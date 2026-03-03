@@ -2,7 +2,6 @@ import { Injectable, HttpStatus } from '@nestjs/common'
 import { InboxRepository } from './inbox.repository'
 import { InboxGateway } from './inbox.gateway'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
-import { InstancesService } from '@modules/instances/instances.service'
 import { AppException } from '@core/errors/app.exception'
 import { LoggerService } from '@core/logger/logger.service'
 import { ConversationFiltersDto } from './dto/conversation-filters.dto'
@@ -13,7 +12,6 @@ import { ConversationStatus } from '@prisma/client'
 export class InboxService {
   constructor(
     private readonly repository: InboxRepository,
-    private readonly instancesService: InstancesService,
     private readonly whatsapp: WhatsAppService,
     private readonly gateway: InboxGateway,
     private readonly logger: LoggerService,
