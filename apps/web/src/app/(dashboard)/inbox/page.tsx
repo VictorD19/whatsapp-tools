@@ -68,10 +68,12 @@ export default function InboxPage() {
         )}
       </div>
 
-      {/* Right: Contact info */}
-      <div className="w-[320px] shrink-0 border-l border-border hidden xl:block overflow-y-auto">
-        <ContactPanel conversation={selectedConversation} />
-      </div>
+      {/* Right: Contact info — only when a conversation is open */}
+      {selectedConversation && (
+        <div className="w-[320px] shrink-0 border-l border-border hidden xl:block overflow-y-auto">
+          <ContactPanel conversation={selectedConversation} />
+        </div>
+      )}
     </div>
   )
 }

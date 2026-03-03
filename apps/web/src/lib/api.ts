@@ -1,6 +1,6 @@
 import ky, { type KyInstance } from 'ky'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/api/v1/`
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null

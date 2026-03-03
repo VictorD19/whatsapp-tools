@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common'
 import { WhatsAppService } from './whatsapp.service'
 import { EvolutionAdapter } from './adapters/evolution/evolution.adapter'
 import { EvolutionHttpClient } from './adapters/evolution/evolution-http.client'
+import { WHATSAPP_PROVIDER } from './whatsapp.tokens'
 
-export const WHATSAPP_PROVIDER = 'WHATSAPP_PROVIDER'
+export { WHATSAPP_PROVIDER }
 
 @Module({
   providers: [

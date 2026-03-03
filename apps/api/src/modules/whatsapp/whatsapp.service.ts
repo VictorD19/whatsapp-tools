@@ -9,7 +9,7 @@ import {
   MentionPayload,
   WebhookEvent,
 } from './ports/whatsapp-provider.interface'
-import { WHATSAPP_PROVIDER } from './whatsapp.module'
+import { WHATSAPP_PROVIDER } from './whatsapp.tokens'
 
 @Injectable()
 export class WhatsAppService {
