@@ -13,7 +13,8 @@ interface ConnectResult {
 }
 
 export function useInstances() {
-  const { setInstances, setLoading, addInstance, removeInstance } = useInstancesStore()
+  const { setInstances, setLoading, addInstance, removeInstance, updateInstanceStatus } =
+    useInstancesStore()
 
   const fetchInstances = useCallback(async () => {
     setLoading(true)
@@ -37,15 +38,23 @@ export function useInstances() {
     [addInstance],
   )
 
-  const connectInstance = useCallback(async (id: string) => {
-    const res = await apiPost<ApiResponse<ConnectResult>>(`instances/${id}/connect`, {})
-    return res.data.qrCode
-  }, [])
+  const connectInstance = useCallback(
+    async (id: string) => {
+      updateInstanceStatus(id, 'CONNECTING')
+      const res = await apiPost<ApiResponse<ConnectResult>>(`instances/${id}/connect`, {})
+      return res.data.qrCode
+    },
+    [updateInstanceStatus],
+  )
 
-  const disconnectInstance = useCallback(async (id: string) => {
-    await apiPost<ApiResponse<void>>(`instances/${id}/disconnect`, {})
-    toast({ title: 'Instancia desconectada', variant: 'success' })
-  }, [])
+  const disconnectInstance = useCallback(
+    async (id: string) => {
+      await apiPost<ApiResponse<void>>(`instances/${id}/disconnect`, {})
+      updateInstanceStatus(id, 'DISCONNECTED')
+      toast({ title: 'Instancia desconectada', variant: 'success' })
+    },
+    [updateInstanceStatus],
+  )
 
   const deleteInstance = useCallback(
     async (id: string) => {
