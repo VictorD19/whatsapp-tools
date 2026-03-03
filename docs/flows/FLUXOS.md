@@ -94,10 +94,12 @@ flowchart TD
     I -->|Sim| B
     I -->|Não| J([Aguarda próxima\nmensagem])
 
-    D -->|Não / Limite| K[IA sinaliza\nque não conseguiu]
-    K --> L[status: PENDING\ntag: escalonado]
-    L --> M[Emite WS\nconversation:escalated]
-    M --> N([Atendente humano\nvê na fila])
+    D -->|Não / Limite| ESCALA[IA sinaliza\nque não conseguiu]
+    ESCALA --> ESCALA2[Gera resumo automático\nda conversa via Claude]
+    ESCALA2 --> ESCALA3[Salva conversation.summary\n'IA atendeu: usuário relatou X,\ntentou Y, não resolveu']
+    ESCALA3 --> ESCALA4[status: PENDING\ntag: escalonado]
+    ESCALA4 --> ESCALA5[Emite WS\nconversation:escalated]
+    ESCALA5 --> ESCALA6([Atendente vê na fila\ncom resumo visível])
 
     A --> O{Atendente clica\n'Assumir' a qualquer\nmomento?}
     O -->|Sim| P[POST /inbox/:id/assign]
@@ -106,9 +108,56 @@ flowchart TD
     R --> S([Atendente responde\nmanualmente])
 
     style A fill:#3B82F6,color:#fff
-    style L fill:#F59E0B,color:#fff
+    style ESCALA4 fill:#F59E0B,color:#fff
+    style ESCALA2 fill:#8B5CF6,color:#fff
+    style ESCALA3 fill:#8B5CF6,color:#fff
     style Q fill:#10B981,color:#fff
     style S fill:#10B981,color:#fff
+```
+
+---
+
+## 3b. Inbox — Encerramento assistido pela IA
+
+> A IA valida com o usuário se o problema foi resolvido antes de encerrar.
+> Esse fluxo ocorre ao final de toda conversa tratada pelo Assistente Virtual.
+
+```mermaid
+flowchart TD
+    A([IA avalia que\natendimento chegou\nao fim]) --> B[Envia mensagem\nde validação ao cliente]
+    B --> C["'Conseguimos resolver\nseu problema? 😊'"]
+    C --> D{Cliente responde}
+
+    D -->|Sim / Confirmou| E[IA registra resolução]
+    E --> F[status: CLOSE\nclosedAt: agora]
+    F --> G[Emite WS\nconversation:closed]
+    G --> H([Conversa encerrada\nautomaticamente ✅])
+
+    D -->|Não / Ainda com dúvida| I[IA pede desculpas\ne informa transferência]
+    I --> J["'Vou transferir você para\num de nossos atendentes'"]
+    J --> K[Claude gera resumo\nda conversa inteira]
+    K --> L["Salva conversation.summary\nEx: 'Cliente perguntou sobre\nplano X, IA explicou preços,\ncliente quer negociar desconto'"]
+    L --> M[status: PENDING\ntag: escalonado\ntag: resumo-ia]
+    M --> N[Emite WS\nconversation:escalated]
+    N --> O([Atendente vê na fila\ncom banner de resumo])
+
+    O --> P[Atendente abre\na conversa]
+    P --> Q[Vê banner amarelo\nno topo da thread]
+    Q --> R["📋 Resumo da IA:\n'Cliente perguntou sobre\nplano X...'"]
+    R --> S([Atendente continua\no atendimento\ncom contexto completo])
+
+    D -->|Sem resposta\npor 10 min| T[IA encerra\npor inatividade]
+    T --> F
+
+    style A fill:#3B82F6,color:#fff
+    style F fill:#6B7280,color:#fff
+    style H fill:#10B981,color:#fff
+    style K fill:#8B5CF6,color:#fff
+    style L fill:#8B5CF6,color:#fff
+    style M fill:#F59E0B,color:#fff
+    style Q fill:#F59E0B,color:#fff
+    style S fill:#10B981,color:#fff
+    style T fill:#6B7280,color:#fff
 ```
 
 ---
@@ -169,15 +218,19 @@ stateDiagram-v2
 
     [*] --> WITH_ASSIST : mensagem chega\ncom assistente configurado
 
-    WITH_ASSIST --> OPEN : atendente assume\n(a qualquer momento)
-    WITH_ASSIST --> PENDING : IA escalona\n(não conseguiu resolver)
-    WITH_ASSIST --> CLOSE : IA resolveu
+    WITH_ASSIST --> WITH_ASSIST : IA responde\nnormalmente
+
+    WITH_ASSIST --> OPEN : atendente assume\na qualquer momento
+
+    WITH_ASSIST --> PENDING : IA não conseguiu resolver\nou usuário disse NÃO\n→ gera summary + tag escalonado
+
+    WITH_ASSIST --> CLOSE : IA validou com usuário\ne ele confirmou resolução\nou inatividade 10min
 
     PENDING --> OPEN : atendente assume
 
     OPEN --> CLOSE : atendente encerra
 
-    CLOSE --> PENDING : cliente manda\nmensagem nova\n(novo atendimento)
+    CLOSE --> PENDING : cliente manda nova mensagem\n(novo atendimento, mesmo contato)
 ```
 
 ---
@@ -218,6 +271,7 @@ erDiagram
         string assistantId
         enum status
         string[] tags
+        string summary
         int unreadCount
         datetime lastMessageAt
         datetime closedAt
@@ -270,8 +324,11 @@ flowchart LR
         E2[conversation:new_message]
         E3[conversation:assigned]
         E4[conversation:closed]
-        E5[instance:status_changed]
-        E6[instance:qr_updated]
+        E5[conversation:escalated]
+        E6[instance:status_changed]
+        E7[instance:qr_updated]
+        E8[instance:connected]
+        E9[instance:disconnected]
     end
 
     R1 --> EVENTS
