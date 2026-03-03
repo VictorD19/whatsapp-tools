@@ -58,8 +58,8 @@ export class InstancesRepository {
     status: InstanceStatus,
     phone?: string,
   ) {
-    return this.prisma.instance.update({
-      where: { id },
+    return this.prisma.instance.updateMany({
+      where: { id, tenantId, deletedAt: null },
       data: {
         status,
         ...(phone !== undefined && { phone }),
@@ -68,8 +68,8 @@ export class InstancesRepository {
   }
 
   async softDelete(tenantId: string, id: string) {
-    return this.prisma.instance.update({
-      where: { id },
+    return this.prisma.instance.updateMany({
+      where: { id, tenantId, deletedAt: null },
       data: { deletedAt: new Date() },
     })
   }

@@ -8,14 +8,15 @@ let socket: Socket | null = null
 export function getSocket(): Socket {
   if (socket) return socket
 
-  const { token, user } = useAuthStore.getState()
-
   socket = io(WS_URL, {
     autoConnect: false,
     transports: ['websocket', 'polling'],
-    auth: {
-      token: token ? `Bearer ${token}` : '',
-      tenantId: user?.tenantId ?? '',
+    auth: (cb) => {
+      const { token, user } = useAuthStore.getState()
+      cb({
+        token: token ? `Bearer ${token}` : '',
+        tenantId: user?.tenantId ?? '',
+      })
     },
   })
 

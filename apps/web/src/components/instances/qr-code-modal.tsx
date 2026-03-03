@@ -11,9 +11,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInstanceSocket } from '@/hooks/use-instance-socket'
-import { useInstancesStore } from '@/stores/instances.store'
+import { useInstancesStore, type Instance } from '@/stores/instances.store'
+import { apiGet } from '@/lib/api'
 
 const QR_TIMEOUT_SECONDS = 30
+const STATUS_POLL_INTERVAL = 5_000
 
 interface QrCodeModalProps {
   open: boolean
@@ -45,11 +47,31 @@ export function QrCodeModal({ open, onOpenChange, instanceId, onRequestQr }: QrC
     instanceId ? s.instances.find((i) => i.id === instanceId)?.status : undefined
   )
 
+  const updateInstanceStatus = useInstancesStore((s) => s.updateInstanceStatus)
+
   useEffect(() => {
     if (open && instanceStatus === 'CONNECTED') {
       onOpenChange(false)
     }
   }, [open, instanceStatus, onOpenChange])
+
+  // Polling fallback — if WebSocket misses the status update, poll the API
+  useEffect(() => {
+    if (!open || !instanceId) return
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await apiGet<{ data: Instance }>(`instances/${instanceId}`)
+        if (res.data.status === 'CONNECTED') {
+          updateInstanceStatus(instanceId, 'CONNECTED', res.data.phone)
+        }
+      } catch {
+        // Ignore polling errors silently
+      }
+    }, STATUS_POLL_INTERVAL)
+
+    return () => clearInterval(interval)
+  }, [open, instanceId, updateInstanceStatus])
 
   // Request QR on open
   useEffect(() => {
