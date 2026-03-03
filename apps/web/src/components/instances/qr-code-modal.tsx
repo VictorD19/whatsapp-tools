@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
 import {
   Dialog,
   DialogContent,
@@ -113,7 +112,13 @@ export function QrCodeModal({ open, onOpenChange, instanceId, onRequestQr }: QrC
             {loading || !qrCode ? (
               <Skeleton className="h-[200px] w-[200px]" />
             ) : (
-              <QRCodeSVG value={qrCode} size={200} />
+              <img
+                src={qrCode}
+                alt="QR Code WhatsApp"
+                width={200}
+                height={200}
+                className="h-[200px] w-[200px]"
+              />
             )}
           </div>
 

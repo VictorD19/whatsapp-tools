@@ -119,7 +119,7 @@ export default function LoginPage() {
           {/* Testimonial */}
           <div className="rounded-xl border border-white/6 bg-white/4 p-4 backdrop-blur-sm max-w-[380px]">
             <p className="text-[13px] leading-relaxed text-zinc-400 italic">
-              "Triplicamos nossas vendas em 60 dias usando a plataforma para atendimento e disparos."
+              &quot;Triplicamos nossas vendas em 60 dias usando a plataforma para atendimento e disparos.&quot;
             </p>
             <div className="mt-3.5 flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/30">

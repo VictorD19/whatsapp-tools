@@ -50,13 +50,16 @@ export class InstancesService {
     }
 
     // Create on Evolution API (webhook is set during creation)
-    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3001')
+    // WEBHOOK_URL overrides APP_URL — needed when Evolution runs in Docker
+    // and cannot reach the host via localhost
+    const webhookBase = this.config.get<string>('WEBHOOK_URL')
+      || this.config.get<string>('APP_URL', 'http://localhost:8000')
     let evolutionResult: { instanceId: string; status: string }
     try {
       evolutionResult = await this.whatsapp.createInstance({
         name: dto.name,
         tenantId,
-        webhookUrl: `${appUrl}/api/v1/webhooks/evolution`,
+        webhookUrl: `${webhookBase}/api/v1/webhooks/evolution`,
       })
     } catch (error) {
       this.logger.error(

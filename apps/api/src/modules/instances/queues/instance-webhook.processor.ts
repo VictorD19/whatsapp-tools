@@ -61,7 +61,16 @@ export class InstanceWebhookProcessor {
     instance: { id: string; tenantId: string },
     data: Record<string, unknown>,
   ) {
-    const qrCode = data.qrcode as string | undefined
+    // Evolution sends qrcode as object { base64: "data:image/png;base64,...", code: "..." }
+    let qrCode: string | undefined
+
+    if (data.qrcode && typeof data.qrcode === 'object') {
+      const qrData = data.qrcode as Record<string, unknown>
+      qrCode = qrData.base64 as string | undefined
+    } else {
+      qrCode = data.qrcode as string | undefined
+    }
+
     if (!qrCode) return
 
     this.gateway.emitQrUpdated(instance.tenantId, {

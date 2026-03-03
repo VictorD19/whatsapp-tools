@@ -1,0 +1,39 @@
+# ── Dependencies ────────────────────────
+node_modules
+**/node_modules
+
+# ── Build output ────────────────────────
+apps/api/dist
+apps/web/.next
+apps/web/out
+
+# ── Dev/IDE ─────────────────────────────
+.git
+.gitignore
+.turbo
+.vscode
+.idea
+*.swp
+*.swo
+
+# ── Docker ──────────────────────────────
+docker-compose*.yml
+Dockerfile*
+
+# ── Docs ────────────────────────────────
+docs/
+*.md
+!README.md
+
+# ── Tests ───────────────────────────────
+**/__tests__
+**/*.spec.ts
+**/*.test.ts
+coverage/
+
+# ── Misc ────────────────────────────────
+.env
+.env.local
+.env.*.local
+.playwright-mcp
+rules/

@@ -1,8 +1,8 @@
 # Regras do Projeto — WhatsApp Sales Platform
 
 ## Referências obrigatórias
-- Arquitetura e padrões: `ARCHITECTURE.md`
-- Roadmap de features: `FEATURES.md`
+- Arquitetura e padrões: `./docs/ARCHITECTURE.md`
+- Roadmap de features: `./docs/FEATURES.md`
 
 ## Rules ativas
 
