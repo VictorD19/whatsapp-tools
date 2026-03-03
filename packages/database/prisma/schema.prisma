@@ -1,6 +1,8 @@
 // ────────────────────────────────────────────────
 // WhatsApp Sales Platform — Prisma Schema
-// Migration: 20260303_add_instances
+// Migrations:
+//   20260303_add_instances
+//   20260303_add_conversations_messages
 // ────────────────────────────────────────────────
 
 generator client {
@@ -15,17 +17,19 @@ datasource db {
 // ── Tenant ──────────────────────────────────────
 
 model Tenant {
-  id        String    @id @default(cuid())
-  name      String
-  slug      String    @unique
-  plan      String    @default("free")
-  maxInstances Int    @default(3)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  plan         String    @default("free")
+  maxInstances Int       @default(3)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
-  instances Instance[]
-  users     User[]
+  instances     Instance[]
+  users         User[]
+  contacts      Contact[]
+  conversations Conversation[]
 }
 
 // ── User ────────────────────────────────────────
@@ -41,7 +45,8 @@ model User {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  conversations Conversation[] @relation("AssignedConversations")
 
   @@index([tenantId])
 }
@@ -56,19 +61,121 @@ enum InstanceStatus {
 }
 
 model Instance {
-  id            String         @id @default(cuid())
-  tenantId      String
-  name          String
-  phone         String?
-  status        InstanceStatus @default(DISCONNECTED)
-  evolutionId   String         @unique
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
+  id          String         @id @default(cuid())
+  tenantId    String
+  name        String
+  phone       String?
+  status      InstanceStatus @default(DISCONNECTED)
+  evolutionId String         @unique
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  conversations Conversation[]
 
   @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([evolutionId])
+}
+
+// ── Contact ─────────────────────────────────────
+
+model Contact {
+  id        String    @id @default(cuid())
+  tenantId  String
+  phone     String
+  name      String?
+  avatarUrl String?
+  tags      String[]  @default([])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  conversations Conversation[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+  @@index([tenantId, phone])
+}
+
+// ── Conversation ────────────────────────────────
+
+enum ConversationStatus {
+  PENDING
+  OPEN
+  CLOSE
+}
+
+model Conversation {
+  id            String             @id @default(cuid())
+  tenantId      String
+  instanceId    String
+  contactId     String
+  assignedToId  String?
+  status        ConversationStatus @default(PENDING)
+  tags          String[]           @default([])
+  summary       String?
+  unreadCount   Int                @default(0)
+  lastMessageAt DateTime?
+  closedAt      DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  deletedAt     DateTime?
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  instance   Instance @relation(fields: [instanceId], references: [id])
+  contact    Contact  @relation(fields: [contactId], references: [id])
+  assignedTo User?    @relation("AssignedConversations", fields: [assignedToId], references: [id])
+  messages   Message[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, instanceId])
+  @@index([contactId])
+}
+
+// ── Message ─────────────────────────────────────
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  STICKER
+  LOCATION
+  CONTACT
+  UNKNOWN
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  tenantId       String
+  conversationId String
+  fromMe         Boolean       @default(false)
+  fromBot        Boolean       @default(false)
+  body           String?
+  type           MessageType   @default(TEXT)
+  status         MessageStatus @default(PENDING)
+  evolutionId    String?
+  mediaUrl       String?
+  sentAt         DateTime      @default(now())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
   @@index([tenantId])
   @@index([evolutionId])
 }

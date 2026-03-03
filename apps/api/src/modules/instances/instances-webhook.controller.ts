@@ -1,12 +1,28 @@
 import { Controller, Post, Param, Body, HttpCode, HttpStatus } from '@nestjs/common'
+import { InjectQueue } from '@nestjs/bull'
+import { Queue } from 'bull'
 import { Public } from '@shared/decorators/current-user.decorator'
-import { InstanceWebhookProducer, InstanceWebhookJob } from './queues/instance-webhook.producer'
+import { QUEUES } from '@core/queue/queue.module'
 import { LoggerService } from '@core/logger/logger.service'
+
+// Events that belong to instance lifecycle
+const INSTANCE_EVENTS = new Set(['connection.update', 'qrcode.updated'])
+
+// Events that belong to inbox/messages
+const INBOX_EVENTS = new Set(['messages.upsert', 'messages.update'])
+
+interface WebhookJob {
+  instanceName: string
+  event: string
+  data: Record<string, unknown>
+  receivedAt: string
+}
 
 @Controller('webhooks/evolution')
 export class InstancesWebhookController {
   constructor(
-    private readonly webhookProducer: InstanceWebhookProducer,
+    @InjectQueue(QUEUES.WEBHOOK_INBOUND)
+    private readonly webhookQueue: Queue<WebhookJob>,
     private readonly logger: LoggerService,
   ) {}
 
@@ -29,14 +45,27 @@ export class InstancesWebhookController {
       'Webhook',
     )
 
-    const job: InstanceWebhookJob = {
+    const job: WebhookJob = {
       instanceName: evolutionId,
       event,
       data: body.data as Record<string, unknown> ?? body,
       receivedAt: new Date().toISOString(),
     }
 
-    await this.webhookProducer.enqueue(job)
+    // Route to appropriate processor job name
+    if (INSTANCE_EVENTS.has(event)) {
+      await this.webhookQueue.add('instance-webhook', job, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+      })
+    } else if (INBOX_EVENTS.has(event)) {
+      await this.webhookQueue.add('inbox-webhook', job, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+      })
+    } else {
+      this.logger.debug(`Unrouted webhook event: ${event}`, 'Webhook')
+    }
 
     return { received: true }
   }

@@ -7,7 +7,6 @@ import { InstancesWebhookController } from './instances-webhook.controller'
 import { InstancesService } from './instances.service'
 import { InstancesRepository } from './instances.repository'
 import { InstancesGateway } from './instances.gateway'
-import { InstanceWebhookProducer } from './queues/instance-webhook.producer'
 import { InstanceWebhookProcessor } from './queues/instance-webhook.processor'
 
 @Module({
@@ -20,7 +19,6 @@ import { InstanceWebhookProcessor } from './queues/instance-webhook.processor'
     InstancesService,
     InstancesRepository,
     InstancesGateway,
-    InstanceWebhookProducer,
     InstanceWebhookProcessor,
   ],
   exports: [InstancesService],

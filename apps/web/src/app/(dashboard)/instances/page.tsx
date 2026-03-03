@@ -1,72 +1,81 @@
-import React from 'react'
+'use client'
+
+import React, { useCallback, useEffect, useState } from 'react'
 import { Plus, Radio } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { StatusBadge } from '@/components/shared/status-badge'
+import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/shared/empty-state'
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = { title: 'Instâncias' }
-
-const mockInstances = [
-  {
-    id: '1',
-    name: 'Vendas Principal',
-    phone: '+55 (11) 99999-0001',
-    status: 'connected' as const,
-    messagesDay: 142,
-    lastActivity: '2 min atrás',
-  },
-  {
-    id: '2',
-    name: 'Suporte',
-    phone: '+55 (11) 99999-0002',
-    status: 'connected' as const,
-    messagesDay: 87,
-    lastActivity: '5 min atrás',
-  },
-  {
-    id: '3',
-    name: 'Marketing',
-    phone: '+55 (11) 99999-0003',
-    status: 'connecting' as const,
-    messagesDay: 0,
-    lastActivity: '—',
-  },
-  {
-    id: '4',
-    name: 'Pós-venda',
-    phone: '+55 (11) 99999-0004',
-    status: 'disconnected' as const,
-    messagesDay: 0,
-    lastActivity: 'há 2 dias',
-  },
-]
+import { InstanceGrid } from '@/components/instances/instance-grid'
+import { CreateInstanceModal } from '@/components/instances/create-instance-modal'
+import { QrCodeModal } from '@/components/instances/qr-code-modal'
+import { useInstances } from '@/hooks/use-instances'
+import { useInstanceSocket } from '@/hooks/use-instance-socket'
+import { useInstancesStore } from '@/stores/instances.store'
 
 export default function InstancesPage() {
+  const instances = useInstancesStore((s) => s.instances)
+  const isLoading = useInstancesStore((s) => s.isLoading)
+  const { fetchInstances, createInstance, connectInstance, disconnectInstance, deleteInstance } =
+    useInstances()
+
+  const [createOpen, setCreateOpen] = useState(false)
+  const [qrOpen, setQrOpen] = useState(false)
+  const [qrInstanceId, setQrInstanceId] = useState<string | null>(null)
+
+  // Socket for real-time updates
+  useInstanceSocket()
+
+  // Initial fetch
+  useEffect(() => {
+    fetchInstances()
+  }, [fetchInstances])
+
+  const handleConnect = useCallback(
+    (id: string) => {
+      setQrInstanceId(id)
+      setQrOpen(true)
+    },
+    [],
+  )
+
+  const handleRequestQr = useCallback(
+    async (id: string) => {
+      return connectInstance(id)
+    },
+    [connectInstance],
+  )
+
+  // Stats
+  const stats = {
+    total: instances.length,
+    connected: instances.filter((i) => i.status === 'CONNECTED').length,
+    connecting: instances.filter((i) => i.status === 'CONNECTING').length,
+    disconnected: instances.filter((i) => i.status === 'DISCONNECTED').length,
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Instâncias WhatsApp</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Instancias WhatsApp</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie suas conexões com o WhatsApp
+            Gerencie suas conexoes com o WhatsApp
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
-          Nova instância
+          Nova instancia
         </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total', value: '4', color: 'text-foreground' },
-          { label: 'Conectadas', value: '2', color: 'text-green-600 dark:text-green-400' },
-          { label: 'Conectando', value: '1', color: 'text-yellow-600 dark:text-yellow-400' },
-          { label: 'Desconectadas', value: '1', color: 'text-red-600 dark:text-red-400' },
+          { label: 'Total', value: stats.total, color: 'text-foreground' },
+          { label: 'Conectadas', value: stats.connected, color: 'text-green-600 dark:text-green-400' },
+          { label: 'Conectando', value: stats.connecting, color: 'text-yellow-600 dark:text-yellow-400' },
+          { label: 'Desconectadas', value: stats.disconnected, color: 'text-red-600 dark:text-red-400' },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardContent className="p-4">
@@ -78,58 +87,35 @@ export default function InstancesPage() {
       </div>
 
       {/* Instances grid */}
-      {mockInstances.length === 0 ? (
+      {!isLoading && instances.length === 0 ? (
         <EmptyState
           icon={Radio}
-          title="Nenhuma instância criada"
-          description="Conecte seu WhatsApp para começar a enviar e receber mensagens"
-          action={{ label: 'Criar primeira instância', onClick: () => {} }}
+          title="Nenhuma instancia criada"
+          description="Conecte seu WhatsApp para comecar a enviar e receber mensagens"
+          action={{ label: 'Criar primeira instancia', onClick: () => setCreateOpen(true) }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {mockInstances.map((instance) => (
-            <Card key={instance.id} className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-base">{instance.name}</CardTitle>
-                    <CardDescription className="mt-0.5">{instance.phone}</CardDescription>
-                  </div>
-                  <StatusBadge status={instance.status} />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Mensagens hoje</span>
-                  <span className="font-medium">{instance.messagesDay}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm mt-1">
-                  <span className="text-muted-foreground">Última atividade</span>
-                  <span className="font-medium">{instance.lastActivity}</span>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  {instance.status === 'connected' ? (
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Desconectar
-                    </Button>
-                  ) : instance.status === 'disconnected' ? (
-                    <Button size="sm" className="flex-1">
-                      Conectar QR
-                    </Button>
-                  ) : (
-                    <Button variant="outline" size="sm" className="flex-1" disabled>
-                      Aguardando...
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="sm">
-                    Detalhes
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <InstanceGrid
+          instances={instances}
+          isLoading={isLoading}
+          onConnect={handleConnect}
+          onDisconnect={disconnectInstance}
+          onDelete={deleteInstance}
+        />
       )}
+
+      {/* Modals */}
+      <CreateInstanceModal
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreate={createInstance}
+      />
+      <QrCodeModal
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        instanceId={qrInstanceId}
+        onRequestQr={handleRequestQr}
+      />
     </div>
   )
 }

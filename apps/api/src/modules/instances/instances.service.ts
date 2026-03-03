@@ -104,6 +104,10 @@ export class InstancesService {
     return this.repository.findAllByTenant(tenantId)
   }
 
+  async findByEvolutionId(evolutionId: string) {
+    return this.repository.findByEvolutionId(evolutionId)
+  }
+
   async findOne(tenantId: string, id: string) {
     const instance = await this.repository.findById(tenantId, id)
     if (!instance) {

@@ -4,8 +4,14 @@ import { QUEUES } from '@core/queue/queue.module'
 import { LoggerService } from '@core/logger/logger.service'
 import { InstancesRepository } from '../instances.repository'
 import { InstancesGateway } from '../instances.gateway'
-import { InstanceWebhookJob } from './instance-webhook.producer'
 import { InstanceStatus } from '@prisma/client'
+
+interface InstanceWebhookJob {
+  instanceName: string
+  event: string
+  data: Record<string, unknown>
+  receivedAt: string
+}
 
 @Processor(QUEUES.WEBHOOK_INBOUND)
 export class InstanceWebhookProcessor {
