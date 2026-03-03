@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import { CoreModule } from './core/core.module'
+import { InstancesModule } from './modules/instances/instances.module'
 
 // TODO: importar módulos de negócio conforme forem implementados
 // import { AuthModule } from './modules/auth/auth.module'
 // import { TenantsModule } from './modules/tenants/tenants.module'
 // import { UsersModule } from './modules/users/users.module'
-// import { InstancesModule } from './modules/instances/instances.module'
 // import { BroadcastsModule } from './modules/broadcasts/broadcasts.module'
 // import { GroupsModule } from './modules/groups/groups.module'
 // import { AssistantsModule } from './modules/assistants/assistants.module'
@@ -16,10 +16,10 @@ import { CoreModule } from './core/core.module'
 @Module({
   imports: [
     CoreModule,
+    InstancesModule,
     // AuthModule,
     // TenantsModule,
     // UsersModule,
-    // InstancesModule,
     // BroadcastsModule,
     // GroupsModule,
     // AssistantsModule,

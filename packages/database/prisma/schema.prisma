@@ -1,0 +1,74 @@
+// ────────────────────────────────────────────────
+// WhatsApp Sales Platform — Prisma Schema
+// Migration: 20260303_add_instances
+// ────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Tenant ──────────────────────────────────────
+
+model Tenant {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  plan      String    @default("free")
+  maxInstances Int    @default(3)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  instances Instance[]
+  users     User[]
+}
+
+// ── User ────────────────────────────────────────
+
+model User {
+  id        String    @id @default(cuid())
+  tenantId  String
+  email     String    @unique
+  name      String
+  password  String
+  role      String    @default("agent")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+// ── Instance (WhatsApp) ─────────────────────────
+
+enum InstanceStatus {
+  CONNECTED
+  CONNECTING
+  DISCONNECTED
+  BANNED
+}
+
+model Instance {
+  id            String         @id @default(cuid())
+  tenantId      String
+  name          String
+  phone         String?
+  status        InstanceStatus @default(DISCONNECTED)
+  evolutionId   String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([evolutionId])
+}
