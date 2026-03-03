@@ -5,7 +5,6 @@ import {
   Param,
   Body,
   Query,
-  UsePipes,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
@@ -70,12 +69,11 @@ export class InboxController {
   }
 
   @Post('conversations/:id/messages')
-  @UsePipes(new ZodValidationPipe(sendMessageSchema))
   sendMessage(
     @CurrentTenant() tenantId: string,
     @Param('id') id: string,
     @CurrentUser() user: { id: string; role: string },
-    @Body() dto: SendMessageDto,
+    @Body(new ZodValidationPipe(sendMessageSchema)) dto: SendMessageDto,
   ) {
     return this.inboxService.sendMessage(tenantId, id, user.id, dto, user.role)
   }
@@ -92,11 +90,10 @@ export class InboxController {
 
   @Post('conversations/:id/transfer')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ZodValidationPipe(transferConversationSchema))
   transferConversation(
     @CurrentTenant() tenantId: string,
     @Param('id') id: string,
-    @Body() dto: TransferConversationDto,
+    @Body(new ZodValidationPipe(transferConversationSchema)) dto: TransferConversationDto,
   ) {
     return this.inboxService.transferConversation(tenantId, id, dto.assignedToId)
   }

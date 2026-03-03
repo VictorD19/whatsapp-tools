@@ -19,10 +19,9 @@ export class InstancesController {
   constructor(private readonly instancesService: InstancesService) {}
 
   @Post()
-  @UsePipes(new ZodValidationPipe(createInstanceSchema))
   create(
     @CurrentTenant() tenantId: string,
-    @Body() dto: CreateInstanceDto,
+    @Body(new ZodValidationPipe(createInstanceSchema)) dto: CreateInstanceDto,
   ) {
     return this.instancesService.create(tenantId, dto)
   }
