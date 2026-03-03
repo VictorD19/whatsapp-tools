@@ -49,12 +49,14 @@ export class InstancesService {
       )
     }
 
-    // Create on Evolution API
+    // Create on Evolution API (webhook is set during creation)
+    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3001')
     let evolutionResult: { instanceId: string; status: string }
     try {
       evolutionResult = await this.whatsapp.createInstance({
-        instanceName: dto.name,
-        tenantSlug: tenant.slug,
+        name: dto.name,
+        tenantId,
+        webhookUrl: `${appUrl}/api/v1/webhooks/evolution`,
       })
     } catch (error) {
       this.logger.error(
@@ -67,21 +69,6 @@ export class InstancesService {
         'Falha ao criar instância no provedor WhatsApp',
         { reason: (error as Error).message },
         HttpStatus.BAD_GATEWAY,
-      )
-    }
-
-    // Configure webhook URL
-    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3001')
-    try {
-      await this.whatsapp.setWebhook(
-        evolutionResult.instanceId,
-        `${appUrl}/api/v1/webhooks/evolution/${evolutionResult.instanceId}`,
-        ['MESSAGE_RECEIVED', 'STATUS_UPDATE', 'CONNECTED', 'DISCONNECTED', 'QR_CODE'],
-      )
-    } catch (error) {
-      this.logger.warn(
-        `Failed to set webhook for ${evolutionResult.instanceId}: ${(error as Error).message}`,
-        'InstancesService',
       )
     }
 

@@ -96,6 +96,20 @@ export function useInboxSocket() {
       removeConversation(payload.conversationId)
     }
 
+    function handleConversationTransferred(payload: {
+      conversationId: string
+      assignedToId: string
+    }) {
+      const conversations = useInboxStore.getState().conversations
+      const conv = conversations.find((c) => c.id === payload.conversationId)
+      if (conv) {
+        upsertConversation({
+          ...conv,
+          assignedToId: payload.assignedToId,
+        })
+      }
+    }
+
     function handleMessageStatusUpdated(payload: {
       conversationId: string
       messageId: string
@@ -104,18 +118,32 @@ export function useInboxSocket() {
       updateMessageStatus(payload.conversationId, payload.messageId, payload.status)
     }
 
+    // Restore document title when tab gains focus
+    function handleVisibilityChange() {
+      if (!document.hidden) {
+        const total = useInboxStore.getState().conversations.reduce(
+          (sum, c) => sum + c.unreadCount, 0
+        )
+        updateDocumentTitle(total)
+      }
+    }
+
     socket.on('conversation:created', handleConversationCreated)
     socket.on('conversation:new_message', handleNewMessage)
     socket.on('conversation:assigned', handleConversationAssigned)
     socket.on('conversation:closed', handleConversationClosed)
+    socket.on('conversation:transferred', handleConversationTransferred)
     socket.on('message:status_updated', handleMessageStatusUpdated)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       socket.off('conversation:created', handleConversationCreated)
       socket.off('conversation:new_message', handleNewMessage)
       socket.off('conversation:assigned', handleConversationAssigned)
       socket.off('conversation:closed', handleConversationClosed)
+      socket.off('conversation:transferred', handleConversationTransferred)
       socket.off('message:status_updated', handleMessageStatusUpdated)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [upsertConversation, removeConversation, appendMessage, incrementUnread, updateMessageStatus])
 }

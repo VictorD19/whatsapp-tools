@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common'
-import {
-  IWhatsAppProvider,
-  CreateInstanceDto,
+import type { IWhatsAppProvider } from './ports/whatsapp-provider.interface'
+import type { CreateInstanceDto } from './dto/instance.dto'
+import type {
   ImagePayload,
   VideoPayload,
   AudioPayload,
   DocumentPayload,
   MentionPayload,
-  WebhookEvent,
-} from './ports/whatsapp-provider.interface'
+} from './dto/send-message.dto'
+import type { WebhookEvent } from './dto/webhook.dto'
 import { WHATSAPP_PROVIDER } from './whatsapp.tokens'
 
 @Injectable()

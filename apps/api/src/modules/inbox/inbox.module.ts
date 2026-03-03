@@ -9,6 +9,7 @@ import { InboxService } from './inbox.service'
 import { InboxRepository } from './inbox.repository'
 import { InboxGateway } from './inbox.gateway'
 import { InboxWebhookProcessor } from './queues/inbox-webhook.processor'
+import { WebhookInboundProducer } from './queues/webhook-inbound.producer'
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { InboxWebhookProcessor } from './queues/inbox-webhook.processor'
     InboxRepository,
     InboxGateway,
     InboxWebhookProcessor,
+    WebhookInboundProducer,
   ],
-  exports: [InboxService],
+  exports: [InboxService, WebhookInboundProducer],
 })
 export class InboxModule {}

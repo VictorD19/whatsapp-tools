@@ -17,10 +17,19 @@ export class InboxService {
     private readonly logger: LoggerService,
   ) {}
 
-  async findConversations(tenantId: string, filters: ConversationFiltersDto) {
+  async findConversations(
+    tenantId: string,
+    filters: ConversationFiltersDto,
+    userId?: string,
+  ) {
+    // Resolve assignedToMe into assignedToId
+    const assignedToId = filters.assignedToMe && userId
+      ? userId
+      : filters.assignedToId
+
     const { conversations, total } = await this.repository.findConversations(tenantId, {
       status: filters.status as ConversationStatus | undefined,
-      assignedToId: filters.assignedToId,
+      assignedToId,
       instanceId: filters.instanceId,
       page: filters.page,
       limit: filters.limit,
@@ -40,7 +49,7 @@ export class InboxService {
   async findConversationById(tenantId: string, id: string) {
     const conversation = await this.repository.findConversationById(tenantId, id)
     if (!conversation) {
-      throw AppException.notFound('CONVERSATION_NOT_FOUND', 'Conversa não encontrada', { id })
+      throw AppException.notFound('CONVERSATION_NOT_FOUND', 'Conversa nao encontrada', { id })
     }
     return conversation
   }
@@ -81,7 +90,7 @@ export class InboxService {
     if (conversation.assignedToId) {
       throw new AppException(
         'CONVERSATION_ALREADY_ASSIGNED',
-        'Conversa já está atribuída a outro atendente',
+        'Conversa ja esta atribuida a outro atendente',
         { assignedToId: conversation.assignedToId },
       )
     }
@@ -107,21 +116,23 @@ export class InboxService {
     conversationId: string,
     userId: string,
     dto: SendMessageDto,
+    role?: string,
   ) {
     const conversation = await this.findConversationById(tenantId, conversationId)
 
     if (conversation.status !== 'OPEN') {
       throw new AppException(
         'CONVERSATION_NOT_OPEN',
-        'Só é possível enviar mensagens em conversas abertas',
+        'So e possivel enviar mensagens em conversas abertas',
         { status: conversation.status },
       )
     }
 
-    if (conversation.assignedToId !== userId) {
+    // Admin can send messages in any open conversation
+    if (role !== 'admin' && conversation.assignedToId !== userId) {
       throw new AppException(
         'CONVERSATION_ALREADY_ASSIGNED',
-        'Você não está atribuído a esta conversa',
+        'Voce nao esta atribuido a esta conversa',
         { assignedToId: conversation.assignedToId },
       )
     }
@@ -159,6 +170,9 @@ export class InboxService {
       evolutionId: messageResult.messageId,
     })
 
+    // Update lastMessageAt
+    await this.repository.updateLastMessageAt(conversationId)
+
     // Emit WebSocket
     this.gateway.emitNewMessage(tenantId, {
       conversationId,
@@ -181,7 +195,7 @@ export class InboxService {
     if (conversation.status === 'CLOSE') {
       throw new AppException(
         'CONVERSATION_ALREADY_CLOSED',
-        'Conversa já está encerrada',
+        'Conversa ja esta encerrada',
         { conversationId },
       )
     }
@@ -189,7 +203,7 @@ export class InboxService {
     if (conversation.status !== 'OPEN') {
       throw new AppException(
         'CONVERSATION_NOT_OPEN',
-        'Só é possível encerrar conversas abertas',
+        'So e possivel encerrar conversas abertas',
         { status: conversation.status },
       )
     }
@@ -216,7 +230,7 @@ export class InboxService {
     if (conversation.status === 'CLOSE') {
       throw new AppException(
         'CONVERSATION_ALREADY_CLOSED',
-        'Não é possível transferir conversa encerrada',
+        'Nao e possivel transferir conversa encerrada',
         { conversationId },
       )
     }
@@ -247,7 +261,7 @@ export class InboxService {
     if (conversation.status !== 'CLOSE') {
       throw new AppException(
         'CONVERSATION_NOT_OPEN',
-        'Só é possível reabrir conversas encerradas',
+        'So e possivel reabrir conversas encerradas',
         { status: conversation.status },
       )
     }

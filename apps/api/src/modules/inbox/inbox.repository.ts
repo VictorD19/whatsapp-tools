@@ -136,6 +136,13 @@ export class InboxRepository {
     })
   }
 
+  async updateLastMessageAt(id: string) {
+    return this.prisma.conversation.update({
+      where: { id },
+      data: { lastMessageAt: new Date() },
+    })
+  }
+
   // ── Messages ──
 
   async findMessages(

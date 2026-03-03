@@ -85,23 +85,23 @@ describe('InstancesService', () => {
       prisma.tenant.findUnique.mockResolvedValue(mockTenant)
       repository.countByTenant.mockResolvedValue(0)
       whatsapp.createInstance.mockResolvedValue({
-        instanceId: 'acme-vendas',
-        status: 'created',
+        instanceId: 'tenant-123_vendas',
+        status: 'DISCONNECTED',
       })
-      whatsapp.setWebhook.mockResolvedValue(undefined)
       repository.create.mockResolvedValue(mockInstance)
 
       const result = await service.create(tenantId, { name: 'vendas' })
 
       expect(result).toEqual(mockInstance)
       expect(whatsapp.createInstance).toHaveBeenCalledWith({
-        instanceName: 'vendas',
-        tenantSlug: 'acme',
+        name: 'vendas',
+        tenantId,
+        webhookUrl: 'http://localhost:3001/api/v1/webhooks/evolution',
       })
       expect(repository.create).toHaveBeenCalledWith({
         tenantId,
         name: 'vendas',
-        evolutionId: 'acme-vendas',
+        evolutionId: 'tenant-123_vendas',
       })
     })
 

@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common'
-import {
-  IWhatsAppProvider,
+import { Injectable, Logger } from '@nestjs/common'
+import type { IWhatsAppProvider } from '../../ports/whatsapp-provider.interface'
+import type {
   CreateInstanceDto,
   InstanceResult,
   QRCodeResult,
   InstanceStatus,
+} from '../../dto/instance.dto'
+import type {
   MessageResult,
   ImagePayload,
   VideoPayload,
@@ -13,31 +15,106 @@ import {
   Group,
   GroupMember,
   MentionPayload,
-  WebhookEvent,
-} from '../../ports/whatsapp-provider.interface'
+} from '../../dto/send-message.dto'
+import type { WebhookEvent } from '../../dto/webhook.dto'
 import { EvolutionHttpClient } from './evolution-http.client'
+
+// ---------- Evolution API response shapes (internal only) ----------
+
+interface EvoCreateInstanceResponse {
+  instance: { instanceName: string; status: string }
+}
+
+interface EvoConnectResponse {
+  base64?: string
+  code?: string
+}
+
+interface EvoConnectionStateResponse {
+  instance: { state: string }
+}
+
+interface EvoMessageResponse {
+  key: { id: string }
+}
+
+interface EvoGroupRaw {
+  id: string
+  subject: string
+  size: number
+}
+
+interface EvoParticipant {
+  id: string
+  pushName?: string
+  admin?: string | null
+}
+
+interface EvoParticipantsResponse {
+  participants: EvoParticipant[]
+}
+
+// -------------------------------------------------------------------
+
+const STATE_MAP: Record<string, InstanceStatus> = {
+  open: 'CONNECTED',
+  close: 'DISCONNECTED',
+  connecting: 'CONNECTING',
+}
 
 @Injectable()
 export class EvolutionAdapter implements IWhatsAppProvider {
+  private readonly logger = new Logger(EvolutionAdapter.name)
+
   constructor(private readonly http: EvolutionHttpClient) {}
 
+  // ── Instancias ────────────────────────────────────────────────────
+
   async createInstance(config: CreateInstanceDto): Promise<InstanceResult> {
-    const instanceName = `${config.tenantSlug}-${config.instanceName}`
-    const response = await this.http.post<{ instance: { instanceName: string; status: string } }>(
+    const instanceName = `${config.tenantId}_${config.name}`
+
+    const body: Record<string, unknown> = {
+      instanceName,
+      qrcode: false,
+      integration: 'WHATSAPP-BAILEYS',
+    }
+
+    if (config.webhookUrl) {
+      body.webhook = {
+        enabled: true,
+        url: config.webhookUrl,
+        events: [
+          'MESSAGES_UPSERT',
+          'MESSAGES_UPDATE',
+          'QRCODE_UPDATED',
+          'CONNECTION_UPDATE',
+          'SEND_MESSAGE',
+        ],
+      }
+    }
+
+    const res = await this.http.post<EvoCreateInstanceResponse>(
       '/instance/create',
-      { instanceName, integration: 'WHATSAPP-BAILEYS' },
+      body,
     )
+
+    const status = STATE_MAP[res.instance.status] ?? 'DISCONNECTED'
+
     return {
-      instanceId: response.instance.instanceName,
-      status: response.instance.status,
+      instanceId: res.instance.instanceName,
+      status,
     }
   }
 
   async connectInstance(instanceId: string): Promise<QRCodeResult> {
-    const response = await this.http.get<{ base64: string; code?: string }>(
+    const res = await this.http.get<EvoConnectResponse>(
       `/instance/connect/${instanceId}`,
     )
-    return { qrCode: response.base64, pairingCode: response.code }
+
+    return {
+      qrCode: res.base64 ?? '',
+      pairingCode: res.code,
+    }
   }
 
   async disconnectInstance(instanceId: string): Promise<void> {
@@ -49,47 +126,75 @@ export class EvolutionAdapter implements IWhatsAppProvider {
   }
 
   async getInstanceStatus(instanceId: string): Promise<InstanceStatus> {
-    const response = await this.http.get<{ instance: { state: string } }>(
+    const res = await this.http.get<EvoConnectionStateResponse>(
       `/instance/connectionState/${instanceId}`,
     )
-    const stateMap: Record<string, InstanceStatus> = {
-      open: 'connected',
-      close: 'disconnected',
-      connecting: 'connecting',
-    }
-    return stateMap[response.instance.state] ?? 'disconnected'
+
+    return STATE_MAP[res.instance.state] ?? 'DISCONNECTED'
   }
 
-  async sendText(instanceId: string, to: string, text: string): Promise<MessageResult> {
-    const response = await this.http.post<{ key: { id: string } }>(
+  // ── Mensagens ─────────────────────────────────────────────────────
+
+  async sendText(
+    instanceId: string,
+    to: string,
+    text: string,
+  ): Promise<MessageResult> {
+    const res = await this.http.post<EvoMessageResponse>(
       `/message/sendText/${instanceId}`,
       { number: to, text },
     )
-    return { messageId: response.key.id, status: 'sent' }
+
+    return { messageId: res.key.id, status: 'sent' }
   }
 
-  async sendImage(instanceId: string, to: string, payload: ImagePayload): Promise<MessageResult> {
-    const response = await this.http.post<{ key: { id: string } }>(
+  async sendImage(
+    instanceId: string,
+    to: string,
+    payload: ImagePayload,
+  ): Promise<MessageResult> {
+    const res = await this.http.post<EvoMessageResponse>(
       `/message/sendMedia/${instanceId}`,
-      { number: to, mediatype: 'image', media: payload.imageUrl, caption: payload.caption },
+      {
+        number: to,
+        mediatype: 'image',
+        media: payload.url,
+        caption: payload.caption,
+      },
     )
-    return { messageId: response.key.id, status: 'sent' }
+
+    return { messageId: res.key.id, status: 'sent' }
   }
 
-  async sendVideo(instanceId: string, to: string, payload: VideoPayload): Promise<MessageResult> {
-    const response = await this.http.post<{ key: { id: string } }>(
+  async sendVideo(
+    instanceId: string,
+    to: string,
+    payload: VideoPayload,
+  ): Promise<MessageResult> {
+    const res = await this.http.post<EvoMessageResponse>(
       `/message/sendMedia/${instanceId}`,
-      { number: to, mediatype: 'video', media: payload.videoUrl, caption: payload.caption },
+      {
+        number: to,
+        mediatype: 'video',
+        media: payload.url,
+        caption: payload.caption,
+      },
     )
-    return { messageId: response.key.id, status: 'sent' }
+
+    return { messageId: res.key.id, status: 'sent' }
   }
 
-  async sendAudio(instanceId: string, to: string, payload: AudioPayload): Promise<MessageResult> {
-    const response = await this.http.post<{ key: { id: string } }>(
-      `/message/sendMedia/${instanceId}`,
-      { number: to, mediatype: 'audio', media: payload.audioUrl },
+  async sendAudio(
+    instanceId: string,
+    to: string,
+    payload: AudioPayload,
+  ): Promise<MessageResult> {
+    const res = await this.http.post<EvoMessageResponse>(
+      `/message/sendWhatsAppAudio/${instanceId}`,
+      { number: to, audio: payload.url },
     )
-    return { messageId: response.key.id, status: 'sent' }
+
+    return { messageId: res.key.id, status: 'sent' }
   }
 
   async sendDocument(
@@ -97,39 +202,46 @@ export class EvolutionAdapter implements IWhatsAppProvider {
     to: string,
     payload: DocumentPayload,
   ): Promise<MessageResult> {
-    const response = await this.http.post<{ key: { id: string } }>(
+    const res = await this.http.post<EvoMessageResponse>(
       `/message/sendMedia/${instanceId}`,
       {
         number: to,
         mediatype: 'document',
-        media: payload.documentUrl,
+        media: payload.url,
         fileName: payload.fileName,
-        caption: payload.caption,
+        mimetype: payload.mimetype,
       },
     )
-    return { messageId: response.key.id, status: 'sent' }
+
+    return { messageId: res.key.id, status: 'sent' }
   }
 
+  // ── Grupos ────────────────────────────────────────────────────────
+
   async getGroups(instanceId: string): Promise<Group[]> {
-    const response = await this.http.get<Array<{ id: string; subject: string; desc?: string; size: number }>>(
+    const res = await this.http.get<EvoGroupRaw[]>(
       `/group/fetchAllGroups/${instanceId}?getParticipants=false`,
     )
-    return response.map((g) => ({
+
+    return res.map((g) => ({
       id: g.id,
       name: g.subject,
-      description: g.desc,
-      participantCount: g.size,
+      size: g.size,
     }))
   }
 
-  async getGroupMembers(instanceId: string, groupId: string): Promise<GroupMember[]> {
-    const response = await this.http.get<{ participants: Array<{ id: string; pushName?: string; admin?: string }>}>(
+  async getGroupMembers(
+    instanceId: string,
+    groupId: string,
+  ): Promise<GroupMember[]> {
+    const res = await this.http.get<EvoParticipantsResponse>(
       `/group/participants/${instanceId}?groupJid=${groupId}`,
     )
-    return response.participants.map((p) => ({
+
+    return res.participants.map((p) => ({
       id: p.id,
-      pushName: p.pushName,
-      isAdmin: !!p.admin,
+      name: p.pushName,
+      admin: !!p.admin,
     }))
   }
 
@@ -138,19 +250,32 @@ export class EvolutionAdapter implements IWhatsAppProvider {
     groupId: string,
     payload: MentionPayload,
   ): Promise<MessageResult> {
-    const response = await this.http.post<{ key: { id: string } }>(
+    const res = await this.http.post<EvoMessageResponse>(
       `/message/sendText/${instanceId}`,
-      { number: groupId, text: payload.text, mentions: payload.mentions },
+      {
+        number: groupId,
+        text: payload.text,
+        mentioned: payload.mentions,
+      },
     )
-    return { messageId: response.key.id, status: 'sent' }
+
+    return { messageId: res.key.id, status: 'sent' }
   }
 
-  async setWebhook(instanceId: string, url: string, events: WebhookEvent[]): Promise<void> {
+  // ── Webhook ───────────────────────────────────────────────────────
+
+  async setWebhook(
+    instanceId: string,
+    url: string,
+    events: WebhookEvent[],
+  ): Promise<void> {
     await this.http.post(`/webhook/set/${instanceId}`, {
       url,
-      webhook_by_events: true,
-      webhook_base64: false,
-      events,
+      webhook: {
+        enabled: true,
+        url,
+        events,
+      },
     })
   }
 }

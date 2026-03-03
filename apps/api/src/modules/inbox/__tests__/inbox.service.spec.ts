@@ -3,7 +3,6 @@ import { InboxService } from '../inbox.service'
 import { InboxRepository } from '../inbox.repository'
 import { InboxGateway } from '../inbox.gateway'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
-import { InstancesService } from '@modules/instances/instances.service'
 import { LoggerService } from '@core/logger/logger.service'
 import { AppException } from '@core/errors/app.exception'
 
@@ -47,6 +46,7 @@ describe('InboxService', () => {
       transferConversation: jest.fn(),
       reopenConversation: jest.fn(),
       incrementUnreadCount: jest.fn(),
+      updateLastMessageAt: jest.fn(),
       findMessages: jest.fn(),
       createMessage: jest.fn(),
       updateMessageStatusByEvolutionId: jest.fn(),
@@ -65,17 +65,12 @@ describe('InboxService', () => {
       sendText: jest.fn(),
     }
 
-    const mockInstancesService = {
-      findByEvolutionId: jest.fn(),
-    }
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InboxService,
         { provide: InboxRepository, useValue: mockRepository },
         { provide: InboxGateway, useValue: mockGateway },
         { provide: WhatsAppService, useValue: mockWhatsapp },
-        { provide: InstancesService, useValue: mockInstancesService },
         { provide: LoggerService, useValue: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } },
       ],
     }).compile()
@@ -103,6 +98,27 @@ describe('InboxService', () => {
       expect(repository.findConversations).toHaveBeenCalledWith(tenantId, {
         status: undefined,
         assignedToId: undefined,
+        instanceId: undefined,
+        page: 1,
+        limit: 20,
+      })
+    })
+
+    it('should resolve assignedToMe=true to assignedToId=userId', async () => {
+      repository.findConversations.mockResolvedValue({
+        conversations: [],
+        total: 0,
+      })
+
+      await service.findConversations(
+        tenantId,
+        { assignedToMe: true, page: 1, limit: 20 },
+        userId,
+      )
+
+      expect(repository.findConversations).toHaveBeenCalledWith(tenantId, {
+        status: undefined,
+        assignedToId: userId,
         instanceId: undefined,
         page: 1,
         limit: 20,
@@ -196,12 +212,49 @@ describe('InboxService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       })
+      repository.updateLastMessageAt.mockResolvedValue({} as never)
 
       const result = await service.sendMessage(tenantId, 'conv-1', userId, { body: 'Hello' })
 
       expect(result.body).toBe('Hello')
       expect(whatsapp.sendText).toHaveBeenCalledWith('acme-vendas', '5511999999999', 'Hello')
+      expect(repository.updateLastMessageAt).toHaveBeenCalledWith('conv-1')
       expect(gateway.emitNewMessage).toHaveBeenCalled()
+    })
+
+    it('should allow admin to send in any open conversation', async () => {
+      const otherUserConversation = {
+        ...openConversation,
+        assignedToId: 'other-user',
+      }
+      repository.findConversationById.mockResolvedValue(otherUserConversation)
+      whatsapp.sendText.mockResolvedValue({ messageId: 'evo-msg-2', status: 'sent' })
+      repository.createMessage.mockResolvedValue({
+        id: 'msg-2',
+        tenantId,
+        conversationId: 'conv-1',
+        fromMe: true,
+        fromBot: false,
+        body: 'Admin message',
+        type: 'TEXT' as const,
+        status: 'SENT' as const,
+        evolutionId: 'evo-msg-2',
+        mediaUrl: null,
+        sentAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      repository.updateLastMessageAt.mockResolvedValue({} as never)
+
+      const result = await service.sendMessage(
+        tenantId,
+        'conv-1',
+        userId,
+        { body: 'Admin message' },
+        'admin',
+      )
+
+      expect(result.body).toBe('Admin message')
     })
 
     it('should throw CONVERSATION_NOT_OPEN if not OPEN', async () => {

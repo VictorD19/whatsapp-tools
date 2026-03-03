@@ -44,6 +44,10 @@ export class InstanceWebhookProcessor {
         await this.handleConnectionUpdate(instance, data)
         break
       }
+      case 'qrcode.updated': {
+        this.handleQrCodeUpdated(instance, data)
+        break
+      }
       default: {
         this.logger.debug(
           `Unhandled webhook event: ${event}`,
@@ -51,6 +55,24 @@ export class InstanceWebhookProcessor {
         )
       }
     }
+  }
+
+  private handleQrCodeUpdated(
+    instance: { id: string; tenantId: string },
+    data: Record<string, unknown>,
+  ) {
+    const qrCode = data.qrcode as string | undefined
+    if (!qrCode) return
+
+    this.gateway.emitQrUpdated(instance.tenantId, {
+      instanceId: instance.id,
+      qrCode,
+    })
+
+    this.logger.debug(
+      `QR code updated for instance ${instance.id}`,
+      'InstanceWebhookProcessor',
+    )
   }
 
   private async handleConnectionUpdate(

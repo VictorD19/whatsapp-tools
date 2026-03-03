@@ -18,6 +18,10 @@ import {
   conversationFiltersSchema,
   ConversationFiltersDto,
 } from './dto/conversation-filters.dto'
+import {
+  transferConversationSchema,
+  TransferConversationDto,
+} from './dto/assign-conversation.dto'
 
 @Controller('inbox')
 export class InboxController {
@@ -26,9 +30,10 @@ export class InboxController {
   @Get('conversations')
   findConversations(
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: { id: string; role: string },
     @Query(new ZodValidationPipe(conversationFiltersSchema)) filters: ConversationFiltersDto,
   ) {
-    return this.inboxService.findConversations(tenantId, filters)
+    return this.inboxService.findConversations(tenantId, filters, user.id)
   }
 
   @Get('conversations/:id')
@@ -69,10 +74,10 @@ export class InboxController {
   sendMessage(
     @CurrentTenant() tenantId: string,
     @Param('id') id: string,
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: { id: string; role: string },
     @Body() dto: SendMessageDto,
   ) {
-    return this.inboxService.sendMessage(tenantId, id, user.id, dto)
+    return this.inboxService.sendMessage(tenantId, id, user.id, dto, user.role)
   }
 
   @Post('conversations/:id/close')
@@ -87,12 +92,13 @@ export class InboxController {
 
   @Post('conversations/:id/transfer')
   @HttpCode(HttpStatus.OK)
+  @UsePipes(new ZodValidationPipe(transferConversationSchema))
   transferConversation(
     @CurrentTenant() tenantId: string,
     @Param('id') id: string,
-    @Body('assignedToId') assignedToId: string,
+    @Body() dto: TransferConversationDto,
   ) {
-    return this.inboxService.transferConversation(tenantId, id, assignedToId)
+    return this.inboxService.transferConversation(tenantId, id, dto.assignedToId)
   }
 
   @Post('conversations/:id/reopen')

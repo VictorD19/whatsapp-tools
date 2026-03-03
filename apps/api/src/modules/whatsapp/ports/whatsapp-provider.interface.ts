@@ -1,76 +1,26 @@
-// Port (contrato) — NUNCA muda
+// Port (contrato) -- NUNCA muda
 // Trocar de provider = criar novo adapter, zero impacto aqui
 
-export interface CreateInstanceDto {
-  instanceName: string
-  tenantSlug: string
-}
-
-export interface InstanceResult {
-  instanceId: string
-  status: string
-}
-
-export interface QRCodeResult {
-  qrCode: string
-  pairingCode?: string
-}
-
-export type InstanceStatus = 'connected' | 'disconnected' | 'connecting' | 'qr_code'
-
-export interface MessageResult {
-  messageId: string
-  status: 'sent' | 'queued' | 'failed'
-}
-
-export interface ImagePayload {
-  imageUrl: string
-  caption?: string
-}
-
-export interface VideoPayload {
-  videoUrl: string
-  caption?: string
-}
-
-export interface AudioPayload {
-  audioUrl: string
-}
-
-export interface DocumentPayload {
-  documentUrl: string
-  fileName: string
-  caption?: string
-}
-
-export interface Group {
-  id: string
-  name: string
-  description?: string
-  participantCount: number
-}
-
-export interface GroupMember {
-  id: string
-  pushName?: string
-  isAdmin: boolean
-}
-
-export interface MentionPayload {
-  text: string
-  mentions: string[]
-}
-
-export type WebhookEvent =
-  | 'MESSAGE_RECEIVED'
-  | 'MESSAGE_SENT'
-  | 'STATUS_UPDATE'
-  | 'CONNECTED'
-  | 'DISCONNECTED'
-  | 'QR_CODE'
+import type {
+  CreateInstanceDto,
+  InstanceResult,
+  QRCodeResult,
+  InstanceStatus,
+} from '../dto/instance.dto'
+import type {
+  MessageResult,
+  ImagePayload,
+  VideoPayload,
+  AudioPayload,
+  DocumentPayload,
+  Group,
+  GroupMember,
+  MentionPayload,
+} from '../dto/send-message.dto'
+import type { WebhookEvent } from '../dto/webhook.dto'
 
 export interface IWhatsAppProvider {
-  // Instâncias
+  // Instancias
   createInstance(config: CreateInstanceDto): Promise<InstanceResult>
   connectInstance(instanceId: string): Promise<QRCodeResult>
   disconnectInstance(instanceId: string): Promise<void>

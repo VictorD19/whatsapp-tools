@@ -12,11 +12,10 @@ export class ContactsRepository {
   }
 
   async findOrCreate(tenantId: string, phone: string, name?: string) {
-    const existing = await this.findByPhone(tenantId, phone)
-    if (existing) return existing
-
-    return this.prisma.contact.create({
-      data: { tenantId, phone, name },
+    return this.prisma.contact.upsert({
+      where: { tenantId_phone: { tenantId, phone } },
+      create: { tenantId, phone, name },
+      update: name ? { name } : {},
     })
   }
 

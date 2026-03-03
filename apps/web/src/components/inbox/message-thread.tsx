@@ -1,17 +1,35 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { AlertTriangle, Loader2 } from 'lucide-react'
 import { MessageBubble } from './message-bubble'
 import { MessageInput } from './message-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { useInboxStore, type Conversation } from '@/stores/inbox.store'
+import { useInboxStore, type Conversation, type Message } from '@/stores/inbox.store'
 import { useConversation } from '@/hooks/use-conversation'
 import { useAuthStore } from '@/stores/auth.store'
 
 interface MessageThreadProps {
   conversation: Conversation
+}
+
+function formatDateSeparator(dateStr: string): string {
+  const date = new Date(dateStr)
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  if (date.toDateString() === today.toDateString()) return 'Hoje'
+  if (date.toDateString() === yesterday.toDateString()) return 'Ontem'
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
+
+function shouldShowDateSeparator(messages: Message[], index: number): boolean {
+  if (index === 0) return true
+  const current = new Date(messages[index].sentAt).toDateString()
+  const previous = new Date(messages[index - 1].sentAt).toDateString()
+  return current !== previous
 }
 
 export function MessageThread({ conversation }: MessageThreadProps) {
@@ -20,16 +38,89 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   const { fetchMessages, sendMessage, assignConversation, closeConversation } = useConversation()
   const userId = useAuthStore((s) => s.user?.id)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const topSentinelRef = useRef<HTMLDivElement>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
 
-  // Fetch messages on conversation select
+  // Reset pagination on conversation change
   useEffect(() => {
-    fetchMessages(conversation.id)
+    setPage(1)
+    setHasMore(true)
+    setLoadingMore(false)
+    fetchMessages(conversation.id, 1).then((meta) => {
+      if (meta) {
+        setHasMore(meta.page < meta.totalPages)
+      }
+    })
   }, [conversation.id, fetchMessages])
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom on initial load or new messages (only if already near bottom)
+  const isInitialLoad = useRef(true)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length])
+    if (isInitialLoad.current && messages.length > 0 && !isLoading) {
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+      isInitialLoad.current = false
+      return
+    }
+    // Scroll to bottom for new messages only if user is near the bottom
+    const area = scrollAreaRef.current
+    if (area) {
+      const isNearBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 120
+      if (isNearBottom) {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }, [messages.length, isLoading])
+
+  // Reset initial load flag when conversation changes
+  useEffect(() => {
+    isInitialLoad.current = true
+  }, [conversation.id])
+
+  // IntersectionObserver for infinite scroll upward
+  useEffect(() => {
+    if (!hasMore || loadingMore || isLoading) return
+
+    const sentinel = topSentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          const nextPage = page + 1
+          setLoadingMore(true)
+
+          // Save scroll position to restore after prepending
+          const area = scrollAreaRef.current
+          const prevScrollHeight = area?.scrollHeight ?? 0
+
+          fetchMessages(conversation.id, nextPage).then((meta) => {
+            setPage(nextPage)
+            setLoadingMore(false)
+            if (meta) {
+              setHasMore(meta.page < meta.totalPages)
+            } else {
+              setHasMore(false)
+            }
+
+            // Restore scroll position after DOM update
+            requestAnimationFrame(() => {
+              if (area) {
+                const newScrollHeight = area.scrollHeight
+                area.scrollTop = newScrollHeight - prevScrollHeight
+              }
+            })
+          })
+        }
+      },
+      { root: scrollAreaRef.current, threshold: 0.1 },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore, loadingMore, isLoading, page, conversation.id, fetchMessages])
 
   const handleSend = useCallback(
     async (body: string) => {
@@ -88,7 +179,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-1">
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4 space-y-1">
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -99,8 +190,29 @@ export function MessageThread({ conversation }: MessageThreadProps) {
           </div>
         ) : (
           <>
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
+            {/* Top sentinel for infinite scroll */}
+            <div ref={topSentinelRef} className="h-1" />
+
+            {/* Loading more indicator */}
+            {loadingMore && (
+              <div className="flex justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
+            {messages.map((msg, idx) => (
+              <React.Fragment key={msg.id}>
+                {shouldShowDateSeparator(messages, idx) && (
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="flex-1 border-t border-border" />
+                    <span className="text-[10px] text-muted-foreground font-medium px-2">
+                      {formatDateSeparator(msg.sentAt)}
+                    </span>
+                    <div className="flex-1 border-t border-border" />
+                  </div>
+                )}
+                <MessageBubble message={msg} />
+              </React.Fragment>
             ))}
             <div ref={bottomRef} />
           </>
