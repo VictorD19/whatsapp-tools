@@ -33,6 +33,11 @@ export class InboxRepository {
           contact: { select: { id: true, phone: true, name: true, avatarUrl: true } },
           instance: { select: { id: true, name: true } },
           assignedTo: { select: { id: true, name: true } },
+          messages: {
+            select: { body: true, type: true, fromMe: true },
+            orderBy: { sentAt: 'desc' },
+            take: 1,
+          },
         },
         orderBy: { lastMessageAt: { sort: 'desc', nulls: 'last' } },
         skip: (filters.page - 1) * filters.limit,
@@ -51,6 +56,11 @@ export class InboxRepository {
         contact: { select: { id: true, phone: true, name: true, avatarUrl: true } },
         instance: { select: { id: true, name: true, evolutionId: true } },
         assignedTo: { select: { id: true, name: true } },
+        messages: {
+          select: { body: true, type: true, fromMe: true },
+          orderBy: { sentAt: 'desc' },
+          take: 1,
+        },
       },
     })
   }
@@ -71,6 +81,7 @@ export class InboxRepository {
     tenantId: string
     instanceId: string
     contactId: string
+    protocol: string
     lastMessageAt: Date
   }) {
     return this.prisma.conversation.create({
@@ -78,6 +89,7 @@ export class InboxRepository {
         tenantId: data.tenantId,
         instanceId: data.instanceId,
         contactId: data.contactId,
+        protocol: data.protocol,
         status: 'PENDING',
         unreadCount: 1,
         lastMessageAt: data.lastMessageAt,
@@ -143,6 +155,42 @@ export class InboxRepository {
     })
   }
 
+  async findConversationByContactAndInstance(
+    tenantId: string,
+    instanceId: string,
+    contactId: string,
+  ) {
+    return this.prisma.conversation.findFirst({
+      where: {
+        tenantId,
+        instanceId,
+        contactId,
+        deletedAt: null,
+      },
+    })
+  }
+
+  async createConversationForImport(data: {
+    tenantId: string
+    instanceId: string
+    contactId: string
+    protocol: string
+    lastMessageAt: Date
+    unreadCount: number
+  }) {
+    return this.prisma.conversation.create({
+      data: {
+        tenantId: data.tenantId,
+        instanceId: data.instanceId,
+        contactId: data.contactId,
+        protocol: data.protocol,
+        status: 'PENDING',
+        unreadCount: data.unreadCount,
+        lastMessageAt: data.lastMessageAt,
+      },
+    })
+  }
+
   // ── Messages ──
 
   async findMessages(
@@ -156,9 +204,17 @@ export class InboxRepository {
       conversationId,
     }
 
+    const quotedSelect = {
+      id: true,
+      body: true,
+      fromMe: true,
+      type: true,
+    } as const
+
     const [messages, total] = await Promise.all([
       this.prisma.message.findMany({
         where,
+        include: { quotedMessage: { select: quotedSelect } },
         orderBy: { sentAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -179,7 +235,15 @@ export class InboxRepository {
     status?: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
     evolutionId?: string
     mediaUrl?: string
+    quotedMessageId?: string
   }) {
+    const quotedSelect = {
+      id: true,
+      body: true,
+      fromMe: true,
+      type: true,
+    } as const
+
     return this.prisma.message.create({
       data: {
         tenantId: data.tenantId,
@@ -191,7 +255,51 @@ export class InboxRepository {
         status: data.status ?? 'PENDING',
         evolutionId: data.evolutionId,
         mediaUrl: data.mediaUrl,
+        quotedMessageId: data.quotedMessageId,
       },
+      include: { quotedMessage: { select: quotedSelect } },
+    })
+  }
+
+  async createManyMessages(
+    messages: Array<{
+      tenantId: string
+      conversationId: string
+      fromMe: boolean
+      body: string | null
+      type?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' | 'STICKER' | 'LOCATION' | 'CONTACT' | 'UNKNOWN'
+      status?: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
+      evolutionId?: string
+      mediaUrl?: string
+      sentAt?: Date
+    }>,
+  ) {
+    return this.prisma.message.createMany({
+      data: messages.map((msg) => ({
+        tenantId: msg.tenantId,
+        conversationId: msg.conversationId,
+        fromMe: msg.fromMe,
+        fromBot: false,
+        body: msg.body,
+        type: msg.type ?? 'TEXT',
+        status: msg.status ?? 'DELIVERED',
+        evolutionId: msg.evolutionId,
+        mediaUrl: msg.mediaUrl,
+        sentAt: msg.sentAt ?? new Date(),
+      })),
+      skipDuplicates: true,
+    })
+  }
+
+  async findMessageById(tenantId: string, messageId: string) {
+    return this.prisma.message.findFirst({
+      where: { id: messageId, tenantId },
+    })
+  }
+
+  async findMessageByEvolutionId(evolutionId: string) {
+    return this.prisma.message.findFirst({
+      where: { evolutionId },
     })
   }
 

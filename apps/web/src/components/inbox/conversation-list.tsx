@@ -25,7 +25,12 @@ export function ConversationList() {
   const isLoading = useInboxStore((s) => s.isLoadingConversations)
   const selectedConversationId = useInboxStore((s) => s.selectedConversationId)
   const selectConversation = useInboxStore((s) => s.selectConversation)
-  const { fetchConversations } = useConversations()
+  const tabCounts = useInboxStore((s) => s.tabCounts)
+  const { fetchConversations, fetchTabCounts } = useConversations()
+
+  useEffect(() => {
+    fetchTabCounts()
+  }, [fetchTabCounts])
 
   useEffect(() => {
     fetchConversations(activeTab)
@@ -58,21 +63,26 @@ export function ConversationList() {
         <div className="flex gap-1.5 rounded-lg bg-muted/60 p-1">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key
-            const count = isActive ? filtered.length : 0
+            const count = tabCounts[tab.key]
             return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'relative flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-all duration-150',
+                  'relative flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-all duration-150',
                   isActive
                     ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 <span>{tab.shortLabel}</span>
-                {isActive && count > 0 && (
-                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white leading-none">
+                {count > 0 && (
+                  <span className={cn(
+                    'text-[10px] tabular-nums',
+                    isActive
+                      ? 'text-muted-foreground'
+                      : 'text-muted-foreground/50'
+                  )}>
                     {count > 99 ? '99+' : count}
                   </span>
                 )}

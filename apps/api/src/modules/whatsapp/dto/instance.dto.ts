@@ -15,3 +15,9 @@ export interface QRCodeResult {
   qrCode: string
   pairingCode?: string
 }
+
+export interface InstanceInfo {
+  instanceId: string
+  status: InstanceStatus
+  phone?: string
+}

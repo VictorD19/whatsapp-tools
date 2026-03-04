@@ -13,7 +13,10 @@ interface ApiResponse<T> {
 }
 
 export function useConversation() {
-  const { setMessages, setLoadingMessages, appendMessage, clearUnread } = useInboxStore()
+  const setMessages = useInboxStore((s) => s.setMessages)
+  const setLoadingMessages = useInboxStore((s) => s.setLoadingMessages)
+  const appendMessage = useInboxStore((s) => s.appendMessage)
+  const clearUnread = useInboxStore((s) => s.clearUnread)
 
   const fetchMessages = useCallback(
     async (conversationId: string, page = 1) => {
@@ -62,11 +65,14 @@ export function useConversation() {
   }, [])
 
   const sendMessage = useCallback(
-    async (conversationId: string, body: string) => {
+    async (conversationId: string, body: string, quotedMessageId?: string) => {
       try {
+        const payload: Record<string, string> = { body }
+        if (quotedMessageId) payload.quotedMessageId = quotedMessageId
+
         const res = await apiPost<ApiResponse<Message>>(
           `inbox/conversations/${conversationId}/messages`,
-          { body }
+          payload,
         )
         appendMessage(conversationId, res.data)
       } catch {

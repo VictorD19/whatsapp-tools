@@ -10,12 +10,14 @@ import { CreateInstanceModal } from '@/components/instances/create-instance-moda
 import { QrCodeModal } from '@/components/instances/qr-code-modal'
 import { useInstances } from '@/hooks/use-instances'
 import { useInstanceSocket } from '@/hooks/use-instance-socket'
+import { useImportSocket } from '@/hooks/use-import-socket'
 import { useInstancesStore } from '@/stores/instances.store'
 
 export default function InstancesPage() {
   const instances = useInstancesStore((s) => s.instances)
   const isLoading = useInstancesStore((s) => s.isLoading)
-  const { fetchInstances, createInstance, connectInstance, disconnectInstance, deleteInstance } =
+  const importProgress = useInstancesStore((s) => s.importProgress)
+  const { fetchInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, importConversations } =
     useInstances()
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -24,6 +26,7 @@ export default function InstancesPage() {
 
   // Socket for real-time updates
   useInstanceSocket()
+  useImportSocket()
 
   // Initial fetch
   useEffect(() => {
@@ -98,9 +101,11 @@ export default function InstancesPage() {
         <InstanceGrid
           instances={instances}
           isLoading={isLoading}
+          importProgress={importProgress}
           onConnect={handleConnect}
           onDisconnect={disconnectInstance}
           onDelete={deleteInstance}
+          onImportConversations={importConversations}
         />
       )}
 

@@ -6,6 +6,9 @@ import { InboxRepository } from '../inbox.repository'
 import { InboxGateway } from '../inbox.gateway'
 import { ContactsService } from '@modules/contacts/contacts.service'
 import { InstancesService } from '@modules/instances/instances.service'
+import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
+import { TenantsService } from '@modules/tenants/tenants.service'
+import { parseWhatsAppMessage, extractQuotedStanzaId } from '../utils/message-parser'
 interface InboxWebhookJob {
   instanceName: string
   event: string
@@ -19,6 +22,8 @@ export class InboxWebhookProcessor {
     private readonly inboxRepository: InboxRepository,
     private readonly contactsService: ContactsService,
     private readonly instancesService: InstancesService,
+    private readonly whatsapp: WhatsAppService,
+    private readonly tenantsService: TenantsService,
     private readonly gateway: InboxGateway,
     private readonly logger: LoggerService,
   ) {}
@@ -43,7 +48,10 @@ export class InboxWebhookProcessor {
 
     switch (event) {
       case 'messages.upsert': {
-        await this.handleMessageReceived(instance, data)
+        await this.handleMessageReceived(
+          { id: instance.id, tenantId: instance.tenantId, evolutionId: instance.evolutionId },
+          data,
+        )
         break
       }
       case 'messages.update': {
@@ -60,7 +68,7 @@ export class InboxWebhookProcessor {
   }
 
   private async handleMessageReceived(
-    instance: { id: string; tenantId: string },
+    instance: { id: string; tenantId: string; evolutionId: string },
     data: Record<string, unknown>,
   ) {
     // Evolution sends messages array
@@ -70,12 +78,37 @@ export class InboxWebhookProcessor {
       const key = msg.key as Record<string, unknown> | undefined
       if (!key) continue
 
+      // Skip old messages from history sync (only process messages from last 60s)
+      const messageTimestamp = msg.messageTimestamp as number | undefined
+      if (messageTimestamp) {
+        const msgAge = Math.floor(Date.now() / 1000) - messageTimestamp
+        if (msgAge > 60) continue
+      }
+
       // Skip messages sent by us
       const fromMe = key.fromMe as boolean
       if (fromMe) continue
 
-      const remoteJid = key.remoteJid as string | undefined
+      let remoteJid = key.remoteJid as string | undefined
       if (!remoteJid) continue
+
+      // Handle LID format — use remoteJidAlt or sender for real phone number
+      if (remoteJid.includes('@lid')) {
+        const remoteJidAlt = key.remoteJidAlt as string | undefined
+        const sender = msg.sender as string | undefined
+
+        if (remoteJidAlt) {
+          remoteJid = remoteJidAlt
+        } else if (sender) {
+          remoteJid = sender
+        } else {
+          this.logger.warn(
+            `Cannot resolve LID ${remoteJid} — no alternative JID available`,
+            'InboxWebhookProcessor',
+          )
+          continue
+        }
+      }
 
       // Skip group messages for now (inbox is 1:1)
       if (remoteJid.includes('@g.us')) continue
@@ -84,34 +117,18 @@ export class InboxWebhookProcessor {
       const phone = remoteJid.split('@')[0]
       const pushName = msg.pushName as string | undefined
 
-      // Extract message body
+      // Extract message body and quoted context
       const message = msg.message as Record<string, unknown> | undefined
-      let body: string | null = null
-      let type: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' | 'UNKNOWN' = 'TEXT'
-      let mediaUrl: string | undefined
+      const parsed = parseWhatsAppMessage(message)
+      const { body, type, mediaUrl } = parsed
 
-      if (message) {
-        if (message.conversation) {
-          body = message.conversation as string
-        } else if (message.extendedTextMessage) {
-          body = (message.extendedTextMessage as Record<string, unknown>).text as string
-        } else if (message.imageMessage) {
-          type = 'IMAGE'
-          body = (message.imageMessage as Record<string, unknown>).caption as string ?? null
-          mediaUrl = (message.imageMessage as Record<string, unknown>).url as string
-        } else if (message.videoMessage) {
-          type = 'VIDEO'
-          body = (message.videoMessage as Record<string, unknown>).caption as string ?? null
-          mediaUrl = (message.videoMessage as Record<string, unknown>).url as string
-        } else if (message.audioMessage) {
-          type = 'AUDIO'
-          mediaUrl = (message.audioMessage as Record<string, unknown>).url as string
-        } else if (message.documentMessage) {
-          type = 'DOCUMENT'
-          body = (message.documentMessage as Record<string, unknown>).fileName as string ?? null
-          mediaUrl = (message.documentMessage as Record<string, unknown>).url as string
-        } else {
-          type = 'UNKNOWN'
+      // Resolve quoted message (reply context)
+      let quotedMessageId: string | undefined
+      const quotedStanzaId = extractQuotedStanzaId(message)
+      if (quotedStanzaId) {
+        const quotedMsg = await this.inboxRepository.findMessageByEvolutionId(quotedStanzaId)
+        if (quotedMsg) {
+          quotedMessageId = quotedMsg.id
         }
       }
 
@@ -121,6 +138,18 @@ export class InboxWebhookProcessor {
         phone,
         pushName,
       )
+
+      // Fetch profile picture if contact doesn't have one
+      if (!contact.avatarUrl) {
+        const avatarUrl = await this.whatsapp.getProfilePictureUrl(
+          instance.evolutionId,
+          phone,
+        )
+        if (avatarUrl) {
+          await this.contactsService.updateAvatarUrl(contact.id, avatarUrl)
+          contact.avatarUrl = avatarUrl
+        }
+      }
 
       // Find active conversation or create new one
       let conversation = await this.inboxRepository.findActiveConversation(
@@ -133,10 +162,12 @@ export class InboxWebhookProcessor {
       let isNewConversation = false
 
       if (!conversation) {
+        const protocol = await this.tenantsService.getNextProtocol(instance.tenantId)
         conversation = await this.inboxRepository.createConversation({
           tenantId: instance.tenantId,
           instanceId: instance.id,
           contactId: contact.id,
+          protocol,
           lastMessageAt: now,
         })
         isNewConversation = true
@@ -155,28 +186,37 @@ export class InboxWebhookProcessor {
         status: 'DELIVERED',
         evolutionId: evolutionMsgId,
         mediaUrl,
+        quotedMessageId,
       })
 
       // Emit WebSocket events
       if (isNewConversation) {
-        this.gateway.emitConversationCreated(instance.tenantId, {
-          conversationId: conversation.id,
-          instanceId: instance.id,
-          contactId: contact.id,
-          contactPhone: contact.phone,
-          contactName: contact.name,
-        })
+        const fullConversation = await this.inboxRepository.findConversationById(
+          instance.tenantId,
+          conversation.id,
+        )
+        if (fullConversation) {
+          this.gateway.emitConversationCreated(instance.tenantId, {
+            conversation: fullConversation,
+          })
+        }
       }
 
       this.gateway.emitNewMessage(instance.tenantId, {
         conversationId: conversation.id,
         message: {
           id: newMessage.id,
+          conversationId: conversation.id,
           fromMe: false,
+          fromBot: false,
           body: newMessage.body,
           type: newMessage.type,
+          status: newMessage.status,
           mediaUrl: newMessage.mediaUrl,
+          quotedMessageId: newMessage.quotedMessageId,
+          quotedMessage: newMessage.quotedMessage,
           sentAt: newMessage.sentAt,
+          createdAt: newMessage.createdAt,
         },
       })
 

@@ -3,6 +3,8 @@ import { InboxService } from '../inbox.service'
 import { InboxRepository } from '../inbox.repository'
 import { InboxGateway } from '../inbox.gateway'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
+import { InstancesService } from '@modules/instances/instances.service'
+import { ConversationImportProducer } from '../queues/import.producer'
 import { LoggerService } from '@core/logger/logger.service'
 import { AppException } from '@core/errors/app.exception'
 
@@ -21,6 +23,7 @@ describe('InboxService', () => {
     instanceId: 'inst-1',
     contactId: 'contact-1',
     assignedToId: null as string | null,
+    protocol: 'SCHA1000',
     status: 'PENDING' as const,
     tags: [],
     summary: null,
@@ -33,6 +36,7 @@ describe('InboxService', () => {
     contact: { id: 'contact-1', phone: '5511999999999', name: 'John', avatarUrl: null },
     instance: { id: 'inst-1', name: 'vendas', evolutionId: 'acme-vendas' },
     assignedTo: null,
+    messages: [],
   }
 
   beforeEach(async () => {
@@ -65,12 +69,22 @@ describe('InboxService', () => {
       sendText: jest.fn(),
     }
 
+    const mockInstancesService = {
+      findOne: jest.fn(),
+    }
+
+    const mockImportProducer = {
+      startImport: jest.fn(),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InboxService,
         { provide: InboxRepository, useValue: mockRepository },
         { provide: InboxGateway, useValue: mockGateway },
         { provide: WhatsAppService, useValue: mockWhatsapp },
+        { provide: InstancesService, useValue: mockInstancesService },
+        { provide: ConversationImportProducer, useValue: mockImportProducer },
         { provide: LoggerService, useValue: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } },
       ],
     }).compile()
@@ -208,6 +222,8 @@ describe('InboxService', () => {
         status: 'SENT' as const,
         evolutionId: 'evo-msg-1',
         mediaUrl: null,
+        quotedMessageId: null,
+        quotedMessage: null,
         sentAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -217,7 +233,7 @@ describe('InboxService', () => {
       const result = await service.sendMessage(tenantId, 'conv-1', userId, { body: 'Hello' })
 
       expect(result.body).toBe('Hello')
-      expect(whatsapp.sendText).toHaveBeenCalledWith('acme-vendas', '5511999999999', 'Hello')
+      expect(whatsapp.sendText).toHaveBeenCalledWith('acme-vendas', '5511999999999', 'Hello', { quotedMessageEvolutionId: undefined })
       expect(repository.updateLastMessageAt).toHaveBeenCalledWith('conv-1')
       expect(gateway.emitNewMessage).toHaveBeenCalled()
     })
@@ -240,6 +256,8 @@ describe('InboxService', () => {
         status: 'SENT' as const,
         evolutionId: 'evo-msg-2',
         mediaUrl: null,
+        quotedMessageId: null,
+        quotedMessage: null,
         sentAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import type { IWhatsAppProvider } from './ports/whatsapp-provider.interface'
 import type { CreateInstanceDto } from './dto/instance.dto'
 import type {
+  SendTextOptions,
   ImagePayload,
   VideoPayload,
   AudioPayload,
@@ -9,6 +10,7 @@ import type {
   MentionPayload,
 } from './dto/send-message.dto'
 import type { WebhookEvent } from './dto/webhook.dto'
+import type { FindMessagesOptions } from './dto/chat.dto'
 import { WHATSAPP_PROVIDER } from './whatsapp.tokens'
 
 @Injectable()
@@ -38,8 +40,12 @@ export class WhatsAppService {
     return this.provider.getInstanceStatus(instanceId)
   }
 
-  sendText(instanceId: string, to: string, text: string) {
-    return this.provider.sendText(instanceId, to, text)
+  getInstanceInfo(instanceId: string) {
+    return this.provider.getInstanceInfo(instanceId)
+  }
+
+  sendText(instanceId: string, to: string, text: string, options?: SendTextOptions) {
+    return this.provider.sendText(instanceId, to, text, options)
   }
 
   sendImage(instanceId: string, to: string, payload: ImagePayload) {
@@ -68,6 +74,18 @@ export class WhatsAppService {
 
   sendGroupMention(instanceId: string, groupId: string, payload: MentionPayload) {
     return this.provider.sendGroupMention(instanceId, groupId, payload)
+  }
+
+  findChats(instanceId: string) {
+    return this.provider.findChats(instanceId)
+  }
+
+  findMessages(instanceId: string, options: FindMessagesOptions) {
+    return this.provider.findMessages(instanceId, options)
+  }
+
+  getProfilePictureUrl(instanceId: string, phone: string) {
+    return this.provider.getProfilePictureUrl(instanceId, phone)
   }
 
   setWebhook(instanceId: string, url: string, events: WebhookEvent[]) {

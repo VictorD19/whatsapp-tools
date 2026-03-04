@@ -19,6 +19,13 @@ export class ContactsRepository {
     })
   }
 
+  async updateAvatarUrl(id: string, avatarUrl: string) {
+    return this.prisma.contact.update({
+      where: { id },
+      data: { avatarUrl },
+    })
+  }
+
   async findById(tenantId: string, id: string) {
     return this.prisma.contact.findFirst({
       where: { id, tenantId, deletedAt: null },

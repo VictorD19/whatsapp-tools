@@ -157,7 +157,7 @@ export default function LoginPage() {
                   type="email"
                   placeholder="voce@empresa.com"
                   autoComplete="email"
-                  className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 text-sm text-gray-900 dark:text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                   {...register('email')}
                 />
                 {errors.email && <p className="text-[11px] text-red-400">{errors.email.message}</p>}
@@ -176,7 +176,7 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 pr-9 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 pr-9 text-sm text-gray-900 dark:text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                     {...register('password')}
                   />
                   <button

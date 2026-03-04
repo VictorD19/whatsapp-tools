@@ -2,10 +2,13 @@
 
 import React from 'react'
 import { Phone, Tag, Radio, User } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { getInitials, formatPhone } from '@/lib/utils'
+import { useConversation } from '@/hooks/use-conversation'
+import { useAuthStore } from '@/stores/auth.store'
 import type { Conversation } from '@/stores/inbox.store'
 
 interface ContactPanelProps {
@@ -13,6 +16,9 @@ interface ContactPanelProps {
 }
 
 export function ContactPanel({ conversation }: ContactPanelProps) {
+  const { assignConversation, closeConversation } = useConversation()
+  const userId = useAuthStore((s) => s.user?.id)
+
   if (!conversation) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground p-4">
@@ -23,12 +29,17 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
 
   const contact = conversation.contact
   const contactName = contact.name ?? contact.phone
+  const isAssignedToMe = conversation.assignedToId === userId
+  const isPending = conversation.status === 'PENDING'
 
   return (
     <div className="flex flex-col h-full p-4 space-y-4">
       {/* Contact info */}
       <div className="flex flex-col items-center gap-3 pt-2">
         <Avatar className="h-14 w-14">
+          {contact.avatarUrl && (
+            <AvatarImage src={contact.avatarUrl} alt={contactName} />
+          )}
           <AvatarFallback className="bg-primary-500/10 text-primary-500 text-lg">
             {getInitials(contactName)}
           </AvatarFallback>
@@ -107,6 +118,29 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
               : 'Encerrada'}
         </Badge>
       </div>
+
+      {/* Actions */}
+      {(isPending || (conversation.status === 'OPEN' && isAssignedToMe)) && (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            {isPending && (
+              <Button className="w-full" onClick={() => assignConversation(conversation.id)}>
+                Assumir
+              </Button>
+            )}
+            {conversation.status === 'OPEN' && isAssignedToMe && (
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={() => closeConversation(conversation.id)}
+              >
+                Encerrar
+              </Button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

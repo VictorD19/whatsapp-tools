@@ -2,14 +2,16 @@ import React from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { InstanceCard } from './instance-card'
-import type { Instance } from '@/stores/instances.store'
+import type { Instance, ImportProgress } from '@/stores/instances.store'
 
 interface InstanceGridProps {
   instances: Instance[]
   isLoading: boolean
+  importProgress: Record<string, ImportProgress>
   onConnect: (id: string) => void
   onDisconnect: (id: string) => void
   onDelete: (id: string) => void
+  onImportConversations: (id: string) => void
 }
 
 function SkeletonCard() {
@@ -35,9 +37,11 @@ function SkeletonCard() {
 export function InstanceGrid({
   instances,
   isLoading,
+  importProgress,
   onConnect,
   onDisconnect,
   onDelete,
+  onImportConversations,
 }: InstanceGridProps) {
   if (isLoading) {
     return (
@@ -55,9 +59,11 @@ export function InstanceGrid({
         <InstanceCard
           key={instance.id}
           instance={instance}
+          importProgress={importProgress[instance.id]}
           onConnect={onConnect}
           onDisconnect={onDisconnect}
           onDelete={onDelete}
+          onImportConversations={onImportConversations}
         />
       ))}
     </div>

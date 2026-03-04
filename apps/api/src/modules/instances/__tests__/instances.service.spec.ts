@@ -96,7 +96,7 @@ describe('InstancesService', () => {
       expect(whatsapp.createInstance).toHaveBeenCalledWith({
         name: 'vendas',
         tenantId,
-        webhookUrl: 'http://localhost:3001/api/v1/webhooks/evolution',
+        webhookUrl: 'http://localhost:3001/api/v1/webhooks/evolution/tenant-123_vendas',
       })
       expect(repository.create).toHaveBeenCalledWith({
         tenantId,
@@ -173,10 +173,7 @@ describe('InstancesService', () => {
         qrCode: 'base64-qr-data',
         pairingCode: '1234',
       })
-      repository.updateStatus.mockResolvedValue({
-        ...mockInstance,
-        status: 'CONNECTING' as const,
-      })
+      repository.updateStatus.mockResolvedValue({ count: 1 })
 
       const result = await service.connect(tenantId, 'inst-1')
 
@@ -205,10 +202,7 @@ describe('InstancesService', () => {
     it('should disconnect and emit WebSocket events', async () => {
       repository.findById.mockResolvedValue({ ...mockInstance, status: 'CONNECTED' })
       whatsapp.disconnectInstance.mockResolvedValue(undefined)
-      repository.updateStatus.mockResolvedValue({
-        ...mockInstance,
-        status: 'DISCONNECTED' as const,
-      })
+      repository.updateStatus.mockResolvedValue({ count: 1 })
 
       await service.disconnect(tenantId, 'inst-1')
 
@@ -230,7 +224,7 @@ describe('InstancesService', () => {
     it('should soft-delete instance and call Evolution delete', async () => {
       repository.findById.mockResolvedValue(mockInstance)
       whatsapp.deleteInstance.mockResolvedValue(undefined)
-      repository.softDelete.mockResolvedValue({ ...mockInstance, deletedAt: new Date() })
+      repository.softDelete.mockResolvedValue({ count: 1 })
 
       await service.remove(tenantId, 'inst-1')
 
@@ -241,7 +235,7 @@ describe('InstancesService', () => {
     it('should soft-delete even if Evolution delete fails', async () => {
       repository.findById.mockResolvedValue(mockInstance)
       whatsapp.deleteInstance.mockRejectedValue(new Error('Not found'))
-      repository.softDelete.mockResolvedValue({ ...mockInstance, deletedAt: new Date() })
+      repository.softDelete.mockResolvedValue({ count: 1 })
 
       await service.remove(tenantId, 'inst-1')
 

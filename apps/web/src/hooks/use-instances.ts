@@ -13,7 +13,7 @@ interface ConnectResult {
 }
 
 export function useInstances() {
-  const { setInstances, setLoading, addInstance, removeInstance, updateInstanceStatus } =
+  const { setInstances, setLoading, addInstance, removeInstance, updateInstanceStatus, setImportProgress } =
     useInstancesStore()
 
   const fetchInstances = useCallback(async () => {
@@ -65,5 +65,19 @@ export function useInstances() {
     [removeInstance],
   )
 
-  return { fetchInstances, createInstance, connectInstance, disconnectInstance, deleteInstance }
+  const importConversations = useCallback(
+    async (instanceId: string) => {
+      setImportProgress(instanceId, { importing: true, imported: 0, total: 0, skipped: 0 })
+      try {
+        await apiPost<ApiResponse<{ message: string }>>(`inbox/instances/${instanceId}/import-conversations`, {})
+        toast({ title: 'Importacao iniciada', variant: 'success' })
+      } catch {
+        setImportProgress(instanceId, { importing: false, imported: 0, total: 0, skipped: 0 })
+        toast({ title: 'Erro ao iniciar importacao', variant: 'destructive' })
+      }
+    },
+    [setImportProgress],
+  )
+
+  return { fetchInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, importConversations }
 }

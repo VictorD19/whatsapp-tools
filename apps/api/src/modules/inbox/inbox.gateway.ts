@@ -52,4 +52,20 @@ export class InboxGateway implements OnGatewayConnection, OnGatewayDisconnect {
   emitMessageStatusUpdated(tenantId: string, payload: Record<string, unknown>) {
     this.server.to(`tenant:${tenantId}`).emit('message:status_updated', payload)
   }
+
+  emitImportStarted(tenantId: string, payload: { instanceId: string; totalChats: number; jobId: string }) {
+    this.server.to(`tenant:${tenantId}`).emit('import:started', payload)
+  }
+
+  emitImportProgress(tenantId: string, payload: { instanceId: string; imported: number; total: number; skipped: number }) {
+    this.server.to(`tenant:${tenantId}`).emit('import:progress', payload)
+  }
+
+  emitImportCompleted(tenantId: string, payload: { instanceId: string; totalImported: number; totalSkipped: number; totalErrors: number }) {
+    this.server.to(`tenant:${tenantId}`).emit('import:completed', payload)
+  }
+
+  emitImportFailed(tenantId: string, payload: { instanceId: string; reason: string }) {
+    this.server.to(`tenant:${tenantId}`).emit('import:failed', payload)
+  }
 }

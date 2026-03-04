@@ -2,10 +2,13 @@ import { Injectable, HttpStatus } from '@nestjs/common'
 import { InboxRepository } from './inbox.repository'
 import { InboxGateway } from './inbox.gateway'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
+import { InstancesService } from '@modules/instances/instances.service'
 import { AppException } from '@core/errors/app.exception'
 import { LoggerService } from '@core/logger/logger.service'
 import { ConversationFiltersDto } from './dto/conversation-filters.dto'
 import { SendMessageDto } from './dto/send-message.dto'
+import { ImportConversationsDto } from './dto/import-conversations.dto'
+import { ConversationImportProducer } from './queues/import.producer'
 import { ConversationStatus } from '@prisma/client'
 
 @Injectable()
@@ -13,7 +16,9 @@ export class InboxService {
   constructor(
     private readonly repository: InboxRepository,
     private readonly whatsapp: WhatsAppService,
+    private readonly instancesService: InstancesService,
     private readonly gateway: InboxGateway,
+    private readonly importProducer: ConversationImportProducer,
     private readonly logger: LoggerService,
   ) {}
 
@@ -141,10 +146,26 @@ export class InboxService {
     const contactPhone = conversation.contact.phone
     const evolutionId = conversation.instance.evolutionId
 
+    // Validate quotedMessageId if provided
+    let quotedMessageEvolutionId: string | undefined
+    if (dto.quotedMessageId) {
+      const quotedMsg = await this.repository.findMessageById(tenantId, dto.quotedMessageId)
+      if (!quotedMsg) {
+        throw AppException.notFound(
+          'INBOX_QUOTED_MESSAGE_NOT_FOUND',
+          'Mensagem citada nao encontrada',
+          { quotedMessageId: dto.quotedMessageId },
+        )
+      }
+      quotedMessageEvolutionId = quotedMsg.evolutionId ?? undefined
+    }
+
     // Send via WhatsApp
     let messageResult: { messageId: string; status: string }
     try {
-      messageResult = await this.whatsapp.sendText(evolutionId, contactPhone, dto.body)
+      messageResult = await this.whatsapp.sendText(evolutionId, contactPhone, dto.body, {
+        quotedMessageEvolutionId,
+      })
     } catch (error) {
       this.logger.error(
         `Failed to send message: ${(error as Error).message}`,
@@ -168,6 +189,7 @@ export class InboxService {
       type: 'TEXT',
       status: 'SENT',
       evolutionId: messageResult.messageId,
+      quotedMessageId: dto.quotedMessageId,
     })
 
     // Update lastMessageAt
@@ -178,11 +200,17 @@ export class InboxService {
       conversationId,
       message: {
         id: message.id,
+        conversationId,
         fromMe: true,
+        fromBot: false,
         body: message.body,
         type: message.type,
-        sentAt: message.sentAt,
         status: message.status,
+        mediaUrl: message.mediaUrl,
+        quotedMessageId: message.quotedMessageId,
+        quotedMessage: message.quotedMessage,
+        sentAt: message.sentAt,
+        createdAt: message.createdAt,
       },
     })
 
@@ -268,14 +296,57 @@ export class InboxService {
 
     const updated = await this.repository.reopenConversation(tenantId, conversationId)
 
-    this.gateway.emitConversationCreated(tenantId, {
-      conversationId,
-      status: 'PENDING',
-      reopened: true,
-    })
+    const fullConversation = await this.repository.findConversationById(tenantId, conversationId)
+    if (fullConversation) {
+      this.gateway.emitConversationCreated(tenantId, {
+        conversation: fullConversation,
+      })
+    }
 
     this.logger.log(`Conversation ${conversationId} reopened`, 'InboxService')
 
     return updated
+  }
+
+  async startConversationImport(
+    tenantId: string,
+    instanceId: string,
+    dto: ImportConversationsDto,
+  ) {
+    const instance = await this.instancesService.findOne(tenantId, instanceId)
+
+    if (instance.status !== 'CONNECTED') {
+      throw new AppException(
+        'IMPORT_INSTANCE_NOT_CONNECTED',
+        'A instancia precisa estar conectada para importar conversas',
+        { status: instance.status },
+      )
+    }
+
+    try {
+      await this.importProducer.startImport({
+        tenantId,
+        instanceId,
+        evolutionId: instance.evolutionId,
+        messageLimit: dto.messageLimit,
+      })
+    } catch (error) {
+      // BullMQ rejects duplicate jobId — means import already running
+      if ((error as Error).message?.includes('Job is already')) {
+        throw new AppException(
+          'IMPORT_ALREADY_IN_PROGRESS',
+          'Ja existe uma importacao em andamento para esta instancia',
+          { instanceId },
+        )
+      }
+      throw error
+    }
+
+    this.logger.log(
+      `Conversation import started for instance ${instanceId}`,
+      'InboxService',
+    )
+
+    return { data: { message: 'Importacao iniciada', instanceId } }
   }
 }

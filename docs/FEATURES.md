@@ -37,6 +37,8 @@
 - Status da conversa: Aberta / Em atendimento / Resolvida
 - Respostas rápidas (atalhos de texto)
 - Notificação de nova mensagem em tempo real
+- Responder/citar mensagens (reply/quote) — envio e recebimento
+- Atualização automática de tabs e contadores via WebSocket (assumir, encerrar, nova conversa)
 
 ### 5. CRM
 - Cadastro e gestão de contatos

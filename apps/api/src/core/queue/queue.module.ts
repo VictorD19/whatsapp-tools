@@ -7,6 +7,7 @@ export const QUEUES = {
   AI_RESPONSE: 'ai-response',
   WEBHOOK_INBOUND: 'webhook-inbound',
   NOTIFICATION: 'notification',
+  CONVERSATION_IMPORT: 'conversation-import',
 } as const
 
 @Module({

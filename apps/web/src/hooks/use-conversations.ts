@@ -9,6 +9,8 @@ interface PaginatedResponse<T> {
   meta: { page: number; limit: number; total: number; totalPages: number }
 }
 
+const ALL_TABS: InboxTab[] = ['pending', 'mine', 'all', 'closed']
+
 function tabToFilters(tab: InboxTab, userId: string | undefined) {
   const params = new URLSearchParams()
   switch (tab) {
@@ -30,7 +32,7 @@ function tabToFilters(tab: InboxTab, userId: string | undefined) {
 }
 
 export function useConversations() {
-  const { setConversations, setLoadingConversations } = useInboxStore()
+  const { setConversations, setLoadingConversations, setTabCount } = useInboxStore()
 
   const fetchConversations = useCallback(
     async (tab: InboxTab) => {
@@ -42,14 +44,33 @@ export function useConversations() {
           `inbox/conversations${query ? `?${query}` : ''}`
         )
         setConversations(res.data)
+        setTabCount(tab, res.meta.total)
       } catch {
         toast({ title: 'Erro ao carregar conversas', variant: 'destructive' })
       } finally {
         setLoadingConversations(false)
       }
     },
-    [setConversations, setLoadingConversations],
+    [setConversations, setLoadingConversations, setTabCount],
   )
 
-  return { fetchConversations }
+  const fetchTabCounts = useCallback(async () => {
+    const userId = useAuthStore.getState().user?.id
+    await Promise.all(
+      ALL_TABS.map(async (tab) => {
+        try {
+          const query = tabToFilters(tab, userId)
+          const sep = query ? `?${query}&` : '?'
+          const res = await apiGet<PaginatedResponse<Conversation[]>>(
+            `inbox/conversations${sep}limit=1`
+          )
+          setTabCount(tab, res.meta.total)
+        } catch {
+          // silently ignore count fetch errors
+        }
+      })
+    )
+  }, [setTabCount])
+
+  return { fetchConversations, fetchTabCounts }
 }

@@ -3,6 +3,10 @@ export interface MessageResult {
   status: 'sent' | 'error'
 }
 
+export interface SendTextOptions {
+  quotedMessageEvolutionId?: string
+}
+
 export interface ImagePayload {
   url: string
   caption?: string

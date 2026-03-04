@@ -18,6 +18,8 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick }: TopbarProps) {
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => setMounted(true), [])
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-background/80 backdrop-blur-sm px-4">
@@ -46,7 +48,9 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
-              {theme === 'dark' ? (
+              {!mounted ? (
+                <Monitor className="h-4 w-4" />
+              ) : theme === 'dark' ? (
                 <Moon className="h-4 w-4" />
               ) : theme === 'light' ? (
                 <Sun className="h-4 w-4" />

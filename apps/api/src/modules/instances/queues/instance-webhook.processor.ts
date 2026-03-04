@@ -4,6 +4,7 @@ import { QUEUES } from '@core/queue/queue.module'
 import { LoggerService } from '@core/logger/logger.service'
 import { InstancesRepository } from '../instances.repository'
 import { InstancesGateway } from '../instances.gateway'
+import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { InstanceStatus } from '@prisma/client'
 
 interface InstanceWebhookJob {
@@ -18,6 +19,7 @@ export class InstanceWebhookProcessor {
   constructor(
     private readonly repository: InstancesRepository,
     private readonly gateway: InstancesGateway,
+    private readonly whatsapp: WhatsAppService,
     private readonly logger: LoggerService,
   ) {}
 
@@ -58,7 +60,7 @@ export class InstanceWebhookProcessor {
   }
 
   private handleQrCodeUpdated(
-    instance: { id: string; tenantId: string },
+    instance: { id: string; tenantId: string; evolutionId: string },
     data: Record<string, unknown>,
   ) {
     // Evolution sends qrcode as object { base64: "data:image/png;base64,...", code: "..." }
@@ -85,7 +87,7 @@ export class InstanceWebhookProcessor {
   }
 
   private async handleConnectionUpdate(
-    instance: { id: string; tenantId: string },
+    instance: { id: string; tenantId: string; evolutionId: string },
     data: Record<string, unknown>,
   ) {
     const state = data.state as string | undefined
@@ -96,14 +98,15 @@ export class InstanceWebhookProcessor {
 
     if (state === 'open') {
       newStatus = 'CONNECTED'
-      // Evolution may send phone number in the connection update
-      if (data.instance && typeof data.instance === 'object') {
-        const instanceData = data.instance as Record<string, unknown>
-        phone = instanceData.wuid as string | undefined
-        // wuid format: 5511999999999@s.whatsapp.net -> extract number
-        if (phone?.includes('@')) {
-          phone = phone.split('@')[0]
-        }
+      // Fetch phone number from Evolution API (webhook doesn't include it)
+      try {
+        const info = await this.whatsapp.getInstanceInfo(instance.evolutionId)
+        phone = info.phone
+      } catch (error) {
+        this.logger.warn(
+          `Failed to fetch phone for ${instance.evolutionId}: ${(error as Error).message}`,
+          'InstanceWebhookProcessor',
+        )
       }
     } else if (state === 'close' && statusCode === 401) {
       newStatus = 'BANNED'

@@ -17,14 +17,16 @@ datasource db {
 // ── Tenant ──────────────────────────────────────
 
 model Tenant {
-  id           String    @id @default(cuid())
-  name         String
-  slug         String    @unique
-  plan         String    @default("free")
-  maxInstances Int       @default(3)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id             String    @id @default(cuid())
+  name           String
+  slug           String    @unique
+  plan           String    @default("free")
+  maxInstances   Int       @default(3)
+  protocolPrefix String    @default("SCHA")
+  protocolSeq    Int       @default(999)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   instances     Instance[]
   users         User[]
@@ -115,6 +117,7 @@ model Conversation {
   instanceId    String
   contactId     String
   assignedToId  String?
+  protocol      String
   status        ConversationStatus @default(PENDING)
   tags          String[]           @default([])
   summary       String?
@@ -131,6 +134,7 @@ model Conversation {
   assignedTo User?    @relation("AssignedConversations", fields: [assignedToId], references: [id])
   messages   Message[]
 
+  @@unique([tenantId, protocol])
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, instanceId])
@@ -160,22 +164,25 @@ enum MessageStatus {
 }
 
 model Message {
-  id             String        @id @default(cuid())
-  tenantId       String
-  conversationId String
-  fromMe         Boolean       @default(false)
-  fromBot        Boolean       @default(false)
-  body           String?
-  type           MessageType   @default(TEXT)
-  status         MessageStatus @default(PENDING)
-  evolutionId    String?
-  mediaUrl       String?
-  sentAt         DateTime      @default(now())
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  tenantId         String
+  conversationId   String
+  quotedMessageId  String?
+  fromMe           Boolean       @default(false)
+  fromBot          Boolean       @default(false)
+  body             String?
+  type             MessageType   @default(TEXT)
+  status           MessageStatus @default(PENDING)
+  evolutionId      String?
+  mediaUrl         String?
+  sentAt           DateTime      @default(now())
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  tenant       Tenant       @relation(fields: [tenantId], references: [id])
-  conversation Conversation @relation(fields: [conversationId], references: [id])
+  tenant         Tenant       @relation(fields: [tenantId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  quotedMessage  Message?     @relation("QuotedMessage", fields: [quotedMessageId], references: [id])
+  replies        Message[]    @relation("QuotedMessage")
 
   @@index([conversationId])
   @@index([tenantId])

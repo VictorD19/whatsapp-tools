@@ -9,6 +9,10 @@ export class ContactsService {
     return this.repository.findOrCreate(tenantId, phone, name)
   }
 
+  async updateAvatarUrl(id: string, avatarUrl: string) {
+    return this.repository.updateAvatarUrl(id, avatarUrl)
+  }
+
   async findById(tenantId: string, id: string) {
     return this.repository.findById(tenantId, id)
   }

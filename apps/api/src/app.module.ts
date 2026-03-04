@@ -5,8 +5,8 @@ import { InstancesModule } from './modules/instances/instances.module'
 import { ContactsModule } from './modules/contacts/contacts.module'
 import { InboxModule } from './modules/inbox/inbox.module'
 
+import { TenantsModule } from './modules/tenants/tenants.module'
 // TODO: importar módulos de negócio conforme forem implementados
-// import { TenantsModule } from './modules/tenants/tenants.module'
 // import { UsersModule } from './modules/users/users.module'
 // import { BroadcastsModule } from './modules/broadcasts/broadcasts.module'
 // import { GroupsModule } from './modules/groups/groups.module'
@@ -20,7 +20,7 @@ import { InboxModule } from './modules/inbox/inbox.module'
     InstancesModule,
     ContactsModule,
     InboxModule,
-    // TenantsModule,
+    TenantsModule,
     // UsersModule,
     // BroadcastsModule,
     // GroupsModule,

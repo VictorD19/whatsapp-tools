@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { getSocket } from '@/lib/socket'
-import { useInboxStore, type Conversation, type Message, type MessageStatus } from '@/stores/inbox.store'
+import { apiGet } from '@/lib/api'
+import { useInboxStore, type Conversation, type InboxTab, type Message, type MessageStatus } from '@/stores/inbox.store'
+import { useAuthStore } from '@/stores/auth.store'
 
 const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3'
 
@@ -21,6 +23,53 @@ function updateDocumentTitle(unreadTotal: number) {
   document.title = unreadTotal > 0 ? `(${unreadTotal}) ${base}` : base
 }
 
+const ALL_TABS: InboxTab[] = ['pending', 'mine', 'all', 'closed']
+
+function tabToFilters(tab: InboxTab, userId: string | undefined) {
+  const params = new URLSearchParams()
+  switch (tab) {
+    case 'pending':
+      params.set('status', 'PENDING')
+      break
+    case 'mine':
+      params.set('status', 'OPEN')
+      if (userId) params.set('assignedToId', userId)
+      break
+    case 'all':
+      break
+    case 'closed':
+      params.set('status', 'CLOSE')
+      break
+  }
+  return params.toString()
+}
+
+async function refreshInbox() {
+  const { activeTab, setConversations, setTabCount } = useInboxStore.getState()
+  const userId = useAuthStore.getState().user?.id
+
+  await Promise.all(
+    ALL_TABS.map(async (tab) => {
+      try {
+        const query = tabToFilters(tab, userId)
+        const isActive = tab === activeTab
+
+        const res = await apiGet<{ data: Conversation[]; meta: { total: number } }>(
+          `inbox/conversations${query ? `?${query}` : ''}${isActive ? '' : (query ? '&' : '?') + 'limit=1'}`,
+        )
+
+        setTabCount(tab, res.meta.total)
+
+        if (isActive) {
+          setConversations(res.data)
+        }
+      } catch {
+        // ignore
+      }
+    }),
+  )
+}
+
 export function useInboxSocket() {
   const upsertConversation = useInboxStore((s) => s.upsertConversation)
   const removeConversation = useInboxStore((s) => s.removeConversation)
@@ -37,6 +86,7 @@ export function useInboxSocket() {
     function handleConversationCreated(payload: { conversation: Conversation }) {
       upsertConversation(payload.conversation)
       playNotificationSound()
+      refreshInbox()
       // Update badge in title
       const total = useInboxStore.getState().conversations.reduce(
         (sum, c) => sum + c.unreadCount, 0
@@ -44,7 +94,7 @@ export function useInboxSocket() {
       updateDocumentTitle(total + 1)
     }
 
-    function handleNewMessage(payload: {
+    async function handleNewMessage(payload: {
       conversationId: string
       message: Message
     }) {
@@ -65,8 +115,29 @@ export function useInboxSocket() {
         updated.unshift({
           ...conv,
           lastMessageAt: payload.message.sentAt,
+          messages: [{ body: payload.message.body, type: payload.message.type, fromMe: payload.message.fromMe }],
         })
         useInboxStore.getState().setConversations(updated)
+      } else if (idx === 0) {
+        const updated = [...conversations]
+        updated[0] = {
+          ...updated[0],
+          lastMessageAt: payload.message.sentAt,
+          messages: [{ body: payload.message.body, type: payload.message.type, fromMe: payload.message.fromMe }],
+        }
+        useInboxStore.getState().setConversations(updated)
+      } else {
+        // Conversation not in list — fetch it from API
+        try {
+          const conversation = await apiGet<Conversation>(
+            `inbox/conversations/${payload.conversationId}`,
+          )
+          if (conversation) {
+            upsertConversation(conversation)
+          }
+        } catch {
+          // Ignore — conversation may not belong to current tab
+        }
       }
 
       // Update badge
@@ -81,19 +152,12 @@ export function useInboxSocket() {
       assignedToId: string
       status: string
     }) {
-      const conversations = useInboxStore.getState().conversations
-      const conv = conversations.find((c) => c.id === payload.conversationId)
-      if (conv) {
-        upsertConversation({
-          ...conv,
-          status: 'OPEN',
-          assignedToId: payload.assignedToId,
-        })
-      }
+      refreshInbox()
     }
 
     function handleConversationClosed(payload: { conversationId: string }) {
       removeConversation(payload.conversationId)
+      refreshInbox()
     }
 
     function handleConversationTransferred(payload: {

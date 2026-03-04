@@ -23,6 +23,12 @@ export interface ConversationAssignee {
   name: string
 }
 
+export interface LastMessage {
+  body: string | null
+  type: MessageType
+  fromMe: boolean
+}
+
 export interface Conversation {
   id: string
   instanceId: string
@@ -38,6 +44,14 @@ export interface Conversation {
   contact: ConversationContact
   instance: ConversationInstance
   assignedTo: ConversationAssignee | null
+  messages?: LastMessage[]
+}
+
+export interface QuotedMessage {
+  id: string
+  body: string | null
+  fromMe: boolean
+  type: MessageType
 }
 
 export interface Message {
@@ -49,6 +63,8 @@ export interface Message {
   type: MessageType
   status: MessageStatus
   mediaUrl: string | null
+  quotedMessageId: string | null
+  quotedMessage: QuotedMessage | null
   sentAt: string
   createdAt: string
 }
@@ -60,8 +76,11 @@ interface InboxState {
   messages: Record<string, Message[]>
   isLoadingConversations: boolean
   isLoadingMessages: boolean
+  tabCounts: Record<InboxTab, number>
+  replyingTo: Message | null
 
   setActiveTab: (tab: InboxTab) => void
+  setTabCount: (tab: InboxTab, count: number) => void
   selectConversation: (id: string | null) => void
   setConversations: (conversations: Conversation[]) => void
   setLoadingConversations: (loading: boolean) => void
@@ -73,17 +92,22 @@ interface InboxState {
   updateMessageStatus: (conversationId: string, messageId: string, status: MessageStatus) => void
   incrementUnread: (conversationId: string) => void
   clearUnread: (conversationId: string) => void
+  setReplyingTo: (message: Message | null) => void
 }
 
 export const useInboxStore = create<InboxState>()((set) => ({
-  activeTab: 'pending',
+  activeTab: 'mine',
   selectedConversationId: null,
   conversations: [],
   messages: {},
   isLoadingConversations: false,
   isLoadingMessages: false,
+  tabCounts: { pending: 0, mine: 0, all: 0, closed: 0 },
+  replyingTo: null,
 
   setActiveTab: (activeTab) => set({ activeTab }),
+  setTabCount: (tab, count) =>
+    set((state) => ({ tabCounts: { ...state.tabCounts, [tab]: count } })),
 
   selectConversation: (selectedConversationId) => set({ selectedConversationId }),
 
@@ -116,12 +140,16 @@ export const useInboxStore = create<InboxState>()((set) => ({
     })),
 
   appendMessage: (conversationId, message) =>
-    set((state) => ({
-      messages: {
-        ...state.messages,
-        [conversationId]: [...(state.messages[conversationId] ?? []), message],
-      },
-    })),
+    set((state) => {
+      const existing = state.messages[conversationId] ?? []
+      if (existing.some((m) => m.id === message.id)) return state
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: [...existing, message],
+        },
+      }
+    }),
 
   updateMessageStatus: (conversationId, messageId, status) =>
     set((state) => ({
@@ -146,4 +174,6 @@ export const useInboxStore = create<InboxState>()((set) => ({
         c.id === conversationId ? { ...c, unreadCount: 0 } : c
       ),
     })),
+
+  setReplyingTo: (replyingTo) => set({ replyingTo }),
 }))

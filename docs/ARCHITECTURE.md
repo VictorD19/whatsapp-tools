@@ -499,5 +499,59 @@ model NomeModelo {
 
 ---
 
+## 14. Inbox — Reply/Quote de Mensagens
+
+### Schema
+
+`Message` possui self-relation para citações:
+
+```prisma
+model Message {
+  quotedMessageId  String?
+  quotedMessage    Message?  @relation("QuotedMessage", fields: [quotedMessageId], references: [id])
+  replies          Message[] @relation("QuotedMessage")
+}
+```
+
+### Fluxo de envio (outbound reply)
+
+1. Frontend envia `POST /inbox/conversations/:id/messages` com `{ body, quotedMessageId? }`
+2. Service valida que `quotedMessageId` existe no tenant (error: `INBOX_QUOTED_MESSAGE_NOT_FOUND`)
+3. Busca `evolutionId` da mensagem citada
+4. Passa `{ quotedMessageEvolutionId }` via `SendTextOptions` ao provider
+5. Evolution Adapter envia com `quoted: { key: { id } }` no body
+6. Mensagem salva no banco com `quotedMessageId` + `quotedMessage` (select: id, body, fromMe, type)
+7. WebSocket emite `conversation:new_message` incluindo `quotedMessageId` e `quotedMessage`
+
+### Fluxo de recebimento (inbound reply)
+
+1. Webhook recebe mensagem com `contextInfo.stanzaId` (extraído por `extractQuotedStanzaId`)
+2. Processor resolve `stanzaId` → `quotedMessageId` interno via `findMessageByEvolutionId`
+3. Salva mensagem com `quotedMessageId` e emite via WebSocket
+
+### Frontend
+
+- `MessageBubble`: mostra preview da mensagem citada dentro da bubble + botão Reply no hover
+- `MessageInput`: barra de preview acima do input ao responder, com X para cancelar
+- `inbox.store`: state `replyingTo` + action `setReplyingTo`
+
+---
+
+## 15. Inbox — Atualização de Tabs em Tempo Real
+
+Eventos WebSocket que disparam refresh automático de tabs:
+
+| Evento | Ação |
+|---|---|
+| `conversation:created` | Refresh lista da tab ativa + contadores de todas as tabs |
+| `conversation:assigned` | Refresh lista da tab ativa + contadores de todas as tabs |
+| `conversation:closed` | Remove conversa da lista + refresh lista e contadores |
+
+A função `refreshInbox()` (em `use-inbox-socket.ts`) busca em paralelo:
+- **Tab ativa**: lista completa de conversas + count
+- **Demais tabs**: apenas count (`limit=1`)
+
+---
+
 *Referência: FEATURES.md — roadmap de funcionalidades*
-*Atualizado em: 2026-03-03*
+*Atualizado em: 2026-03-04*

@@ -54,12 +54,13 @@ export class InstancesService {
     // and cannot reach the host via localhost
     const webhookBase = this.config.get<string>('WEBHOOK_URL')
       || this.config.get<string>('APP_URL', 'http://localhost:8000')
+    const evolutionId = `${tenantId}_${dto.name}`
     let evolutionResult: { instanceId: string; status: string }
     try {
       evolutionResult = await this.whatsapp.createInstance({
         name: dto.name,
         tenantId,
-        webhookUrl: `${webhookBase}/api/v1/webhooks/evolution`,
+        webhookUrl: `${webhookBase}/api/v1/webhooks/evolution/${evolutionId}`,
       })
     } catch (error) {
       this.logger.error(

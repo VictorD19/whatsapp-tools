@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { cn, getInitials } from '@/lib/utils'
 import type { Conversation } from '@/stores/inbox.store'
 
@@ -47,7 +47,14 @@ export function ConversationListItem({
 }: ConversationListItemProps) {
   const contactName = conversation.contact.name ?? conversation.contact.phone
   const hasUnread = conversation.unreadCount > 0
+  const lastMsg = conversation.messages?.[0]
+  const lastMsgPreview = lastMsg
+    ? lastMsg.type !== 'TEXT'
+      ? `📎 ${lastMsg.type.charAt(0) + lastMsg.type.slice(1).toLowerCase()}`
+      : lastMsg.body ?? ''
+    : null
   const preview = conversation.summary
+    ?? lastMsgPreview
     ?? (conversation.status === 'PENDING' ? 'Aguardando atendimento...' : 'Sem mensagens recentes')
 
   return (
@@ -68,6 +75,9 @@ export function ConversationListItem({
       {/* Avatar with WhatsApp badge */}
       <div className="relative shrink-0 mt-0.5">
         <Avatar className="h-9 w-9">
+          {conversation.contact.avatarUrl && (
+            <AvatarImage src={conversation.contact.avatarUrl} alt={contactName} />
+          )}
           <AvatarFallback className={cn('text-xs font-semibold', getAvatarColor(contactName))}>
             {getInitials(contactName)}
           </AvatarFallback>

@@ -5,9 +5,11 @@ import type {
   InstanceResult,
   QRCodeResult,
   InstanceStatus,
+  InstanceInfo,
 } from '../../dto/instance.dto'
 import type {
   MessageResult,
+  SendTextOptions,
   ImagePayload,
   VideoPayload,
   AudioPayload,
@@ -17,6 +19,7 @@ import type {
   MentionPayload,
 } from '../../dto/send-message.dto'
 import type { WebhookEvent } from '../../dto/webhook.dto'
+import type { ChatItem, HistoryMessage, FindMessagesOptions } from '../../dto/chat.dto'
 import { EvolutionHttpClient } from './evolution-http.client'
 
 // ---------- Evolution API response shapes (internal only) ----------
@@ -32,6 +35,12 @@ interface EvoConnectResponse {
 
 interface EvoConnectionStateResponse {
   instance: { state: string }
+}
+
+interface EvoFetchInstanceResponse {
+  name: string
+  connectionStatus: string
+  ownerJid: string | null
 }
 
 interface EvoMessageResponse {
@@ -133,16 +142,39 @@ export class EvolutionAdapter implements IWhatsAppProvider {
     return STATE_MAP[res.instance.state] ?? 'DISCONNECTED'
   }
 
+  async getInstanceInfo(instanceId: string): Promise<InstanceInfo> {
+    const res = await this.http.get<EvoFetchInstanceResponse>(
+      `/instance/fetchInstances?instanceName=${instanceId}`,
+    )
+
+    const data = Array.isArray(res) ? res[0] : res
+    const status = STATE_MAP[data?.connectionStatus] ?? 'DISCONNECTED'
+    let phone: string | undefined
+
+    if (data?.ownerJid) {
+      phone = data.ownerJid.split('@')[0]
+    }
+
+    return { instanceId, status, phone }
+  }
+
   // ── Mensagens ─────────────────────────────────────────────────────
 
   async sendText(
     instanceId: string,
     to: string,
     text: string,
+    options?: SendTextOptions,
   ): Promise<MessageResult> {
+    const body: Record<string, unknown> = { number: to, text }
+
+    if (options?.quotedMessageEvolutionId) {
+      body.quoted = { key: { id: options.quotedMessageEvolutionId } }
+    }
+
     const res = await this.http.post<EvoMessageResponse>(
       `/message/sendText/${instanceId}`,
-      { number: to, text },
+      body,
     )
 
     return { messageId: res.key.id, status: 'sent' }
@@ -260,6 +292,67 @@ export class EvolutionAdapter implements IWhatsAppProvider {
     )
 
     return { messageId: res.key.id, status: 'sent' }
+  }
+
+  // ── Chat history ─────────────────────────────────────────────────
+
+  async findChats(instanceId: string): Promise<ChatItem[]> {
+    const res = await this.http.post<Array<{ id: string; name?: string }>>(
+      `/chat/findChats/${instanceId}`,
+    )
+
+    return res.map((chat) => ({
+      remoteJid: chat.id,
+      name: chat.name,
+      isGroup: chat.id.includes('@g.us'),
+    }))
+  }
+
+  async findMessages(
+    instanceId: string,
+    options: FindMessagesOptions,
+  ): Promise<HistoryMessage[]> {
+    const res = await this.http.post<Array<Record<string, unknown>>>(
+      `/chat/findMessages/${instanceId}`,
+      {
+        where: { key: { remoteJid: options.remoteJid } },
+        limit: options.limit ?? 50,
+      },
+    )
+
+    return res.map((msg) => {
+      const key = msg.key as Record<string, unknown>
+      return {
+        key: {
+          id: key.id as string,
+          remoteJid: key.remoteJid as string,
+          fromMe: key.fromMe as boolean,
+        },
+        messageTimestamp: msg.messageTimestamp as number,
+        pushName: msg.pushName as string | undefined,
+        message: msg.message as Record<string, unknown> | undefined,
+      }
+    })
+  }
+
+  // ── Contatos ─────────────────────────────────────────────────────
+
+  async getProfilePictureUrl(
+    instanceId: string,
+    phone: string,
+  ): Promise<string | null> {
+    try {
+      const res = await this.http.get<{ profilePictureUrl?: string | null }>(
+        `/chat/fetchProfilePictureUrl/${instanceId}?number=${phone}`,
+      )
+      return res.profilePictureUrl ?? null
+    } catch {
+      this.logger.warn(
+        `Failed to fetch profile picture for ${phone} on ${instanceId}`,
+        'EvolutionAdapter',
+      )
+      return null
+    }
   }
 
   // ── Webhook ───────────────────────────────────────────────────────

@@ -1,12 +1,13 @@
 'use client'
 
 import React from 'react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/shared/status-badge'
+import { ImportProgressBar } from './import-progress'
 import { formatPhone } from '@/lib/utils'
-import type { Instance } from '@/stores/instances.store'
+import type { Instance, ImportProgress } from '@/stores/instances.store'
 
 const statusMap = {
   CONNECTED: 'connected',
@@ -17,13 +18,16 @@ const statusMap = {
 
 interface InstanceCardProps {
   instance: Instance
+  importProgress?: ImportProgress
   onConnect: (id: string) => void
   onDisconnect: (id: string) => void
   onDelete: (id: string) => void
+  onImportConversations: (id: string) => void
 }
 
-export function InstanceCard({ instance, onConnect, onDisconnect, onDelete }: InstanceCardProps) {
+export function InstanceCard({ instance, importProgress, onConnect, onDisconnect, onDelete, onImportConversations }: InstanceCardProps) {
   const badgeStatus = statusMap[instance.status]
+  const isImporting = importProgress?.importing ?? false
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -47,21 +51,32 @@ export function InstanceCard({ instance, onConnect, onDisconnect, onDelete }: In
         </div>
         <div className="flex gap-2 mt-4">
           {instance.status === 'CONNECTED' ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => onDisconnect(instance.id)}
-            >
-              Desconectar
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => onDisconnect(instance.id)}
+              >
+                Desconectar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onImportConversations(instance.id)}
+                disabled={isImporting}
+                title="Importar conversas"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </>
           ) : instance.status === 'DISCONNECTED' ? (
             <Button size="sm" className="flex-1" onClick={() => onConnect(instance.id)}>
               Conectar QR
             </Button>
           ) : instance.status === 'CONNECTING' ? (
-            <Button variant="outline" size="sm" className="flex-1" disabled>
-              Aguardando...
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => onConnect(instance.id)}>
+              Ver QR Code
             </Button>
           ) : (
             <Button variant="outline" size="sm" className="flex-1" disabled>
@@ -77,6 +92,7 @@ export function InstanceCard({ instance, onConnect, onDisconnect, onDelete }: In
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
+        {importProgress && <ImportProgressBar progress={importProgress} />}
       </CardContent>
     </Card>
   )

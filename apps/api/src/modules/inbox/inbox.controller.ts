@@ -21,6 +21,10 @@ import {
   transferConversationSchema,
   TransferConversationDto,
 } from './dto/assign-conversation.dto'
+import {
+  importConversationsSchema,
+  ImportConversationsDto,
+} from './dto/import-conversations.dto'
 
 @Controller('inbox')
 export class InboxController {
@@ -105,5 +109,15 @@ export class InboxController {
     @Param('id') id: string,
   ) {
     return this.inboxService.reopenConversation(tenantId, id)
+  }
+
+  @Post('instances/:instanceId/import-conversations')
+  @HttpCode(HttpStatus.ACCEPTED)
+  importConversations(
+    @CurrentTenant() tenantId: string,
+    @Param('instanceId') instanceId: string,
+    @Body(new ZodValidationPipe(importConversationsSchema)) dto: ImportConversationsDto,
+  ) {
+    return this.inboxService.startConversationImport(tenantId, instanceId, dto)
   }
 }

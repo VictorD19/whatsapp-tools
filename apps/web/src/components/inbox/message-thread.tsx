@@ -5,7 +5,6 @@ import { AlertTriangle, Loader2 } from 'lucide-react'
 import { MessageBubble } from './message-bubble'
 import { MessageInput } from './message-input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
 import { useInboxStore, type Conversation, type Message } from '@/stores/inbox.store'
 import { useConversation } from '@/hooks/use-conversation'
 import { useAuthStore } from '@/stores/auth.store'
@@ -13,6 +12,8 @@ import { useAuthStore } from '@/stores/auth.store'
 interface MessageThreadProps {
   conversation: Conversation
 }
+
+const EMPTY_MESSAGES: Message[] = []
 
 function formatDateSeparator(dateStr: string): string {
   const date = new Date(dateStr)
@@ -33,9 +34,11 @@ function shouldShowDateSeparator(messages: Message[], index: number): boolean {
 }
 
 export function MessageThread({ conversation }: MessageThreadProps) {
-  const messages = useInboxStore((s) => s.messages[conversation.id] ?? [])
+  const messages = useInboxStore((s) => s.messages[conversation.id] ?? EMPTY_MESSAGES)
   const isLoading = useInboxStore((s) => s.isLoadingMessages)
-  const { fetchMessages, sendMessage, assignConversation, closeConversation } = useConversation()
+  const replyingTo = useInboxStore((s) => s.replyingTo)
+  const setReplyingTo = useInboxStore((s) => s.setReplyingTo)
+  const { fetchMessages, sendMessage } = useConversation()
   const userId = useAuthStore((s) => s.user?.id)
   const bottomRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
@@ -44,17 +47,18 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
 
-  // Reset pagination on conversation change
+  // Reset pagination and reply state on conversation change
   useEffect(() => {
     setPage(1)
     setHasMore(true)
     setLoadingMore(false)
+    setReplyingTo(null)
     fetchMessages(conversation.id, 1).then((meta) => {
       if (meta) {
         setHasMore(meta.page < meta.totalPages)
       }
     })
-  }, [conversation.id, fetchMessages])
+  }, [conversation.id, fetchMessages, setReplyingTo])
 
   // Auto-scroll to bottom on initial load or new messages (only if already near bottom)
   const isInitialLoad = useRef(true)
@@ -80,8 +84,9 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   }, [conversation.id])
 
   // IntersectionObserver for infinite scroll upward
+  // Skip until initial scroll-to-bottom is done (isInitialLoad becomes false)
   useEffect(() => {
-    if (!hasMore || loadingMore || isLoading) return
+    if (!hasMore || loadingMore || isLoading || isInitialLoad.current) return
 
     const sentinel = topSentinelRef.current
     if (!sentinel) return
@@ -124,10 +129,23 @@ export function MessageThread({ conversation }: MessageThreadProps) {
 
   const handleSend = useCallback(
     async (body: string) => {
-      await sendMessage(conversation.id, body)
+      const quotedId = useInboxStore.getState().replyingTo?.id
+      await sendMessage(conversation.id, body, quotedId)
+      setReplyingTo(null)
     },
-    [conversation.id, sendMessage],
+    [conversation.id, sendMessage, setReplyingTo],
   )
+
+  const handleReply = useCallback(
+    (msg: Message) => {
+      setReplyingTo(msg)
+    },
+    [setReplyingTo],
+  )
+
+  const handleCancelReply = useCallback(() => {
+    setReplyingTo(null)
+  }, [setReplyingTo])
 
   const isAssignedToMe = conversation.assignedToId === userId
   const canSend = conversation.status === 'OPEN' && isAssignedToMe
@@ -143,22 +161,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
           </h3>
           <p className="text-xs text-muted-foreground">{conversation.instance.name}</p>
         </div>
-        <div className="flex items-center gap-2">
-          {isPending && (
-            <Button size="sm" onClick={() => assignConversation(conversation.id)}>
-              Assumir
-            </Button>
-          )}
-          {conversation.status === 'OPEN' && isAssignedToMe && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => closeConversation(conversation.id)}
-            >
-              Encerrar
-            </Button>
-          )}
-        </div>
+        <div className="flex items-center gap-2" />
       </div>
 
       {/* Summary banner for escalated conversations */}
@@ -179,7 +182,11 @@ export function MessageThread({ conversation }: MessageThreadProps) {
       )}
 
       {/* Messages area */}
-      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4 space-y-1">
+      <div ref={scrollAreaRef} className="relative flex-1 overflow-y-auto p-4 space-y-1 bg-muted/30 scrollbar-none">
+        {/* Subtle background pattern */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23888888' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -211,7 +218,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
                     <div className="flex-1 border-t border-border" />
                   </div>
                 )}
-                <MessageBubble message={msg} />
+                <MessageBubble message={msg} contactName={conversation.contact.name ?? conversation.contact.phone} onReply={canSend ? handleReply : undefined} />
               </React.Fragment>
             ))}
             <div ref={bottomRef} />
@@ -230,6 +237,9 @@ export function MessageThread({ conversation }: MessageThreadProps) {
               ? 'Voce nao esta atribuido a esta conversa'
               : 'Digite uma mensagem... (Enter para enviar)'
         }
+        replyingTo={replyingTo}
+        onCancelReply={handleCancelReply}
+        contactName={conversation.contact.name ?? conversation.contact.phone}
       />
     </div>
   )
