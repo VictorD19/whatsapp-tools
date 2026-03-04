@@ -124,6 +124,10 @@ const config: Config = {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.4' },
         },
+        'fade-slide-in': {
+          from: { opacity: '0', transform: 'translateY(4px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -131,6 +135,7 @@ const config: Config = {
         'fade-in': 'fade-in 0.2s ease-out',
         'slide-in-from-left': 'slide-in-from-left 0.3s ease-out',
         'pulse-dot': 'pulse-dot 2s ease-in-out infinite',
+        'fade-slide-in': 'fade-slide-in 0.25s ease-out',
       },
     },
   },

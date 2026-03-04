@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 
@@ -31,21 +31,23 @@ interface ContactPayload {
 
 export function useContacts() {
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [fetching, setFetching] = useState(false)
+  const hasFetched = useRef(false)
   const [meta, setMeta] = useState<PaginationMeta>({
     page: 1,
-    limit: 20,
+    limit: 10,
     total: 0,
     totalPages: 0,
   })
 
   const fetchContacts = useCallback(async (search?: string, page = 1) => {
-    setLoading(true)
+    setFetching(true)
     try {
       const params = new URLSearchParams()
       if (search) params.set('search', search)
       params.set('page', String(page))
-      params.set('limit', '20')
+      params.set('limit', '10')
 
       const res = await apiGet<PaginatedResponse>(`contacts?${params}`)
       setContacts(res.data)
@@ -53,7 +55,11 @@ export function useContacts() {
     } catch {
       toast({ title: 'Erro ao carregar contatos', variant: 'destructive' })
     } finally {
-      setLoading(false)
+      setFetching(false)
+      if (!hasFetched.current) {
+        hasFetched.current = true
+        setInitialLoading(false)
+      }
     }
   }, [])
 
@@ -76,7 +82,8 @@ export function useContacts() {
 
   return {
     contacts,
-    loading,
+    initialLoading,
+    fetching,
     meta,
     fetchContacts,
     createContact,

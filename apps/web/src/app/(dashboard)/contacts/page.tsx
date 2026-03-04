@@ -26,11 +26,11 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { useContacts, type Contact } from '@/hooks/use-contacts'
-import { getInitials, formatPhone, formatDate } from '@/lib/utils'
+import { cn, getInitials, formatPhone, formatDate } from '@/lib/utils'
 import { toast } from '@/components/ui/toaster'
 
 export default function ContactsPage() {
-  const { contacts, loading, meta, fetchContacts, createContact, updateContact, deleteContact } =
+  const { contacts, initialLoading, fetching, meta, fetchContacts, createContact, updateContact, deleteContact } =
     useContacts()
 
   const [search, setSearch] = useState('')
@@ -166,7 +166,7 @@ export default function ContactsPage() {
       </div>
 
       {/* Table */}
-      {loading ? (
+      {initialLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-4 py-3">
@@ -190,7 +190,7 @@ export default function ContactsPage() {
         />
       ) : (
         <>
-          <div className="rounded-md border border-border overflow-hidden">
+          <div className={cn('rounded-md border border-border overflow-hidden transition-opacity duration-200', fetching && 'opacity-50 pointer-events-none')}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
@@ -211,7 +211,10 @@ export default function ContactsPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody
+                key={`page-${meta.page}-${search}`}
+                className="divide-y divide-border animate-fade-slide-in"
+              >
                 {contacts.map((c) => (
                   <tr key={c.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
