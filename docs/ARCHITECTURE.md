@@ -311,31 +311,7 @@ apps/web/src/
 - Nunca fazer fetch direto ao banco no frontend — sempre via API
 - Estado global com **Zustand** — sem Redux
 - Estilização com **Tailwind CSS** + **shadcn/ui**
-
-### Design System — Paleta de Cores
-
-Baseado no template **Tasko** (verde-floresta profundo). Cores definidas via CSS variables em `globals.css`.
-
-| Token | Light | Dark | Uso |
-|---|---|---|---|
-| `--primary` | `#005e30` (verde-floresta) | `hsl(153 80% 35%)` | Botões, nav ativo, badges |
-| `--accent` | `#008b46` (verde médio) | `hsl(153 60% 25%)` | Links, hover states |
-| `--background` | `#f8f9f5` (off-white esverdeado) | `hsl(160 20% 5%)` | Fundo geral |
-| `--muted` | `#f1f3eb` (cinza esverdeado) | `hsl(160 15% 14%)` | Fundos secundários |
-| `--border` | `#e3e6de` (cinza esverdeado) | `hsl(160 12% 15%)` | Bordas, divisores |
-| `--destructive` | `#e40014` | `hsl(0 62.8% 30.6%)` | Erros, ações perigosas |
-
-**Paleta brand (Tailwind):** `primary-50` → `primary-900` escala completa em `tailwind.config.ts`
-
-**Semânticas:** `danger` (#EF4444), `warning` (#F59E0B), `info` (#3B82F6), `success` (#008b46)
-
-**Chart:** 5 tons de verde (`--chart-1` a `--chart-5`) para gráficos
-
-**Sidebar:** Active nav = fundo sólido `bg-primary` + `text-primary-foreground` + `shadow-lg shadow-primary/20` + `rounded-lg`
-
-**Border radius:** `--radius: 1rem` (16px) — cards arredondados
-
-**Dark mode:** Suporte completo via `next-themes` com `attribute="class"`
+- Design system: ver `./docs/DESIGN_SYSTEM.md`
 
 ---
 
