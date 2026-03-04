@@ -5,11 +5,12 @@ import {
   Param,
   Body,
   Query,
+  Req,
   Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
-import type { FastifyReply } from 'fastify'
+import type { FastifyRequest, FastifyReply } from 'fastify'
 import { InboxService } from './inbox.service'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
 import { CurrentUser } from '@shared/decorators/current-user.decorator'

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import multipart from '@fastify/multipart'
 import { AppModule } from './app.module'
 
 async function bootstrap() {
@@ -8,6 +9,11 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter({ logger: false }),
   )
+
+  // File upload support (50MB limit for WhatsApp media)
+  await app.register(multipart, {
+    limits: { fileSize: 50 * 1024 * 1024 },
+  })
 
   app.enableCors()
   app.setGlobalPrefix('api/v1')
