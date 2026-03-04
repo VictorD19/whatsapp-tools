@@ -38,7 +38,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   const isLoading = useInboxStore((s) => s.isLoadingMessages)
   const replyingTo = useInboxStore((s) => s.replyingTo)
   const setReplyingTo = useInboxStore((s) => s.setReplyingTo)
-  const { fetchMessages, sendMessage } = useConversation()
+  const { fetchMessages, sendMessage, syncMessages } = useConversation()
   const userId = useAuthStore((s) => s.user?.id)
   const bottomRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
@@ -58,7 +58,9 @@ export function MessageThread({ conversation }: MessageThreadProps) {
         setHasMore(meta.page < meta.totalPages)
       }
     })
-  }, [conversation.id, fetchMessages, setReplyingTo])
+    // Fire-and-forget sync to catch messages missed while offline
+    syncMessages(conversation.id)
+  }, [conversation.id, fetchMessages, syncMessages, setReplyingTo])
 
   // Auto-scroll to bottom on initial load or new messages (only if already near bottom)
   const isInitialLoad = useRef(true)

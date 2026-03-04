@@ -5,9 +5,11 @@ import {
   Param,
   Body,
   Query,
+  Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
+import type { FastifyReply } from 'fastify'
 import { InboxService } from './inbox.service'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
 import { CurrentUser } from '@shared/decorators/current-user.decorator'
@@ -62,6 +64,22 @@ export class InboxController {
     )
   }
 
+  @Get('messages/:messageId/media')
+  async getMedia(
+    @CurrentTenant() tenantId: string,
+    @Param('messageId') messageId: string,
+    @Res() res: FastifyReply,
+  ) {
+    const media = await this.inboxService.getMediaBase64(tenantId, messageId)
+    const buffer = Buffer.from(media.base64, 'base64')
+
+    res
+      .header('Content-Type', media.mimetype)
+      .header('Content-Length', buffer.length)
+      .header('Cache-Control', 'private, max-age=86400')
+      .send(buffer)
+  }
+
   @Post('conversations/:id/assign')
   @HttpCode(HttpStatus.OK)
   assignConversation(
@@ -100,6 +118,15 @@ export class InboxController {
     @Body(new ZodValidationPipe(transferConversationSchema)) dto: TransferConversationDto,
   ) {
     return this.inboxService.transferConversation(tenantId, id, dto.assignedToId)
+  }
+
+  @Post('conversations/:id/sync')
+  @HttpCode(HttpStatus.OK)
+  syncMessages(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+  ) {
+    return this.inboxService.syncConversationMessages(tenantId, id)
   }
 
   @Post('conversations/:id/reopen')

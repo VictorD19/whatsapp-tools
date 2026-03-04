@@ -82,5 +82,16 @@ export function useConversation() {
     [appendMessage],
   )
 
-  return { fetchMessages, assignConversation, closeConversation, sendMessage }
+  const syncMessages = useCallback(async (conversationId: string) => {
+    try {
+      await apiPost<ApiResponse<{ synced: boolean; newMessages: number }>>(
+        `inbox/conversations/${conversationId}/sync`,
+        {},
+      )
+    } catch {
+      // Sync is best-effort — don't show errors to user
+    }
+  }, [])
+
+  return { fetchMessages, assignConversation, closeConversation, sendMessage, syncMessages }
 }

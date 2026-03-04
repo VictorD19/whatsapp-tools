@@ -1,5 +1,5 @@
 import React from 'react'
-import { Check, CheckCheck, Bot, Reply } from 'lucide-react'
+import { Check, CheckCheck, Bot, Reply, FileText, Download, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Message } from '@/stores/inbox.store'
 
@@ -9,11 +9,112 @@ interface MessageBubbleProps {
   onReply?: (message: Message) => void
 }
 
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/api/v1`
+
+function getMediaUrl(messageId: string) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+  return `${API_URL}/inbox/messages/${messageId}/media?token=${token ?? ''}`
+}
+
+function MediaContent({ message }: { message: Message }) {
+  const mediaUrl = getMediaUrl(message.id)
+
+  switch (message.type) {
+    case 'IMAGE':
+      return (
+        <div className="mb-1">
+          <img
+            src={mediaUrl}
+            alt={message.body ?? 'Imagem'}
+            className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
+            loading="lazy"
+            onClick={() => window.open(mediaUrl, '_blank')}
+          />
+          {message.body && (
+            <p className="leading-relaxed whitespace-pre-wrap mt-1">{message.body}</p>
+          )}
+        </div>
+      )
+
+    case 'VIDEO':
+      return (
+        <div className="mb-1">
+          <video
+            src={mediaUrl}
+            controls
+            preload="metadata"
+            className="rounded-lg max-w-full max-h-64"
+          />
+          {message.body && (
+            <p className="leading-relaxed whitespace-pre-wrap mt-1">{message.body}</p>
+          )}
+        </div>
+      )
+
+    case 'AUDIO':
+      return (
+        <div className="mb-1 min-w-[200px]">
+          <audio src={mediaUrl} controls preload="metadata" className="w-full h-8" />
+        </div>
+      )
+
+    case 'STICKER':
+      return (
+        <div className="mb-1">
+          <img
+            src={mediaUrl}
+            alt="Sticker"
+            className="max-w-[150px] max-h-[150px]"
+            loading="lazy"
+          />
+        </div>
+      )
+
+    case 'DOCUMENT':
+      return (
+        <button
+          onClick={async () => {
+            try {
+              const res = await fetch(mediaUrl)
+              const blob = await res.blob()
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = message.body ?? 'documento'
+              a.click()
+              URL.revokeObjectURL(url)
+            } catch {
+              // Fallback: open in new tab
+              window.open(mediaUrl, '_blank')
+            }
+          }}
+          className={cn(
+            'flex items-center gap-2 mb-1 p-2 rounded-lg w-full text-left',
+            'bg-black/10 hover:bg-black/20 transition-colors cursor-pointer'
+          )}
+        >
+          <FileText className="h-8 w-8 shrink-0 opacity-70" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{message.body ?? 'Documento'}</p>
+          </div>
+          <Download className="h-4 w-4 shrink-0 opacity-60" />
+        </button>
+      )
+
+    default:
+      return message.body ? (
+        <p className="leading-relaxed whitespace-pre-wrap">{message.body}</p>
+      ) : null
+  }
+}
+
 export function MessageBubble({ message, contactName, onReply }: MessageBubbleProps) {
   const time = new Date(message.sentAt).toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
   })
+
+  const isMediaType = ['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'STICKER'].includes(message.type)
 
   return (
     <div className={cn('group flex items-center gap-1', message.fromMe ? 'justify-end' : 'justify-start')}>
@@ -69,7 +170,14 @@ export function MessageBubble({ message, contactName, onReply }: MessageBubblePr
             <span>Assistente IA</span>
           </div>
         )}
-        <p className="leading-relaxed whitespace-pre-wrap">{message.body}</p>
+
+        {/* Media or text content */}
+        {isMediaType && message.mediaUrl ? (
+          <MediaContent message={message} />
+        ) : (
+          message.body && <p className="leading-relaxed whitespace-pre-wrap">{message.body}</p>
+        )}
+
         <div className="flex items-center gap-1 mt-1 justify-end">
           <span className={cn('text-[10px]', message.fromMe ? 'text-white/70' : 'text-muted-foreground')}>
             {time}

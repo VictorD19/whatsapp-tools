@@ -319,6 +319,17 @@ export class InboxRepository {
     })
   }
 
+  async findMessageWithInstance(tenantId: string, messageId: string) {
+    return this.prisma.message.findFirst({
+      where: { id: messageId, tenantId },
+      include: {
+        conversation: {
+          select: { instance: { select: { evolutionId: true } } },
+        },
+      },
+    })
+  }
+
   async findMessageByEvolutionId(evolutionId: string) {
     return this.prisma.message.findFirst({
       where: { evolutionId },

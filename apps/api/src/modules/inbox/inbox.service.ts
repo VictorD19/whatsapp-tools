@@ -10,6 +10,7 @@ import { SendMessageDto } from './dto/send-message.dto'
 import { ImportConversationsDto } from './dto/import-conversations.dto'
 import { ConversationImportProducer } from './queues/import.producer'
 import { ConversationStatus } from '@prisma/client'
+import { parseWhatsAppMessage } from './utils/message-parser'
 
 @Injectable()
 export class InboxService {
@@ -332,6 +333,121 @@ export class InboxService {
     this.logger.log(`Conversation ${conversationId} reopened`, 'InboxService')
 
     return updated
+  }
+
+  async getMediaBase64(tenantId: string, messageId: string) {
+    const message = await this.repository.findMessageWithInstance(tenantId, messageId)
+    if (!message) {
+      throw AppException.notFound('MESSAGE_NOT_FOUND', 'Mensagem nao encontrada')
+    }
+
+    if (!message.evolutionId) {
+      throw new AppException('MEDIA_NOT_AVAILABLE', 'Mensagem sem ID do Evolution')
+    }
+
+    const evolutionId = message.conversation.instance.evolutionId
+    const media = await this.whatsapp.getMediaBase64(evolutionId, message.evolutionId)
+    if (!media) {
+      throw new AppException('MEDIA_DOWNLOAD_FAILED', 'Falha ao baixar midia do WhatsApp')
+    }
+
+    return media
+  }
+
+  async syncConversationMessages(tenantId: string, conversationId: string) {
+    const conversation = await this.findConversationById(tenantId, conversationId)
+
+    const contactPhone = conversation.contact.phone
+    const evolutionId = conversation.instance.evolutionId
+    const remoteJid = `${contactPhone}@s.whatsapp.net`
+
+    let historyMessages: Awaited<ReturnType<WhatsAppService['findMessages']>>
+    try {
+      historyMessages = await this.whatsapp.findMessages(evolutionId, {
+        remoteJid,
+        limit: 20,
+      })
+    } catch (error) {
+      this.logger.warn(
+        `Sync failed for conversation ${conversationId}: ${(error as Error).message}`,
+        'InboxService',
+      )
+      return { data: { synced: false, newMessages: 0 } }
+    }
+
+    if (historyMessages.length === 0) {
+      return { data: { synced: true, newMessages: 0 } }
+    }
+
+    // Deduplicate: filter out messages already in DB
+    const evolutionIds = historyMessages
+      .map((m) => m.key.id)
+      .filter((id): id is string => id != null)
+
+    const existingIds = evolutionIds.length > 0
+      ? await this.repository.findExistingEvolutionIds(evolutionIds)
+      : new Set<string>()
+
+    const newMessages = historyMessages.filter(
+      (m) => m.key.id && !existingIds.has(m.key.id),
+    )
+
+    if (newMessages.length === 0) {
+      return { data: { synced: true, newMessages: 0 } }
+    }
+
+    // Sort oldest first
+    newMessages.sort((a, b) => a.messageTimestamp - b.messageTimestamp)
+
+    // Transform with parseWhatsAppMessage (same pattern as import)
+    const messagesToCreate = newMessages.map((msg) => {
+      const parsed = parseWhatsAppMessage(msg.message)
+      return {
+        tenantId,
+        conversationId,
+        fromMe: msg.key.fromMe,
+        body: parsed.body,
+        type: parsed.type as 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' | 'STICKER' | 'LOCATION' | 'CONTACT' | 'UNKNOWN',
+        status: 'DELIVERED' as const,
+        evolutionId: msg.key.id,
+        mediaUrl: parsed.mediaUrl,
+        sentAt: new Date(msg.messageTimestamp * 1000),
+      }
+    })
+
+    await this.repository.createManyMessages(messagesToCreate)
+
+    // Emit WebSocket for each new message so frontend updates in real-time
+    for (const msg of messagesToCreate) {
+      this.gateway.emitNewMessage(tenantId, {
+        conversationId,
+        message: {
+          conversationId,
+          fromMe: msg.fromMe,
+          fromBot: false,
+          body: msg.body,
+          type: msg.type,
+          status: msg.status,
+          mediaUrl: msg.mediaUrl,
+          evolutionId: msg.evolutionId,
+          sentAt: msg.sentAt,
+          createdAt: msg.sentAt,
+        },
+      })
+    }
+
+    // Update lastMessageAt if the latest synced message is newer
+    const lastSynced = messagesToCreate[messagesToCreate.length - 1]
+    if (lastSynced.sentAt > (conversation.lastMessageAt ?? new Date(0))) {
+      await this.repository.updateLastMessageAt(conversationId)
+    }
+
+    this.logger.log(
+      `Synced ${newMessages.length} messages for conversation ${conversationId}`,
+      'InboxService',
+    )
+
+    return { data: { synced: true, newMessages: newMessages.length } }
   }
 
   async startConversationImport(

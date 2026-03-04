@@ -34,7 +34,7 @@ export default function ContactsPage() {
     useContacts()
 
   const [search, setSearch] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Sheet state (create/edit)
   const [formOpen, setFormOpen] = useState(false)

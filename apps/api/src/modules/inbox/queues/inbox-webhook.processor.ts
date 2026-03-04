@@ -80,16 +80,14 @@ export class InboxWebhookProcessor {
       const key = msg.key as Record<string, unknown> | undefined
       if (!key) continue
 
+      const fromMe = key.fromMe as boolean
+
       // Skip old messages from history sync (only process messages from last 60s)
       const messageTimestamp = msg.messageTimestamp as number | undefined
       if (messageTimestamp) {
         const msgAge = Math.floor(Date.now() / 1000) - messageTimestamp
         if (msgAge > 60) continue
       }
-
-      // Skip messages sent by us
-      const fromMe = key.fromMe as boolean
-      if (fromMe) continue
 
       let remoteJid = key.remoteJid as string | undefined
       if (!remoteJid) continue
@@ -112,11 +110,9 @@ export class InboxWebhookProcessor {
         }
       }
 
-      // Skip group messages for now (inbox is 1:1)
-      if (remoteJid.includes('@g.us')) continue
-
-      // Extract phone number from JID
-      const phone = remoteJid.split('@')[0]
+      const isGroup = remoteJid.includes('@g.us')
+      // For groups use full JID as identifier; for 1:1 use phone number
+      const phone = isGroup ? remoteJid : remoteJid.split('@')[0]
       const pushName = msg.pushName as string | undefined
 
       // Extract message body and quoted context
@@ -134,15 +130,17 @@ export class InboxWebhookProcessor {
         }
       }
 
-      // Find or create contact
+      // Find or create contact (for groups, use group JID; for 1:1, use phone)
+      // Only update name from pushName on inbound messages (fromMe pushName is our own name)
+      const contactName = (!fromMe && !isGroup) ? pushName : undefined
       const contact = await this.contactsService.findOrCreate(
         instance.tenantId,
         phone,
-        pushName,
+        contactName,
       )
 
-      // Fetch profile picture if contact doesn't have one
-      if (!contact.avatarUrl) {
+      // Fetch profile picture if contact doesn't have one (skip for groups and fromMe)
+      if (!isGroup && !fromMe && !contact.avatarUrl) {
         const avatarUrl = await this.whatsapp.getProfilePictureUrl(
           instance.evolutionId,
           phone,
@@ -173,22 +171,24 @@ export class InboxWebhookProcessor {
           lastMessageAt: now,
         })
         isNewConversation = true
-      } else {
+      } else if (!fromMe) {
         await this.inboxRepository.incrementUnreadCount(conversation.id)
       }
 
-      // Find or create deal for this contact
-      try {
-        await this.dealService.findOrCreateForContact(
-          instance.tenantId,
-          contact.id,
-          conversation.id,
-        )
-      } catch (error) {
-        this.logger.warn(
-          `Failed to find/create deal for contact ${contact.id}: ${(error as Error).message}`,
-          'InboxWebhookProcessor',
-        )
+      // Find or create deal for this contact (skip groups)
+      if (!isGroup) {
+        try {
+          await this.dealService.findOrCreateForContact(
+            instance.tenantId,
+            contact.id,
+            conversation.id,
+          )
+        } catch (error) {
+          this.logger.warn(
+            `Failed to find/create deal for contact ${contact.id}: ${(error as Error).message}`,
+            'InboxWebhookProcessor',
+          )
+        }
       }
 
       // Create message
@@ -196,10 +196,10 @@ export class InboxWebhookProcessor {
       const newMessage = await this.inboxRepository.createMessage({
         tenantId: instance.tenantId,
         conversationId: conversation.id,
-        fromMe: false,
+        fromMe,
         body,
         type,
-        status: 'DELIVERED',
+        status: fromMe ? 'SENT' : 'DELIVERED',
         evolutionId: evolutionMsgId,
         mediaUrl,
         quotedMessageId,
@@ -223,7 +223,7 @@ export class InboxWebhookProcessor {
         message: {
           id: newMessage.id,
           conversationId: conversation.id,
-          fromMe: false,
+          fromMe,
           fromBot: false,
           body: newMessage.body,
           type: newMessage.type,

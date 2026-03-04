@@ -55,6 +55,8 @@ describe('InboxService', () => {
       findMessages: jest.fn(),
       createMessage: jest.fn(),
       updateMessageStatusByEvolutionId: jest.fn(),
+      createManyMessages: jest.fn(),
+      findExistingEvolutionIds: jest.fn(),
     }
 
     const mockGateway = {
@@ -68,6 +70,7 @@ describe('InboxService', () => {
 
     const mockWhatsapp = {
       sendText: jest.fn(),
+      findMessages: jest.fn(),
     }
 
     const mockInstancesService = {
@@ -368,6 +371,84 @@ describe('InboxService', () => {
       await expect(
         service.transferConversation(tenantId, 'conv-1', 'new-user'),
       ).rejects.toMatchObject({ code: 'CONVERSATION_ALREADY_CLOSED' })
+    })
+  })
+
+  describe('syncConversationMessages', () => {
+    it('should sync new messages from Evolution API', async () => {
+      repository.findConversationById.mockResolvedValue(mockConversation)
+      whatsapp.findMessages.mockResolvedValue([
+        {
+          key: { id: 'evo-1', remoteJid: '5511999999999@s.whatsapp.net', fromMe: false },
+          messageTimestamp: Math.floor(Date.now() / 1000),
+          message: { conversation: 'Hello from phone' },
+        },
+        {
+          key: { id: 'evo-2', remoteJid: '5511999999999@s.whatsapp.net', fromMe: true },
+          messageTimestamp: Math.floor(Date.now() / 1000) + 1,
+          message: { conversation: 'Reply from server' },
+        },
+      ])
+      repository.findExistingEvolutionIds.mockResolvedValue(new Set(['evo-1']))
+      repository.createManyMessages.mockResolvedValue({ count: 1 })
+      repository.updateLastMessageAt.mockResolvedValue({} as never)
+
+      const result = await service.syncConversationMessages(tenantId, 'conv-1')
+
+      expect(result).toEqual({ data: { synced: true, newMessages: 1 } })
+      expect(repository.createManyMessages).toHaveBeenCalledWith([
+        expect.objectContaining({
+          tenantId,
+          conversationId: 'conv-1',
+          fromMe: true,
+          body: 'Reply from server',
+          evolutionId: 'evo-2',
+        }),
+      ])
+      expect(gateway.emitNewMessage).toHaveBeenCalledTimes(1)
+    })
+
+    it('should return synced with 0 when no new messages', async () => {
+      repository.findConversationById.mockResolvedValue(mockConversation)
+      whatsapp.findMessages.mockResolvedValue([
+        {
+          key: { id: 'evo-1', remoteJid: '5511999999999@s.whatsapp.net', fromMe: false },
+          messageTimestamp: Math.floor(Date.now() / 1000),
+          message: { conversation: 'Already exists' },
+        },
+      ])
+      repository.findExistingEvolutionIds.mockResolvedValue(new Set(['evo-1']))
+
+      const result = await service.syncConversationMessages(tenantId, 'conv-1')
+
+      expect(result).toEqual({ data: { synced: true, newMessages: 0 } })
+      expect(repository.createManyMessages).not.toHaveBeenCalled()
+    })
+
+    it('should return synced false when Evolution API fails', async () => {
+      repository.findConversationById.mockResolvedValue(mockConversation)
+      whatsapp.findMessages.mockRejectedValue(new Error('Connection refused'))
+
+      const result = await service.syncConversationMessages(tenantId, 'conv-1')
+
+      expect(result).toEqual({ data: { synced: false, newMessages: 0 } })
+    })
+
+    it('should return synced with 0 when Evolution returns empty', async () => {
+      repository.findConversationById.mockResolvedValue(mockConversation)
+      whatsapp.findMessages.mockResolvedValue([])
+
+      const result = await service.syncConversationMessages(tenantId, 'conv-1')
+
+      expect(result).toEqual({ data: { synced: true, newMessages: 0 } })
+    })
+
+    it('should throw CONVERSATION_NOT_FOUND for invalid conversation', async () => {
+      repository.findConversationById.mockResolvedValue(null)
+
+      await expect(
+        service.syncConversationMessages(tenantId, 'nonexistent'),
+      ).rejects.toMatchObject({ code: 'CONVERSATION_NOT_FOUND' })
     })
   })
 
