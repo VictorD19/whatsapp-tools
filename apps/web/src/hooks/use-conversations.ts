@@ -15,7 +15,14 @@ function tabToFilters(tab: InboxTab) {
 }
 
 export function useConversations() {
-  const { setConversations, setLoadingConversations, setTabCount } = useInboxStore()
+  const {
+    setConversations,
+    appendConversations,
+    setLoadingConversations,
+    setLoadingMoreConversations,
+    setTabCount,
+    conversationsPagination,
+  } = useInboxStore()
 
   const fetchConversations = useCallback(
     async (tab: InboxTab) => {
@@ -23,9 +30,15 @@ export function useConversations() {
       try {
         const query = tabToFilters(tab)
         const res = await apiGet<PaginatedResponse<Conversation[]>>(
-          `inbox/conversations?${query}`
+          `inbox/conversations?${query}&page=1&limit=20`
         )
-        setConversations(res.data)
+        const pagination = {
+          page: res.meta.page,
+          totalPages: res.meta.totalPages,
+          total: res.meta.total,
+          hasMore: res.meta.page < res.meta.totalPages,
+        }
+        setConversations(res.data, pagination)
         setTabCount(tab, res.meta.total)
       } catch {
         toast({ title: 'Erro ao carregar conversas', variant: 'destructive' })
@@ -34,6 +47,34 @@ export function useConversations() {
       }
     },
     [setConversations, setLoadingConversations, setTabCount],
+  )
+
+  const fetchMoreConversations = useCallback(
+    async (tab: InboxTab) => {
+      const { page, hasMore } = useInboxStore.getState().conversationsPagination
+      if (!hasMore) return
+
+      setLoadingMoreConversations(true)
+      try {
+        const nextPage = page + 1
+        const query = tabToFilters(tab)
+        const res = await apiGet<PaginatedResponse<Conversation[]>>(
+          `inbox/conversations?${query}&page=${nextPage}&limit=20`
+        )
+        const pagination = {
+          page: res.meta.page,
+          totalPages: res.meta.totalPages,
+          total: res.meta.total,
+          hasMore: res.meta.page < res.meta.totalPages,
+        }
+        appendConversations(res.data, pagination)
+      } catch {
+        toast({ title: 'Erro ao carregar mais conversas', variant: 'destructive' })
+      } finally {
+        setLoadingMoreConversations(false)
+      }
+    },
+    [appendConversations, setLoadingMoreConversations],
   )
 
   const fetchTabCounts = useCallback(async () => {
@@ -52,5 +93,5 @@ export function useConversations() {
     )
   }, [setTabCount])
 
-  return { fetchConversations, fetchTabCounts }
+  return { fetchConversations, fetchMoreConversations, fetchTabCounts }
 }

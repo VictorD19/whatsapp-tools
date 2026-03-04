@@ -80,12 +80,20 @@ export class WhatsAppService {
     return this.provider.findChats(instanceId)
   }
 
+  findContacts(instanceId: string) {
+    return this.provider.findContacts(instanceId)
+  }
+
   findMessages(instanceId: string, options: FindMessagesOptions) {
     return this.provider.findMessages(instanceId, options)
   }
 
   getProfilePictureUrl(instanceId: string, phone: string) {
     return this.provider.getProfilePictureUrl(instanceId, phone)
+  }
+
+  getMediaBase64(instanceId: string, messageEvolutionId: string) {
+    return this.provider.getMediaBase64(instanceId, messageEvolutionId)
   }
 
   setWebhook(instanceId: string, url: string, events: WebhookEvent[]) {

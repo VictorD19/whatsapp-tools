@@ -10,13 +10,29 @@ export const QUEUES = {
   CONVERSATION_IMPORT: 'conversation-import',
 } as const
 
+function parseRedisConfig() {
+  const url = process.env.REDIS_URL
+  if (url) {
+    try {
+      const parsed = new URL(url)
+      return {
+        host: parsed.hostname || 'localhost',
+        port: parseInt(parsed.port || '6379'),
+      }
+    } catch {
+      // fallback to host/port
+    }
+  }
+  return {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379'),
+  }
+}
+
 @Module({
   imports: [
     BullModule.forRoot({
-      redis: {
-        host: process.env.REDIS_HOST ?? 'localhost',
-        port: parseInt(process.env.REDIS_PORT ?? '6379'),
-      },
+      redis: parseRedisConfig(),
       defaultJobOptions: {
         attempts: 3,
         backoff: {

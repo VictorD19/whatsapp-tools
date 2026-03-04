@@ -2,6 +2,7 @@ export interface ChatItem {
   remoteJid: string
   name?: string
   isGroup: boolean
+  profilePicUrl?: string
 }
 
 export interface HistoryMessage {
@@ -18,4 +19,10 @@ export interface HistoryMessage {
 export interface FindMessagesOptions {
   remoteJid: string
   limit?: number
+}
+
+export interface ContactInfo {
+  remoteJid: string
+  pushName?: string
+  profilePicUrl?: string
 }

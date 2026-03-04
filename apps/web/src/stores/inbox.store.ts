@@ -95,12 +95,21 @@ export interface Message {
   createdAt: string
 }
 
+interface ConversationsPagination {
+  page: number
+  totalPages: number
+  total: number
+  hasMore: boolean
+}
+
 interface InboxState {
   activeTab: InboxTab
   selectedConversationId: string | null
   conversations: Conversation[]
+  conversationsPagination: ConversationsPagination
   messages: Record<string, Message[]>
   isLoadingConversations: boolean
+  isLoadingMoreConversations: boolean
   isLoadingMessages: boolean
   tabCounts: Record<InboxTab, number>
   replyingTo: Message | null
@@ -108,8 +117,10 @@ interface InboxState {
   setActiveTab: (tab: InboxTab) => void
   setTabCount: (tab: InboxTab, count: number) => void
   selectConversation: (id: string | null) => void
-  setConversations: (conversations: Conversation[]) => void
+  setConversations: (conversations: Conversation[], pagination: ConversationsPagination) => void
+  appendConversations: (conversations: Conversation[], pagination: ConversationsPagination) => void
   setLoadingConversations: (loading: boolean) => void
+  setLoadingMoreConversations: (loading: boolean) => void
   setLoadingMessages: (loading: boolean) => void
   upsertConversation: (conversation: Conversation) => void
   removeConversation: (id: string) => void
@@ -125,8 +136,10 @@ export const useInboxStore = create<InboxState>()((set) => ({
   activeTab: 'mine',
   selectedConversationId: null,
   conversations: [],
+  conversationsPagination: { page: 1, totalPages: 1, total: 0, hasMore: false },
   messages: {},
   isLoadingConversations: false,
+  isLoadingMoreConversations: false,
   isLoadingMessages: false,
   tabCounts: { all: 0, mine: 0, unassigned: 0 },
   replyingTo: null,
@@ -137,9 +150,22 @@ export const useInboxStore = create<InboxState>()((set) => ({
 
   selectConversation: (selectedConversationId) => set({ selectedConversationId }),
 
-  setConversations: (conversations) => set({ conversations }),
+  setConversations: (conversations, pagination) => set({ conversations, conversationsPagination: pagination }),
+
+  appendConversations: (newConversations, pagination) =>
+    set((state) => {
+      // Deduplicate by id
+      const existingIds = new Set(state.conversations.map((c) => c.id))
+      const unique = newConversations.filter((c) => !existingIds.has(c.id))
+      return {
+        conversations: [...state.conversations, ...unique],
+        conversationsPagination: pagination,
+      }
+    }),
 
   setLoadingConversations: (isLoadingConversations) => set({ isLoadingConversations }),
+
+  setLoadingMoreConversations: (isLoadingMoreConversations) => set({ isLoadingMoreConversations }),
 
   setLoadingMessages: (isLoadingMessages) => set({ isLoadingMessages }),
 

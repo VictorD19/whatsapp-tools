@@ -20,7 +20,7 @@ import type {
   MentionPayload,
 } from '../dto/send-message.dto'
 import type { WebhookEvent } from '../dto/webhook.dto'
-import type { ChatItem, HistoryMessage, FindMessagesOptions } from '../dto/chat.dto'
+import type { ChatItem, HistoryMessage, FindMessagesOptions, ContactInfo } from '../dto/chat.dto'
 
 export interface IWhatsAppProvider {
   // Instancias
@@ -48,7 +48,11 @@ export interface IWhatsAppProvider {
   findMessages(instanceId: string, options: FindMessagesOptions): Promise<HistoryMessage[]>
 
   // Contatos
+  findContacts(instanceId: string): Promise<ContactInfo[]>
   getProfilePictureUrl(instanceId: string, phone: string): Promise<string | null>
+
+  // Media
+  getMediaBase64(instanceId: string, messageEvolutionId: string): Promise<{ base64: string; mimetype: string } | null>
 
   // Webhook
   setWebhook(instanceId: string, url: string, events: WebhookEvent[]): Promise<void>

@@ -19,7 +19,7 @@ import type {
   MentionPayload,
 } from '../../dto/send-message.dto'
 import type { WebhookEvent } from '../../dto/webhook.dto'
-import type { ChatItem, HistoryMessage, FindMessagesOptions } from '../../dto/chat.dto'
+import type { ChatItem, HistoryMessage, FindMessagesOptions, ContactInfo } from '../../dto/chat.dto'
 import { EvolutionHttpClient } from './evolution-http.client'
 
 // ---------- Evolution API response shapes (internal only) ----------
@@ -297,22 +297,71 @@ export class EvolutionAdapter implements IWhatsAppProvider {
   // ── Chat history ─────────────────────────────────────────────────
 
   async findChats(instanceId: string): Promise<ChatItem[]> {
-    const res = await this.http.post<Array<{ id: string; name?: string }>>(
+    const res = await this.http.post<Array<{
+      id: string | null
+      remoteJid?: string
+      name?: string
+      pushName?: string
+      profilePicUrl?: string
+      lastMessage?: {
+        key?: { remoteJidAlt?: string; fromMe?: boolean }
+        pushName?: string
+      }
+    }>>(
       `/chat/findChats/${instanceId}`,
     )
 
-    return res.map((chat) => ({
-      remoteJid: chat.id,
-      name: chat.name,
-      isGroup: chat.id.includes('@g.us'),
-    }))
+    const chats = Array.isArray(res) ? res : []
+
+    return chats
+      .filter((chat) => chat.remoteJid != null)
+      .map((chat) => {
+        let jid = chat.remoteJid!
+
+        // Resolve LID to real phone using lastMessage.key.remoteJidAlt
+        if (jid.includes('@lid')) {
+          const alt = chat.lastMessage?.key?.remoteJidAlt
+          if (alt) {
+            this.logger.debug(
+              `LID resolved: ${jid} → ${alt}`,
+              'EvolutionAdapter',
+            )
+            jid = alt
+          } else {
+            this.logger.warn(
+              `LID unresolved (no remoteJidAlt): ${jid} — pushName: ${chat.lastMessage?.pushName ?? chat.pushName ?? 'unknown'}`,
+              'EvolutionAdapter',
+            )
+          }
+        }
+
+        // Use lastMessage.pushName as fallback — but only if NOT fromMe (fromMe shows "Você")
+        const lastMsgName = chat.lastMessage?.key?.fromMe
+          ? undefined
+          : chat.lastMessage?.pushName
+        const rawName = chat.pushName ?? lastMsgName ?? chat.name
+        // Filter out phone-number-like strings (Evolution API bug #2426 returns phone as pushName)
+        const name = rawName && !/^\d+$/.test(rawName) ? rawName : undefined
+
+        return {
+          remoteJid: jid,
+          name,
+          isGroup: jid.includes('@g.us'),
+          profilePicUrl: chat.profilePicUrl ?? undefined,
+        }
+      })
   }
 
   async findMessages(
     instanceId: string,
     options: FindMessagesOptions,
   ): Promise<HistoryMessage[]> {
-    const res = await this.http.post<Array<Record<string, unknown>>>(
+    const res = await this.http.post<{
+      messages?: {
+        total?: number
+        records?: Array<Record<string, unknown>>
+      }
+    }>(
       `/chat/findMessages/${instanceId}`,
       {
         where: { key: { remoteJid: options.remoteJid } },
@@ -320,7 +369,20 @@ export class EvolutionAdapter implements IWhatsAppProvider {
       },
     )
 
-    return res.map((msg) => {
+    const records = res?.messages?.records ?? (Array.isArray(res) ? res : [])
+
+    // Deduplicate by key.id — Evolution API returns each message twice
+    const seen = new Set<string>()
+    const unique = records.filter((msg) => {
+      const key = msg.key as Record<string, unknown>
+      const id = key?.id as string | undefined
+      if (!id) return true
+      if (seen.has(id)) return false
+      seen.add(id)
+      return true
+    })
+
+    return unique.map((msg) => {
       const key = msg.key as Record<string, unknown>
       return {
         key: {
@@ -337,6 +399,35 @@ export class EvolutionAdapter implements IWhatsAppProvider {
 
   // ── Contatos ─────────────────────────────────────────────────────
 
+  async findContacts(instanceId: string): Promise<ContactInfo[]> {
+    try {
+      const res = await this.http.post<Array<{
+        id?: string
+        remoteJid?: string
+        pushName?: string
+        profilePicUrl?: string
+      }>>(
+        `/chat/findContacts/${instanceId}`,
+      )
+
+      const contacts = Array.isArray(res) ? res : []
+
+      return contacts
+        .filter((c) => c.remoteJid != null)
+        .map((c) => ({
+          remoteJid: c.remoteJid!,
+          pushName: c.pushName || undefined,
+          profilePicUrl: c.profilePicUrl || undefined,
+        }))
+    } catch (error) {
+      this.logger.warn(
+        `Failed to fetch contacts for ${instanceId}: ${(error as Error).message}`,
+        'EvolutionAdapter',
+      )
+      return []
+    }
+  }
+
   async getProfilePictureUrl(
     instanceId: string,
     phone: string,
@@ -349,6 +440,32 @@ export class EvolutionAdapter implements IWhatsAppProvider {
     } catch {
       this.logger.warn(
         `Failed to fetch profile picture for ${phone} on ${instanceId}`,
+        'EvolutionAdapter',
+      )
+      return null
+    }
+  }
+
+  // ── Media ────────────────────────────────────────────────────────
+
+  async getMediaBase64(
+    instanceId: string,
+    messageEvolutionId: string,
+  ): Promise<{ base64: string; mimetype: string } | null> {
+    try {
+      const res = await this.http.post<{
+        base64?: string
+        mimetype?: string
+      }>(
+        `/chat/getBase64FromMediaMessage/${instanceId}`,
+        { message: { key: { id: messageEvolutionId } } },
+      )
+
+      if (!res.base64 || !res.mimetype) return null
+      return { base64: res.base64, mimetype: res.mimetype }
+    } catch {
+      this.logger.warn(
+        `Failed to get media base64 for message ${messageEvolutionId} on ${instanceId}`,
         'EvolutionAdapter',
       )
       return null

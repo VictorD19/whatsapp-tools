@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import { Search, SlidersHorizontal, Plus } from 'lucide-react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Search, SlidersHorizontal, Plus, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -22,10 +22,15 @@ export function ConversationList() {
   const setActiveTab = useInboxStore((s) => s.setActiveTab)
   const conversations = useInboxStore((s) => s.conversations)
   const isLoading = useInboxStore((s) => s.isLoadingConversations)
+  const isLoadingMore = useInboxStore((s) => s.isLoadingMoreConversations)
+  const hasMore = useInboxStore((s) => s.conversationsPagination.hasMore)
+  const total = useInboxStore((s) => s.conversationsPagination.total)
   const selectedConversationId = useInboxStore((s) => s.selectedConversationId)
   const selectConversation = useInboxStore((s) => s.selectConversation)
   const tabCounts = useInboxStore((s) => s.tabCounts)
-  const { fetchConversations, fetchTabCounts } = useConversations()
+  const { fetchConversations, fetchMoreConversations, fetchTabCounts } = useConversations()
+
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchTabCounts()
@@ -34,6 +39,30 @@ export function ConversationList() {
   useEffect(() => {
     fetchConversations(activeTab)
   }, [activeTab, fetchConversations])
+
+  // Infinite scroll via IntersectionObserver
+  const handleLoadMore = useCallback(() => {
+    if (!isLoadingMore && hasMore && !search) {
+      fetchMoreConversations(activeTab)
+    }
+  }, [isLoadingMore, hasMore, search, fetchMoreConversations, activeTab])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          handleLoadMore()
+        }
+      },
+      { threshold: 0.1 },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [handleLoadMore])
 
   const filtered = search
     ? conversations.filter((c) => {
@@ -108,7 +137,10 @@ export function ConversationList() {
       {!isLoading && filtered.length > 0 && (
         <div className="px-3 pb-1.5 shrink-0">
           <p className="text-[10px] text-muted-foreground/60">
-            {filtered.length} {filtered.length === 1 ? 'conversa' : 'conversas'}
+            {search
+              ? `${filtered.length} ${filtered.length === 1 ? 'conversa' : 'conversas'}`
+              : `${conversations.length} de ${total} ${total === 1 ? 'conversa' : 'conversas'}`
+            }
           </p>
         </div>
       )}
@@ -155,6 +187,15 @@ export function ConversationList() {
                 onClick={() => selectConversation(conv.id)}
               />
             ))}
+
+            {/* Infinite scroll sentinel */}
+            {!search && hasMore && (
+              <div ref={sentinelRef} className="flex items-center justify-center py-3">
+                {isLoadingMore && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

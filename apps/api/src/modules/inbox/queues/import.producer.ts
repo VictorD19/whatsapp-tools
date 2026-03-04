@@ -16,6 +16,7 @@ export interface ImportConversationJobData {
   evolutionId: string
   remoteJid: string
   contactName?: string
+  contactAvatarUrl?: string
   messageLimit: number
   index: number
   total: number
@@ -37,7 +38,11 @@ export class ConversationImportProducer {
   }
 
   async importConversation(payload: ImportConversationJobData) {
+    // Deterministic jobId prevents duplicate jobs for the same JID
+    const phone = payload.remoteJid.split('@')[0]
+    const jobId = `import-conv-${payload.tenantId}-${payload.instanceId}-${phone}`
     return this.queue.add('import-conversation', payload, {
+      jobId,
       attempts: 3,
       backoff: { type: 'exponential', delay: 2000 },
       removeOnComplete: true,

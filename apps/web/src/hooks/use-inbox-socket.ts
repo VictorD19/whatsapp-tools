@@ -32,14 +32,19 @@ async function refreshInbox() {
       try {
         const isActive = tab === activeTab
 
-        const res = await apiGet<{ data: Conversation[]; meta: { total: number } }>(
+        const res = await apiGet<{ data: Conversation[]; meta: { page: number; limit: number; total: number; totalPages: number } }>(
           `inbox/conversations?tab=${tab}${isActive ? '' : '&limit=1'}`,
         )
 
         setTabCount(tab, res.meta.total)
 
         if (isActive) {
-          setConversations(res.data)
+          setConversations(res.data, {
+            page: res.meta.page,
+            totalPages: res.meta.totalPages,
+            total: res.meta.total,
+            hasMore: res.meta.page < res.meta.totalPages,
+          })
         }
       } catch {
         // ignore
@@ -85,7 +90,7 @@ export function useInboxSocket() {
       }
 
       // Reorder conversations — move to top
-      const conversations = useInboxStore.getState().conversations
+      const { conversations, conversationsPagination } = useInboxStore.getState()
       const idx = conversations.findIndex((c) => c.id === payload.conversationId)
       if (idx > 0) {
         const updated = [...conversations]
@@ -95,7 +100,7 @@ export function useInboxSocket() {
           lastMessageAt: payload.message.sentAt,
           messages: [{ body: payload.message.body, type: payload.message.type, fromMe: payload.message.fromMe }],
         })
-        useInboxStore.getState().setConversations(updated)
+        useInboxStore.getState().setConversations(updated, conversationsPagination)
       } else if (idx === 0) {
         const updated = [...conversations]
         updated[0] = {
@@ -103,7 +108,7 @@ export function useInboxSocket() {
           lastMessageAt: payload.message.sentAt,
           messages: [{ body: payload.message.body, type: payload.message.type, fromMe: payload.message.fromMe }],
         }
-        useInboxStore.getState().setConversations(updated)
+        useInboxStore.getState().setConversations(updated, conversationsPagination)
       } else {
         // Conversation not in list — fetch it from API
         try {

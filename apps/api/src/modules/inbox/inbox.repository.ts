@@ -325,6 +325,14 @@ export class InboxRepository {
     })
   }
 
+  async findExistingEvolutionIds(evolutionIds: string[]): Promise<Set<string>> {
+    const existing = await this.prisma.message.findMany({
+      where: { evolutionId: { in: evolutionIds } },
+      select: { evolutionId: true },
+    })
+    return new Set(existing.map((m) => m.evolutionId!).filter(Boolean))
+  }
+
   async updateMessageStatusByEvolutionId(evolutionId: string, status: 'SENT' | 'DELIVERED' | 'READ' | 'FAILED') {
     const message = await this.prisma.message.findFirst({
       where: { evolutionId },
