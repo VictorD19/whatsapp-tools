@@ -10,26 +10,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand
+        // Brand — Tasko-inspired green-forest
         primary: {
-          DEFAULT: '#10B981',
-          foreground: '#FFFFFF',
-          50: '#ECFDF5',
-          100: '#D1FAE5',
-          200: '#A7F3D0',
-          300: '#6EE7B7',
-          400: '#34D399',
-          500: '#10B981',
-          600: '#059669',
-          700: '#047857',
-          800: '#065F46',
-          900: '#064E3B',
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+          50: '#f0fdf6',
+          100: '#dcfce9',
+          200: '#bbf7d4',
+          300: '#86efb0',
+          400: '#4ade83',
+          500: '#008b46',
+          600: '#007a3d',
+          700: '#005e30',
+          800: '#004a26',
+          900: '#003d1f',
         },
         // Semantic
         danger: '#EF4444',
         warning: '#F59E0B',
         info: '#3B82F6',
-        success: '#10B981',
+        success: '#008b46',
         // Neutrals (slate)
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
@@ -59,9 +59,18 @@ const config: Config = {
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',
+          primary: 'hsl(var(--sidebar-primary))',
+          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
           border: 'hsl(var(--sidebar-border))',
           accent: 'hsl(var(--sidebar-accent))',
           'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+        },
+        chart: {
+          1: 'hsl(var(--chart-1))',
+          2: 'hsl(var(--chart-2))',
+          3: 'hsl(var(--chart-3))',
+          4: 'hsl(var(--chart-4))',
+          5: 'hsl(var(--chart-5))',
         },
       },
       fontFamily: {

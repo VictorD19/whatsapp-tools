@@ -63,13 +63,13 @@ export function ConversationListItem({
       className={cn(
         'group relative flex w-full items-start gap-3 rounded-lg px-2 py-2.5 text-left transition-all duration-100',
         isActive
-          ? 'bg-emerald-50 dark:bg-emerald-500/10'
+          ? 'bg-primary-50 dark:bg-primary/10'
           : 'hover:bg-muted/60'
       )}
     >
       {/* Active bar */}
       {isActive && (
-        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-emerald-500" />
+        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
       )}
 
       {/* Avatar with WhatsApp badge */}
@@ -91,7 +91,7 @@ export function ConversationListItem({
         </span>
         {/* Online indicator (unread) */}
         {hasUnread && (
-          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background" />
+          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
         )}
       </div>
 
@@ -136,7 +136,7 @@ export function ConversationListItem({
           </div>
           {/* Unread badge */}
           {hasUnread && (
-            <span className="shrink-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white">
+            <span className="shrink-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white">
               {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
             </span>
           )}

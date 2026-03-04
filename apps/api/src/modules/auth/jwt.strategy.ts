@@ -7,6 +7,7 @@ interface JwtPayload {
   tenantId: string
   email: string
   role: string
+  isSuperAdmin: boolean
 }
 
 @Injectable()
@@ -25,6 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       tenantId: payload.tenantId,
       email: payload.email,
       role: payload.role,
+      isSuperAdmin: payload.isSuperAdmin ?? false,
     }
   }
 }

@@ -8,6 +8,7 @@ interface User {
   avatarUrl?: string
   tenantId: string
   role: 'admin' | 'agent' | 'viewer'
+  isSuperAdmin: boolean
 }
 
 interface AuthState {

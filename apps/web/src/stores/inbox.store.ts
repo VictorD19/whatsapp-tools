@@ -4,7 +4,7 @@ export type ConversationStatus = 'PENDING' | 'OPEN' | 'CLOSE'
 export type MessageStatus = 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
 export type MessageType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' | 'STICKER' | 'LOCATION' | 'CONTACT' | 'UNKNOWN'
 
-export type InboxTab = 'pending' | 'mine' | 'all' | 'closed'
+export type InboxTab = 'all' | 'mine' | 'unassigned'
 
 export interface ConversationContact {
   id: string
@@ -29,6 +29,31 @@ export interface LastMessage {
   fromMe: boolean
 }
 
+export type DealStageType = 'ACTIVE' | 'WON' | 'LOST'
+
+export interface ConversationDealStage {
+  id: string
+  name: string
+  color: string
+  type: DealStageType
+}
+
+export interface ConversationDealPipeline {
+  id: string
+  name: string
+}
+
+export interface ConversationDeal {
+  id: string
+  title: string | null
+  value: number | null
+  stageId: string
+  stage: ConversationDealStage
+  pipeline: ConversationDealPipeline
+  wonAt: string | null
+  lostAt: string | null
+}
+
 export interface Conversation {
   id: string
   instanceId: string
@@ -45,6 +70,7 @@ export interface Conversation {
   instance: ConversationInstance
   assignedTo: ConversationAssignee | null
   messages?: LastMessage[]
+  deals?: ConversationDeal[]
 }
 
 export interface QuotedMessage {
@@ -102,7 +128,7 @@ export const useInboxStore = create<InboxState>()((set) => ({
   messages: {},
   isLoadingConversations: false,
   isLoadingMessages: false,
-  tabCounts: { pending: 0, mine: 0, all: 0, closed: 0 },
+  tabCounts: { all: 0, mine: 0, unassigned: 0 },
   replyingTo: null,
 
   setActiveTab: (activeTab) => set({ activeTab }),

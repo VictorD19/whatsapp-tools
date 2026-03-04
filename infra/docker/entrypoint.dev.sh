@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+export CI=true
+
 # ───────────────────────────────────────────────────────────
 # entrypoint.dev.sh — instala dependências apenas quando necessário
 # Compara hash do pnpm-lock.yaml com o salvo no volume de node_modules.

@@ -14,42 +14,77 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ── Plan ──────────────────────────────────────────
+
+model Plan {
+  id                      String    @id @default(cuid())
+  name                    String
+  slug                    String    @unique
+  description             String?
+  benefits                Json      @default("[]")
+  maxInstances            Int       @default(3)
+  maxUsers                Int       @default(5)
+  maxAssistants           Int       @default(1)
+  maxBroadcastsPerDay     Int       @default(5)
+  maxContactsPerBroadcast Int       @default(500)
+  price                   Decimal?  @db.Decimal(10, 2)
+  isDefault               Boolean   @default(false)
+  isActive                Boolean   @default(true)
+  sortOrder               Int       @default(0)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  tenants Tenant[]
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
 // ── Tenant ──────────────────────────────────────
 
 model Tenant {
   id             String    @id @default(cuid())
   name           String
   slug           String    @unique
-  plan           String    @default("free")
-  maxInstances   Int       @default(3)
+  planId         String
   protocolPrefix String    @default("SCHA")
   protocolSeq    Int       @default(999)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
+  plan          Plan       @relation(fields: [planId], references: [id])
   instances     Instance[]
   users         User[]
   contacts      Contact[]
   conversations Conversation[]
   messages      Message[]
+  pipelines     Pipeline[]
+  deals         Deal[]
+  dealNotes     DealNote[]
+  tags          Tag[]
+
+  @@index([planId])
 }
 
 // ── User ────────────────────────────────────────
 
 model User {
-  id        String    @id @default(cuid())
-  tenantId  String
-  email     String    @unique
-  name      String
-  password  String
-  role      String    @default("agent")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id           String    @id @default(cuid())
+  tenantId     String
+  email        String    @unique
+  name         String
+  password     String
+  role         String    @default("agent")
+  isSuperAdmin Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id])
   conversations Conversation[] @relation("AssignedConversations")
+  assignedDeals Deal[]         @relation("DealAssignee")
+  dealNotes     DealNote[]     @relation("DealNoteAuthor")
 
   @@index([tenantId])
 }
@@ -90,13 +125,14 @@ model Contact {
   phone     String
   name      String?
   avatarUrl String?
-  tags      String[]  @default([])
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   tenant        Tenant         @relation(fields: [tenantId], references: [id])
   conversations Conversation[]
+  deals         Deal[]
+  contactTags   ContactTag[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -128,11 +164,12 @@ model Conversation {
   updatedAt     DateTime           @updatedAt
   deletedAt     DateTime?
 
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
-  instance   Instance @relation(fields: [instanceId], references: [id])
-  contact    Contact  @relation(fields: [contactId], references: [id])
-  assignedTo User?    @relation("AssignedConversations", fields: [assignedToId], references: [id])
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  instance   Instance  @relation(fields: [instanceId], references: [id])
+  contact    Contact   @relation(fields: [contactId], references: [id])
+  assignedTo User?     @relation("AssignedConversations", fields: [assignedToId], references: [id])
   messages   Message[]
+  deals      Deal[]
 
   @@unique([tenantId, protocol])
   @@index([tenantId])
@@ -164,27 +201,145 @@ enum MessageStatus {
 }
 
 model Message {
-  id               String        @id @default(cuid())
-  tenantId         String
-  conversationId   String
-  quotedMessageId  String?
-  fromMe           Boolean       @default(false)
-  fromBot          Boolean       @default(false)
-  body             String?
-  type             MessageType   @default(TEXT)
-  status           MessageStatus @default(PENDING)
-  evolutionId      String?
-  mediaUrl         String?
-  sentAt           DateTime      @default(now())
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  tenantId        String
+  conversationId  String
+  quotedMessageId String?
+  fromMe          Boolean       @default(false)
+  fromBot         Boolean       @default(false)
+  body            String?
+  type            MessageType   @default(TEXT)
+  status          MessageStatus @default(PENDING)
+  evolutionId     String?
+  mediaUrl        String?
+  sentAt          DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  tenant         Tenant       @relation(fields: [tenantId], references: [id])
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  quotedMessage  Message?     @relation("QuotedMessage", fields: [quotedMessageId], references: [id])
-  replies        Message[]    @relation("QuotedMessage")
+  tenant        Tenant       @relation(fields: [tenantId], references: [id])
+  conversation  Conversation @relation(fields: [conversationId], references: [id])
+  quotedMessage Message?     @relation("QuotedMessage", fields: [quotedMessageId], references: [id])
+  replies       Message[]    @relation("QuotedMessage")
 
   @@index([conversationId])
   @@index([tenantId])
   @@index([evolutionId])
+}
+
+// ── CRM: Pipeline & Deals ────────────────────────
+
+enum PipelineStageType {
+  ACTIVE
+  WON
+  LOST
+}
+
+model Pipeline {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant          @relation(fields: [tenantId], references: [id])
+  stages PipelineStage[]
+  deals  Deal[]
+
+  @@index([tenantId])
+}
+
+model PipelineStage {
+  id         String            @id @default(cuid())
+  pipelineId String
+  name       String
+  color      String            @default("#6B7280")
+  type       PipelineStageType @default(ACTIVE)
+  order      Int
+  isDefault  Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  pipeline Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals    Deal[]
+
+  @@unique([pipelineId, order])
+  @@index([pipelineId])
+}
+
+model Deal {
+  id             String    @id @default(cuid())
+  tenantId       String
+  pipelineId     String
+  stageId        String
+  contactId      String
+  conversationId String?
+  assignedToId   String?
+  title          String?
+  value          Decimal?  @db.Decimal(10, 2)
+  wonAt          DateTime?
+  lostAt         DateTime?
+  lostReason     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  pipeline     Pipeline      @relation(fields: [pipelineId], references: [id])
+  stage        PipelineStage @relation(fields: [stageId], references: [id])
+  contact      Contact       @relation(fields: [contactId], references: [id])
+  conversation Conversation? @relation(fields: [conversationId], references: [id])
+  assignedTo   User?         @relation("DealAssignee", fields: [assignedToId], references: [id])
+  notes        DealNote[]
+
+  @@index([tenantId])
+  @@index([tenantId, contactId])
+  @@index([tenantId, stageId])
+  @@index([conversationId])
+}
+
+model DealNote {
+  id        String   @id @default(cuid())
+  dealId    String
+  tenantId  String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deal   Deal   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  author User   @relation("DealNoteAuthor", fields: [authorId], references: [id])
+
+  @@index([dealId])
+  @@index([tenantId])
+}
+
+// ── CRM: Tags ─────────────────────────────────────
+
+model Tag {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  color     String   @default("#6B7280")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id])
+  contacts ContactTag[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model ContactTag {
+  contactId String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@index([tagId])
 }

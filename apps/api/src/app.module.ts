@@ -4,10 +4,14 @@ import { AuthModule } from './modules/auth/auth.module'
 import { InstancesModule } from './modules/instances/instances.module'
 import { ContactsModule } from './modules/contacts/contacts.module'
 import { InboxModule } from './modules/inbox/inbox.module'
+import { PipelineModule } from './modules/pipeline/pipeline.module'
+import { TagModule } from './modules/tag/tag.module'
+import { PlanModule } from './modules/plan/plan.module'
 
 import { TenantsModule } from './modules/tenants/tenants.module'
+import { DealModule } from './modules/deal/deal.module'
 // TODO: importar módulos de negócio conforme forem implementados
-// import { UsersModule } from './modules/users/users.module'
+import { UsersModule } from './modules/users/users.module'
 // import { BroadcastsModule } from './modules/broadcasts/broadcasts.module'
 // import { GroupsModule } from './modules/groups/groups.module'
 // import { AssistantsModule } from './modules/assistants/assistants.module'
@@ -17,11 +21,15 @@ import { TenantsModule } from './modules/tenants/tenants.module'
   imports: [
     CoreModule,
     AuthModule,
+    PlanModule,
     InstancesModule,
     ContactsModule,
     InboxModule,
+    PipelineModule,
+    TagModule,
     TenantsModule,
-    // UsersModule,
+    DealModule,
+    UsersModule,
     // BroadcastsModule,
     // GroupsModule,
     // AssistantsModule,

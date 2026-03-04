@@ -26,7 +26,10 @@ executar os passos abaixo na ordem, sem exceção. Não iniciar código antes de
 - [ ] Resposta segue envelope padrão `{ data, meta }` ou `{ error }`
 - [ ] DTOs validados com Zod
 - [ ] Operações longas/falháveis delegadas para fila BullMQ
-- [ ] Teste unitário no `service` cobrindo fluxo principal
+- [ ] Teste unitário no `service` cobrindo fluxo principal e cenários de erro
+- [ ] Testes seguem o padrão existente (`*.service.spec.ts` em `__tests__/`)
+- [ ] Mocks de dependências (repository, serviços externos, gateways)
+- [ ] Cobertura mínima: happy path + validações + error cases de cada método público
 - [ ] Variáveis de ambiente novas documentadas no `.env.example`
 - [ ] Migration com nome descritivo (`YYYYMMDD_descricao`)
 
@@ -50,7 +53,59 @@ modules/nome/
 
 ---
 
-## Passo 4 — Schema Prisma base obrigatório
+## Passo 4 — Testes obrigatórios
+
+Todo módulo DEVE ter testes unitários no service. Seguir o padrão de `inbox.service.spec.ts`:
+
+```
+modules/nome/__tests__/
+└── nome.service.spec.ts
+```
+
+### Estrutura do teste
+```typescript
+describe('NomeService', () => {
+  let service: NomeService
+  let repository: jest.Mocked<NomeRepository>
+  // ... outros mocks
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        NomeService,
+        { provide: NomeRepository, useValue: createMock<NomeRepository>() },
+      ],
+    }).compile()
+    service = module.get(NomeService)
+    repository = module.get(NomeRepository)
+  })
+
+  describe('metodoPublico', () => {
+    it('deve retornar resultado esperado no happy path', () => {})
+    it('deve lançar erro quando input inválido', () => {})
+    it('deve lançar erro quando recurso não encontrado', () => {})
+  })
+})
+```
+
+### Cobertura mínima exigida
+- ✅ Happy path de cada método público do service
+- ✅ Cenários de erro (not found, duplicado, permissão)
+- ✅ Validações de negócio (ex: último admin, deal já fechado)
+- ✅ Edge cases relevantes (ex: soft delete, filtros por tenant)
+- ❌ NÃO testar controller (testado via e2e)
+- ❌ NÃO testar repository (acesso direto ao Prisma)
+
+### Rodar testes
+```bash
+pnpm --filter @repo/api test              # todos os testes
+pnpm --filter @repo/api test -- --coverage # com coverage
+pnpm --filter @repo/api test -- nome.service  # teste específico
+```
+
+---
+
+## Passo 5 — Schema Prisma base obrigatório
 
 Toda tabela nova de negócio começa com:
 

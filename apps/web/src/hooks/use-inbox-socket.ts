@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { getSocket } from '@/lib/socket'
 import { apiGet } from '@/lib/api'
 import { useInboxStore, type Conversation, type InboxTab, type Message, type MessageStatus } from '@/stores/inbox.store'
-import { useAuthStore } from '@/stores/auth.store'
 
 const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3'
 
@@ -23,39 +22,18 @@ function updateDocumentTitle(unreadTotal: number) {
   document.title = unreadTotal > 0 ? `(${unreadTotal}) ${base}` : base
 }
 
-const ALL_TABS: InboxTab[] = ['pending', 'mine', 'all', 'closed']
-
-function tabToFilters(tab: InboxTab, userId: string | undefined) {
-  const params = new URLSearchParams()
-  switch (tab) {
-    case 'pending':
-      params.set('status', 'PENDING')
-      break
-    case 'mine':
-      params.set('status', 'OPEN')
-      if (userId) params.set('assignedToId', userId)
-      break
-    case 'all':
-      break
-    case 'closed':
-      params.set('status', 'CLOSE')
-      break
-  }
-  return params.toString()
-}
+const ALL_TABS: InboxTab[] = ['all', 'mine', 'unassigned']
 
 async function refreshInbox() {
   const { activeTab, setConversations, setTabCount } = useInboxStore.getState()
-  const userId = useAuthStore.getState().user?.id
 
   await Promise.all(
     ALL_TABS.map(async (tab) => {
       try {
-        const query = tabToFilters(tab, userId)
         const isActive = tab === activeTab
 
         const res = await apiGet<{ data: Conversation[]; meta: { total: number } }>(
-          `inbox/conversations${query ? `?${query}` : ''}${isActive ? '' : (query ? '&' : '?') + 'limit=1'}`,
+          `inbox/conversations?tab=${tab}${isActive ? '' : '&limit=1'}`,
         )
 
         setTabCount(tab, res.meta.total)

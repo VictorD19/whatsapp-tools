@@ -5,5 +5,6 @@ export interface TenantRequest {
     tenantId: string
     email: string
     role: string
+    isSuperAdmin: boolean
   }
 }

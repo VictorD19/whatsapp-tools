@@ -11,10 +11,9 @@ import { ConversationListItem } from './conversation-list-item'
 import { cn } from '@/lib/utils'
 
 const tabs: { key: InboxTab; label: string; shortLabel: string }[] = [
-  { key: 'pending', label: 'Pendentes', shortLabel: 'Pend.' },
-  { key: 'mine', label: 'Minhas', shortLabel: 'Minhas' },
   { key: 'all', label: 'Todas', shortLabel: 'Todas' },
-  { key: 'closed', label: 'Encerradas', shortLabel: 'Enc.' },
+  { key: 'mine', label: 'Minhas', shortLabel: 'Minhas' },
+  { key: 'unassigned', label: 'Sem atendente', shortLabel: 'Livres' },
 ]
 
 export function ConversationList() {

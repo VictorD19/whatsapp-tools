@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const conversationFiltersSchema = z.object({
+  tab: z.enum(['all', 'mine', 'unassigned']).optional(),
   status: z.enum(['PENDING', 'OPEN', 'CLOSE']).optional(),
   assignedToMe: z.coerce.boolean().optional(),
   assignedToId: z.string().optional(),

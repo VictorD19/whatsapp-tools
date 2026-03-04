@@ -12,7 +12,9 @@ export class InboxRepository {
     tenantId: string,
     filters: {
       status?: ConversationStatus
+      statusNot?: ConversationStatus
       assignedToId?: string
+      unassigned?: boolean
       instanceId?: string
       page: number
       limit: number
@@ -22,7 +24,9 @@ export class InboxRepository {
       tenantId,
       deletedAt: null,
       ...(filters.status && { status: filters.status }),
+      ...(filters.statusNot && { status: { not: filters.statusNot } }),
       ...(filters.assignedToId && { assignedToId: filters.assignedToId }),
+      ...(filters.unassigned && { assignedToId: null }),
       ...(filters.instanceId && { instanceId: filters.instanceId }),
     }
 
@@ -37,6 +41,15 @@ export class InboxRepository {
             select: { body: true, type: true, fromMe: true },
             orderBy: { sentAt: 'desc' },
             take: 1,
+          },
+          deals: {
+            where: { deletedAt: null },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            include: {
+              stage: { select: { id: true, name: true, color: true, type: true } },
+              pipeline: { select: { id: true, name: true } },
+            },
           },
         },
         orderBy: { lastMessageAt: { sort: 'desc', nulls: 'last' } },
@@ -60,6 +73,15 @@ export class InboxRepository {
           select: { body: true, type: true, fromMe: true },
           orderBy: { sentAt: 'desc' },
           take: 1,
+        },
+        deals: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            stage: { select: { id: true, name: true, color: true, type: true } },
+            pipeline: { select: { id: true, name: true } },
+          },
         },
       },
     })

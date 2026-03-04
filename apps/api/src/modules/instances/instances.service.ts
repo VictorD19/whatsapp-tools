@@ -34,18 +34,19 @@ export class InstancesService {
     // Check instance limit
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { maxInstances: true, slug: true },
+      select: { slug: true, plan: { select: { maxInstances: true } } },
     })
     if (!tenant) {
       throw AppException.notFound('TENANT_NOT_FOUND', 'Tenant não encontrado')
     }
 
+    const maxInstances = tenant.plan.maxInstances
     const count = await this.repository.countByTenant(tenantId)
-    if (count >= tenant.maxInstances) {
+    if (count >= maxInstances) {
       throw new AppException(
         'INSTANCE_LIMIT_REACHED',
-        `Limite de ${tenant.maxInstances} instâncias atingido`,
-        { current: count, max: tenant.maxInstances },
+        `Limite de ${maxInstances} instâncias atingido`,
+        { current: count, max: maxInstances },
       )
     }
 

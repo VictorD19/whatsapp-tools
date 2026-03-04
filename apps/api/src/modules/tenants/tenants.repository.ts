@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
 import { PrismaService } from '@core/database/prisma.service'
+import { TenantFiltersDto } from './dto/tenant-filters.dto'
 
 @Injectable()
 export class TenantsRepository {
@@ -33,6 +35,121 @@ export class TenantsRepository {
     return this.prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { protocolPrefix: true, protocolSeq: true },
+    })
+  }
+
+  // ── Admin CRUD ──
+
+  async findAll(filters: TenantFiltersDto) {
+    const where: Prisma.TenantWhereInput = { deletedAt: null }
+
+    if (filters.search) {
+      where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { slug: { contains: filters.search, mode: 'insensitive' } },
+      ]
+    }
+
+    if (filters.planId) {
+      where.planId = filters.planId
+    }
+
+    const skip = (filters.page - 1) * filters.limit
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.tenant.findMany({
+        where,
+        skip,
+        take: filters.limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          plan: {
+            select: { id: true, name: true, slug: true },
+          },
+          _count: {
+            select: {
+              users: { where: { deletedAt: null } },
+              instances: true,
+            },
+          },
+        },
+      }),
+      this.prisma.tenant.count({ where }),
+    ])
+
+    return { data, total }
+  }
+
+  async findByIdWithStats(id: string) {
+    return this.prisma.tenant.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        plan: {
+          select: { id: true, name: true, slug: true },
+        },
+        _count: {
+          select: {
+            users: { where: { deletedAt: null } },
+            instances: true,
+            conversations: true,
+          },
+        },
+      },
+    })
+  }
+
+  async findBySlug(slug: string) {
+    return this.prisma.tenant.findFirst({
+      where: { slug, deletedAt: null },
+    })
+  }
+
+  async create(data: {
+    name: string
+    slug: string
+    planId: string
+  }) {
+    return this.prisma.tenant.create({ data })
+  }
+
+  async createAdminUser(data: {
+    tenantId: string
+    name: string
+    email: string
+    password: string
+  }) {
+    return this.prisma.user.create({
+      data: {
+        ...data,
+        role: 'admin',
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    })
+  }
+
+  async findUserByEmail(email: string) {
+    return this.prisma.user.findFirst({
+      where: { email, deletedAt: null },
+    })
+  }
+
+  async update(id: string, data: Prisma.TenantUpdateInput) {
+    return this.prisma.tenant.update({
+      where: { id },
+      data,
+    })
+  }
+
+  async softDelete(id: string) {
+    return this.prisma.tenant.update({
+      where: { id },
+      data: { deletedAt: new Date() },
     })
   }
 }

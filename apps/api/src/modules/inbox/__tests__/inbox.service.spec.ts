@@ -37,6 +37,7 @@ describe('InboxService', () => {
     instance: { id: 'inst-1', name: 'vendas', evolutionId: 'acme-vendas' },
     assignedTo: null,
     messages: [],
+    deals: [],
   }
 
   beforeEach(async () => {
@@ -111,7 +112,9 @@ describe('InboxService', () => {
       expect(result.meta.total).toBe(1)
       expect(repository.findConversations).toHaveBeenCalledWith(tenantId, {
         status: undefined,
+        statusNot: undefined,
         assignedToId: undefined,
+        unassigned: false,
         instanceId: undefined,
         page: 1,
         limit: 20,
@@ -132,7 +135,9 @@ describe('InboxService', () => {
 
       expect(repository.findConversations).toHaveBeenCalledWith(tenantId, {
         status: undefined,
+        statusNot: undefined,
         assignedToId: userId,
+        unassigned: false,
         instanceId: undefined,
         page: 1,
         limit: 20,

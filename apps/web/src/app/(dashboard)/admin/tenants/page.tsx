@@ -1,0 +1,661 @@
+'use client'
+
+import React, { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Building,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  Radio,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { EmptyState } from '@/components/shared/empty-state'
+import { toast } from '@/components/ui/toaster'
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth.store'
+
+// ── Types ──
+
+interface PlanOption {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  maxInstances: number
+  maxUsers: number
+  isDefault: boolean
+}
+
+interface Tenant {
+  id: string
+  name: string
+  slug: string
+  planId: string
+  plan?: { id: string; name: string; slug: string }
+  createdAt: string
+  updatedAt: string
+  _count?: {
+    users: number
+    instances: number
+  }
+}
+
+interface PaginatedResponse {
+  data: Tenant[]
+  meta: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+interface SingleResponse {
+  data: Tenant
+}
+
+// ── Slug helper ──
+
+function toSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9-\s]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+// ── Component ──
+
+export default function TenantsPage() {
+  const router = useRouter()
+  const { user } = useAuthStore()
+
+  // Access control
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  // Plans
+  const [activePlans, setActivePlans] = useState<PlanOption[]>([])
+
+  // List state
+  const [tenants, setTenants] = useState<Tenant[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 })
+
+  // Dialog state
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null)
+  const [deletingTenant, setDeletingTenant] = useState<Tenant | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  // Create form state
+  const [formName, setFormName] = useState('')
+  const [formSlug, setFormSlug] = useState('')
+  const [formSlugManual, setFormSlugManual] = useState(false)
+  const [formPlanId, setFormPlanId] = useState('')
+  const [formAdminName, setFormAdminName] = useState('')
+  const [formAdminEmail, setFormAdminEmail] = useState('')
+  const [formAdminPassword, setFormAdminPassword] = useState('')
+
+  // Edit form state
+  const [editName, setEditName] = useState('')
+  const [editPlanId, setEditPlanId] = useState('')
+
+  // Auto-generate slug from name
+  useEffect(() => {
+    if (!formSlugManual) {
+      setFormSlug(toSlug(formName))
+    }
+  }, [formName, formSlugManual])
+
+  // Debounced search
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  // Fetch active plans
+  const fetchPlans = useCallback(async () => {
+    try {
+      const res = await apiGet<{ data: PlanOption[] }>('admin/plans/active')
+      setActivePlans(res.data)
+    } catch {
+      // silent — plans will be empty
+    }
+  }, [])
+
+  // Fetch tenants
+  const fetchTenants = useCallback(async (currentPage: number, searchQuery: string) => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: '20',
+      })
+      if (searchQuery.trim()) {
+        params.set('search', searchQuery.trim())
+      }
+      const res = await apiGet<PaginatedResponse>(`admin/tenants?${params.toString()}`)
+      setTenants(res.data)
+      setMeta(res.meta)
+    } catch {
+      toast({ title: 'Erro ao carregar tenants', variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (mounted && user?.isSuperAdmin) {
+      fetchPlans()
+      fetchTenants(page, debouncedSearch)
+    }
+  }, [mounted, user?.isSuperAdmin, page, debouncedSearch, fetchPlans, fetchTenants])
+
+  // ── Handlers ──
+
+  const getDefaultPlanId = () => {
+    const defaultPlan = activePlans.find((p) => p.isDefault)
+    return defaultPlan?.id ?? activePlans[0]?.id ?? ''
+  }
+
+  const openCreateDialog = () => {
+    setFormName('')
+    setFormSlug('')
+    setFormSlugManual(false)
+    setFormPlanId(getDefaultPlanId())
+    setFormAdminName('')
+    setFormAdminEmail('')
+    setFormAdminPassword('')
+    setCreateOpen(true)
+  }
+
+  const openEditDialog = (tenant: Tenant) => {
+    setEditingTenant(tenant)
+    setEditName(tenant.name)
+    setEditPlanId(tenant.plan?.id ?? tenant.planId)
+    setEditOpen(true)
+  }
+
+  const openDeleteDialog = (tenant: Tenant) => {
+    setDeletingTenant(tenant)
+    setDeleteOpen(true)
+  }
+
+  const handleCreate = async () => {
+    if (!formName.trim() || !formSlug.trim() || !formPlanId || !formAdminName.trim() || !formAdminEmail.trim() || !formAdminPassword.trim()) return
+    if (formAdminPassword.length < 6) {
+      toast({ title: 'Senha deve ter no minimo 6 caracteres', variant: 'destructive' })
+      return
+    }
+    setSaving(true)
+    try {
+      await apiPost<SingleResponse>('admin/tenants', {
+        name: formName.trim(),
+        slug: formSlug.trim(),
+        planId: formPlanId,
+        adminName: formAdminName.trim(),
+        adminEmail: formAdminEmail.trim(),
+        adminPassword: formAdminPassword,
+      })
+      toast({ title: 'Tenant criado com sucesso', variant: 'success' })
+      setCreateOpen(false)
+      fetchTenants(page, debouncedSearch)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao criar tenant'
+      toast({ title: message, variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEdit = async () => {
+    if (!editingTenant || !editName.trim() || !editPlanId) return
+    setSaving(true)
+    try {
+      const res = await apiPatch<SingleResponse>(`admin/tenants/${editingTenant.id}`, {
+        name: editName.trim(),
+        planId: editPlanId,
+      })
+      setTenants((prev) =>
+        prev.map((t) => (t.id === editingTenant.id ? { ...t, ...res.data } : t)),
+      )
+      toast({ title: 'Tenant atualizado', variant: 'success' })
+      setEditOpen(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao atualizar tenant'
+      toast({ title: message, variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deletingTenant) return
+    setSaving(true)
+    try {
+      await apiDelete(`admin/tenants/${deletingTenant.id}`)
+      toast({ title: 'Tenant excluido', variant: 'success' })
+      setDeleteOpen(false)
+      fetchTenants(page, debouncedSearch)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao excluir tenant'
+      toast({ title: message, variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSlugChange = (value: string) => {
+    setFormSlugManual(true)
+    setFormSlug(toSlug(value))
+  }
+
+  // ── Access control ──
+
+  if (!mounted) {
+    return null
+  }
+
+  if (!user?.isSuperAdmin) {
+    router.replace('/inbox')
+    return null
+  }
+
+  // ── Render: Loading ──
+
+  if (loading && tenants.length === 0) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-9 w-36" />
+        </div>
+        <Skeleton className="h-9 w-72" />
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Render: Page ──
+
+  const createFormValid =
+    formName.trim() &&
+    formSlug.trim() &&
+    formPlanId &&
+    formAdminName.trim() &&
+    formAdminEmail.trim() &&
+    formAdminPassword.length >= 6
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Tenants</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie as empresas cadastradas na plataforma
+          </p>
+        </div>
+        <Button size="sm" onClick={openCreateDialog}>
+          <Plus className="h-4 w-4" />
+          Novo Tenant
+        </Button>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nome ou slug..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {/* Tenants list */}
+      {tenants.length === 0 && !loading ? (
+        <EmptyState
+          icon={Building}
+          title={debouncedSearch ? 'Nenhum tenant encontrado' : 'Nenhum tenant cadastrado'}
+          description={
+            debouncedSearch
+              ? 'Tente buscar com outros termos'
+              : 'Crie o primeiro tenant para comecar'
+          }
+          action={
+            debouncedSearch
+              ? undefined
+              : { label: 'Criar tenant', onClick: openCreateDialog }
+          }
+        />
+      ) : (
+        <>
+          <div className="rounded-md border border-border overflow-hidden">
+            {/* Table header */}
+            <div className="hidden sm:grid sm:grid-cols-[1fr_100px_140px_100px_80px] gap-4 px-4 py-2.5 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <span>Tenant</span>
+              <span>Plano</span>
+              <span>Recursos</span>
+              <span>Criado em</span>
+              <span className="text-right">Acoes</span>
+            </div>
+
+            {/* Rows */}
+            {tenants.map((tenant) => (
+              <div
+                key={tenant.id}
+                className="flex flex-col sm:grid sm:grid-cols-[1fr_100px_140px_100px_80px] gap-2 sm:gap-4 sm:items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
+              >
+                {/* Name + slug */}
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{tenant.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{tenant.slug}</p>
+                </div>
+
+                {/* Plan badge */}
+                <div>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {tenant.plan?.name ?? '—'}
+                  </Badge>
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {tenant._count?.users ?? 0}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Radio className="h-3 w-3" />
+                    {tenant._count?.instances ?? 0}
+                  </span>
+                </div>
+
+                {/* Created at */}
+                <span className="text-xs text-muted-foreground">
+                  {new Date(tenant.createdAt).toLocaleDateString('pt-BR')}
+                </span>
+
+                {/* Actions */}
+                <div className="flex items-center gap-0.5 sm:justify-end">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => openEditDialog(tenant)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive"
+                    onClick={() => openDeleteDialog(tenant)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {meta.totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-muted-foreground">
+                {meta.total} {meta.total === 1 ? 'tenant' : 'tenants'}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {page} / {meta.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= meta.totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Proximo
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Create Tenant Dialog ── */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Novo Tenant</DialogTitle>
+            <DialogDescription>
+              Crie uma nova empresa e seu usuario administrador
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Company name */}
+            <div className="space-y-1.5">
+              <Label htmlFor="create-name">Nome da empresa</Label>
+              <Input
+                id="create-name"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="Minha Empresa LTDA"
+                maxLength={100}
+              />
+            </div>
+
+            {/* Slug */}
+            <div className="space-y-1.5">
+              <Label htmlFor="create-slug">Slug</Label>
+              <Input
+                id="create-slug"
+                value={formSlug}
+                onChange={(e) => handleSlugChange(e.target.value)}
+                placeholder="minha-empresa"
+                maxLength={60}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Identificador unico. Apenas letras minusculas, numeros e hifens.
+              </p>
+            </div>
+
+            {/* Plan select */}
+            <div className="space-y-1.5">
+              <Label>Plano</Label>
+              <div className="flex flex-wrap gap-2">
+                {activePlans.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setFormPlanId(p.id)}
+                    className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                      formPlanId === p.id
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border hover:bg-accent'
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Admin section */}
+            <p className="text-sm font-medium text-muted-foreground">Usuario administrador</p>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="create-admin-name">Nome do admin</Label>
+              <Input
+                id="create-admin-name"
+                value={formAdminName}
+                onChange={(e) => setFormAdminName(e.target.value)}
+                placeholder="Joao Silva"
+                maxLength={100}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="create-admin-email">Email do admin</Label>
+              <Input
+                id="create-admin-email"
+                type="email"
+                value={formAdminEmail}
+                onChange={(e) => setFormAdminEmail(e.target.value)}
+                placeholder="joao@empresa.com"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="create-admin-password">Senha do admin</Label>
+              <Input
+                id="create-admin-password"
+                type="password"
+                value={formAdminPassword}
+                onChange={(e) => setFormAdminPassword(e.target.value)}
+                placeholder="Min. 6 caracteres"
+                minLength={6}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreate} disabled={saving || !createFormValid}>
+              {saving ? 'Criando...' : 'Criar Tenant'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Edit Tenant Dialog ── */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Tenant</DialogTitle>
+            <DialogDescription>
+              Altere as informacoes do tenant{' '}
+              <strong>{editingTenant?.name}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-name">Nome</Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                maxLength={100}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Plano</Label>
+              <div className="flex flex-wrap gap-2">
+                {activePlans.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setEditPlanId(p.id)}
+                    className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                      editPlanId === p.id
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border hover:bg-accent'
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEdit} disabled={saving || !editName.trim() || !editPlanId}>
+              {saving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete Confirmation Dialog ── */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Excluir tenant</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o tenant{' '}
+              <strong>{deletingTenant?.name}</strong>? Isso desativara o tenant e
+              todos seus dados.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={saving}>
+              {saving ? 'Excluindo...' : 'Excluir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

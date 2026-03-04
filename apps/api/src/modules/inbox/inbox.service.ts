@@ -27,14 +27,40 @@ export class InboxService {
     filters: ConversationFiltersDto,
     userId?: string,
   ) {
-    // Resolve assignedToMe into assignedToId
-    const assignedToId = filters.assignedToMe && userId
-      ? userId
-      : filters.assignedToId
+    // Tab-based filtering takes priority over raw status/assignedToId
+    let status: ConversationStatus | undefined = filters.status as ConversationStatus | undefined
+    let statusNot: ConversationStatus | undefined
+    let assignedToId: string | undefined = filters.assignedToId
+    let unassigned = false
+
+    if (filters.tab) {
+      switch (filters.tab) {
+        case 'all':
+          // All active conversations (not closed)
+          status = undefined
+          statusNot = 'CLOSE'
+          assignedToId = undefined
+          break
+        case 'mine':
+          // Assigned to current user, not closed
+          statusNot = 'CLOSE'
+          assignedToId = userId
+          break
+        case 'unassigned':
+          // No assignment, pending status
+          status = 'PENDING'
+          unassigned = true
+          break
+      }
+    } else if (filters.assignedToMe && userId) {
+      assignedToId = userId
+    }
 
     const { conversations, total } = await this.repository.findConversations(tenantId, {
-      status: filters.status as ConversationStatus | undefined,
+      status,
+      statusNot,
       assignedToId,
+      unassigned,
       instanceId: filters.instanceId,
       page: filters.page,
       limit: filters.limit,

@@ -25,6 +25,7 @@ interface LoginResponse {
       name: string
       email: string
       role: string
+      isSuperAdmin: boolean
       tenant: { id: string; name: string; slug: string; plan: string }
     }
   }
@@ -61,6 +62,7 @@ export default function LoginPage() {
           email: user.email,
           role: user.role as 'admin' | 'agent' | 'viewer',
           tenantId: user.tenant.id,
+          isSuperAdmin: user.isSuperAdmin,
         },
         accessToken,
       )
@@ -73,9 +75,9 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-zinc-950 overflow-hidden px-6 py-12">
       {/* Glows globais */}
-      <div className="pointer-events-none absolute -top-48 -left-48 h-[600px] w-[600px] rounded-full bg-emerald-500/10 blur-[140px]" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-emerald-600/8 blur-[120px]" />
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-emerald-500/4 blur-[160px]" />
+      <div className="pointer-events-none absolute -top-48 -left-48 h-[600px] w-[600px] rounded-full bg-primary/10 blur-[140px]" />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-primary/10 blur-[120px]" />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-primary/5 blur-[160px]" />
 
       <div className="relative z-10 flex w-full max-w-5xl items-center gap-16 lg:gap-24">
 
@@ -83,7 +85,7 @@ export default function LoginPage() {
         <div className="hidden lg:flex flex-1 flex-col space-y-10">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 shadow-lg shadow-emerald-500/30">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/30">
               <MessageSquare className="h-4 w-4 text-white" />
             </div>
             <span className="text-[14px] font-semibold text-white tracking-tight">WhatsApp Tools</span>
@@ -91,13 +93,13 @@ export default function LoginPage() {
 
           {/* Copy */}
           <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[11px] font-medium text-emerald-400 tracking-wide uppercase">Plataforma completa</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse" />
+              <span className="text-[11px] font-medium text-primary-400 tracking-wide uppercase">Plataforma completa</span>
             </div>
             <h2 className="text-[38px] font-bold leading-[1.1] text-white">
               Venda mais pelo<br />
-              <span className="text-emerald-400">WhatsApp</span>
+              <span className="text-primary-400">WhatsApp</span>
             </h2>
             <p className="text-[14px] leading-relaxed text-zinc-400 max-w-[380px]">
               Gerencie conversas, dispare campanhas e feche negócios — tudo em um só lugar.
@@ -108,8 +110,8 @@ export default function LoginPage() {
           <ul className="space-y-3">
             {features.map(({ icon: Icon, text }) => (
               <li key={text} className="flex items-center gap-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/12 border border-emerald-500/20">
-                  <Icon className="h-3.5 w-3.5 text-emerald-400" />
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/12 border border-primary/20">
+                  <Icon className="h-3.5 w-3.5 text-primary-400" />
                 </div>
                 <span className="text-[13px] text-zinc-300">{text}</span>
               </li>
@@ -122,8 +124,8 @@ export default function LoginPage() {
               &quot;Triplicamos nossas vendas em 60 dias usando a plataforma para atendimento e disparos.&quot;
             </p>
             <div className="mt-3.5 flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/30">
-                <span className="text-[10px] font-bold text-emerald-400">MO</span>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 ring-1 ring-primary/30">
+                <span className="text-[10px] font-bold text-primary-400">MO</span>
               </div>
               <div>
                 <p className="text-[12px] font-medium text-white/80">Marcos Oliveira</p>
@@ -137,7 +139,7 @@ export default function LoginPage() {
         <div className="w-full lg:w-[360px] shrink-0">
           {/* Mobile logo */}
           <div className="mb-8 flex items-center gap-2 lg:hidden">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
               <MessageSquare className="h-3.5 w-3.5 text-white" />
             </div>
             <span className="text-[13px] font-semibold text-white">WhatsApp Tools</span>
@@ -157,7 +159,7 @@ export default function LoginPage() {
                   type="email"
                   placeholder="voce@empresa.com"
                   autoComplete="email"
-                  className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 text-sm text-gray-900 dark:text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 text-sm text-gray-900 dark:text-white placeholder:text-zinc-600 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                   {...register('email')}
                 />
                 {errors.email && <p className="text-[11px] text-red-400">{errors.email.message}</p>}
@@ -166,7 +168,7 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label htmlFor="password" className="block text-[12px] font-medium text-zinc-300">Senha</label>
-                  <Link href="/forgot-password" className="text-[11px] text-zinc-500 hover:text-emerald-400 transition-colors">
+                  <Link href="/forgot-password" className="text-[11px] text-zinc-500 hover:text-primary-400 transition-colors">
                     Esqueceu a senha?
                   </Link>
                 </div>
@@ -176,7 +178,7 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 pr-9 text-sm text-gray-900 dark:text-white placeholder:text-zinc-600 outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 pr-9 text-sm text-gray-900 dark:text-white placeholder:text-zinc-600 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                     {...register('password')}
                   />
                   <button
@@ -199,7 +201,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-9 rounded-lg bg-emerald-500 text-[13px] font-medium text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 active:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="w-full h-9 rounded-lg bg-primary text-[13px] font-medium text-white shadow-lg shadow-primary/25 hover:bg-primary-500 active:bg-primary-800 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <><Loader2 className="h-3.5 w-3.5 animate-spin" />Entrando...</>
@@ -209,7 +211,7 @@ export default function LoginPage() {
 
             <p className="mt-5 text-center text-[12px] text-zinc-500">
               Não tem uma conta?{' '}
-              <Link href="/register" className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
+              <Link href="/register" className="font-medium text-primary-400 hover:text-primary-300 transition-colors">
                 Criar conta grátis
               </Link>
             </p>

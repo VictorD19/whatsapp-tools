@@ -10,7 +10,7 @@ import type { Message } from '@/stores/inbox.store'
 const attachmentOptions = [
   { key: 'image', icon: Image, label: 'Imagem', color: 'text-violet-400' },
   { key: 'video', icon: Video, label: 'Vídeo', color: 'text-blue-400' },
-  { key: 'audio', icon: Mic, label: 'Áudio', color: 'text-emerald-400' },
+  { key: 'audio', icon: Mic, label: 'Áudio', color: 'text-primary-400' },
   { key: 'audio-recorded', icon: AudioLines, label: 'Áudio gravado', color: 'text-pink-400' },
   { key: 'document', icon: FileText, label: 'Documento', color: 'text-orange-400' },
 ]

@@ -16,7 +16,7 @@ describe('InstancesService', () => {
   let prisma: { tenant: { findUnique: jest.Mock } }
 
   const tenantId = 'tenant-123'
-  const mockTenant = { maxInstances: 3, slug: 'acme' }
+  const mockTenant = { slug: 'acme', plan: { maxInstances: 3 } }
 
   const mockInstance = {
     id: 'inst-1',

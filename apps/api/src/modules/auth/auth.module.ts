@@ -5,6 +5,9 @@ import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { AuthRepository } from './auth.repository'
 import { JwtStrategy } from './jwt.strategy'
+import { PipelineModule } from '@modules/pipeline/pipeline.module'
+import { TagModule } from '@modules/tag/tag.module'
+import { PlanModule } from '@modules/plan/plan.module'
 
 @Module({
   imports: [
@@ -13,6 +16,9 @@ import { JwtStrategy } from './jwt.strategy'
       secret: process.env.JWT_SECRET ?? 'change-me-in-production',
       signOptions: { expiresIn: '15m' },
     }),
+    PipelineModule,
+    TagModule,
+    PlanModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthRepository, JwtStrategy],

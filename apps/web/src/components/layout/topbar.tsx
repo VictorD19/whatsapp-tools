@@ -41,7 +41,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative h-7 w-7 text-muted-foreground hover:text-foreground">
           <Bell className="h-4 w-4" />
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-1 ring-background" />
+          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary ring-1 ring-background" />
         </Button>
 
         {/* Theme toggle */}

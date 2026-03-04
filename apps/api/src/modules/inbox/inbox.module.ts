@@ -5,6 +5,7 @@ import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module'
 import { ContactsModule } from '@modules/contacts/contacts.module'
 import { InstancesModule } from '@modules/instances/instances.module'
 import { TenantsModule } from '@modules/tenants/tenants.module'
+import { DealModule } from '@modules/deal/deal.module'
 import { InboxController } from './inbox.controller'
 import { InboxService } from './inbox.service'
 import { InboxRepository } from './inbox.repository'
@@ -20,6 +21,7 @@ import { ConversationImportProcessor } from './queues/import.processor'
     ContactsModule,
     InstancesModule,
     TenantsModule,
+    DealModule,
     BullModule.registerQueue(
       { name: QUEUES.WEBHOOK_INBOUND },
       { name: QUEUES.CONVERSATION_IMPORT },
