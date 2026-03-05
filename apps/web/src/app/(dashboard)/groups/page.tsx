@@ -139,16 +139,35 @@ export default function GroupsPage() {
 
   const handleExport = useCallback(
     (format: 'csv' | 'excel') => {
-      // Build temporary contactIds from phones — we use the export endpoint
-      // which supports contactListId if available
       if (extractedListId) {
         exportContacts(format, undefined, extractedListId)
-      } else {
-        // Fallback: export from extracted phones (server side will match)
-        exportContacts(format, undefined, undefined)
+        return
       }
+
+      // No list ID — generate file client-side from in-memory data
+      if (extractedContacts.length === 0) return
+
+      const separator = format === 'csv' ? ',' : '\t'
+      const header = `phone${separator}name${separator}group`
+      const rows = extractedContacts.map(
+        (c) =>
+          `${c.phone}${separator}"${(c.name || '').replace(/"/g, '""')}"${separator}"${c.groupName.replace(/"/g, '""')}"`,
+      )
+      const content = [header, ...rows].join('\n')
+      const ext = format === 'csv' ? 'csv' : 'xls'
+      const mime = format === 'csv' ? 'text/csv' : 'application/vnd.ms-excel'
+
+      const blob = new Blob([content], { type: mime })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `contacts-${Date.now()}.${ext}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
     },
-    [exportContacts, extractedListId],
+    [exportContacts, extractedListId, extractedContacts],
   )
 
   const handleCreateListFromResults = useCallback(() => {
