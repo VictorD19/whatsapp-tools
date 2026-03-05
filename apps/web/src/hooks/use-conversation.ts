@@ -81,10 +81,11 @@ export function useConversation() {
   }, [])
 
   const sendMessage = useCallback(
-    async (conversationId: string, body: string, quotedMessageId?: string) => {
+    async (conversationId: string, body: string, quotedMessageId?: string, mentions?: string[]) => {
       try {
-        const payload: Record<string, string> = { body }
+        const payload: Record<string, unknown> = { body }
         if (quotedMessageId) payload.quotedMessageId = quotedMessageId
+        if (mentions && mentions.length > 0) payload.mentions = mentions
 
         const res = await apiPost<ApiResponse<Message>>(
           `inbox/conversations/${conversationId}/messages`,

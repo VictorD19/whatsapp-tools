@@ -3,8 +3,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   Send, Paperclip, Smile, Image, FileText, Video, AudioLines, X, Music, Mic, Check,
-  Play, Pause,
+  Play, Pause, Loader2, AtSign,
 } from 'lucide-react'
+import type { GroupMember } from '@/hooks/use-group-members'
 import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data'
 import { cn } from '@/lib/utils'
@@ -44,6 +45,13 @@ function getDocMeta(mimetype: string, name: string): { label: string; bg: string
   if (/\.(zip|rar|7z)$/.test(name))
     return { label: 'ZIP', bg: 'bg-yellow-500/15', color: 'text-yellow-400' }
   return { label: 'ARQ', bg: 'bg-muted', color: 'text-muted-foreground' }
+}
+
+/** Returns pushName if available, otherwise the phone number */
+function memberDisplayName(member: GroupMember): string {
+  if (member.name) return member.name
+  if (member.phone) return member.phone
+  return member.id.split('@')[0]
 }
 
 /** Deterministic pseudo-waveform from filename chars */
@@ -273,13 +281,16 @@ function RecordingBar({ seconds, analyser, onCancel, onConfirm }: RecordingBarPr
 // ─── MessageInput ─────────────────────────────────────────────────────────────
 
 interface MessageInputProps {
-  onSend: (body: string) => Promise<void>
+  onSend: (body: string, mentions?: string[]) => Promise<void>
   onSendMedia?: (file: File, caption?: string) => Promise<void>
   disabled?: boolean
   placeholder?: string
   replyingTo?: Message | null
   onCancelReply?: () => void
   contactName?: string
+  isGroup?: boolean
+  groupMembers?: GroupMember[]
+  loadingMembers?: boolean
 }
 
 export function MessageInput({
@@ -290,6 +301,9 @@ export function MessageInput({
   replyingTo,
   onCancelReply,
   contactName,
+  isGroup = false,
+  groupMembers = [],
+  loadingMembers = false,
 }: MessageInputProps) {
   const instanceId = useRef(`msg-input-${Math.random().toString(36).slice(2)}`)
   const [message, setMessage] = useState('')
@@ -297,6 +311,11 @@ export function MessageInput({
   const [showEmoji, setShowEmoji] = useState(false)
   const [showAttach, setShowAttach] = useState(false)
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [showMention, setShowMention] = useState(false)
+  const [mentionFilter, setMentionFilter] = useState('')
+  const [trackedMentions, setTrackedMentions] = useState<{ jid: string; name: string }[]>([])
+  const [mentionIndex, setMentionIndex] = useState(0)
+  const mentionRef = useRef<HTMLDivElement>(null)
 
   // ── Recording state ──
   const [isRecording, setIsRecording] = useState(false)
@@ -331,12 +350,19 @@ export function MessageInput({
       ) {
         setShowAttach(false)
       }
+      if (
+        showMention &&
+        mentionRef.current &&
+        !mentionRef.current.contains(e.target as Node)
+      ) {
+        setShowMention(false)
+      }
     }
-    if (showEmoji || showAttach) {
+    if (showEmoji || showAttach || showMention) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showEmoji, showAttach])
+  }, [showEmoji, showAttach, showMention])
 
   // cleanup on unmount
   useEffect(() => {
@@ -349,6 +375,63 @@ export function MessageInput({
 
   function handleEmojiSelect(emoji: { native: string }) {
     setMessage((prev) => prev + emoji.native)
+    textareaRef.current?.focus()
+  }
+
+  function handleMessageChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const val = e.target.value
+    setMessage(val)
+
+    if (!isGroup) {
+      setShowMention(false)
+      return
+    }
+
+    // Find the last '@' that starts a mention (not inside brackets)
+    const cursorPos = e.target.selectionStart ?? val.length
+    const textUpToCursor = val.slice(0, cursorPos)
+    const lastAtIdx = textUpToCursor.lastIndexOf('@')
+
+    if (lastAtIdx >= 0) {
+      // Check the char before @ is space/start-of-text (word boundary)
+      const charBefore = lastAtIdx > 0 ? textUpToCursor[lastAtIdx - 1] : ' '
+      if (charBefore === ' ' || charBefore === '\n' || lastAtIdx === 0) {
+        const filterText = textUpToCursor.slice(lastAtIdx + 1)
+        // Only show if no space yet in filter (still typing a name)
+        if (!filterText.includes(' ') && !filterText.includes('[') && !filterText.includes(']')) {
+          setMentionFilter(filterText.toLowerCase())
+          setShowMention(true)
+          setMentionIndex(0)
+          return
+        }
+      }
+    }
+
+    setShowMention(false)
+  }
+
+  // Compute filtered members list for dropdown
+  const filteredMembers = groupMembers.filter((m) => {
+    const name = memberDisplayName(m).toLowerCase()
+    return name.includes(mentionFilter)
+  })
+
+  function insertMention(member: GroupMember) {
+    const cursorPos = textareaRef.current?.selectionStart ?? message.length
+    const textUpToCursor = message.slice(0, cursorPos)
+    const lastAtIdx = textUpToCursor.lastIndexOf('@')
+    if (lastAtIdx < 0) return
+
+    const displayName = memberDisplayName(member)
+    const before = message.slice(0, lastAtIdx)
+    const after = message.slice(cursorPos)
+    const newMessage = `${before}@[${displayName}] ${after}`
+    setMessage(newMessage)
+    setTrackedMentions((prev) => {
+      if (prev.some((m) => m.jid === member.id)) return prev
+      return [...prev, { jid: member.id, name: displayName }]
+    })
+    setShowMention(false)
     textareaRef.current?.focus()
   }
 
@@ -445,8 +528,17 @@ export function MessageInput({
     if (!message.trim()) return
     setSending(true)
     try {
-      await onSend(message.trim())
+      // If message contains @todos, auto-add all group members as mentions
+      let mentions: string[] | undefined
+      const hasAtTodos = message.includes('@todos')
+      if (hasAtTodos && isGroup && groupMembers.length > 0) {
+        mentions = groupMembers.map((m) => m.id)
+      } else if (trackedMentions.length > 0) {
+        mentions = trackedMentions.map((m) => m.jid)
+      }
+      await onSend(message.trim(), mentions)
       setMessage('')
+      setTrackedMentions([])
     } finally {
       setSending(false)
     }
@@ -615,25 +707,69 @@ export function MessageInput({
             onConfirm={confirmRecording}
           />
         ) : (
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={pendingFiles.length > 0 ? 'Adicionar legenda... (opcional)' : placeholder}
-            rows={1}
-            disabled={disabled}
-            className={cn(
-              'flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground',
-              'max-h-32 scrollbar-none disabled:cursor-not-allowed'
+          <div className="relative flex-1">
+            {/* Mention dropdown */}
+            {showMention && (
+              <div
+                ref={mentionRef}
+                className="absolute bottom-full mb-1 left-0 z-50 rounded-lg border border-border bg-popover shadow-xl overflow-hidden max-h-48 overflow-y-auto min-w-[200px]"
+              >
+                {loadingMembers ? (
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Carregando membros...</span>
+                  </div>
+                ) : (
+                  <>
+                    {/* Individual members */}
+                    {filteredMembers.map((member, idx) => (
+                      <button
+                        key={member.id}
+                        onMouseDown={(e) => { e.preventDefault(); insertMention(member) }}
+                        className={cn(
+                          'flex items-center gap-2.5 px-3 py-2 hover:bg-muted/60 transition-colors w-full text-left',
+                          mentionIndex === idx && 'bg-muted/40',
+                        )}
+                      >
+                        <AtSign className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="text-xs font-medium truncate">
+                          {memberDisplayName(member)}
+                        </span>
+                        {member.admin && (
+                          <span className="text-[9px] text-emerald-500 font-medium ml-auto shrink-0">Admin</span>
+                        )}
+                      </button>
+                    ))}
+
+                    {filteredMembers.length === 0 && mentionFilter && (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">
+                        Nenhum membro encontrado
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             )}
-            style={{ height: 'auto' }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement
-              target.style.height = 'auto'
-              target.style.height = Math.min(target.scrollHeight, 128) + 'px'
-            }}
-          />
+            <textarea
+              ref={textareaRef}
+              value={message}
+              onChange={handleMessageChange}
+              onKeyDown={handleKeyDown}
+              placeholder={pendingFiles.length > 0 ? 'Adicionar legenda... (opcional)' : placeholder}
+              rows={1}
+              disabled={disabled}
+              className={cn(
+                'w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground',
+                'max-h-32 scrollbar-none disabled:cursor-not-allowed'
+              )}
+              style={{ height: 'auto' }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement
+                target.style.height = 'auto'
+                target.style.height = Math.min(target.scrollHeight, 128) + 'px'
+              }}
+            />
+          </div>
         )}
 
         {/* Mic button (shown when not recording) */}

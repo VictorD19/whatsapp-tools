@@ -75,6 +75,8 @@ describe('InboxService', () => {
       sendVideo: jest.fn(),
       sendAudio: jest.fn(),
       sendDocument: jest.fn(),
+      sendGroupMention: jest.fn(),
+      getGroupMembers: jest.fn(),
       findMessages: jest.fn(),
     }
 
@@ -321,6 +323,114 @@ describe('InboxService', () => {
       await expect(
         service.sendMessage(tenantId, 'conv-1', userId, { body: 'Hello' }),
       ).rejects.toMatchObject({ code: 'MESSAGE_SEND_FAILED' })
+    })
+
+    it('should use sendGroupMention when mentions are provided in a group', async () => {
+      const groupConversation = {
+        ...openConversation,
+        contact: { id: 'contact-1', phone: '120363012345@g.us', name: 'Grupo Vendas', avatarUrl: null },
+      }
+      repository.findConversationById.mockResolvedValue(groupConversation)
+      whatsapp.sendGroupMention.mockResolvedValue({ messageId: 'evo-mention-1', status: 'sent' })
+      repository.createMessage.mockResolvedValue({
+        id: 'msg-mention-1',
+        tenantId,
+        conversationId: 'conv-1',
+        fromMe: true,
+        fromBot: false,
+        body: 'Ola @todos pessoal',
+        type: 'TEXT' as const,
+        status: 'SENT' as const,
+        evolutionId: 'evo-mention-1',
+        mediaUrl: null,
+        quotedMessageId: null,
+        quotedMessage: null,
+        sentAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      repository.updateLastMessageAt.mockResolvedValue({} as never)
+
+      const mentions = ['5511999@s.whatsapp.net', '5522888@s.whatsapp.net']
+      await service.sendMessage(tenantId, 'conv-1', userId, {
+        body: 'Ola @todos pessoal',
+        mentions,
+      })
+
+      expect(whatsapp.sendGroupMention).toHaveBeenCalledWith(
+        'acme-vendas',
+        '120363012345@g.us',
+        { text: 'Ola pessoal', mentions },
+      )
+      expect(whatsapp.sendText).not.toHaveBeenCalled()
+    })
+
+    it('should use sendText when mentions are provided but not a group', async () => {
+      repository.findConversationById.mockResolvedValue(openConversation)
+      whatsapp.sendText.mockResolvedValue({ messageId: 'evo-msg-3', status: 'sent' })
+      repository.createMessage.mockResolvedValue({
+        id: 'msg-3',
+        tenantId,
+        conversationId: 'conv-1',
+        fromMe: true,
+        fromBot: false,
+        body: 'Hello @[Joao] ',
+        type: 'TEXT' as const,
+        status: 'SENT' as const,
+        evolutionId: 'evo-msg-3',
+        mediaUrl: null,
+        quotedMessageId: null,
+        quotedMessage: null,
+        sentAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      repository.updateLastMessageAt.mockResolvedValue({} as never)
+
+      await service.sendMessage(tenantId, 'conv-1', userId, {
+        body: 'Hello @[Joao] ',
+        mentions: ['5511999@s.whatsapp.net'],
+      })
+
+      // Not a group, so sendText should be used instead
+      expect(whatsapp.sendText).toHaveBeenCalled()
+      expect(whatsapp.sendGroupMention).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('getGroupMembers', () => {
+    it('should return group members for a group conversation', async () => {
+      const groupConversation = {
+        ...mockConversation,
+        contact: { id: 'contact-1', phone: '120363012345@g.us', name: 'Grupo Vendas', avatarUrl: null },
+      }
+      repository.findConversationById.mockResolvedValue(groupConversation)
+      whatsapp.getGroupMembers.mockResolvedValue([
+        { id: '5511999@s.whatsapp.net', name: 'Joao', admin: true },
+        { id: '5522888@s.whatsapp.net', name: 'Maria', admin: false },
+      ])
+
+      const result = await service.getGroupMembers(tenantId, 'conv-1')
+
+      expect(result.data).toHaveLength(2)
+      expect(result.data[0].name).toBe('Joao')
+      expect(whatsapp.getGroupMembers).toHaveBeenCalledWith('acme-vendas', '120363012345@g.us')
+    })
+
+    it('should throw NOT_A_GROUP if conversation is not a group', async () => {
+      repository.findConversationById.mockResolvedValue(mockConversation)
+
+      await expect(
+        service.getGroupMembers(tenantId, 'conv-1'),
+      ).rejects.toMatchObject({ code: 'NOT_A_GROUP' })
+    })
+
+    it('should throw CONVERSATION_NOT_FOUND for invalid conversation', async () => {
+      repository.findConversationById.mockResolvedValue(null)
+
+      await expect(
+        service.getGroupMembers(tenantId, 'nonexistent'),
+      ).rejects.toMatchObject({ code: 'CONVERSATION_NOT_FOUND' })
     })
   })
 

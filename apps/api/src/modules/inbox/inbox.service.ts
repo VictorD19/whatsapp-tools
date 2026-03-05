@@ -195,6 +195,24 @@ export class InboxService {
     return updated
   }
 
+  async getGroupMembers(tenantId: string, conversationId: string) {
+    const conversation = await this.findConversationById(tenantId, conversationId)
+    const contactPhone = conversation.contact.phone
+
+    if (!contactPhone.endsWith('@g.us')) {
+      throw new AppException(
+        'NOT_A_GROUP',
+        'Esta conversa nao e um grupo',
+        { conversationId },
+      )
+    }
+
+    const evolutionId = conversation.instance.evolutionId
+    const members = await this.whatsapp.getGroupMembers(evolutionId, contactPhone)
+
+    return { data: members }
+  }
+
   async sendMessage(
     tenantId: string,
     conversationId: string,
@@ -239,12 +257,28 @@ export class InboxService {
       quotedMessageEvolutionId = quotedMsg.evolutionId ?? undefined
     }
 
-    // Send via WhatsApp
+    // Send via WhatsApp — with mentions if provided
+    const isGroup = contactPhone.endsWith('@g.us')
+    const hasMentions = dto.mentions && dto.mentions.length > 0
+
     let messageResult: { messageId: string; status: string }
+    let cleanBody = dto.body
     try {
-      messageResult = await this.whatsapp.sendText(evolutionId, contactPhone, dto.body, {
-        quotedMessageEvolutionId,
-      })
+      if (hasMentions && isGroup) {
+        // Strip mention markers from text: @todos and @[Name]
+        cleanBody = dto.body
+          .replace(/@todos\s*/g, '')
+          .replace(/@\[.*?\]\s*/g, '')
+          .trim() || dto.body
+        messageResult = await this.whatsapp.sendGroupMention(evolutionId, contactPhone, {
+          text: cleanBody,
+          mentions: dto.mentions!,
+        })
+      } else {
+        messageResult = await this.whatsapp.sendText(evolutionId, contactPhone, dto.body, {
+          quotedMessageEvolutionId,
+        })
+      }
     } catch (error) {
       this.logger.error(
         `Failed to send message: ${(error as Error).message}`,
@@ -259,12 +293,12 @@ export class InboxService {
       )
     }
 
-    // Save message to DB
+    // Save message to DB (cleanBody has markers stripped for group mentions)
     const message = await this.repository.createMessage({
       tenantId,
       conversationId,
       fromMe: true,
-      body: dto.body,
+      body: cleanBody,
       type: 'TEXT',
       status: 'SENT',
       evolutionId: messageResult.messageId,

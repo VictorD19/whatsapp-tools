@@ -43,6 +43,7 @@ export interface Group {
 
 export interface GroupMember {
   id: string
+  phone?: string
   name?: string
   admin: boolean
 }

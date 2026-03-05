@@ -55,7 +55,9 @@ interface EvoGroupRaw {
 
 interface EvoParticipant {
   id: string
+  phoneNumber?: string
   pushName?: string
+  name?: string | null
   admin?: string | null
 }
 
@@ -279,7 +281,8 @@ export class EvolutionAdapter implements IWhatsAppProvider {
 
     return res.participants.map((p) => ({
       id: p.id,
-      name: p.pushName,
+      phone: p.phoneNumber?.split('@')[0],
+      name: p.pushName || p.name || undefined,
       admin: !!p.admin,
     }))
   }

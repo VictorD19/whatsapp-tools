@@ -7,6 +7,7 @@ import { MessageInput } from './message-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInboxStore, type Conversation, type Message } from '@/stores/inbox.store'
 import { useConversation } from '@/hooks/use-conversation'
+import { useGroupMembers } from '@/hooks/use-group-members'
 import { useAuthStore } from '@/stores/auth.store'
 
 interface MessageThreadProps {
@@ -39,6 +40,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   const replyingTo = useInboxStore((s) => s.replyingTo)
   const setReplyingTo = useInboxStore((s) => s.setReplyingTo)
   const { fetchMessages, sendMessage, syncMessages, sendMedia } = useConversation()
+  const { members: groupMembers, loading: loadingMembers, fetchMembers, clearMembers } = useGroupMembers()
   const userId = useAuthStore((s) => s.user?.id)
   const bottomRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
@@ -60,7 +62,14 @@ export function MessageThread({ conversation }: MessageThreadProps) {
     })
     // Fire-and-forget sync to catch messages missed while offline
     syncMessages(conversation.id)
-  }, [conversation.id, fetchMessages, syncMessages, setReplyingTo])
+
+    // Fetch group members if this is a group conversation
+    if (conversation.contact.phone.endsWith('@g.us')) {
+      fetchMembers(conversation.id)
+    } else {
+      clearMembers()
+    }
+  }, [conversation.id, fetchMessages, syncMessages, setReplyingTo, fetchMembers, clearMembers, conversation.contact.phone])
 
   // Auto-scroll to bottom on initial load or new messages (only if already near bottom)
   const isInitialLoad = useRef(true)
@@ -135,9 +144,9 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   }, [hasMore, loadingMore, isLoading, page, conversation.id, fetchMessages])
 
   const handleSend = useCallback(
-    async (body: string) => {
+    async (body: string, mentions?: string[]) => {
       const quotedId = useInboxStore.getState().replyingTo?.id
-      await sendMessage(conversation.id, body, quotedId)
+      await sendMessage(conversation.id, body, quotedId, mentions)
       setReplyingTo(null)
     },
     [conversation.id, sendMessage, setReplyingTo],
@@ -255,6 +264,9 @@ export function MessageThread({ conversation }: MessageThreadProps) {
         replyingTo={replyingTo}
         onCancelReply={handleCancelReply}
         contactName={conversation.contact.name ?? conversation.contact.phone}
+        isGroup={conversation.contact.phone.endsWith('@g.us')}
+        groupMembers={groupMembers}
+        loadingMembers={loadingMembers}
       />
     </div>
   )

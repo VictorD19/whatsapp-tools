@@ -91,6 +91,14 @@ export class InboxController {
     return this.inboxService.assignConversation(tenantId, id, user.id)
   }
 
+  @Get('conversations/:id/group-members')
+  getGroupMembers(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+  ) {
+    return this.inboxService.getGroupMembers(tenantId, id)
+  }
+
   @Post('conversations/:id/messages')
   sendMessage(
     @CurrentTenant() tenantId: string,
