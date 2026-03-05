@@ -74,6 +74,12 @@ export class UsersRepository {
     })
   }
 
+  async countActiveByTenant(tenantId: string) {
+    return this.prisma.user.count({
+      where: { tenantId, deletedAt: null },
+    })
+  }
+
   async create(data: {
     tenantId: string
     name: string

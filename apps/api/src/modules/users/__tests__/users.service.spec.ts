@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from '../users.service'
 import { UsersRepository } from '../users.repository'
+import { PrismaService } from '@core/database/prisma.service'
 
 jest.mock('bcryptjs', () => ({
   hash: jest.fn().mockResolvedValue('hashed-password'),
@@ -9,9 +10,11 @@ jest.mock('bcryptjs', () => ({
 describe('UsersService', () => {
   let service: UsersService
   let repository: jest.Mocked<UsersRepository>
+  let prisma: { tenant: { findUnique: jest.Mock } }
 
   const tenantId = 'tenant-123'
   const userId = 'user-456'
+  const mockTenant = { plan: { maxUsers: 5 } }
 
   const mockUser = {
     id: userId,
@@ -31,16 +34,22 @@ describe('UsersService', () => {
       findById: jest.fn(),
       findByEmail: jest.fn(),
       countAdmins: jest.fn(),
+      countActiveByTenant: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       updatePassword: jest.fn(),
       softDelete: jest.fn(),
     }
 
+    prisma = {
+      tenant: { findUnique: jest.fn() },
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: UsersRepository, useValue: mockRepository },
+        { provide: PrismaService, useValue: prisma },
       ],
     }).compile()
 
@@ -96,6 +105,8 @@ describe('UsersService', () => {
   describe('create', () => {
     it('should create a user successfully', async () => {
       repository.findByEmail.mockResolvedValue(null)
+      prisma.tenant.findUnique.mockResolvedValue(mockTenant)
+      repository.countActiveByTenant.mockResolvedValue(2)
       repository.create.mockResolvedValue(mockUser)
 
       const result = await service.create(tenantId, {
@@ -127,6 +138,38 @@ describe('UsersService', () => {
           role: 'agent',
         }),
       ).rejects.toMatchObject({ code: 'USER_EMAIL_ALREADY_EXISTS' })
+    })
+
+    it('should throw USER_LIMIT_REACHED when at max users', async () => {
+      repository.findByEmail.mockResolvedValue(null)
+      prisma.tenant.findUnique.mockResolvedValue(mockTenant)
+      repository.countActiveByTenant.mockResolvedValue(5)
+
+      await expect(
+        service.create(tenantId, {
+          name: 'New User',
+          email: 'new@example.com',
+          password: 'secret123',
+          role: 'agent',
+        }),
+      ).rejects.toMatchObject({ code: 'USER_LIMIT_REACHED' })
+    })
+
+    it('should create user when under limit', async () => {
+      repository.findByEmail.mockResolvedValue(null)
+      prisma.tenant.findUnique.mockResolvedValue(mockTenant)
+      repository.countActiveByTenant.mockResolvedValue(4)
+      repository.create.mockResolvedValue(mockUser)
+
+      const result = await service.create(tenantId, {
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'secret123',
+        role: 'admin',
+      })
+
+      expect(result).toEqual(mockUser)
+      expect(repository.countActiveByTenant).toHaveBeenCalledWith(tenantId)
     })
   })
 

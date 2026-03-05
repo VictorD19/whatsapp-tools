@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/auth.store'
 import { getInitials } from '@/lib/utils'
+import { PlanUsage } from './plan-usage'
 
 interface NavItem {
   icon: React.ElementType
@@ -173,8 +174,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Bottom — settings + user */}
+      {/* Bottom — plan usage + settings + user */}
       <div className="border-t border-sidebar-border px-3 py-2 space-y-0.5">
+        <PlanUsage collapsed={collapsed} />
         <NavLink
           item={{ icon: Settings, label: 'Configurações', href: '/settings' }}
           pathname={pathname}

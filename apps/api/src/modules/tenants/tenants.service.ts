@@ -18,6 +18,27 @@ export class TenantsService {
     private readonly planService: PlanService,
   ) {}
 
+  // ── Usage ──
+
+  async getUsage(tenantId: string) {
+    const tenant = await this.tenantsRepository.findUsageByTenant(tenantId)
+    if (!tenant) {
+      throw AppException.notFound('TENANT_NOT_FOUND', 'Tenant nao encontrado', { tenantId })
+    }
+
+    return {
+      data: {
+        plan: tenant.plan,
+        usage: {
+          instances: tenant._count.instances,
+          users: tenant._count.users,
+          assistants: 0,
+          broadcastsToday: 0,
+        },
+      },
+    }
+  }
+
   // ── Protocol settings (existing) ──
 
   async getNextProtocol(tenantId: string): Promise<string> {

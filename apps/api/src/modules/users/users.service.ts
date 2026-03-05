@@ -2,6 +2,7 @@ import { Injectable, HttpStatus } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { UsersRepository } from './users.repository'
 import { AppException } from '@core/errors/app.exception'
+import { PrismaService } from '@core/database/prisma.service'
 import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { ChangePasswordDto } from './dto/change-password.dto'
@@ -9,7 +10,10 @@ import { UserFiltersDto } from './dto/user-filters.dto'
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly repository: UsersRepository) {}
+  constructor(
+    private readonly repository: UsersRepository,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async findMany(tenantId: string, filters: UserFiltersDto) {
     const { users, total } = await this.repository.findMany(tenantId, filters)
@@ -41,6 +45,25 @@ export class UsersService {
         'Ja existe um usuario com este email',
         { email: dto.email },
         HttpStatus.CONFLICT,
+      )
+    }
+
+    // Check user limit
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { plan: { select: { maxUsers: true } } },
+    })
+    if (!tenant) {
+      throw AppException.notFound('TENANT_NOT_FOUND', 'Tenant nao encontrado')
+    }
+
+    const maxUsers = tenant.plan.maxUsers
+    const count = await this.repository.countActiveByTenant(tenantId)
+    if (count >= maxUsers) {
+      throw new AppException(
+        'USER_LIMIT_REACHED',
+        `Limite de ${maxUsers} usuarios atingido`,
+        { current: count, max: maxUsers },
       )
     }
 

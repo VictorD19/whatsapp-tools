@@ -54,7 +54,7 @@ interface SingleResponse {
 
 const ROLE_CONFIG: Record<UserRole, { label: string; variant: 'default' | 'info' | 'secondary' }> = {
   admin: { label: 'Admin', variant: 'default' },
-  agent: { label: 'Agente', variant: 'info' },
+  agent: { label: 'Atendente', variant: 'info' },
   viewer: { label: 'Visualizador', variant: 'secondary' },
 }
 

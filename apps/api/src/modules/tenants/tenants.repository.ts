@@ -38,6 +38,30 @@ export class TenantsRepository {
     })
   }
 
+  async findUsageByTenant(tenantId: string) {
+    return this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: {
+        plan: {
+          select: {
+            name: true,
+            maxInstances: true,
+            maxUsers: true,
+            maxAssistants: true,
+            maxBroadcastsPerDay: true,
+            maxContactsPerBroadcast: true,
+          },
+        },
+        _count: {
+          select: {
+            users: { where: { deletedAt: null } },
+            instances: { where: { deletedAt: null } },
+          },
+        },
+      },
+    })
+  }
+
   // ── Admin CRUD ──
 
   async findAll(filters: TenantFiltersDto) {

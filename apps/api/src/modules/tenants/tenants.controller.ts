@@ -11,6 +11,11 @@ import {
 export class TenantsController {
   constructor(private readonly tenantsService: TenantsService) {}
 
+  @Get('usage')
+  async getUsage(@CurrentTenant() tenantId: string) {
+    return this.tenantsService.getUsage(tenantId)
+  }
+
   @Get('settings/protocol')
   async getProtocolSettings(@CurrentTenant() tenantId: string) {
     const settings = await this.tenantsService.getProtocolSettings(tenantId)
