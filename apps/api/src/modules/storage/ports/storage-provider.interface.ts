@@ -12,6 +12,11 @@ export interface IStorageProvider {
   getSignedUrl(key: string, expiresIn?: number): Promise<string>
 
   /**
+   * Baixa o arquivo e retorna buffer + content-type (para proxy server-side)
+   */
+  download(key: string): Promise<{ buffer: Buffer; contentType: string }>
+
+  /**
    * Remove o arquivo do storage
    */
   delete(key: string): Promise<void>

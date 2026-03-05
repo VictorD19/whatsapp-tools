@@ -12,6 +12,22 @@ interface ApiResponse<T> {
   data: T
 }
 
+const AUDIO_MIME_MAP: Record<string, string> = {
+  '.ogg': 'audio/ogg',
+  '.oga': 'audio/ogg',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+}
+
+/** Re-wraps a File with a correct audio/* MIME type when browser misidentifies it */
+function normalizeAudioFile(file: File): File {
+  if (file.type.startsWith('audio/')) return file
+  const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
+  const corrected = AUDIO_MIME_MAP[ext]
+  if (!corrected) return file
+  return new File([file], file.name, { type: corrected })
+}
+
 export function useConversation() {
   const setMessages = useInboxStore((s) => s.setMessages)
   const setLoadingMessages = useInboxStore((s) => s.setLoadingMessages)
@@ -97,7 +113,9 @@ export function useConversation() {
     async (conversationId: string, file: File, caption?: string) => {
       try {
         const formData = new FormData()
-        formData.append('file', file)
+        // Normalize MIME type for audio files browsers may misidentify (e.g. .ogg → application/ogg)
+        const normalizedFile = normalizeAudioFile(file)
+        formData.append('file', normalizedFile)
         if (caption) formData.append('caption', caption)
         const res = await apiUpload<ApiResponse<Message>>(
           `inbox/conversations/${conversationId}/media`,

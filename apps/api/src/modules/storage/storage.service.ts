@@ -78,6 +78,14 @@ export class StorageService {
     return this.provider.getSignedUrl(key, expiresIn)
   }
 
+  /**
+   * Baixa o arquivo e retorna buffer + content-type para proxy server-side.
+   * Evita redirecionar o browser para URLs presignadas (que falham com Range requests).
+   */
+  async download(key: string): Promise<{ buffer: Buffer; contentType: string }> {
+    return this.provider.download(key)
+  }
+
   async delete(key: string): Promise<void> {
     return this.provider.delete(key)
   }

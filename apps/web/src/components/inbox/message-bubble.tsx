@@ -172,7 +172,7 @@ export function MessageBubble({ message, contactName, onReply }: MessageBubblePr
         )}
 
         {/* Media or text content */}
-        {isMediaType && message.mediaUrl ? (
+        {isMediaType ? (
           <MediaContent message={message} />
         ) : (
           message.body && <p className="leading-relaxed whitespace-pre-wrap">{message.body}</p>

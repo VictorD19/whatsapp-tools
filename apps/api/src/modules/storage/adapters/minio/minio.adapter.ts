@@ -7,6 +7,7 @@ import {
   GetObjectCommand,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { Readable } from 'stream'
 import { IStorageProvider } from '../../ports/storage-provider.interface'
 
 /**
@@ -37,6 +38,10 @@ export class MinioAdapter implements IStorageProvider {
       },
       // Necessário para MinIO — S3/R2 não precisam
       forcePathStyle: config.get<string>('MINIO_FORCE_PATH_STYLE') !== 'false',
+      // Desabilita checksum automático — versões antigas do MinIO não suportam
+      // x-amz-checksum-mode=ENABLED nas URLs presignadas e retornam 403
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     })
   }
 
@@ -64,6 +69,23 @@ export class MinioAdapter implements IStorageProvider {
     }
 
     return signed
+  }
+
+  async download(key: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const res = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+    )
+    const stream = res.Body as Readable
+    const chunks: Buffer[] = []
+    await new Promise<void>((resolve, reject) => {
+      stream.on('data', (chunk: Buffer) => chunks.push(chunk))
+      stream.on('end', resolve)
+      stream.on('error', reject)
+    })
+    return {
+      buffer: Buffer.concat(chunks),
+      contentType: res.ContentType ?? 'application/octet-stream',
+    }
   }
 
   async delete(key: string): Promise<void> {

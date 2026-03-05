@@ -13,20 +13,53 @@ import { ConversationStatus } from '@prisma/client'
 import { parseWhatsAppMessage } from './utils/message-parser'
 import { StorageService, isStorageKey, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
 
+// ─── WhatsApp supported formats & limits ──────────────────────────────────────
+// Images: JPG, PNG — 16 MB
+// Videos: MP4, AVI, MOV, 3GP — 16 MB
+// Audio:  MP3, WAV, OGG — 16 MB
+// Documents: PDF, DOCX, XLSX, PPTX, TXT, RTF, ZIP, RAR — 100 MB
+
 const SIZE_LIMITS: Record<string, number> = {
-  IMAGE: 5 * 1024 * 1024,
+  IMAGE: 16 * 1024 * 1024,
   VIDEO: 16 * 1024 * 1024,
   AUDIO: 16 * 1024 * 1024,
   DOCUMENT: 100 * 1024 * 1024,
 }
 
-function resolveMediaType(mimetype: string): {
+const AUDIO_EXTS = new Set(['.ogg', '.oga', '.mp3', '.wav'])
+const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png'])
+const VIDEO_EXTS = new Set(['.mp4', '.avi', '.mov', '.3gp'])
+
+const AUDIO_MIME_MAP: Record<string, string> = {
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.oga': 'audio/ogg',
+}
+
+function getExtension(filename: string): string {
+  const idx = filename.lastIndexOf('.')
+  return idx >= 0 ? filename.slice(idx).toLowerCase() : ''
+}
+
+/** Normalizes misidentified MIME types (e.g. application/ogg → audio/ogg) using file extension */
+function normalizeMimetype(mimetype: string, filename: string): string {
+  if (mimetype.startsWith('audio/') || mimetype.startsWith('image/') || mimetype.startsWith('video/')) return mimetype
+  const ext = getExtension(filename)
+  if (AUDIO_EXTS.has(ext)) return AUDIO_MIME_MAP[ext] ?? 'audio/ogg'
+  if (IMAGE_EXTS.has(ext)) return ext === '.png' ? 'image/png' : 'image/jpeg'
+  if (VIDEO_EXTS.has(ext)) return ext === '.mov' ? 'video/quicktime' : ext === '.3gp' ? 'video/3gpp' : `video/${ext.slice(1)}`
+  return mimetype
+}
+
+function resolveMediaType(mimetype: string, filename = ''): {
   type: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
   sizeLimit: number
 } {
-  if (mimetype.startsWith('image/')) return { type: 'IMAGE', sizeLimit: SIZE_LIMITS.IMAGE }
-  if (mimetype.startsWith('video/')) return { type: 'VIDEO', sizeLimit: SIZE_LIMITS.VIDEO }
-  if (mimetype.startsWith('audio/')) return { type: 'AUDIO', sizeLimit: SIZE_LIMITS.AUDIO }
+  const normalized = normalizeMimetype(mimetype, filename)
+  if (normalized.startsWith('image/')) return { type: 'IMAGE', sizeLimit: SIZE_LIMITS.IMAGE }
+  if (normalized.startsWith('video/')) return { type: 'VIDEO', sizeLimit: SIZE_LIMITS.VIDEO }
+  if (normalized.startsWith('audio/')) return { type: 'AUDIO', sizeLimit: SIZE_LIMITS.AUDIO }
   return { type: 'DOCUMENT', sizeLimit: SIZE_LIMITS.DOCUMENT }
 }
 
@@ -288,7 +321,8 @@ export class InboxService {
       )
     }
 
-    const { type, sizeLimit } = resolveMediaType(file.mimetype)
+    const resolvedMimetype = normalizeMimetype(file.mimetype, file.filename)
+    const { type, sizeLimit } = resolveMediaType(resolvedMimetype, file.filename)
 
     if (file.buffer.length > sizeLimit) {
       throw new AppException(
@@ -307,19 +341,19 @@ export class InboxService {
     try {
       switch (type) {
         case 'IMAGE':
-          messageResult = await this.whatsapp.sendImage(evolutionId, contactPhone, { url: base64, mimetype: file.mimetype, caption: file.caption })
+          messageResult = await this.whatsapp.sendImage(evolutionId, contactPhone, { url: base64, mimetype: resolvedMimetype, caption: file.caption })
           break
         case 'VIDEO':
-          messageResult = await this.whatsapp.sendVideo(evolutionId, contactPhone, { url: base64, mimetype: file.mimetype, caption: file.caption })
+          messageResult = await this.whatsapp.sendVideo(evolutionId, contactPhone, { url: base64, mimetype: resolvedMimetype, caption: file.caption })
           break
         case 'AUDIO':
-          messageResult = await this.whatsapp.sendAudio(evolutionId, contactPhone, { url: base64, mimetype: file.mimetype })
+          messageResult = await this.whatsapp.sendAudio(evolutionId, contactPhone, { url: base64, mimetype: resolvedMimetype })
           break
         default:
           messageResult = await this.whatsapp.sendDocument(evolutionId, contactPhone, {
             url: base64,
             fileName: file.filename,
-            mimetype: file.mimetype,
+            mimetype: resolvedMimetype,
           })
       }
     } catch (error) {
@@ -482,16 +516,16 @@ export class InboxService {
   async getMedia(
     tenantId: string,
     messageId: string,
-  ): Promise<{ type: 'redirect'; url: string } | { type: 'base64'; base64: string; mimetype: string }> {
+  ): Promise<{ buffer: Buffer; mimetype: string }> {
     const message = await this.repository.findMessageWithInstance(tenantId, messageId)
     if (!message) {
       throw AppException.notFound('MESSAGE_NOT_FOUND', 'Mensagem nao encontrada')
     }
 
-    // Mídia armazenada localmente — retorna signed URL para redirect
+    // Mídia armazenada localmente — baixa do storage e faz proxy (evita redirect + 403 no Range request)
     if (isStorageKey(message.mediaUrl)) {
-      const url = await this.storage.getSignedUrl(message.mediaUrl)
-      return { type: 'redirect', url }
+      const { buffer, contentType } = await this.storage.download(message.mediaUrl)
+      return { buffer, mimetype: contentType }
     }
 
     // Fallback: proxy via Evolution API (stickers, mídias antigas, etc.)
@@ -505,7 +539,7 @@ export class InboxService {
       throw new AppException('MEDIA_DOWNLOAD_FAILED', 'Falha ao baixar midia do WhatsApp')
     }
 
-    return { type: 'base64', ...media }
+    return { buffer: Buffer.from(media.base64, 'base64'), mimetype: media.mimetype }
   }
 
   async syncConversationMessages(tenantId: string, conversationId: string) {

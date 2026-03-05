@@ -72,19 +72,12 @@ export class InboxController {
     @Param('messageId') messageId: string,
     @Res() res: FastifyReply,
   ) {
-    const result = await this.inboxService.getMedia(tenantId, messageId)
-
-    if (result.type === 'redirect') {
-      // Mídia no storage local — redireciona direto para a URL (MinIO/S3/R2)
-      return res.redirect(result.url, 302)
-    }
-
-    // Fallback: proxy base64 do Evolution (stickers, mídias antigas)
-    const buffer = Buffer.from(result.base64, 'base64')
+    const { buffer, mimetype } = await this.inboxService.getMedia(tenantId, messageId)
     res
-      .header('Content-Type', result.mimetype)
+      .header('Content-Type', mimetype)
       .header('Content-Length', buffer.length)
       .header('Cache-Control', 'private, max-age=86400')
+      .header('Accept-Ranges', 'bytes')
       .send(buffer)
   }
 
