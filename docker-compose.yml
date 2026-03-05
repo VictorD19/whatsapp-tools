@@ -37,10 +37,18 @@ services:
       EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-changeme-evolution-key}
       WEBHOOK_URL: http://api:3001
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_BUCKET: ${MINIO_BUCKET:-whatsapp-media}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_PUBLIC_URL: http://localhost:9000
+      MINIO_FORCE_PATH_STYLE: "true"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     networks:
       - wt-network
@@ -109,6 +117,50 @@ services:
     networks:
       - wt-network
 
+  # ── MinIO (Object Storage S3-compatible) ───────────
+  minio:
+    image: minio/minio:latest
+    container_name: wt-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # API S3
+      - "9001:9001"   # Console Web (http://localhost:9001)
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - wt-network
+
+  # ── MinIO Init (cria bucket automaticamente) ───────
+  minio-init:
+    image: minio/mc:latest
+    container_name: wt-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        mc alias set local http://minio:9000 $${MINIO_ACCESS_KEY:-minioadmin} $${MINIO_SECRET_KEY:-minioadmin123} &&
+        mc mb --ignore-existing local/$${MINIO_BUCKET:-whatsapp-media} &&
+        mc anonymous set download local/$${MINIO_BUCKET:-whatsapp-media} &&
+        echo 'MinIO bucket ready'
+      "
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-whatsapp-media}
+    networks:
+      - wt-network
+
   # ── PostgreSQL ─────────────────────────────────────
   postgres:
     image: postgres:16-alpine
@@ -137,7 +189,7 @@ services:
     container_name: wt-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -156,6 +208,7 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  minio_data:
   # ── Volumes separados por serviço (evita conflito entre api e web) ──
   api_root_modules:
   api_app_modules:

@@ -5,6 +5,7 @@ import { InboxGateway } from '../inbox.gateway'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { InstancesService } from '@modules/instances/instances.service'
 import { ConversationImportProducer } from '../queues/import.producer'
+import { StorageService } from '@modules/storage/storage.service'
 import { LoggerService } from '@core/logger/logger.service'
 import { AppException } from '@core/errors/app.exception'
 
@@ -85,6 +86,12 @@ describe('InboxService', () => {
       startImport: jest.fn(),
     }
 
+    const mockStorage = {
+      uploadMedia: jest.fn().mockResolvedValue('tenants/tenant-123/media/2024-03/uuid.jpg'),
+      getSignedUrl: jest.fn().mockResolvedValue('http://localhost:9000/bucket/key?signed'),
+      delete: jest.fn(),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InboxService,
@@ -93,6 +100,7 @@ describe('InboxService', () => {
         { provide: WhatsAppService, useValue: mockWhatsapp },
         { provide: InstancesService, useValue: mockInstancesService },
         { provide: ConversationImportProducer, useValue: mockImportProducer },
+        { provide: StorageService, useValue: mockStorage },
         { provide: LoggerService, useValue: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } },
       ],
     }).compile()
@@ -354,11 +362,10 @@ describe('InboxService', () => {
       })
 
       expect(result.type).toBe('IMAGE')
-      expect(result.mediaUrl).toBe('has-media')
       expect(whatsapp.sendImage).toHaveBeenCalledWith(
         'acme-vendas',
         '5511999999999',
-        expect.objectContaining({ url: expect.stringContaining('data:image/jpeg;base64,') }),
+        expect.objectContaining({ mimetype: 'image/jpeg' }),
       )
       expect(gateway.emitNewMessage).toHaveBeenCalled()
     })

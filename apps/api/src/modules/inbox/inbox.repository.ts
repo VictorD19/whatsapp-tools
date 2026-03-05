@@ -355,4 +355,11 @@ export class InboxRepository {
       data: { status },
     })
   }
+
+  async updateMessageMediaUrl(messageId: string, mediaUrl: string) {
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { mediaUrl },
+    })
+  }
 }

@@ -11,6 +11,7 @@ import { ImportConversationsDto } from './dto/import-conversations.dto'
 import { ConversationImportProducer } from './queues/import.producer'
 import { ConversationStatus } from '@prisma/client'
 import { parseWhatsAppMessage } from './utils/message-parser'
+import { StorageService, isStorageKey, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
 
 const SIZE_LIMITS: Record<string, number> = {
   IMAGE: 5 * 1024 * 1024,
@@ -37,6 +38,7 @@ export class InboxService {
     private readonly instancesService: InstancesService,
     private readonly gateway: InboxGateway,
     private readonly importProducer: ConversationImportProducer,
+    private readonly storage: StorageService,
     private readonly logger: LoggerService,
   ) {}
 
@@ -334,6 +336,19 @@ export class InboxService {
       )
     }
 
+    // Salva mídia no storage local (MinIO) — independente do Evolution API
+    let storageKey: string | undefined
+    if (STORABLE_MEDIA_TYPES.has(type)) {
+      try {
+        storageKey = await this.storage.uploadMedia(tenantId, file.buffer, file.mimetype, file.filename)
+      } catch (err) {
+        this.logger.warn(
+          `Storage upload failed for outbound media, falling back: ${(err as Error).message}`,
+          'InboxService',
+        )
+      }
+    }
+
     const message = await this.repository.createMessage({
       tenantId,
       conversationId,
@@ -342,7 +357,7 @@ export class InboxService {
       type,
       status: 'SENT',
       evolutionId: messageResult.messageId,
-      mediaUrl: 'has-media',
+      mediaUrl: storageKey ?? 'has-media',
     })
 
     await this.repository.updateLastMessageAt(conversationId)
@@ -459,12 +474,27 @@ export class InboxService {
     return updated
   }
 
-  async getMediaBase64(tenantId: string, messageId: string) {
+  /**
+   * Retorna a mídia de uma mensagem.
+   * - Se estiver no storage local (MinIO): retorna URL pré-assinada para redirect.
+   * - Caso contrário: busca no Evolution API e retorna base64 (fallback).
+   */
+  async getMedia(
+    tenantId: string,
+    messageId: string,
+  ): Promise<{ type: 'redirect'; url: string } | { type: 'base64'; base64: string; mimetype: string }> {
     const message = await this.repository.findMessageWithInstance(tenantId, messageId)
     if (!message) {
       throw AppException.notFound('MESSAGE_NOT_FOUND', 'Mensagem nao encontrada')
     }
 
+    // Mídia armazenada localmente — retorna signed URL para redirect
+    if (isStorageKey(message.mediaUrl)) {
+      const url = await this.storage.getSignedUrl(message.mediaUrl)
+      return { type: 'redirect', url }
+    }
+
+    // Fallback: proxy via Evolution API (stickers, mídias antigas, etc.)
     if (!message.evolutionId) {
       throw new AppException('MEDIA_NOT_AVAILABLE', 'Mensagem sem ID do Evolution')
     }
@@ -475,7 +505,7 @@ export class InboxService {
       throw new AppException('MEDIA_DOWNLOAD_FAILED', 'Falha ao baixar midia do WhatsApp')
     }
 
-    return media
+    return { type: 'base64', ...media }
   }
 
   async syncConversationMessages(tenantId: string, conversationId: string) {

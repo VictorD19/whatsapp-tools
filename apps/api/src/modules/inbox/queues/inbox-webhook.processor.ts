@@ -9,6 +9,7 @@ import { InstancesService } from '@modules/instances/instances.service'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { TenantsService } from '@modules/tenants/tenants.service'
 import { DealService } from '@modules/deal/deal.service'
+import { StorageService, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
 import { parseWhatsAppMessage, extractQuotedStanzaId } from '../utils/message-parser'
 interface InboxWebhookJob {
   instanceName: string
@@ -26,6 +27,7 @@ export class InboxWebhookProcessor {
     private readonly whatsapp: WhatsAppService,
     private readonly tenantsService: TenantsService,
     private readonly dealService: DealService,
+    private readonly storage: StorageService,
     private readonly gateway: InboxGateway,
     private readonly logger: LoggerService,
   ) {}
@@ -205,6 +207,22 @@ export class InboxWebhookProcessor {
         quotedMessageId,
       })
 
+      // Download e armazena mídia inbound no storage local (fire and forget)
+      // STICKER e tipos não suportados continuam via proxy Evolution
+      if (evolutionMsgId && STORABLE_MEDIA_TYPES.has(type)) {
+        this.downloadAndStoreInboundMedia(
+          instance,
+          newMessage.id,
+          evolutionMsgId,
+          instance.tenantId,
+        ).catch((err) =>
+          this.logger.warn(
+            `Failed to store inbound media for message ${newMessage.id}: ${(err as Error).message}`,
+            'InboxWebhookProcessor',
+          ),
+        )
+      }
+
       // Emit WebSocket events
       if (isNewConversation) {
         const fullConversation = await this.inboxRepository.findConversationById(
@@ -241,6 +259,25 @@ export class InboxWebhookProcessor {
         'InboxWebhookProcessor',
       )
     }
+  }
+
+  private async downloadAndStoreInboundMedia(
+    instance: { evolutionId: string },
+    messageId: string,
+    evolutionMsgId: string,
+    tenantId: string,
+  ) {
+    const media = await this.whatsapp.getMediaBase64(instance.evolutionId, evolutionMsgId)
+    if (!media?.base64 || !media.mimetype) return
+
+    const buffer = Buffer.from(media.base64, 'base64')
+    const key = await this.storage.uploadMedia(tenantId, buffer, media.mimetype)
+    await this.inboxRepository.updateMessageMediaUrl(messageId, key)
+
+    this.logger.debug(
+      `Inbound media stored: ${key}`,
+      'InboxWebhookProcessor',
+    )
   }
 
   private async handleMessageStatusUpdate(
