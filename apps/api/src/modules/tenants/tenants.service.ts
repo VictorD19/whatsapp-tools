@@ -8,6 +8,7 @@ import { PlanService } from '@modules/plan/plan.service'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { UpdateTenantDto } from './dto/update-tenant.dto'
 import { TenantFiltersDto } from './dto/tenant-filters.dto'
+import { UpdateLocaleSettingsDto } from './dto/update-locale-settings.dto'
 
 @Injectable()
 export class TenantsService {
@@ -37,6 +38,25 @@ export class TenantsService {
         },
       },
     }
+  }
+
+  // ── Locale settings ──
+
+  async getLocaleSettings(tenantId: string) {
+    const settings = await this.tenantsRepository.getLocaleSettings(tenantId)
+    if (!settings) {
+      throw AppException.notFound('TENANT_NOT_FOUND', 'Tenant nao encontrado', { tenantId })
+    }
+    return { data: settings }
+  }
+
+  async updateLocaleSettings(tenantId: string, dto: UpdateLocaleSettingsDto) {
+    const existing = await this.tenantsRepository.getLocaleSettings(tenantId)
+    if (!existing) {
+      throw AppException.notFound('TENANT_NOT_FOUND', 'Tenant nao encontrado', { tenantId })
+    }
+    const updated = await this.tenantsRepository.updateLocaleSettings(tenantId, dto)
+    return { data: updated }
   }
 
   // ── Protocol settings (existing) ──

@@ -3,27 +3,13 @@
 import React from 'react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { cn, getInitials } from '@/lib/utils'
+import { formatRelativeDate } from '@/lib/formatting'
 import type { Conversation } from '@/stores/inbox.store'
 
 interface ConversationListItemProps {
   conversation: Conversation
   isActive: boolean
   onClick: () => void
-}
-
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMin = Math.floor(diffMs / 60000)
-  const diffHour = Math.floor(diffMin / 60)
-  const diffDay = Math.floor(diffHour / 24)
-
-  if (diffMin < 1) return 'agora'
-  if (diffMin < 60) return `${diffMin}m`
-  if (diffHour < 24) return `${diffHour}h`
-  if (diffDay < 7) return `${diffDay}d`
-  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 }
 
 // Deterministic avatar color from name
@@ -109,7 +95,7 @@ export function ConversationListItem({
           </span>
           {conversation.lastMessageAt && (
             <span className="shrink-0 text-[10px] text-muted-foreground/70 tabular-nums">
-              {formatRelativeTime(conversation.lastMessageAt)}
+              {formatRelativeDate(conversation.lastMessageAt)}
             </span>
           )}
         </div>

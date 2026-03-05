@@ -537,10 +537,12 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
         </Avatar>
         <div className="text-center">
           <h3 className="text-sm font-semibold">{contactName}</h3>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-            <Phone className="h-3 w-3" />
-            <span>{formatPhone(contact.phone)}</span>
-          </div>
+          {!contact.phone.endsWith('@g.us') && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+              <Phone className="h-3 w-3" />
+              <span>{formatPhone(contact.phone)}</span>
+            </div>
+          )}
         </div>
       </div>
 

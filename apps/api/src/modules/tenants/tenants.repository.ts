@@ -176,4 +176,24 @@ export class TenantsRepository {
       data: { deletedAt: new Date() },
     })
   }
+
+  // ── Locale settings ──
+
+  async getLocaleSettings(tenantId: string) {
+    return this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { locale: true, timezone: true, currency: true },
+    })
+  }
+
+  async updateLocaleSettings(
+    tenantId: string,
+    data: { locale?: string; timezone?: string; currency?: string },
+  ) {
+    return this.prisma.tenant.update({
+      where: { id: tenantId },
+      data,
+      select: { locale: true, timezone: true, currency: true },
+    })
+  }
 }

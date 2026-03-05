@@ -106,7 +106,15 @@ export class AuthService {
     name: string
     role: string
     isSuperAdmin: boolean
-    tenant: { id: string; name: string; slug: string; plan: { name: string; slug: string } }
+    tenant: {
+      id: string
+      name: string
+      slug: string
+      locale?: string
+      timezone?: string
+      currency?: string
+      plan: { name: string; slug: string }
+    }
   }) {
     const payload = {
       sub: user.id,
@@ -139,6 +147,9 @@ export class AuthService {
           name: user.tenant.name,
           slug: user.tenant.slug,
           plan: user.tenant.plan.slug,
+          locale: user.tenant.locale ?? 'pt-BR',
+          timezone: user.tenant.timezone ?? 'America/Sao_Paulo',
+          currency: user.tenant.currency ?? 'BRL',
         },
       },
     }

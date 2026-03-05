@@ -25,6 +25,9 @@ describe('TenantsService', () => {
     planId: 'plan-pro',
     protocolPrefix: 'SCHA',
     protocolSeq: 1000,
+    locale: 'pt-BR',
+    timezone: 'America/Sao_Paulo',
+    currency: 'BRL',
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -34,6 +37,12 @@ describe('TenantsService', () => {
       instances: 2,
       conversations: 15,
     },
+  }
+
+  const mockLocaleSettings = {
+    locale: 'pt-BR',
+    timezone: 'America/Sao_Paulo',
+    currency: 'BRL',
   }
 
   const mockAdminUser = {
@@ -58,6 +67,8 @@ describe('TenantsService', () => {
       getNextProtocol: jest.fn(),
       updateProtocolPrefix: jest.fn(),
       getProtocolSettings: jest.fn(),
+      getLocaleSettings: jest.fn(),
+      updateLocaleSettings: jest.fn(),
     }
 
     const mockPipelineService = {
@@ -174,6 +185,9 @@ describe('TenantsService', () => {
         planId: createDto.planId,
         protocolPrefix: 'SCHA',
         protocolSeq: 1000,
+        locale: 'pt-BR',
+        timezone: 'America/Sao_Paulo',
+        currency: 'BRL',
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
@@ -284,6 +298,87 @@ describe('TenantsService', () => {
       })
 
       expect(repository.softDelete).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('getLocaleSettings', () => {
+    it('should return locale settings', async () => {
+      repository.getLocaleSettings.mockResolvedValue(mockLocaleSettings)
+
+      const result = await service.getLocaleSettings(tenantId)
+
+      expect(result.data).toEqual(mockLocaleSettings)
+      expect(repository.getLocaleSettings).toHaveBeenCalledWith(tenantId)
+    })
+
+    it('should throw TENANT_NOT_FOUND if tenant does not exist', async () => {
+      repository.getLocaleSettings.mockResolvedValue(null)
+
+      await expect(service.getLocaleSettings('nonexistent')).rejects.toMatchObject({
+        code: 'TENANT_NOT_FOUND',
+      })
+    })
+  })
+
+  describe('updateLocaleSettings', () => {
+    it('should update and return locale settings (New York / USD)', async () => {
+      const updated = { locale: 'en' as const, timezone: 'America/New_York', currency: 'USD' as const }
+      repository.getLocaleSettings.mockResolvedValue(mockLocaleSettings)
+      repository.updateLocaleSettings.mockResolvedValue(updated)
+
+      const result = await service.updateLocaleSettings(tenantId, updated)
+
+      expect(result.data).toEqual(updated)
+      expect(repository.updateLocaleSettings).toHaveBeenCalledWith(tenantId, updated)
+    })
+
+    it('should update timezone to Caracas, Venezuela (UTC-4)', async () => {
+      const updated = { locale: 'es' as const, timezone: 'America/Caracas', currency: 'BRL' as const }
+      const returned = { locale: 'es', timezone: 'America/Caracas', currency: 'BRL' }
+      repository.getLocaleSettings.mockResolvedValue(mockLocaleSettings)
+      repository.updateLocaleSettings.mockResolvedValue(returned)
+
+      const result = await service.updateLocaleSettings(tenantId, updated)
+
+      expect(result.data.timezone).toBe('America/Caracas')
+      expect(result.data.locale).toBe('es')
+      expect(repository.updateLocaleSettings).toHaveBeenCalledWith(tenantId, updated)
+    })
+
+    it('should update timezone to Dubai (UTC+4)', async () => {
+      const updated = { locale: 'en' as const, timezone: 'Asia/Dubai', currency: 'USD' as const }
+      const returned = { locale: 'en', timezone: 'Asia/Dubai', currency: 'USD' }
+      repository.getLocaleSettings.mockResolvedValue(mockLocaleSettings)
+      repository.updateLocaleSettings.mockResolvedValue(returned)
+
+      const result = await service.updateLocaleSettings(tenantId, updated)
+
+      expect(result.data.timezone).toBe('Asia/Dubai')
+      expect(repository.updateLocaleSettings).toHaveBeenCalledWith(tenantId, updated)
+    })
+
+    it('should allow partial updates (locale only)', async () => {
+      const updated = { locale: 'es' as const }
+      const returned = { ...mockLocaleSettings, locale: 'es' as const }
+      repository.getLocaleSettings.mockResolvedValue(mockLocaleSettings)
+      repository.updateLocaleSettings.mockResolvedValue(returned)
+
+      const result = await service.updateLocaleSettings(tenantId, updated)
+
+      expect(result.data.locale).toBe('es')
+      expect(repository.updateLocaleSettings).toHaveBeenCalledWith(tenantId, updated)
+    })
+
+    it('should throw TENANT_NOT_FOUND if tenant does not exist', async () => {
+      repository.getLocaleSettings.mockResolvedValue(null)
+
+      await expect(
+        service.updateLocaleSettings('nonexistent', { locale: 'en' as const }),
+      ).rejects.toMatchObject({
+        code: 'TENANT_NOT_FOUND',
+      })
+
+      expect(repository.updateLocaleSettings).not.toHaveBeenCalled()
     })
   })
 })

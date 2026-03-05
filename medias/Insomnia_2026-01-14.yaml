@@ -1,0 +1,378 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Scratch Pad
+meta:
+  id: wrk_scratchpad
+  created: 1766753365768
+  modified: 1766753365768
+  description: ""
+collection:
+  - url: https://localhost/auth/login
+    name: login
+    meta:
+      id: req_1e36e33763c44d4194b0aa9f0d9d8f30
+      created: 1766753383056
+      modified: 1767817893490
+      isPrivate: false
+      description: ""
+      sortKey: -1766753383056
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+            "username": "qa@ixcsoft.com.br",
+            "password": "opaixc6001"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.2.0
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - name: Calendar
+    meta:
+      id: fld_63d19e4e38a5482595eeb3e1ababd1e9
+      created: 1767817896756
+      modified: 1768305958471
+      sortKey: -1767817896756
+      description: ""
+    children:
+      - name: CRUD
+        meta:
+          id: fld_540bab7fd3e84bbbbde36ae99e938b19
+          created: 1767960056200
+          modified: 1767960056200
+          sortKey: -1767960056200
+          description: ""
+        children:
+          - url: https://localhost/services/calendar/events/
+            name: Add event
+            meta:
+              id: req_07f5910379344f6cbed9373eafbb5faa
+              created: 1767817898697
+              modified: 1768322333228
+              isPrivate: false
+              description: ""
+              sortKey: -1767960063396
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                	"calendar": "696638f954818678c0e24bae",
+                	"title":"Calendariro TEster",
+                	"isFullDay": false,
+                	"repeat": {
+                		"frequency": "daily"
+                	},
+                	"date": {
+                		"start": "2026-01-13T06:10:00",
+                		"end": "2026-01-13T17:10:00"
+                	},
+                	"reminderNotification": [
+                		{
+                			"value": 30,
+                			"unit": "minutes"
+                		},
+                		{
+                			"value": 30,
+                			"unit": "hours"
+                		}
+                	],
+                	"participants": {
+                		"customerService": {
+                			"id": "694566b44e28d7d15373658f",
+                			"notification": {
+                				"value": 60,
+                				"unit": "minutes",
+                				"template": {
+                					"id": "655650a3ec9780f9083650e3",
+                					"variables":["oisas"]
+                				}
+                			}
+                		},
+                		"attendants": [
+                			"66d5aae4b81ca89833d76dc3"
+                		],
+                		"contacts": [
+                			"69416fd026a660c5956762c2"
+                		]
+                	}
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.2.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: https://localhost/services/calendar/events/69613d645673547b3bf8d2dc
+            name: Update Event
+            meta:
+              id: req_d674d200d0d04eb0903b366777e70cc7
+              created: 1767901422430
+              modified: 1767980391821
+              isPrivate: false
+              description: ""
+              sortKey: -1767960063196
+            method: PATCH
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                	"title": "asdasdasdasdsad sasas"
+
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.2.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: https://localhost/services/calendar/events/696115200454843974a97808
+            name: Delete Event
+            meta:
+              id: req_31fbf5c3adb043f5acd3e3fb76a53ebf
+              created: 1767960016026
+              modified: 1767970084475
+              isPrivate: false
+              description: ""
+              sortKey: -1767960063296
+            method: DELETE
+            headers:
+              - name: User-Agent
+                value: insomnia/12.2.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Add Event
+        meta:
+          id: fld_2fd0203717874f90bcbefe786bfc0b49
+          created: 1767960096453
+          modified: 1768227547287
+          sortKey: -1767960096453
+          description: ""
+        children:
+          - url: https://localhost/services/calendar/events/contacts
+            name: List contacts
+            meta:
+              id: req_22e5fc95aa064047945a438a27522f85
+              created: 1767960098902
+              modified: 1767985531490
+              isPrivate: false
+              description: ""
+              sortKey: -1767960098902
+            method: GET
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                	"filters":{
+                		"query":"49998218294"
+                	}
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.2.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: https://localhost/services/calendar/events/attendants
+            name: List attendents
+            meta:
+              id: req_11e17b96d1254bd383811d38d73c5452
+              created: 1767960882517
+              modified: 1767961151847
+              isPrivate: false
+              description: ""
+              sortKey: -1767960882517
+            method: GET
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                	"filter":{
+                	 "nome":	{
+                  "$regex": "",
+                  "$options": "i"
+                }
+                	}
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.2.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: https://localhost/services/calendar/events/customer-services
+            name: LIst Custormer Services
+            meta:
+              id: req_63fcaafd0fce41a69c8e44795c621cf6
+              created: 1767988000900
+              modified: 1768225893110
+              isPrivate: false
+              description: ""
+              sortKey: -1767960490709.5
+            method: GET
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                	"filters":{
+                	}
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.2.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: https://localhost/services/calendar/events/upcoming
+            name: LIst Upcoming
+            meta:
+              id: req_582d543fa22f4c8e8fe5e4a69fd0316f
+              created: 1768227548151
+              modified: 1768227598677
+              isPrivate: false
+              description: ""
+              sortKey: -1768227548151
+            method: GET
+            headers:
+              - name: User-Agent
+                value: insomnia/12.2.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Calendar
+        meta:
+          id: fld_7d735297d0cd441cba9cccb39798a746
+          created: 1768305966153
+          modified: 1768305966153
+          sortKey: -1768305966153
+          description: ""
+        children:
+          - url: https://localhost/services/calendar/users-with-calendar
+            name: List user with calendar
+            meta:
+              id: req_466c4ad8f3ec4649af72d096ce48d7c0
+              created: 1768305968304
+              modified: 1768308118877
+              isPrivate: false
+              description: ""
+              sortKey: -1768305968304
+            method: GET
+            body:
+              mimeType: application/json
+              text: ""
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.2.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1766753374866
+    modified: 1768322337155
+  cookies:
+    - id: 1c6932bb-6aec-4311-a557-69dd78920029
+      key: opa_language
+      value: pt
+      domain: localhost
+      path: /
+      secure: false
+      httpOnly: false
+    - id: 65f2fe2a-20a2-414e-bece-ba75243d2f5c
+      key: connect.sid
+      value: s%3AGi3Aco99E8-pyOTIRPh9CPxXro-KQA3D.d17KkhhBN18Zijug3gxmgmRtuhYFAOX0glX3US0qur4
+      domain: localhost
+      path: /
+      secure: false
+      httpOnly: true
+      hostOnly: true
+environments:
+  name: Base Environment
+  meta:
+    id: env_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1766753374864
+    modified: 1766753374864
+    isPrivate: false

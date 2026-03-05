@@ -24,6 +24,9 @@ describe('AuthService', () => {
     id: tenantId,
     name: 'Acme Corp',
     slug: 'acme-corp',
+    locale: 'pt-BR',
+    timezone: 'America/Sao_Paulo',
+    currency: 'BRL',
     plan: { name: 'Pro', slug: 'pro' },
   }
 
@@ -288,6 +291,18 @@ describe('AuthService', () => {
       expect(result.user).toHaveProperty('role')
       expect(result.user).toHaveProperty('isSuperAdmin')
       expect(result.user).toHaveProperty('tenant')
+    })
+
+    it('should include locale settings in user tenant response', async () => {
+      repo.findUserByEmail.mockResolvedValue(mockUser as never)
+      ;(bcrypt.compare as jest.Mock).mockResolvedValue(true)
+      jwt.sign.mockReturnValue('token')
+
+      const result = await service.login('john@acme.com', 'password')
+
+      expect(result.user.tenant).toHaveProperty('locale', 'pt-BR')
+      expect(result.user.tenant).toHaveProperty('timezone', 'America/Sao_Paulo')
+      expect(result.user.tenant).toHaveProperty('currency', 'BRL')
     })
   })
 })

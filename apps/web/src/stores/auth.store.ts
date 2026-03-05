@@ -9,6 +9,15 @@ interface User {
   tenantId: string
   role: 'admin' | 'agent' | 'viewer'
   isSuperAdmin: boolean
+  tenant?: {
+    id: string
+    name: string
+    slug: string
+    plan: string
+    locale: string
+    timezone: string
+    currency: string
+  }
 }
 
 interface AuthState {

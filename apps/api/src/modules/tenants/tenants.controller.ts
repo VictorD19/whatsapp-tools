@@ -6,6 +6,10 @@ import {
   updateProtocolPrefixSchema,
   UpdateProtocolPrefixDto,
 } from './dto/update-protocol-prefix.dto'
+import {
+  updateLocaleSettingsSchema,
+  UpdateLocaleSettingsDto,
+} from './dto/update-locale-settings.dto'
 
 @Controller('tenants')
 export class TenantsController {
@@ -20,6 +24,20 @@ export class TenantsController {
   async getProtocolSettings(@CurrentTenant() tenantId: string) {
     const settings = await this.tenantsService.getProtocolSettings(tenantId)
     return { data: settings }
+  }
+
+  @Get('settings/locale')
+  async getLocaleSettings(@CurrentTenant() tenantId: string) {
+    return this.tenantsService.getLocaleSettings(tenantId)
+  }
+
+  @Patch('settings/locale')
+  async updateLocaleSettings(
+    @CurrentTenant() tenantId: string,
+    @Body(new ZodValidationPipe(updateLocaleSettingsSchema))
+    dto: UpdateLocaleSettingsDto,
+  ) {
+    return this.tenantsService.updateLocaleSettings(tenantId, dto)
   }
 
   @Patch('settings/protocol-prefix')

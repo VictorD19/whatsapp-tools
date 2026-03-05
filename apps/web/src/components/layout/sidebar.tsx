@@ -22,6 +22,7 @@ import {
   Building,
   CreditCard,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -49,51 +50,49 @@ interface NavGroup {
   items: NavItem[]
 }
 
-function getNavGroups(role: string, isSuperAdmin: boolean) {
+function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
+  const tNav = useTranslations('nav')
+
   const groups: NavGroup[] = [
     {
-      label: 'Atendimento',
+      label: tNav('groups.service'),
       items: [
-        { icon: Inbox, label: 'Inbox', href: '/inbox' },
-        { icon: Radio, label: 'Instancias', href: '/instances' },
+        { icon: Inbox, label: tNav('items.inbox'), href: '/inbox' },
+        { icon: Radio, label: tNav('items.instances'), href: '/instances' },
       ],
     },
     {
-      label: 'Marketing',
+      label: tNav('groups.marketing'),
       items: [
-        { icon: Megaphone, label: 'Disparos', href: '/broadcasts' },
-        { icon: Users, label: 'Grupos', href: '/groups' },
+        { icon: Megaphone, label: tNav('items.broadcasts'), href: '/broadcasts' },
+        { icon: Users, label: tNav('items.groups'), href: '/groups' },
       ],
     },
     {
-      label: 'Clientes',
+      label: tNav('groups.clients'),
       items: [
-        { icon: UserCircle, label: 'Contatos', href: '/contacts' },
-        { icon: Bot, label: 'Assistentes', href: '/assistants' },
-        { icon: Briefcase, label: 'CRM', href: '/crm' },
+        { icon: UserCircle, label: tNav('items.contacts'), href: '/contacts' },
+        { icon: Bot, label: tNav('items.assistants'), href: '/assistants' },
+        { icon: Briefcase, label: tNav('items.crm'), href: '/crm' },
       ],
     },
   ]
 
-  // Settings group: only for admin+ roles
   if (role === 'admin' || isSuperAdmin) {
     const settingsItems: NavItem[] = [
-      { icon: GitBranch, label: 'Pipeline', href: '/settings/pipeline' },
-      { icon: Tag, label: 'Tags', href: '/settings/tags' },
+      { icon: GitBranch, label: tNav('items.pipeline'), href: '/settings/pipeline' },
+      { icon: Tag, label: tNav('items.tags'), href: '/settings/tags' },
+      { icon: Users, label: tNav('items.team'), href: '/settings/team' },
     ]
-
-    settingsItems.push({ icon: Users, label: 'Equipe', href: '/settings/team' })
-
-    groups.push({ label: 'Configuracoes', items: settingsItems })
+    groups.push({ label: tNav('groups.settings'), items: settingsItems })
   }
 
-  // Super admin group
   if (isSuperAdmin) {
     groups.push({
-      label: 'Administracao',
+      label: tNav('groups.admin'),
       items: [
-        { icon: Building, label: 'Tenants', href: '/admin/tenants' },
-        { icon: CreditCard, label: 'Planos', href: '/admin/plans' },
+        { icon: Building, label: tNav('items.tenants'), href: '/admin/tenants' },
+        { icon: CreditCard, label: tNav('items.plans'), href: '/admin/plans' },
       ],
     })
   }
@@ -109,13 +108,11 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname()
   const { user, clearAuth } = useAuthStore()
+  const tNav = useTranslations('nav')
   const [mounted, setMounted] = React.useState(false)
   React.useEffect(() => setMounted(true), [])
 
-  const navGroups = React.useMemo(
-    () => getNavGroups(user?.role ?? 'agent', user?.isSuperAdmin ?? false),
-    [user?.role, user?.isSuperAdmin],
-  )
+  const navGroups = useNavGroups(user?.role ?? 'agent', user?.isSuperAdmin ?? false)
 
   return (
     <aside
@@ -178,7 +175,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="border-t border-sidebar-border px-3 py-2 space-y-0.5">
         <PlanUsage collapsed={collapsed} />
         <NavLink
-          item={{ icon: Settings, label: 'Configurações', href: '/settings' }}
+          item={{ icon: Settings, label: tNav('items.settings'), href: '/settings' }}
           pathname={pathname}
           collapsed={collapsed}
         />
@@ -201,7 +198,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               {!collapsed && (
                 <div className="flex-1 overflow-hidden text-left">
                   <p className="truncate text-[12px] font-medium text-foreground leading-tight">
-                    {mounted ? (user?.name ?? 'Usuário') : '...'}
+                    {mounted ? (user?.name ?? tNav('user.user')) : '...'}
                   </p>
                   <p className="truncate text-[11px] text-muted-foreground leading-tight">
                     {mounted ? (user?.email ?? '') : ''}
@@ -218,7 +215,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <User className="mr-2 h-3.5 w-3.5" />
-              Meu perfil
+              {tNav('user.myProfile')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -226,7 +223,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               onClick={() => clearAuth()}
             >
               <LogOut className="mr-2 h-3.5 w-3.5" />
-              Sair
+              {tNav('user.logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

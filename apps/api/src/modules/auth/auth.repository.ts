@@ -10,7 +10,15 @@ export class AuthRepository {
       where: { email, deletedAt: null },
       include: {
         tenant: {
-          include: { plan: { select: { name: true, slug: true } } },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            locale: true,
+            timezone: true,
+            currency: true,
+            plan: { select: { name: true, slug: true } },
+          },
         },
       },
     })
@@ -37,7 +45,15 @@ export class AuthRepository {
       data,
       include: {
         tenant: {
-          include: { plan: { select: { name: true, slug: true } } },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            locale: true,
+            timezone: true,
+            currency: true,
+            plan: { select: { name: true, slug: true } },
+          },
         },
       },
     })

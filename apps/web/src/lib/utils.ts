@@ -5,6 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** @deprecated Use formatRelativeDate from '@/lib/formatting' instead */
 export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date
   const now = new Date()

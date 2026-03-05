@@ -9,6 +9,7 @@ import { useInboxStore, type Conversation, type Message } from '@/stores/inbox.s
 import { useConversation } from '@/hooks/use-conversation'
 import { useGroupMembers } from '@/hooks/use-group-members'
 import { useAuthStore } from '@/stores/auth.store'
+import { formatDateSeparator as fmtDateSep } from '@/lib/formatting'
 
 interface MessageThreadProps {
   conversation: Conversation
@@ -17,14 +18,7 @@ interface MessageThreadProps {
 const EMPTY_MESSAGES: Message[] = []
 
 function formatDateSeparator(dateStr: string): string {
-  const date = new Date(dateStr)
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-
-  if (date.toDateString() === today.toDateString()) return 'Hoje'
-  if (date.toDateString() === yesterday.toDateString()) return 'Ontem'
-  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  return fmtDateSep(dateStr)
 }
 
 function shouldShowDateSeparator(messages: Message[], index: number): boolean {

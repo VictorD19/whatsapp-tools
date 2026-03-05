@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { LocaleSettings } from '@/components/settings/locale-settings'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Configurações' }
@@ -42,6 +43,9 @@ export default function SettingsPage() {
           <Button size="sm">Salvar alterações</Button>
         </CardContent>
       </Card>
+
+      {/* Locale */}
+      <LocaleSettings />
 
       {/* Notifications */}
       <Card>

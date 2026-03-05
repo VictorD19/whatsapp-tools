@@ -164,15 +164,30 @@ export class InboxWebhookProcessor {
       let isNewConversation = false
 
       if (!conversation) {
-        const protocol = await this.tenantsService.getNextProtocol(instance.tenantId)
-        conversation = await this.inboxRepository.createConversation({
-          tenantId: instance.tenantId,
-          instanceId: instance.id,
-          contactId: contact.id,
-          protocol,
-          lastMessageAt: now,
-        })
-        isNewConversation = true
+        // Check if a closed conversation exists — reopen it instead of creating a new one
+        const closedConversation = await this.inboxRepository.findConversationByContactAndInstance(
+          instance.tenantId,
+          instance.id,
+          contact.id,
+        )
+
+        if (closedConversation) {
+          conversation = await this.inboxRepository.reopenConversation(instance.tenantId, closedConversation.id)
+          isNewConversation = true
+          if (!fromMe) {
+            await this.inboxRepository.incrementUnreadCount(closedConversation.id)
+          }
+        } else {
+          const protocol = await this.tenantsService.getNextProtocol(instance.tenantId)
+          conversation = await this.inboxRepository.createConversation({
+            tenantId: instance.tenantId,
+            instanceId: instance.id,
+            contactId: contact.id,
+            protocol,
+            lastMessageAt: now,
+          })
+          isNewConversation = true
+        }
       } else if (!fromMe) {
         await this.inboxRepository.incrementUnreadCount(conversation.id)
       }

@@ -14,7 +14,7 @@ interface InstanceWebhookJob {
   receivedAt: string
 }
 
-@Processor(QUEUES.WEBHOOK_INBOUND)
+@Processor(QUEUES.WEBHOOK_INSTANCE)
 export class InstanceWebhookProcessor {
   constructor(
     private readonly repository: InstancesRepository,

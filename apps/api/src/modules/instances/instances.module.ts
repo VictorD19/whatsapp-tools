@@ -12,7 +12,10 @@ import { InstanceWebhookProcessor } from './queues/instance-webhook.processor'
 @Module({
   imports: [
     WhatsAppModule,
-    BullModule.registerQueue({ name: QUEUES.WEBHOOK_INBOUND }),
+    BullModule.registerQueue(
+      { name: QUEUES.WEBHOOK_INSTANCE },
+      { name: QUEUES.WEBHOOK_INBOUND },
+    ),
   ],
   controllers: [InstancesController, InstancesWebhookController],
   providers: [

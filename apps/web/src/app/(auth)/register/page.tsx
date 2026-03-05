@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { apiPost } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
+import { useLocaleStore } from '@/stores/locale.store'
 import { toast } from '@/components/ui/toaster'
 
 const registerSchema = z.object({
@@ -33,7 +34,7 @@ interface RegisterResponse {
       email: string
       role: string
       isSuperAdmin: boolean
-      tenant: { id: string; name: string; slug: string; plan: string }
+      tenant: { id: string; name: string; slug: string; plan: string; locale: string; timezone: string; currency: string }
     }
   }
 }
@@ -47,6 +48,7 @@ const features = [
 export default function RegisterPage() {
   const router = useRouter()
   const setAuth = useAuthStore((s) => s.setAuth)
+  const setLocaleSettings = useLocaleStore((s) => s.setLocaleSettings)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -76,9 +78,17 @@ export default function RegisterPage() {
           role: user.role as 'admin' | 'agent' | 'viewer',
           tenantId: user.tenant.id,
           isSuperAdmin: user.isSuperAdmin,
+          tenant: user.tenant,
         },
         accessToken,
       )
+      if (user.tenant.locale) {
+        setLocaleSettings({
+          locale: user.tenant.locale,
+          timezone: user.tenant.timezone,
+          currency: user.tenant.currency,
+        })
+      }
       router.push('/inbox')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao criar conta'

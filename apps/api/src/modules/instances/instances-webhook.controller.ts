@@ -21,8 +21,10 @@ interface WebhookJob {
 @Controller('webhooks/evolution')
 export class InstancesWebhookController {
   constructor(
+    @InjectQueue(QUEUES.WEBHOOK_INSTANCE)
+    private readonly instanceQueue: Queue<WebhookJob>,
     @InjectQueue(QUEUES.WEBHOOK_INBOUND)
-    private readonly webhookQueue: Queue<WebhookJob>,
+    private readonly inboxQueue: Queue<WebhookJob>,
     private readonly logger: LoggerService,
   ) {}
 
@@ -52,17 +54,25 @@ export class InstancesWebhookController {
       receivedAt: new Date().toISOString(),
     }
 
-    // Route to appropriate processor job name
     if (INSTANCE_EVENTS.has(event)) {
-      await this.webhookQueue.add('instance-webhook', job, {
+      await this.instanceQueue.add('instance-webhook', job, {
         attempts: 3,
         backoff: { type: 'exponential', delay: 1000 },
       })
     } else if (INBOX_EVENTS.has(event)) {
-      await this.webhookQueue.add('inbox-webhook', job, {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 1000 },
-      })
+      const q = this.inboxQueue as any
+      console.log('[DEBUG-INBOX] queue name:', q.name, '| client status:', q.client?.status)
+      try {
+        const result = await this.inboxQueue.add('inbox-webhook', job, {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 1000 },
+        })
+        console.log('[DEBUG-INBOX] Job added OK, id:', result?.id)
+        const idCounter = await q.client?.get(`bull:${q.name}:id`)
+        console.log('[DEBUG-INBOX] Counter after add:', idCounter)
+      } catch (err) {
+        console.error('[DEBUG-INBOX] add() FAILED:', (err as Error).message)
+      }
     } else {
       this.logger.debug(`Unrouted webhook event: ${event}`, 'Webhook')
     }

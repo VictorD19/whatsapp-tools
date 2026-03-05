@@ -49,6 +49,9 @@ model Tenant {
   planId         String
   protocolPrefix String    @default("SCHA")
   protocolSeq    Int       @default(999)
+  locale         String    @default("pt-BR")
+  timezone       String    @default("America/Sao_Paulo")
+  currency       String    @default("BRL")
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?

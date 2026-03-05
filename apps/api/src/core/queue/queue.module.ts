@@ -6,6 +6,7 @@ export const QUEUES = {
   GROUP_MENTION: 'group-mention',
   AI_RESPONSE: 'ai-response',
   WEBHOOK_INBOUND: 'webhook-inbound',
+  WEBHOOK_INSTANCE: 'webhook-instance',
   NOTIFICATION: 'notification',
   CONVERSATION_IMPORT: 'conversation-import',
 } as const
