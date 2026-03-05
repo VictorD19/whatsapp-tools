@@ -10,15 +10,18 @@ export interface SendTextOptions {
 export interface ImagePayload {
   url: string
   caption?: string
+  mimetype?: string
 }
 
 export interface VideoPayload {
   url: string
   caption?: string
+  mimetype?: string
 }
 
 export interface AudioPayload {
   url: string
+  mimetype?: string
 }
 
 export interface DocumentPayload {

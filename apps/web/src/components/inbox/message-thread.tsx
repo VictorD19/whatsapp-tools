@@ -38,7 +38,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   const isLoading = useInboxStore((s) => s.isLoadingMessages)
   const replyingTo = useInboxStore((s) => s.replyingTo)
   const setReplyingTo = useInboxStore((s) => s.setReplyingTo)
-  const { fetchMessages, sendMessage, syncMessages } = useConversation()
+  const { fetchMessages, sendMessage, syncMessages, sendMedia } = useConversation()
   const userId = useAuthStore((s) => s.user?.id)
   const bottomRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
@@ -138,6 +138,13 @@ export function MessageThread({ conversation }: MessageThreadProps) {
     [conversation.id, sendMessage, setReplyingTo],
   )
 
+  const handleSendMedia = useCallback(
+    async (file: File, caption?: string) => {
+      await sendMedia(conversation.id, file, caption)
+    },
+    [conversation.id, sendMedia],
+  )
+
   const handleReply = useCallback(
     (msg: Message) => {
       setReplyingTo(msg)
@@ -231,6 +238,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
       {/* Input */}
       <MessageInput
         onSend={handleSend}
+        onSendMedia={canSend ? handleSendMedia : undefined}
         disabled={!canSend}
         placeholder={
           isPending

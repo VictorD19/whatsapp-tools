@@ -12,7 +12,7 @@
     "test:cov": "jest --coverage"
   },
   "dependencies": {
-    "@fastify/multipart": "^9.4.0",
+    "@fastify/multipart": "^8.3.1",
     "@fastify/static": "^7.0.0",
     "@nestjs/bull": "^10.2.3",
     "@nestjs/common": "^10.4.0",

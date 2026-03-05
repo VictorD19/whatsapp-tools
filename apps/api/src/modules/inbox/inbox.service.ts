@@ -12,6 +12,23 @@ import { ConversationImportProducer } from './queues/import.producer'
 import { ConversationStatus } from '@prisma/client'
 import { parseWhatsAppMessage } from './utils/message-parser'
 
+const SIZE_LIMITS: Record<string, number> = {
+  IMAGE: 5 * 1024 * 1024,
+  VIDEO: 16 * 1024 * 1024,
+  AUDIO: 16 * 1024 * 1024,
+  DOCUMENT: 100 * 1024 * 1024,
+}
+
+function resolveMediaType(mimetype: string): {
+  type: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
+  sizeLimit: number
+} {
+  if (mimetype.startsWith('image/')) return { type: 'IMAGE', sizeLimit: SIZE_LIMITS.IMAGE }
+  if (mimetype.startsWith('video/')) return { type: 'VIDEO', sizeLimit: SIZE_LIMITS.VIDEO }
+  if (mimetype.startsWith('audio/')) return { type: 'AUDIO', sizeLimit: SIZE_LIMITS.AUDIO }
+  return { type: 'DOCUMENT', sizeLimit: SIZE_LIMITS.DOCUMENT }
+}
+
 @Injectable()
 export class InboxService {
   constructor(
@@ -236,6 +253,113 @@ export class InboxService {
         mediaUrl: message.mediaUrl,
         quotedMessageId: message.quotedMessageId,
         quotedMessage: message.quotedMessage,
+        sentAt: message.sentAt,
+        createdAt: message.createdAt,
+      },
+    })
+
+    return message
+  }
+
+  async sendMediaMessage(
+    tenantId: string,
+    conversationId: string,
+    userId: string,
+    role: string,
+    file: { buffer: Buffer; mimetype: string; filename: string; caption?: string },
+  ) {
+    const conversation = await this.findConversationById(tenantId, conversationId)
+
+    if (conversation.status !== 'OPEN') {
+      throw new AppException(
+        'CONVERSATION_NOT_OPEN',
+        'So e possivel enviar mensagens em conversas abertas',
+        { status: conversation.status },
+      )
+    }
+
+    if (role !== 'admin' && conversation.assignedToId !== userId) {
+      throw new AppException(
+        'CONVERSATION_ALREADY_ASSIGNED',
+        'Voce nao esta atribuido a esta conversa',
+        { assignedToId: conversation.assignedToId },
+      )
+    }
+
+    const { type, sizeLimit } = resolveMediaType(file.mimetype)
+
+    if (file.buffer.length > sizeLimit) {
+      throw new AppException(
+        'FILE_TOO_LARGE',
+        `Arquivo excede o limite permitido (${Math.round(sizeLimit / 1024 / 1024)}MB)`,
+        { mimetype: file.mimetype, size: file.buffer.length, limit: sizeLimit },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      )
+    }
+
+    const contactPhone = conversation.contact.phone
+    const evolutionId = conversation.instance.evolutionId
+    const base64 = file.buffer.toString('base64')
+
+    let messageResult: { messageId: string; status: string }
+    try {
+      switch (type) {
+        case 'IMAGE':
+          messageResult = await this.whatsapp.sendImage(evolutionId, contactPhone, { url: base64, mimetype: file.mimetype, caption: file.caption })
+          break
+        case 'VIDEO':
+          messageResult = await this.whatsapp.sendVideo(evolutionId, contactPhone, { url: base64, mimetype: file.mimetype, caption: file.caption })
+          break
+        case 'AUDIO':
+          messageResult = await this.whatsapp.sendAudio(evolutionId, contactPhone, { url: base64, mimetype: file.mimetype })
+          break
+        default:
+          messageResult = await this.whatsapp.sendDocument(evolutionId, contactPhone, {
+            url: base64,
+            fileName: file.filename,
+            mimetype: file.mimetype,
+          })
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send media: ${(error as Error).message}`,
+        (error as Error).stack,
+        'InboxService',
+      )
+      throw new AppException(
+        'MEDIA_UPLOAD_FAILED',
+        'Falha ao enviar midia via WhatsApp',
+        { reason: (error as Error).message },
+        HttpStatus.BAD_GATEWAY,
+      )
+    }
+
+    const message = await this.repository.createMessage({
+      tenantId,
+      conversationId,
+      fromMe: true,
+      body: file.caption || null,
+      type,
+      status: 'SENT',
+      evolutionId: messageResult.messageId,
+      mediaUrl: 'has-media',
+    })
+
+    await this.repository.updateLastMessageAt(conversationId)
+
+    this.gateway.emitNewMessage(tenantId, {
+      conversationId,
+      message: {
+        id: message.id,
+        conversationId,
+        fromMe: true,
+        fromBot: false,
+        body: message.body,
+        type: message.type,
+        status: message.status,
+        mediaUrl: message.mediaUrl,
+        quotedMessageId: null,
+        quotedMessage: null,
         sentAt: message.sentAt,
         createdAt: message.createdAt,
       },

@@ -9,6 +9,7 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common'
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { InboxService } from './inbox.service'
@@ -137,6 +138,42 @@ export class InboxController {
     @Param('id') id: string,
   ) {
     return this.inboxService.reopenConversation(tenantId, id)
+  }
+
+  @Post('conversations/:id/media')
+  async sendMedia(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string; role: string },
+    @Req() req: FastifyRequest,
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parts = (req as any).parts()
+    let fileBuffer: Buffer | null = null
+    let mimetype = ''
+    let filename = 'arquivo'
+    let caption: string | undefined
+
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        fileBuffer = await part.toBuffer()
+        mimetype = part.mimetype as string
+        filename = (part.filename as string) || 'arquivo'
+      } else if (part.fieldname === 'caption') {
+        caption = part.value as string
+      }
+    }
+
+    if (!fileBuffer) {
+      throw new BadRequestException('Nenhum arquivo enviado')
+    }
+
+    return this.inboxService.sendMediaMessage(tenantId, id, user.id, user.role, {
+      buffer: fileBuffer,
+      mimetype,
+      filename,
+      caption,
+    })
   }
 
   @Post('instances/:instanceId/import-conversations')

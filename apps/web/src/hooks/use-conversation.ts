@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { apiGet, apiPost } from '@/lib/api'
+import { apiGet, apiPost, apiUpload } from '@/lib/api'
 import { useInboxStore, type Message } from '@/stores/inbox.store'
 import { toast } from '@/components/ui/toaster'
 
@@ -93,5 +93,23 @@ export function useConversation() {
     }
   }, [])
 
-  return { fetchMessages, assignConversation, closeConversation, sendMessage, syncMessages }
+  const sendMedia = useCallback(
+    async (conversationId: string, file: File, caption?: string) => {
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        if (caption) formData.append('caption', caption)
+        const res = await apiUpload<ApiResponse<Message>>(
+          `inbox/conversations/${conversationId}/media`,
+          formData,
+        )
+        appendMessage(conversationId, res.data)
+      } catch {
+        toast({ title: 'Erro ao enviar mídia', variant: 'destructive' })
+      }
+    },
+    [appendMessage],
+  )
+
+  return { fetchMessages, assignConversation, closeConversation, sendMessage, syncMessages, sendMedia }
 }

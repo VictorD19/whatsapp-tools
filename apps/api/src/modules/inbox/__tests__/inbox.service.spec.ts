@@ -70,6 +70,10 @@ describe('InboxService', () => {
 
     const mockWhatsapp = {
       sendText: jest.fn(),
+      sendImage: jest.fn(),
+      sendVideo: jest.fn(),
+      sendAudio: jest.fn(),
+      sendDocument: jest.fn(),
       findMessages: jest.fn(),
     }
 
@@ -309,6 +313,146 @@ describe('InboxService', () => {
       await expect(
         service.sendMessage(tenantId, 'conv-1', userId, { body: 'Hello' }),
       ).rejects.toMatchObject({ code: 'MESSAGE_SEND_FAILED' })
+    })
+  })
+
+  describe('sendMediaMessage', () => {
+    const openConversation = {
+      ...mockConversation,
+      status: 'OPEN' as const,
+      assignedToId: userId,
+    }
+
+    const mockMediaMessage = {
+      id: 'msg-media-1',
+      tenantId,
+      conversationId: 'conv-1',
+      fromMe: true,
+      fromBot: false,
+      body: null,
+      type: 'IMAGE' as const,
+      status: 'SENT' as const,
+      evolutionId: 'evo-media-1',
+      mediaUrl: 'has-media',
+      quotedMessageId: null,
+      quotedMessage: null,
+      sentAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    it('should send image and emit WebSocket event', async () => {
+      repository.findConversationById.mockResolvedValue(openConversation)
+      whatsapp.sendImage.mockResolvedValue({ messageId: 'evo-media-1', status: 'sent' })
+      repository.createMessage.mockResolvedValue(mockMediaMessage)
+      repository.updateLastMessageAt.mockResolvedValue({} as never)
+
+      const result = await service.sendMediaMessage(tenantId, 'conv-1', userId, 'agent', {
+        buffer: Buffer.from('fake-image-data'),
+        mimetype: 'image/jpeg',
+        filename: 'photo.jpg',
+      })
+
+      expect(result.type).toBe('IMAGE')
+      expect(result.mediaUrl).toBe('has-media')
+      expect(whatsapp.sendImage).toHaveBeenCalledWith(
+        'acme-vendas',
+        '5511999999999',
+        expect.objectContaining({ url: expect.stringContaining('data:image/jpeg;base64,') }),
+      )
+      expect(gateway.emitNewMessage).toHaveBeenCalled()
+    })
+
+    it('should send document for non-media mimetypes', async () => {
+      repository.findConversationById.mockResolvedValue(openConversation)
+      whatsapp.sendDocument.mockResolvedValue({ messageId: 'evo-doc-1', status: 'sent' })
+      repository.createMessage.mockResolvedValue({
+        ...mockMediaMessage,
+        type: 'DOCUMENT' as const,
+        evolutionId: 'evo-doc-1',
+      })
+      repository.updateLastMessageAt.mockResolvedValue({} as never)
+
+      const result = await service.sendMediaMessage(tenantId, 'conv-1', userId, 'agent', {
+        buffer: Buffer.from('fake-pdf'),
+        mimetype: 'application/pdf',
+        filename: 'contrato.pdf',
+      })
+
+      expect(result.type).toBe('DOCUMENT')
+      expect(whatsapp.sendDocument).toHaveBeenCalledWith(
+        'acme-vendas',
+        '5511999999999',
+        expect.objectContaining({ fileName: 'contrato.pdf', mimetype: 'application/pdf' }),
+      )
+    })
+
+    it('should throw CONVERSATION_NOT_OPEN if conversation is not open', async () => {
+      repository.findConversationById.mockResolvedValue(mockConversation) // status: PENDING
+
+      await expect(
+        service.sendMediaMessage(tenantId, 'conv-1', userId, 'agent', {
+          buffer: Buffer.from('data'),
+          mimetype: 'image/png',
+          filename: 'img.png',
+        }),
+      ).rejects.toMatchObject({ code: 'CONVERSATION_NOT_OPEN' })
+    })
+
+    it('should throw CONVERSATION_ALREADY_ASSIGNED if not assigned to user', async () => {
+      repository.findConversationById.mockResolvedValue({
+        ...openConversation,
+        assignedToId: 'other-user',
+      })
+
+      await expect(
+        service.sendMediaMessage(tenantId, 'conv-1', userId, 'agent', {
+          buffer: Buffer.from('data'),
+          mimetype: 'image/png',
+          filename: 'img.png',
+        }),
+      ).rejects.toMatchObject({ code: 'CONVERSATION_ALREADY_ASSIGNED' })
+    })
+
+    it('should throw FILE_TOO_LARGE when image exceeds 5MB', async () => {
+      repository.findConversationById.mockResolvedValue(openConversation)
+
+      await expect(
+        service.sendMediaMessage(tenantId, 'conv-1', userId, 'agent', {
+          buffer: Buffer.alloc(6 * 1024 * 1024), // 6MB
+          mimetype: 'image/jpeg',
+          filename: 'big.jpg',
+        }),
+      ).rejects.toMatchObject({ code: 'FILE_TOO_LARGE' })
+    })
+
+    it('should throw MEDIA_UPLOAD_FAILED on WhatsApp error', async () => {
+      repository.findConversationById.mockResolvedValue(openConversation)
+      whatsapp.sendImage.mockRejectedValue(new Error('Evolution API error'))
+
+      await expect(
+        service.sendMediaMessage(tenantId, 'conv-1', userId, 'agent', {
+          buffer: Buffer.from('data'),
+          mimetype: 'image/jpeg',
+          filename: 'img.jpg',
+        }),
+      ).rejects.toMatchObject({ code: 'MEDIA_UPLOAD_FAILED' })
+    })
+
+    it('should allow admin to send media in any open conversation', async () => {
+      const otherUserConversation = { ...openConversation, assignedToId: 'other-user' }
+      repository.findConversationById.mockResolvedValue(otherUserConversation)
+      whatsapp.sendImage.mockResolvedValue({ messageId: 'evo-media-2', status: 'sent' })
+      repository.createMessage.mockResolvedValue({ ...mockMediaMessage, evolutionId: 'evo-media-2' })
+      repository.updateLastMessageAt.mockResolvedValue({} as never)
+
+      await expect(
+        service.sendMediaMessage(tenantId, 'conv-1', userId, 'admin', {
+          buffer: Buffer.from('data'),
+          mimetype: 'image/png',
+          filename: 'img.png',
+        }),
+      ).resolves.toBeDefined()
     })
   })
 

@@ -53,3 +53,7 @@ export async function apiPatch<T>(path: string, data: unknown): Promise<T> {
 export async function apiDelete<T>(path: string): Promise<T> {
   return api.delete(path).json<T>()
 }
+
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  return api.post(path, { body: formData }).json<T>()
+}

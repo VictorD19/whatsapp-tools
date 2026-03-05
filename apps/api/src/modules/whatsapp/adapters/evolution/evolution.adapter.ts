@@ -190,6 +190,7 @@ export class EvolutionAdapter implements IWhatsAppProvider {
       {
         number: to,
         mediatype: 'image',
+        mimetype: payload.mimetype,
         media: payload.url,
         caption: payload.caption,
       },
@@ -208,6 +209,7 @@ export class EvolutionAdapter implements IWhatsAppProvider {
       {
         number: to,
         mediatype: 'video',
+        mimetype: payload.mimetype,
         media: payload.url,
         caption: payload.caption,
       },
@@ -223,7 +225,7 @@ export class EvolutionAdapter implements IWhatsAppProvider {
   ): Promise<MessageResult> {
     const res = await this.http.post<EvoMessageResponse>(
       `/message/sendWhatsAppAudio/${instanceId}`,
-      { number: to, audio: payload.url },
+      { number: to, audio: payload.url, mimetype: payload.mimetype },
     )
 
     return { messageId: res.key.id, status: 'sent' }
