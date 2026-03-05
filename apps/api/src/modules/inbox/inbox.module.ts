@@ -39,6 +39,6 @@ import { ConversationImportProcessor } from './queues/import.processor'
     ConversationImportProducer,
     ConversationImportProcessor,
   ],
-  exports: [InboxService, WebhookInboundProducer],
+  exports: [InboxService, WebhookInboundProducer, InboxGateway],
 })
 export class InboxModule {}

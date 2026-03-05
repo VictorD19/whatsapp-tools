@@ -93,7 +93,39 @@ export class InstancesService {
   }
 
   async findAll(tenantId: string) {
-    return this.repository.findAllByTenant(tenantId)
+    const instances = await this.repository.findAllByTenant(tenantId)
+
+    // Sync status with Evolution API for instances that may be out of date
+    // (e.g. webhook was lost while server was down)
+    await Promise.allSettled(
+      instances.map(async (instance) => {
+        try {
+          const realStatus = await this.whatsapp.getInstanceStatus(instance.evolutionId)
+          if (realStatus !== instance.status) {
+            let phone: string | undefined
+            if (realStatus === 'CONNECTED') {
+              try {
+                const info = await this.whatsapp.getInstanceInfo(instance.evolutionId)
+                phone = info.phone
+              } catch {
+                // ignore
+              }
+            }
+            await this.repository.updateStatus(instance.tenantId, instance.id, realStatus, phone)
+            instance.status = realStatus
+            if (phone) instance.phone = phone
+            this.logger.log(
+              `Instance ${instance.id} status synced: ${instance.status} -> ${realStatus}`,
+              'InstancesService',
+            )
+          }
+        } catch {
+          // Evolution API unreachable — keep DB status as-is
+        }
+      }),
+    )
+
+    return instances
   }
 
   async findByEvolutionId(evolutionId: string) {

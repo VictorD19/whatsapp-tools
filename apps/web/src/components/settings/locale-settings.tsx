@@ -5,6 +5,7 @@ import { Globe } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Loader2, Check } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -54,9 +55,11 @@ const TIMEZONES = [
   { value: 'UTC', label: 'UTC (UTC+0)' },
 ]
 
-export function LocaleSettings() {
+/** Content-only (no Card wrapper) — used in the redesigned settings page */
+export function LocaleSettingsContent() {
   const { locale, timezone, currency, setLocaleSettings } = useLocaleStore()
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [form, setForm] = useState({ locale, timezone, currency })
 
   async function handleSave() {
@@ -64,6 +67,8 @@ export function LocaleSettings() {
     try {
       await apiPatch('tenants/settings/locale', form)
       setLocaleSettings(form)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
       toast({ title: 'Configurações salvas', description: 'Idioma e região atualizados.' })
     } catch {
       toast({ title: 'Erro', description: 'Não foi possível salvar as configurações.', variant: 'destructive' })
@@ -72,6 +77,69 @@ export function LocaleSettings() {
     }
   }
 
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Idioma</Label>
+          <Select value={form.locale} onValueChange={(v) => setForm((f) => ({ ...f, locale: v }))}>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LOCALES.map((l) => (
+                <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Fuso horário</Label>
+          <Select value={form.timezone} onValueChange={(v) => setForm((f) => ({ ...f, timezone: v }))}>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TIMEZONES.map((tz) => (
+                <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Moeda</Label>
+          <Select value={form.currency} onValueChange={(v) => setForm((f) => ({ ...f, currency: v }))}>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCIES.map((c) => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex justify-end pt-1">
+        <Button size="sm" onClick={handleSave} disabled={saving || saved} className="min-w-[130px]">
+          {saving ? (
+            <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Salvando…</>
+          ) : saved ? (
+            <><Check className="h-3.5 w-3.5 mr-1.5" />Salvo!</>
+          ) : (
+            'Salvar configurações'
+          )}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/** Legacy Card wrapper — kept for backwards compatibility */
+export function LocaleSettings() {
   return (
     <Card>
       <CardHeader>
@@ -83,54 +151,8 @@ export function LocaleSettings() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <Label>Idioma</Label>
-            <Select value={form.locale} onValueChange={(v) => setForm((f) => ({ ...f, locale: v }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LOCALES.map((l) => (
-                  <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Fuso horário</Label>
-            <Select value={form.timezone} onValueChange={(v) => setForm((f) => ({ ...f, timezone: v }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TIMEZONES.map((tz) => (
-                  <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Moeda</Label>
-            <Select value={form.currency} onValueChange={(v) => setForm((f) => ({ ...f, currency: v }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <Button size="sm" onClick={handleSave} disabled={saving}>
-          {saving ? 'Salvando...' : 'Salvar configurações'}
-        </Button>
+      <CardContent>
+        <LocaleSettingsContent />
       </CardContent>
     </Card>
   )

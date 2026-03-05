@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Radio, Users, Bot, Megaphone, Gauge } from 'lucide-react'
+import { Radio, Users, Bot, Megaphone, Gauge, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Progress } from '@/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -44,6 +44,12 @@ function getColor(pct: number) {
   return 'text-emerald-500'
 }
 
+function getProgressColor(pct: number) {
+  if (pct > 85) return 'bg-red-500'
+  if (pct > 60) return 'bg-yellow-500'
+  return 'bg-emerald-500'
+}
+
 function LimitRow({ icon: Icon, label, current, max }: LimitRowProps) {
   const pct = max > 0 ? Math.min((current / max) * 100, 100) : 0
 
@@ -71,7 +77,6 @@ function computeOverallPercentage(data: UsageData): number {
     { current: data.usage.broadcastsToday, max: data.plan.maxBroadcastsPerDay },
   ]
 
-  // Highest usage percentage across all limits
   let highest = 0
   for (const item of items) {
     if (item.max > 0) {
@@ -83,11 +88,7 @@ function computeOverallPercentage(data: UsageData): number {
   return Math.min(Math.round(highest), 100)
 }
 
-interface PlanUsageProps {
-  collapsed: boolean
-}
-
-export function PlanUsage({ collapsed }: PlanUsageProps) {
+function useUsageData() {
   const [data, setData] = useState<UsageData | null>(null)
   const [open, setOpen] = useState(false)
 
@@ -97,85 +98,136 @@ export function PlanUsage({ collapsed }: PlanUsageProps) {
       .catch(() => {})
   }, [])
 
+  return { data, open, setOpen }
+}
+
+/* ──────────────────────────────────────────────
+   PlanUsageInline — card embutido no topo do sidebar
+────────────────────────────────────────────── */
+interface PlanUsageProps {
+  collapsed: boolean
+}
+
+export function PlanUsageInline({ collapsed }: PlanUsageProps) {
+  const { data, open, setOpen } = useUsageData()
+
   if (!data) return null
 
   const overallPct = computeOverallPercentage(data)
+  const progressColor = getProgressColor(overallPct)
 
-  const trigger = (
-    <button
-      onClick={() => setOpen(true)}
-      className={cn(
-        'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-300 hover:bg-sidebar-accent group',
-        collapsed && 'justify-center px-2'
-      )}
-    >
-      <Gauge className="shrink-0 h-4 w-4 text-muted-foreground group-hover:text-sidebar-foreground transition-colors" />
-      {!collapsed && (
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[12px] font-medium text-muted-foreground group-hover:text-sidebar-foreground truncate">
-              {data.plan.name}
-            </span>
-            <span className={cn('text-[11px] font-medium tabular-nums', getColor(overallPct))}>
-              {overallPct}%
-            </span>
-          </div>
-          <Progress value={overallPct} max={100} className="h-1.5" />
-        </div>
-      )}
-    </button>
-  )
-
-  return (
-    <>
-      {collapsed ? (
+  if (collapsed) {
+    return (
+      <>
         <Tooltip>
-          <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setOpen(true)}
+              className="flex w-full justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            >
+              <Gauge className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
           <TooltipContent side="right" className="text-xs">
             {data.plan.name} — {overallPct}% usado
           </TooltipContent>
         </Tooltip>
-      ) : (
-        trigger
-      )}
+        <UsageDialog open={open} onOpenChange={setOpen} data={data} />
+      </>
+    )
+  }
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Limites do plano</DialogTitle>
-            <DialogDescription>
-              Plano {data.plan.name} — uso atual dos recursos
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <LimitRow
-              icon={Radio}
-              label="Instancias WhatsApp"
-              current={data.usage.instances}
-              max={data.plan.maxInstances}
-            />
-            <LimitRow
-              icon={Users}
-              label="Atendentes"
-              current={data.usage.users}
-              max={data.plan.maxUsers}
-            />
-            <LimitRow
-              icon={Bot}
-              label="Assistentes IA"
-              current={data.usage.assistants}
-              max={data.plan.maxAssistants}
-            />
-            <LimitRow
-              icon={Megaphone}
-              label="Disparos / dia"
-              current={data.usage.broadcastsToday}
-              max={data.plan.maxBroadcastsPerDay}
-            />
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full rounded-xl border border-sidebar-border/60 bg-sidebar-accent/40 px-3 py-2.5 text-left transition-colors hover:bg-sidebar-accent group"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Zap className="h-3 w-3 text-primary" />
+            <span className="text-[11px] font-semibold text-sidebar-foreground">
+              {data.plan.name}
+            </span>
           </div>
-        </DialogContent>
-      </Dialog>
+          <span className={cn('text-[11px] font-bold tabular-nums', getColor(overallPct))}>
+            {overallPct}%
+          </span>
+        </div>
+
+        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-sidebar-border">
+          <div
+            className={cn('h-full rounded-full transition-all', progressColor)}
+            style={{ width: `${overallPct}%` }}
+          />
+        </div>
+
+        <p className="mt-1.5 text-[10px] text-muted-foreground group-hover:text-sidebar-foreground transition-colors">
+          Ver detalhes dos limites →
+        </p>
+      </button>
+
+      <UsageDialog open={open} onOpenChange={setOpen} data={data} />
     </>
+  )
+}
+
+/* ──────────────────────────────────────────────
+   PlanUsage — versão legada (mantida para compatibilidade)
+────────────────────────────────────────────── */
+export function PlanUsage({ collapsed }: PlanUsageProps) {
+  return <PlanUsageInline collapsed={collapsed} />
+}
+
+/* ──────────────────────────────────────────────
+   Dialog de detalhes
+────────────────────────────────────────────── */
+function UsageDialog({
+  open,
+  onOpenChange,
+  data,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  data: UsageData
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Limites do plano</DialogTitle>
+          <DialogDescription>
+            Plano {data.plan.name} — uso atual dos recursos
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <LimitRow
+            icon={Radio}
+            label="Instâncias WhatsApp"
+            current={data.usage.instances}
+            max={data.plan.maxInstances}
+          />
+          <LimitRow
+            icon={Users}
+            label="Atendentes"
+            current={data.usage.users}
+            max={data.plan.maxUsers}
+          />
+          <LimitRow
+            icon={Bot}
+            label="Assistentes IA"
+            current={data.usage.assistants}
+            max={data.plan.maxAssistants}
+          />
+          <LimitRow
+            icon={Megaphone}
+            label="Disparos / dia"
+            current={data.usage.broadcastsToday}
+            max={data.plan.maxBroadcastsPerDay}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

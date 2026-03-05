@@ -66,6 +66,7 @@ model Tenant {
   deals         Deal[]
   dealNotes     DealNote[]
   tags          Tag[]
+  contactLists  ContactList[]
 
   @@index([planId])
 }
@@ -132,10 +133,11 @@ model Contact {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  tenant        Tenant         @relation(fields: [tenantId], references: [id])
-  conversations Conversation[]
-  deals         Deal[]
-  contactTags   ContactTag[]
+  tenant           Tenant             @relation(fields: [tenantId], references: [id])
+  conversations    Conversation[]
+  deals            Deal[]
+  contactTags      ContactTag[]
+  contactListItems ContactListItem[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -345,4 +347,42 @@ model ContactTag {
 
   @@id([contactId, tagId])
   @@index([tagId])
+}
+
+// ── Contact Lists ─────────────────────────────────
+
+enum ContactListSource {
+  GROUP_EXTRACT
+  CSV_IMPORT
+  MANUAL
+  CRM_FILTER
+}
+
+model ContactList {
+  id           String            @id @default(cuid())
+  tenantId     String
+  name         String
+  description  String?
+  source       ContactListSource @default(MANUAL)
+  contactCount Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+
+  tenant Tenant            @relation(fields: [tenantId], references: [id])
+  items  ContactListItem[]
+
+  @@index([tenantId])
+}
+
+model ContactListItem {
+  contactListId String
+  contactId     String
+  addedAt       DateTime @default(now())
+
+  contactList ContactList @relation(fields: [contactListId], references: [id], onDelete: Cascade)
+  contact     Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@id([contactListId, contactId])
+  @@index([contactId])
 }

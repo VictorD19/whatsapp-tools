@@ -9,6 +9,7 @@ export const QUEUES = {
   WEBHOOK_INSTANCE: 'webhook-instance',
   NOTIFICATION: 'notification',
   CONVERSATION_IMPORT: 'conversation-import',
+  GROUP_CONTACT_EXTRACT: 'group-contact-extract',
 } as const
 
 function parseRedisConfig() {
