@@ -61,8 +61,9 @@ export class GroupExtractProcessor {
 
         for (const member of members) {
           const phone = member.phone || member.id.split('@')[0]
-          // Skip non-phone JIDs (status, lid, etc)
-          if (!phone || phone.includes('@') || phone === 'status') continue
+          // Only keep valid phone numbers (digits only)
+          // Skips LIDs (lid.xxxxx), status JIDs, and other non-phone identifiers
+          if (!phone || !/^\d+$/.test(phone)) continue
 
           allContacts.push({
             phone,
