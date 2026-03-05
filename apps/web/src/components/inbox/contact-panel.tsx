@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { getInitials, formatPhone, cn } from '@/lib/utils'
 import { useConversation } from '@/hooks/use-conversation'
-import { useTags, type Tag as TagType } from '@/hooks/use-tags'
+import { useTags, useContactTags, type Tag as TagType } from '@/hooks/use-tags'
 import { usePipelineStages } from '@/hooks/use-pipeline-stages'
 import { useDeal, type DealNote } from '@/hooks/use-deal'
 import { useAuthStore } from '@/stores/auth.store'
@@ -63,29 +63,23 @@ function formatNoteDate(dateStr: string): string {
 
 function TagsSection({
   contactId,
-  conversationTags,
-  onTagsChanged,
 }: {
   contactId: string
-  conversationTags: string[]
-  onTagsChanged: () => void
 }) {
   const { tags: allTags, isLoading: isLoadingTags, addTagToContact, removeTagFromContact } = useTags()
+  const { contactTags, refetchContactTags } = useContactTags(contactId)
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false)
 
-  // Map conversation tag names to tag objects for color display
-  const contactTagObjects = useMemo(() => {
-    return allTags.filter((t) => conversationTags.includes(t.name))
-  }, [allTags, conversationTags])
+  const contactTagIds = useMemo(() => new Set(contactTags.map((t) => t.id)), [contactTags])
 
   const availableTags = useMemo(() => {
-    return allTags.filter((t) => !conversationTags.includes(t.name))
-  }, [allTags, conversationTags])
+    return allTags.filter((t) => !contactTagIds.has(t.id))
+  }, [allTags, contactTagIds])
 
   async function handleAddTag(tag: TagType) {
     const ok = await addTagToContact(contactId, tag.id)
     if (ok) {
-      onTagsChanged()
+      await refetchContactTags()
       setTagPopoverOpen(false)
     }
   }
@@ -93,7 +87,7 @@ function TagsSection({
   async function handleRemoveTag(tag: TagType) {
     const ok = await removeTagFromContact(contactId, tag.id)
     if (ok) {
-      onTagsChanged()
+      await refetchContactTags()
     }
   }
 
@@ -143,8 +137,8 @@ function TagsSection({
         </Popover>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {contactTagObjects.length > 0 ? (
-          contactTagObjects.map((tag) => (
+        {contactTags.length > 0 ? (
+          contactTags.map((tag) => (
             <Badge
               key={tag.id}
               variant="secondary"
@@ -171,14 +165,6 @@ function TagsSection({
         ) : (
           <p className="text-[11px] text-muted-foreground/60">Nenhuma tag</p>
         )}
-        {/* Show plain string tags that don't match any tag object */}
-        {conversationTags
-          .filter((name) => !contactTagObjects.some((t) => t.name === name))
-          .map((name) => (
-            <Badge key={name} variant="secondary" className="text-xs">
-              {name}
-            </Badge>
-          ))}
       </div>
     </div>
   )
@@ -519,11 +505,6 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
   const isPending = conversation.status === 'PENDING'
   const activeDeal = conversation.deals?.[0] ?? null
 
-  function handleTagsChanged() {
-    // Refetch will happen via socket, but we could also do an optimistic update here
-    // For now we rely on the backend to push the updated conversation
-  }
-
   function handleStageChanged(stageId: string) {
     if (!activeDeal || !conversation) return
     const updatedDeal = { ...activeDeal, stageId }
@@ -566,11 +547,7 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
       <Separator />
 
       {/* Tags */}
-      <TagsSection
-        contactId={contact.id}
-        conversationTags={conversation.tags}
-        onTagsChanged={handleTagsChanged}
-      />
+      <TagsSection contactId={contact.id} />
 
       <Separator />
 
@@ -661,7 +638,7 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
           <div className="space-y-2">
             {isPending && (
               <Button className="w-full" onClick={() => assignConversation(conversation.id)}>
-                Assumir
+                Entrar na conversa
               </Button>
             )}
             {conversation.status === 'OPEN' && isAssignedToMe && (

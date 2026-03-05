@@ -55,3 +55,28 @@ export function useTags() {
 
   return { tags, isLoading, fetchTags, addTagToContact, removeTagFromContact }
 }
+
+/** Fetch tags assigned to a specific contact */
+export function useContactTags(contactId: string | undefined) {
+  const [contactTags, setContactTags] = useState<Tag[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  const fetchContactTags = useCallback(async () => {
+    if (!contactId) return
+    setIsLoading(true)
+    try {
+      const res = await apiGet<ApiResponse<Tag[]>>(`contacts/${contactId}/tags`)
+      setContactTags(res.data)
+    } catch {
+      // silent — contact may not have tags yet
+    } finally {
+      setIsLoading(false)
+    }
+  }, [contactId])
+
+  useEffect(() => {
+    fetchContactTags()
+  }, [fetchContactTags])
+
+  return { contactTags, isLoadingContactTags: isLoading, refetchContactTags: fetchContactTags }
+}
