@@ -5,6 +5,27 @@ executar os passos abaixo na ordem, sem exceção. Não iniciar código antes de
 
 ---
 
+## Passo 0 — Issue obrigatória no GitHub
+
+**Toda feature deve estar vinculada a uma issue antes de qualquer código ser escrito.**
+
+1. Verificar se já existe uma issue relacionada no repositório (`gh issue list`)
+2. Se não existir, criar antes de começar:
+
+```bash
+gh issue create \
+  --title "feat: <título descritivo da feature>" \
+  --body "## Descrição\n<o que será implementado e por quê>\n\n## Critérios de aceite\n- [ ] <critério 1>\n- [ ] <critério 2>" \
+  --label "enhancement"
+```
+
+3. Registrar o número da issue e referenciá-la no commit (`closes #<número>`)
+
+> **Nunca iniciar implementação sem issue.** Se a demanda chegou informalmente (mensagem, conversa),
+> criar a issue primeiro — mesmo que seja simples — para manter rastreabilidade.
+
+---
+
 ## Passo 1 — Análise prévia (responder explicitamente antes de codar)
 
 1. **Feature mapeada?** — Está no `FEATURES.md`? Em qual fase/versão?

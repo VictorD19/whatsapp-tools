@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import {
-  Send, Paperclip, Smile, Image, FileText, Video, X, Mic, Check,
+  Send, Paperclip, Smile, Image, FileText, Video, AudioLines, X, Music, Mic, Check,
   Play, Pause,
 } from 'lucide-react'
 import Picker from '@emoji-mart/react'
@@ -15,7 +15,7 @@ import type { Message } from '@/stores/inbox.store'
 const attachmentOptions = [
   { key: 'image',    icon: Image,      label: 'Imagem',    color: 'text-violet-400', accept: '.jpg,.jpeg,.png' },
   { key: 'video',    icon: Video,      label: 'Vídeo',     color: 'text-blue-400',   accept: '.mp4,.avi,.mov,.3gp' },
-  { key: 'audio',    icon: Mic,        label: 'Áudio',     color: 'text-pink-400',   accept: null },
+  { key: 'audio',    icon: AudioLines, label: 'Áudio gravado', color: 'text-pink-400',   accept: '.mp3,.wav,.ogg' },
   { key: 'document', icon: FileText,   label: 'Documento', color: 'text-orange-400', accept: '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.zip,.rar' },
 ]
 
@@ -66,9 +66,9 @@ function FilePreview({ file, onRemove }: FilePreviewProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
-  const isImage = file.type.startsWith('image/')
-  const isVideo = file.type.startsWith('video/')
-  const isAudio = file.type.startsWith('audio/')
+  const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name)
+  const isVideo = file.type.startsWith('video/') || /\.(mp4|mov|avi|3gp|mkv|webm)$/i.test(file.name)
+  const isAudio = file.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac|opus)$/i.test(file.name)
 
   useEffect(() => {
     if (isImage || isAudio) {
@@ -126,7 +126,7 @@ function FilePreview({ file, onRemove }: FilePreviewProps) {
       )}
 
       {/* ── Audio ── */}
-      {isAudio && previewUrl && (
+      {isAudio && (
         <div className="flex items-center gap-3 rounded-2xl bg-card border border-border/60 px-4 py-3 max-w-[300px] shadow-sm">
           {/* hidden audio element */}
           <audio
@@ -560,20 +560,7 @@ export function MessageInput({
               >
                 <div className="flex flex-col">
                   {attachmentOptions.map((opt) =>
-                    opt.key === 'audio' ? (
-                      <button
-                        key={opt.key}
-                        onClick={() => { setShowAttach(false); startRecording() }}
-                        disabled={disabled}
-                        className={cn(
-                          'flex items-center gap-2.5 rounded-md px-3 py-2 hover:bg-muted/60 transition-colors whitespace-nowrap',
-                          disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
-                        )}
-                      >
-                        <opt.icon className={cn('h-4 w-4', opt.color)} />
-                        <span className="text-xs font-medium text-foreground">{opt.label}</span>
-                      </button>
-                    ) : (
+                    opt.accept !== null ? (
                       <label
                         key={opt.key}
                         htmlFor={`${instanceId.current}-${opt.key}`}
@@ -586,6 +573,16 @@ export function MessageInput({
                         <opt.icon className={cn('h-4 w-4', opt.color)} />
                         <span className="text-xs font-medium text-foreground">{opt.label}</span>
                       </label>
+                    ) : (
+                      <button
+                        key={opt.key}
+                        onClick={() => setShowAttach(false)}
+                        disabled
+                        className="flex items-center gap-2.5 rounded-md px-3 py-2 whitespace-nowrap opacity-40 cursor-not-allowed"
+                      >
+                        <opt.icon className={cn('h-4 w-4', opt.color)} />
+                        <span className="text-xs font-medium text-foreground">{opt.label}</span>
+                      </button>
                     )
                   )}
                 </div>

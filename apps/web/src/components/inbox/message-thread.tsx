@@ -66,7 +66,10 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   const isInitialLoad = useRef(true)
   useEffect(() => {
     if (isInitialLoad.current && messages.length > 0 && !isLoading) {
-      bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+      // rAF ensures the DOM finished painting before scrolling
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+      })
       isInitialLoad.current = false
       return
     }
@@ -75,7 +78,9 @@ export function MessageThread({ conversation }: MessageThreadProps) {
     if (area) {
       const isNearBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 120
       if (isNearBottom) {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        requestAnimationFrame(() => {
+          bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        })
       }
     }
   }, [messages.length, isLoading])

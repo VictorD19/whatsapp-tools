@@ -1,5 +1,5 @@
-import React from 'react'
-import { Check, CheckCheck, Bot, Reply, FileText, Download, Play } from 'lucide-react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Check, CheckCheck, Bot, Reply, FileText, Download, Pause, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Message } from '@/stores/inbox.store'
 
@@ -14,6 +14,112 @@ const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/a
 function getMediaUrl(messageId: string) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
   return `${API_URL}/inbox/messages/${messageId}/media?token=${token ?? ''}`
+}
+
+function AudioPlayer({ src, fromMe }: { src: string; fromMe: boolean }) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [progress, setProgress] = useState(0)
+
+  // Stable pseudo-random waveform based on URL
+  const bars = useMemo(() => {
+    return Array.from({ length: 30 }, (_, i) => {
+      const seed = src.charCodeAt(i % Math.max(src.length, 1))
+      return 20 + ((i * 13 + seed) % 65)
+    })
+  }, [src])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const onTimeUpdate = () => {
+      setCurrentTime(audio.currentTime)
+      setProgress(audio.duration > 0 ? audio.currentTime / audio.duration : 0)
+    }
+    const onMetadata = () => setDuration(audio.duration)
+    const onEnded = () => { setIsPlaying(false); setProgress(0); setCurrentTime(0) }
+
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('loadedmetadata', onMetadata)
+    audio.addEventListener('ended', onEnded)
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('loadedmetadata', onMetadata)
+      audio.removeEventListener('ended', onEnded)
+    }
+  }, [])
+
+  const togglePlay = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (isPlaying) { audio.pause(); setIsPlaying(false) }
+    else { audio.play(); setIsPlaying(true) }
+  }
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current
+    if (!audio || !audio.duration) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration
+  }
+
+  const formatTime = (s: number) => {
+    if (!isFinite(s) || s <= 0) return '0:00'
+    const m = Math.floor(s / 60)
+    return `${m}:${Math.floor(s % 60).toString().padStart(2, '0')}`
+  }
+
+  return (
+    <div className="flex items-center gap-2 min-w-[210px]">
+      <audio ref={audioRef} src={src} preload="metadata" />
+
+      {/* Play/Pause */}
+      <button
+        onClick={togglePlay}
+        className={cn(
+          'shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors',
+          fromMe ? 'bg-white/20 hover:bg-white/30' : 'bg-primary/15 hover:bg-primary/25',
+        )}
+      >
+        {isPlaying
+          ? <Pause className="h-3.5 w-3.5" />
+          : <Play className="h-3.5 w-3.5 ml-0.5" />}
+      </button>
+
+      {/* Waveform bars */}
+      <div
+        className="flex flex-1 items-center gap-[2px] h-8 cursor-pointer"
+        onClick={handleSeek}
+      >
+        {bars.map((height, i) => {
+          const filled = (i / bars.length) <= progress
+          return (
+            <div
+              key={i}
+              style={{ height: `${height}%` }}
+              className={cn(
+                'flex-1 rounded-full',
+                fromMe
+                  ? filled ? 'bg-white' : 'bg-white/35'
+                  : filled ? 'bg-primary' : 'bg-primary/30',
+              )}
+            />
+          )
+        })}
+      </div>
+
+      {/* Duration / current time */}
+      <span className={cn(
+        'shrink-0 text-[10px] tabular-nums w-8 text-right',
+        fromMe ? 'text-white/70' : 'text-muted-foreground',
+      )}>
+        {currentTime > 0 ? formatTime(currentTime) : formatTime(duration)}
+      </span>
+    </div>
+  )
 }
 
 function MediaContent({ message }: { message: Message }) {
@@ -53,8 +159,8 @@ function MediaContent({ message }: { message: Message }) {
 
     case 'AUDIO':
       return (
-        <div className="mb-1 min-w-[200px]">
-          <audio src={mediaUrl} controls preload="metadata" className="w-full h-8" />
+        <div className="mb-1">
+          <AudioPlayer src={mediaUrl} fromMe={message.fromMe} />
         </div>
       )
 
