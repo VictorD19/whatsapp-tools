@@ -109,6 +109,8 @@ services:
       DEL_INSTANCE: "false"
       CONFIG_SESSION_PHONE_VERSION: "2.3000.1033994345"
       LANGUAGE: pt-BR
+      LOG_LEVEL: WARN
+      LOG_BAILEYS: silent
     depends_on:
       postgres:
         condition: service_healthy

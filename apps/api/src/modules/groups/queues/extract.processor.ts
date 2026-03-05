@@ -40,19 +40,24 @@ export class GroupExtractProcessor {
     const allContacts: ExtractedContact[] = []
     let processedGroups = 0
 
+    // Fetch all groups ONCE to build a name lookup map
+    const groupNameMap = new Map<string, string>()
+    try {
+      const groups = await this.whatsapp.getGroups(evolutionId)
+      for (const g of groups) groupNameMap.set(g.id, g.name)
+    } catch {
+      this.logger.warn('Failed to fetch group names — using groupId as fallback', 'GroupExtractProcessor')
+    }
+
     for (const groupId of groupIds) {
       try {
-        const members = await this.whatsapp.getGroupMembers(evolutionId, groupId)
-
-        // Get group name for reference
-        let groupName = groupId
-        try {
-          const groups = await this.whatsapp.getGroups(evolutionId)
-          const group = groups.find((g) => g.id === groupId)
-          if (group) groupName = group.name
-        } catch {
-          // ignore — use groupId as fallback
+        // Rate-limit: wait 2s between groups to avoid WhatsApp 429
+        if (processedGroups > 0) {
+          await new Promise((r) => setTimeout(r, 2000))
         }
+
+        const members = await this.whatsapp.getGroupMembers(evolutionId, groupId)
+        const groupName = groupNameMap.get(groupId) ?? groupId
 
         for (const member of members) {
           const phone = member.phone || member.id.split('@')[0]
