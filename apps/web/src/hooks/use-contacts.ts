@@ -65,19 +65,19 @@ export function useContacts() {
 
   const createContact = useCallback(async (dto: ContactPayload) => {
     const res = await apiPost<{ data: Contact }>('contacts', dto)
-    toast({ title: 'Contato criado com sucesso' })
+    toast({ title: 'Contato criado com sucesso', variant: 'success' })
     return res.data
   }, [])
 
   const updateContact = useCallback(async (id: string, dto: Partial<ContactPayload>) => {
     const res = await apiPatch<{ data: Contact }>(`contacts/${id}`, dto)
-    toast({ title: 'Contato atualizado com sucesso' })
+    toast({ title: 'Contato atualizado com sucesso', variant: 'success' })
     return res.data
   }, [])
 
   const deleteContact = useCallback(async (id: string) => {
     await apiDelete<{ data: { deleted: boolean } }>(`contacts/${id}`)
-    toast({ title: 'Contato removido com sucesso' })
+    toast({ title: 'Contato removido com sucesso', variant: 'success' })
   }, [])
 
   return {

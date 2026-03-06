@@ -69,7 +69,7 @@ export function LocaleSettingsContent() {
       setLocaleSettings(form)
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
-      toast({ title: 'Configurações salvas', description: 'Idioma e região atualizados.' })
+      toast({ title: 'Configurações salvas', description: 'Idioma e região atualizados.', variant: 'success' })
     } catch {
       toast({ title: 'Erro', description: 'Não foi possível salvar as configurações.', variant: 'destructive' })
     } finally {

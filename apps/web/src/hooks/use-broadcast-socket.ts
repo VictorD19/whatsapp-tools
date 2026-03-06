@@ -41,6 +41,7 @@ export function useBroadcastSocket({ onProgress, onStatusChange }: UseBroadcastS
       toast({
         title: 'Campanha iniciada',
         description: `"${payload.name}" - ${payload.total} destinatarios`,
+        variant: 'info',
       })
     }
 

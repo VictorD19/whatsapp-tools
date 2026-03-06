@@ -1,22 +1,80 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, HttpCode, HttpStatus } from '@nestjs/common'
+import { Controller, Get, Post, Delete, Param, Query, HttpCode, HttpStatus, Req } from '@nestjs/common'
+import type { FastifyRequest } from 'fastify'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
 import { CurrentUser } from '@shared/decorators/current-user.decorator'
 import { ZodValidationPipe } from '@shared/pipes/zod-validation.pipe'
 import { BroadcastsService } from './broadcasts.service'
-import { createBroadcastSchema, type CreateBroadcastDto } from './dto/create-broadcast.dto'
+import type { CreateBroadcastDto, VariationInput } from './dto/create-broadcast.dto'
 import { listBroadcastsSchema, type ListBroadcastsDto } from './dto/list-broadcasts.dto'
 
 @Controller('broadcasts')
 export class BroadcastsController {
   constructor(private readonly broadcastsService: BroadcastsService) {}
 
+  /**
+   * POST /broadcasts — multipart form.
+   *
+   * Campos esperados:
+   *   name, instanceIds[], contactListIds[], groups (JSON), delay, scheduledAt?,
+   *   variations (JSON string): [{ messageType, text }]
+   *   file-0, file-1, … — um arquivo por variação que tenha mídia (index corresponde ao array)
+   */
   @Post()
-  create(
+  async create(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: { id: string },
-    @Body(new ZodValidationPipe(createBroadcastSchema)) dto: CreateBroadcastDto,
+    @Req() req: FastifyRequest,
   ) {
-    return this.broadcastsService.create(tenantId, user.id, dto)
+    const parts = (req as any).parts()
+
+    const fields: Record<string, string | string[]> = {}
+    const files = new Map<number, { buffer: Buffer; mimetype: string; filename: string }>()
+
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        // file-0, file-1, etc.
+        const index = parseInt((part.fieldname as string).replace('file-', ''), 10)
+        const buffer = await part.toBuffer()
+        files.set(isNaN(index) ? 0 : index, {
+          buffer,
+          mimetype: part.mimetype as string,
+          filename: (part.filename as string) || 'arquivo',
+        })
+      } else {
+        const key = part.fieldname as string
+        const value = part.value as string
+
+        if (['instanceIds', 'contactListIds'].includes(key)) {
+          if (!fields[key]) fields[key] = []
+          ;(fields[key] as string[]).push(value)
+        } else {
+          fields[key] = value
+        }
+      }
+    }
+
+    // Parse DTO
+    const dto: CreateBroadcastDto = {
+      name: fields.name as string,
+      instanceIds: (fields.instanceIds as string[]) || [],
+      contactListIds: (fields.contactListIds as string[]) || [],
+      groups: fields.groups ? JSON.parse(fields.groups as string) : [],
+      delay: fields.delay ? Number(fields.delay) : 5,
+      scheduledAt: (fields.scheduledAt as string) || undefined,
+    }
+
+    // Parse variations JSON + attach files
+    const rawVariations: Array<{ messageType: string; text: string }> = fields.variations
+      ? JSON.parse(fields.variations as string)
+      : []
+
+    const variations: VariationInput[] = rawVariations.map((v, i) => ({
+      messageType: v.messageType as VariationInput['messageType'],
+      text: v.text,
+      file: files.get(i),
+    }))
+
+    return this.broadcastsService.create(tenantId, user.id, dto, variations)
   }
 
   @Get()

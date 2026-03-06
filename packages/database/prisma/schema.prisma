@@ -455,10 +455,26 @@ model Broadcast {
   instances  BroadcastInstance[]
   sources    BroadcastSource[]
   recipients BroadcastRecipient[]
+  variations BroadcastVariation[]
 
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([status, scheduledAt])
+}
+
+model BroadcastVariation {
+  id           String               @id @default(cuid())
+  broadcastId  String
+  messageType  BroadcastMessageType @default(TEXT)
+  text         String               @default("")
+  mediaUrl     String?
+  fileName     String?
+  sortOrder    Int                  @default(0)
+  createdAt    DateTime             @default(now())
+
+  broadcast    Broadcast            @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+
+  @@index([broadcastId])
 }
 
 model BroadcastInstance {

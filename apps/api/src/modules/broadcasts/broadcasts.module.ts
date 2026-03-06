@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { BullModule } from '@nestjs/bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module'
+import { StorageModule } from '@modules/storage/storage.module'
 import { BroadcastsController } from './broadcasts.controller'
 import { BroadcastsService } from './broadcasts.service'
 import { BroadcastsRepository } from './broadcasts.repository'
@@ -12,6 +13,7 @@ import { BroadcastProcessor } from './queues/broadcast.processor'
 @Module({
   imports: [
     WhatsAppModule,
+    StorageModule,
     BullModule.registerQueue({ name: QUEUES.BROADCAST }),
   ],
   controllers: [BroadcastsController],

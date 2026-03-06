@@ -70,7 +70,7 @@ export function useContactLists() {
         description,
         ...(contactIds.length > 0 ? { contactIds } : { phones }),
       })
-      toast({ title: 'Lista criada com sucesso' })
+      toast({ title: 'Lista criada com sucesso', variant: 'success' })
       return res.data
     },
     [],
@@ -94,7 +94,7 @@ export function useContactLists() {
 
   const deleteList = useCallback(async (id: string) => {
     await apiDelete<{ data: { deleted: boolean } }>(`contact-lists/${id}`)
-    toast({ title: 'Lista removida com sucesso' })
+    toast({ title: 'Lista removida com sucesso', variant: 'success' })
   }, [])
 
   return {

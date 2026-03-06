@@ -50,6 +50,20 @@
     --sidebar-accent-foreground: 80 18% 11%;
 
     --radius: 1rem;
+
+    /* Sonner toast colors */
+    --success-bg: #f0fdf6;
+    --success-border: #bbf7d4;
+    --success-text: #004a26;
+    --error-bg: #fff1f2;
+    --error-border: #fecdd3;
+    --error-text: #9f1239;
+    --warning-bg: #fffbeb;
+    --warning-border: #fde68a;
+    --warning-text: #78350f;
+    --info-bg: #eff6ff;
+    --info-border: #bfdbfe;
+    --info-text: #1e3a8a;
   }
 
   .dark {
@@ -96,6 +110,20 @@
     --sidebar-border: 160 12% 12%;
     --sidebar-accent: 160 15% 10%;
     --sidebar-accent-foreground: 150 15% 92%;
+
+    /* Sonner toast colors (dark) */
+    --success-bg: #052e16;
+    --success-border: #14532d;
+    --success-text: #86efb0;
+    --error-bg: #450a0a;
+    --error-border: #7f1d1d;
+    --error-text: #fca5a5;
+    --warning-bg: #422006;
+    --warning-border: #713f12;
+    --warning-text: #fcd34d;
+    --info-bg: #0c1a3a;
+    --info-border: #1e3a8a;
+    --info-text: #93c5fd;
   }
 }
 

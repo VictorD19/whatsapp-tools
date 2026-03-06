@@ -1,20 +1,74 @@
 import { Injectable } from '@nestjs/common'
 import { AppException } from '@core/errors/app.exception'
 import { LoggerService } from '@core/logger/logger.service'
+import { StorageService } from '@modules/storage/storage.service'
 import { BroadcastsRepository } from './broadcasts.repository'
 import { BroadcastProducer } from './queues/broadcast.producer'
-import type { CreateBroadcastDto } from './dto/create-broadcast.dto'
+import type { CreateBroadcastDto, VariationInput } from './dto/create-broadcast.dto'
 import type { ListBroadcastsDto } from './dto/list-broadcasts.dto'
+
+/** Limites de tamanho por tipo de mídia. */
+const SIZE_LIMITS: Record<string, number> = {
+  IMAGE: 16 * 1024 * 1024,
+  VIDEO: 16 * 1024 * 1024,
+  AUDIO: 16 * 1024 * 1024,
+  DOCUMENT: 100 * 1024 * 1024,
+}
 
 @Injectable()
 export class BroadcastsService {
   constructor(
     private readonly repository: BroadcastsRepository,
     private readonly producer: BroadcastProducer,
+    private readonly storage: StorageService,
     private readonly logger: LoggerService,
   ) {}
 
-  async create(tenantId: string, userId: string, dto: CreateBroadcastDto) {
+  async create(
+    tenantId: string,
+    userId: string,
+    dto: CreateBroadcastDto,
+    variations: VariationInput[],
+  ) {
+    if (variations.length === 0) {
+      throw new AppException('BROADCAST_NO_VARIATIONS', 'Adicione pelo menos uma variação de mensagem')
+    }
+
+    // 0. Upload media files and build variation records
+    const variationRecords: Array<{
+      messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
+      text: string
+      mediaUrl?: string
+      fileName?: string
+      sortOrder: number
+    }> = []
+
+    for (let i = 0; i < variations.length; i++) {
+      const v = variations[i]
+      let mediaUrl: string | undefined
+      let fileName: string | undefined
+
+      if (v.file && v.messageType !== 'TEXT') {
+        const sizeLimit = SIZE_LIMITS[v.messageType] ?? 16 * 1024 * 1024
+        if (v.file.buffer.length > sizeLimit) {
+          throw new AppException(
+            'FILE_TOO_LARGE',
+            `Variação ${i + 1}: arquivo excede o limite de ${sizeLimit / (1024 * 1024)} MB`,
+          )
+        }
+        mediaUrl = await this.storage.uploadMedia(tenantId, v.file.buffer, v.file.mimetype, v.file.filename)
+        fileName = v.file.filename
+      }
+
+      variationRecords.push({
+        messageType: v.messageType,
+        text: v.text,
+        mediaUrl,
+        fileName,
+        sortOrder: i,
+      })
+    }
+
     // 1. Validate plan limits
     const plan = await this.repository.getTenantPlan(tenantId)
     if (plan) {
@@ -87,37 +141,36 @@ export class BroadcastsService {
       })),
     ]
 
-    // 7. Determine status and calculate delay using tenant timezone
+    // 7. Determine status
     const isScheduled = !!dto.scheduledAt
     const status = isScheduled ? ('SCHEDULED' as const) : ('RUNNING' as const)
 
-    // 8. Create broadcast
+    // 8. Create broadcast with variations
     const broadcast = await this.repository.create({
       tenant: { connect: { id: tenantId } },
       createdBy: { connect: { id: userId } },
       name: dto.name,
       status,
-      messageType: dto.messageType,
-      messageTexts: dto.messageTexts,
-      mediaUrl: dto.mediaUrl,
-      caption: dto.caption,
-      fileName: dto.fileName,
+      // Keep legacy fields populated with first variation for backward compat
+      messageType: variationRecords[0].messageType,
+      messageTexts: variationRecords.map((v) => v.text),
       delay: dto.delay,
       scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
       instanceIds: dto.instanceIds,
       sources,
       recipients,
+      variationRecords,
     })
 
-    // 9. Enqueue job — if scheduled, calculate delay respecting tenant timezone
+    // 9. Enqueue job
     let delayMs: number | undefined
     if (isScheduled && dto.scheduledAt) {
-      delayMs = this.calculateDelayMs(dto.scheduledAt, tenantId)
+      delayMs = this.calculateDelayMs(dto.scheduledAt)
     }
     await this.producer.enqueue(broadcast.id, tenantId, delayMs)
 
     this.logger.log(
-      `Broadcast ${broadcast.id} created: ${recipients.length} recipients, status=${status}${isScheduled ? `, scheduled for ${dto.scheduledAt}` : ''}`,
+      `Broadcast ${broadcast.id} created: ${recipients.length} recipients, ${variationRecords.length} variations, status=${status}`,
       'BroadcastsService',
     )
 
@@ -196,7 +249,6 @@ export class BroadcastsService {
       )
     }
 
-    // Remove scheduled job from queue if SCHEDULED
     if (broadcast.status === 'SCHEDULED') {
       await this.producer.removeJob(id)
     }
@@ -217,7 +269,6 @@ export class BroadcastsService {
       )
     }
 
-    // Remove scheduled job if applicable
     if (broadcast.status === 'SCHEDULED') {
       await this.producer.removeJob(id)
     }
@@ -226,15 +277,9 @@ export class BroadcastsService {
     return { data: { deleted: true } }
   }
 
-  /**
-   * Calcula o delay em ms entre agora e o scheduledAt interpretado no timezone do tenant.
-   * O scheduledAt vem como ISO 8601 com offset (e.g. "2026-03-07T10:00:00-03:00").
-   * O delay é: scheduledAt(parsed) - now.
-   */
-  private calculateDelayMs(scheduledAt: string, _tenantId: string): number {
+  private calculateDelayMs(scheduledAt: string): number {
     const scheduledDate = new Date(scheduledAt)
     const now = new Date()
-    const delayMs = scheduledDate.getTime() - now.getTime()
-    return Math.max(delayMs, 0)
+    return Math.max(scheduledDate.getTime() - now.getTime(), 0)
   }
 }

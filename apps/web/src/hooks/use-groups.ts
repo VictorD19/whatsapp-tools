@@ -100,7 +100,7 @@ export function useGroups() {
         a.click()
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
-        toast({ title: 'Exportação concluída' })
+        toast({ title: 'Exportação concluída', variant: 'success' })
       } catch {
         toast({ title: 'Erro ao exportar contatos', variant: 'destructive' })
       }

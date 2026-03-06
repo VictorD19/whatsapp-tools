@@ -56,7 +56,7 @@ export function useContactDetail(contactId: string) {
     try {
       const res = await apiPatch<ApiResponse<Contact>>(`contacts/${contactId}`, dto)
       setContact(res.data)
-      toast({ title: 'Contato atualizado' })
+      toast({ title: 'Contato atualizado', variant: 'success' })
       return res.data
     } catch {
       toast({ title: 'Erro ao atualizar contato', variant: 'destructive' })

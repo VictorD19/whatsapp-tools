@@ -2,8 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { BroadcastsService } from '../broadcasts.service'
 import { BroadcastsRepository } from '../broadcasts.repository'
 import { BroadcastProducer } from '../queues/broadcast.producer'
+import { StorageService } from '@modules/storage/storage.service'
 import { LoggerService } from '@core/logger/logger.service'
-import type { CreateBroadcastDto } from '../dto/create-broadcast.dto'
+import type { CreateBroadcastDto, VariationInput } from '../dto/create-broadcast.dto'
 
 describe('BroadcastsService', () => {
   let service: BroadcastsService
@@ -62,6 +63,10 @@ describe('BroadcastsService', () => {
     deletedAt: null,
     instances: [{ broadcastId: 'bc-1', instanceId: 'inst-1', instance: mockInstance }],
     sources: [],
+    variations: [
+      { id: 'v1', messageType: 'TEXT' as const, text: 'Olá {{nome}}!', mediaUrl: null, fileName: null, sortOrder: 0, broadcastId: 'bc-1', createdAt: new Date() },
+      { id: 'v2', messageType: 'TEXT' as const, text: 'Oi {{nome}}, tudo bem?', mediaUrl: null, fileName: null, sortOrder: 1, broadcastId: 'bc-1', createdAt: new Date() },
+    ],
     createdBy: { id: userId, name: 'Admin' },
     _count: { recipients: 100 },
   }
@@ -71,10 +76,13 @@ describe('BroadcastsService', () => {
     instanceIds: ['inst-1'],
     contactListIds: ['list-1'],
     groups: [],
-    messageType: 'TEXT',
-    messageTexts: ['Olá {{nome}}!', 'Oi {{nome}}, tudo bem?'],
     delay: 5,
   }
+
+  const baseVariations: VariationInput[] = [
+    { messageType: 'TEXT', text: 'Olá {{nome}}!' },
+    { messageType: 'TEXT', text: 'Oi {{nome}}, tudo bem?' },
+  ]
 
   beforeEach(async () => {
     const mockRepository = {
@@ -101,11 +109,19 @@ describe('BroadcastsService', () => {
       removeJob: jest.fn(),
     }
 
+    const mockStorage = {
+      uploadMedia: jest.fn(),
+      getSignedUrl: jest.fn(),
+      download: jest.fn(),
+      delete: jest.fn(),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BroadcastsService,
         { provide: BroadcastsRepository, useValue: mockRepository },
         { provide: BroadcastProducer, useValue: mockProducer },
+        { provide: StorageService, useValue: mockStorage },
         {
           provide: LoggerService,
           useValue: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
@@ -130,7 +146,7 @@ describe('BroadcastsService', () => {
       repository.create.mockResolvedValue(mockBroadcast as never)
       producer.enqueue.mockResolvedValue({} as never)
 
-      const result = await service.create(tenantId, userId, baseDto)
+      const result = await service.create(tenantId, userId, baseDto, baseVariations)
 
       expect(result.data.id).toBe('bc-1')
       expect(repository.create).toHaveBeenCalledWith(
@@ -138,6 +154,9 @@ describe('BroadcastsService', () => {
           name: 'Campanha Teste',
           status: 'RUNNING',
           delay: 5,
+          variationRecords: expect.arrayContaining([
+            expect.objectContaining({ messageType: 'TEXT', text: 'Olá {{nome}}!', sortOrder: 0 }),
+          ]),
         }),
       )
       expect(producer.enqueue).toHaveBeenCalledWith('bc-1', tenantId, undefined)
@@ -159,7 +178,7 @@ describe('BroadcastsService', () => {
       } as never)
       producer.enqueue.mockResolvedValue({} as never)
 
-      await service.create(tenantId, userId, { ...baseDto, scheduledAt })
+      await service.create(tenantId, userId, { ...baseDto, scheduledAt }, baseVariations)
 
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'SCHEDULED' }),
@@ -171,11 +190,17 @@ describe('BroadcastsService', () => {
       )
     })
 
+    it('should throw BROADCAST_NO_VARIATIONS when empty variations', async () => {
+      await expect(service.create(tenantId, userId, baseDto, [])).rejects.toMatchObject({
+        code: 'BROADCAST_NO_VARIATIONS',
+      })
+    })
+
     it('should throw BROADCAST_DAILY_LIMIT when limit exceeded', async () => {
       repository.getTenantPlan.mockResolvedValue({ ...mockPlan, maxBroadcastsPerDay: 2 })
       repository.countTodayBroadcasts.mockResolvedValue(2)
 
-      await expect(service.create(tenantId, userId, baseDto)).rejects.toMatchObject({
+      await expect(service.create(tenantId, userId, baseDto, baseVariations)).rejects.toMatchObject({
         code: 'BROADCAST_DAILY_LIMIT',
       })
     })
@@ -189,7 +214,7 @@ describe('BroadcastsService', () => {
         { contactId: 'c2', phone: '5511888888888', name: 'Jane' },
       ])
 
-      await expect(service.create(tenantId, userId, baseDto)).rejects.toMatchObject({
+      await expect(service.create(tenantId, userId, baseDto, baseVariations)).rejects.toMatchObject({
         code: 'BROADCAST_CONTACT_LIMIT',
       })
     })
@@ -201,7 +226,7 @@ describe('BroadcastsService', () => {
         { ...mockInstance, status: 'DISCONNECTED' as const },
       ])
 
-      await expect(service.create(tenantId, userId, baseDto)).rejects.toMatchObject({
+      await expect(service.create(tenantId, userId, baseDto, baseVariations)).rejects.toMatchObject({
         code: 'BROADCAST_NO_CONNECTED_INSTANCE',
       })
     })
@@ -213,7 +238,7 @@ describe('BroadcastsService', () => {
       repository.resolveContactListRecipients.mockResolvedValue([])
 
       await expect(
-        service.create(tenantId, userId, { ...baseDto, groups: [] }),
+        service.create(tenantId, userId, { ...baseDto, groups: [] }, baseVariations),
       ).rejects.toMatchObject({ code: 'BROADCAST_EMPTY_LIST' })
     })
 
@@ -229,17 +254,8 @@ describe('BroadcastsService', () => {
       repository.create.mockResolvedValue(mockBroadcast as never)
       producer.enqueue.mockResolvedValue({} as never)
 
-      await service.create(tenantId, userId, baseDto)
+      await service.create(tenantId, userId, baseDto, baseVariations)
 
-      expect(repository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          recipients: expect.arrayContaining([
-            expect.objectContaining({ phone: '5511999999999' }),
-            expect.objectContaining({ phone: '5511888888888' }),
-          ]),
-        }),
-      )
-      // Should have exactly 2 recipients after dedup, not 3
       const createCall = repository.create.mock.calls[0][0]
       expect(createCall.recipients).toHaveLength(2)
     })

@@ -405,7 +405,7 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
         ...conversation!,
         contact: { ...contact, name: trimmed },
       })
-      toast({ title: 'Nome atualizado' })
+      toast({ title: 'Nome atualizado', variant: 'success' })
       setEditingName(false)
     } catch {
       toast({ title: 'Erro ao atualizar nome', variant: 'destructive' })

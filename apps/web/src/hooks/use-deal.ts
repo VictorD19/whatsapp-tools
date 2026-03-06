@@ -127,7 +127,7 @@ export function useDeal() {
     try {
       const res = await apiPost<ApiResponse<Deal>>('deals', dto)
       setDeals((prev) => [res.data, ...prev])
-      toast({ title: 'Negócio criado com sucesso' })
+      toast({ title: 'Negócio criado com sucesso', variant: 'success' })
       return res.data
     } catch (err) {
       toast({ title: (err as Error).message || 'Erro ao criar negócio', variant: 'destructive' })
@@ -150,7 +150,7 @@ export function useDeal() {
     try {
       await apiDelete<ApiResponse<{ message: string }>>(`deals/${id}`)
       setDeals((prev) => prev.filter((d) => d.id !== id))
-      toast({ title: 'Negócio removido com sucesso' })
+      toast({ title: 'Negócio removido com sucesso', variant: 'success' })
       return true
     } catch {
       toast({ title: 'Erro ao remover negócio', variant: 'destructive' })

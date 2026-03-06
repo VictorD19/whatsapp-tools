@@ -4,6 +4,7 @@ import { Job, Queue } from 'bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { LoggerService } from '@core/logger/logger.service'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
+import { StorageService, isStorageKey } from '@modules/storage/storage.service'
 import { BroadcastsRepository } from '../broadcasts.repository'
 import { BroadcastGateway } from '../broadcasts.gateway'
 import type { BroadcastJobData } from './broadcast.producer'
@@ -12,13 +13,24 @@ import type { BroadcastMessageType } from '@prisma/client'
 const BATCH_CHECK_INTERVAL = 10
 const PROGRESS_EMIT_INTERVAL = 5
 
+interface Variation {
+  messageType: BroadcastMessageType
+  text: string
+  mediaUrl: string | null
+  fileName: string | null
+}
+
 @Injectable()
 export class BroadcastProcessor implements OnModuleInit {
+  /** Cache do base64 da mídia — baixa do storage uma vez por broadcast. */
+  private mediaBase64Cache = new Map<string, { base64: string; mimetype: string }>()
+
   constructor(
     @InjectQueue(QUEUES.BROADCAST)
     private readonly queue: Queue,
     private readonly repository: BroadcastsRepository,
     private readonly whatsapp: WhatsAppService,
+    private readonly storage: StorageService,
     private readonly gateway: BroadcastGateway,
     private readonly logger: LoggerService,
   ) {}
@@ -63,6 +75,30 @@ export class BroadcastProcessor implements OnModuleInit {
       return
     }
 
+    // Build variations list — prefer new variations table, fallback to legacy fields
+    const variations: Variation[] = broadcast.variations && broadcast.variations.length > 0
+      ? broadcast.variations.map((v) => ({
+          messageType: v.messageType,
+          text: v.text,
+          mediaUrl: v.mediaUrl,
+          fileName: v.fileName,
+        }))
+      : broadcast.messageTexts.map((text) => ({
+          messageType: broadcast.messageType,
+          text,
+          mediaUrl: broadcast.mediaUrl,
+          fileName: broadcast.fileName,
+        }))
+
+    if (variations.length === 0) {
+      await this.repository.updateStatus(broadcastId, 'FAILED')
+      this.gateway.emitBroadcastFailed(tenantId, {
+        broadcastId,
+        reason: 'Nenhuma variação de mensagem configurada',
+      })
+      return
+    }
+
     // Mark as RUNNING
     await this.repository.updateStatus(broadcastId, 'RUNNING', { startedAt: new Date() })
     this.gateway.emitBroadcastStarted(tenantId, {
@@ -77,7 +113,7 @@ export class BroadcastProcessor implements OnModuleInit {
     let processedInBatch = 0
 
     try {
-      // Process in batches of 50 to avoid loading all recipients at once
+      // Process in batches of 50
       while (true) {
         const recipients = await this.repository.findPendingRecipients(broadcastId, 50)
         if (recipients.length === 0) break
@@ -99,10 +135,10 @@ export class BroadcastProcessor implements OnModuleInit {
           const instance = connectedInstances[instanceIndex % connectedInstances.length]
           instanceIndex++
 
-          // Pick random message variation to avoid bot detection
-          const messageTemplate = this.pickRandom(broadcast.messageTexts)
+          // Pick random variation
+          const variation = this.pickRandom(variations)
           const text = this.interpolateVariables(
-            messageTemplate,
+            variation.text,
             recipient.name ?? recipient.contact.name,
             recipient.phone,
           )
@@ -111,11 +147,11 @@ export class BroadcastProcessor implements OnModuleInit {
             await this.sendMessage(
               instance.evolutionId,
               recipient.phone,
-              broadcast.messageType,
+              variation.messageType,
               text,
-              broadcast.mediaUrl,
-              broadcast.caption ? this.interpolateVariables(broadcast.caption, recipient.name ?? recipient.contact.name, recipient.phone) : undefined,
-              broadcast.fileName,
+              variation.mediaUrl,
+              text,
+              variation.fileName,
             )
 
             await this.repository.updateRecipientStatus(recipient.id, 'SENT', {
@@ -155,6 +191,9 @@ export class BroadcastProcessor implements OnModuleInit {
         }
       }
 
+      // Clear media cache
+      this.mediaBase64Cache.clear()
+
       // Completed
       await this.repository.updateStatus(broadcastId, 'COMPLETED', { completedAt: new Date() })
       this.gateway.emitBroadcastCompleted(tenantId, {
@@ -169,6 +208,7 @@ export class BroadcastProcessor implements OnModuleInit {
         'BroadcastProcessor',
       )
     } catch (error) {
+      this.mediaBase64Cache.clear()
       this.logger.error(
         `Broadcast ${broadcastId} fatal error: ${(error as Error).message}`,
         (error as Error).stack,
@@ -180,6 +220,26 @@ export class BroadcastProcessor implements OnModuleInit {
         reason: (error as Error).message ?? 'Erro interno',
       })
     }
+  }
+
+  /**
+   * Resolve a media URL: se for uma storage key, baixa do storage e converte para base64.
+   * Resultado é cacheado para evitar downloads repetidos.
+   */
+  private async resolveMediaUrl(
+    mediaUrl: string,
+  ): Promise<{ url: string; mimetype: string }> {
+    if (!isStorageKey(mediaUrl)) {
+      return { url: mediaUrl, mimetype: 'application/octet-stream' }
+    }
+
+    const cached = this.mediaBase64Cache.get(mediaUrl)
+    if (cached) return { url: cached.base64, mimetype: cached.mimetype }
+
+    const { buffer, contentType } = await this.storage.download(mediaUrl)
+    const base64 = buffer.toString('base64')
+    this.mediaBase64Cache.set(mediaUrl, { base64, mimetype: contentType })
+    return { url: base64, mimetype: contentType }
   }
 
   private async sendMessage(
@@ -194,33 +254,43 @@ export class BroadcastProcessor implements OnModuleInit {
     switch (messageType) {
       case 'TEXT':
         return this.whatsapp.sendText(evolutionId, phone, text)
-      case 'IMAGE':
+      case 'IMAGE': {
+        const media = await this.resolveMediaUrl(mediaUrl!)
         return this.whatsapp.sendImage(evolutionId, phone, {
-          url: mediaUrl!,
+          url: media.url,
+          mimetype: media.mimetype,
           caption: caption ?? text,
         })
-      case 'VIDEO':
+      }
+      case 'VIDEO': {
+        const media = await this.resolveMediaUrl(mediaUrl!)
         return this.whatsapp.sendVideo(evolutionId, phone, {
-          url: mediaUrl!,
+          url: media.url,
+          mimetype: media.mimetype,
           caption: caption ?? text,
         })
-      case 'AUDIO':
+      }
+      case 'AUDIO': {
+        const media = await this.resolveMediaUrl(mediaUrl!)
         return this.whatsapp.sendAudio(evolutionId, phone, {
-          url: mediaUrl!,
+          url: media.url,
+          mimetype: media.mimetype,
         })
-      case 'DOCUMENT':
+      }
+      case 'DOCUMENT': {
+        const media = await this.resolveMediaUrl(mediaUrl!)
         return this.whatsapp.sendDocument(evolutionId, phone, {
-          url: mediaUrl!,
+          url: media.url,
           fileName: fileName ?? 'document',
-          mimetype: 'application/octet-stream',
+          mimetype: media.mimetype,
         })
+      }
       default:
         return this.whatsapp.sendText(evolutionId, phone, text)
     }
   }
 
-  private pickRandom(items: string[]): string {
-    if (items.length === 0) return ''
+  private pickRandom<T>(items: T[]): T {
     if (items.length === 1) return items[0]
     return items[Math.floor(Math.random() * items.length)]
   }

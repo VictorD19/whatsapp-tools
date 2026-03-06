@@ -12,13 +12,15 @@ export const createBroadcastSchema = z.object({
       }),
     )
     .default([]),
-  messageType: z.enum(['TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT']).default('TEXT'),
-  messageTexts: z.array(z.string().max(4096)).min(1, 'Adicione pelo menos uma variacao de mensagem'),
-  mediaUrl: z.string().url().optional(),
-  caption: z.string().max(1024).optional(),
-  fileName: z.string().max(255).optional(),
   delay: z.number().int().min(1).max(120).default(5),
   scheduledAt: z.string().datetime({ offset: true }).optional(),
 })
 
 export type CreateBroadcastDto = z.infer<typeof createBroadcastSchema>
+
+/** Variação de mensagem recebida via multipart. */
+export interface VariationInput {
+  messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
+  text: string
+  file?: { buffer: Buffer; mimetype: string; filename: string }
+}

@@ -21,9 +21,16 @@ export class BroadcastsRepository {
         phone: string
         name?: string | null
       }>
+      variationRecords?: Array<{
+        messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
+        text: string
+        mediaUrl?: string
+        fileName?: string
+        sortOrder: number
+      }>
     },
   ) {
-    const { instanceIds, sources, recipients, ...broadcastData } = data
+    const { instanceIds, sources, recipients, variationRecords, ...broadcastData } = data
 
     return this.prisma.broadcast.create({
       data: {
@@ -48,9 +55,25 @@ export class BroadcastsRepository {
             })),
           },
         },
+        ...(variationRecords && variationRecords.length > 0
+          ? {
+              variations: {
+                createMany: {
+                  data: variationRecords.map((v) => ({
+                    messageType: v.messageType,
+                    text: v.text,
+                    mediaUrl: v.mediaUrl,
+                    fileName: v.fileName,
+                    sortOrder: v.sortOrder,
+                  })),
+                },
+              },
+            }
+          : {}),
       },
       include: {
         instances: { include: { instance: { select: { id: true, name: true, evolutionId: true, status: true } } } },
+        variations: { orderBy: { sortOrder: 'asc' } },
         _count: { select: { recipients: true } },
       },
     })
@@ -90,6 +113,7 @@ export class BroadcastsRepository {
       include: {
         instances: { include: { instance: { select: { id: true, name: true, evolutionId: true, status: true } } } },
         sources: { include: { contactList: { select: { id: true, name: true } } } },
+        variations: { orderBy: { sortOrder: 'asc' } },
         createdBy: { select: { id: true, name: true } },
         _count: { select: { recipients: true } },
       },
@@ -102,6 +126,7 @@ export class BroadcastsRepository {
       include: {
         tenant: { select: { id: true, timezone: true, locale: true } },
         instances: { include: { instance: { select: { id: true, name: true, evolutionId: true, status: true } } } },
+        variations: { orderBy: { sortOrder: 'asc' } },
       },
     })
   }

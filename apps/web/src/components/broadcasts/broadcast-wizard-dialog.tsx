@@ -12,9 +12,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { StepSelectSources } from './step-select-sources'
-import { StepMessageContent } from './step-message-content'
+import { StepMessageContent, type BroadcastVariation } from './step-message-content'
 import { StepConfig } from './step-config'
-import type { BroadcastMessageType } from '@/hooks/use-broadcasts'
 import type { ContactList } from '@/hooks/use-contact-lists'
 import type { Instance } from '@/stores/instances.store'
 
@@ -31,11 +30,7 @@ export interface BroadcastWizardData {
   instanceIds: string[]
   contactListIds: string[]
   groups: Array<{ jid: string; name?: string }>
-  messageType: BroadcastMessageType
-  messageTexts: string[]
-  mediaUrl?: string
-  caption?: string
-  fileName?: string
+  variations: BroadcastVariation[]
   delay: number
   scheduledAt?: string
 }
@@ -61,11 +56,7 @@ export function BroadcastWizardDialog({
   const [selectedContactListIds, setSelectedContactListIds] = useState<string[]>([])
 
   // Step 2 state
-  const [messageType, setMessageType] = useState<BroadcastMessageType>('TEXT')
-  const [messageTexts, setMessageTexts] = useState<string[]>([''])
-  const [mediaUrl, setMediaUrl] = useState('')
-  const [caption, setCaption] = useState('')
-  const [fileName, setFileName] = useState('')
+  const [variations, setVariations] = useState<BroadcastVariation[]>([])
 
   // Step 3 state
   const [name, setName] = useState('')
@@ -89,21 +80,16 @@ export function BroadcastWizardDialog({
   }, [])
 
   const canProceedStep1 = selectedInstanceIds.length > 0 && selectedContactListIds.length > 0
-  const canProceedStep2 =
-    messageType === 'TEXT'
-      ? messageTexts.some((t) => t.trim().length > 0)
-      : mediaUrl.trim().length > 0
+  const canProceedStep2 = variations.length > 0 && variations.every(
+    (v) => v.messageType === 'TEXT' ? v.text.trim().length > 0 : !!v.file,
+  )
   const canProceedStep3 = name.trim().length > 0
 
   const handleClose = () => {
     setCurrentStep(1)
     setSelectedInstanceIds([])
     setSelectedContactListIds([])
-    setMessageType('TEXT')
-    setMessageTexts([''])
-    setMediaUrl('')
-    setCaption('')
-    setFileName('')
+    setVariations([])
     setName('')
     setDelay(5)
     setScheduledAt('')
@@ -119,16 +105,11 @@ export function BroadcastWizardDialog({
         instanceIds: selectedInstanceIds,
         contactListIds: selectedContactListIds,
         groups: [],
-        messageType,
-        messageTexts: messageTexts.filter((t) => t.trim().length > 0),
-        mediaUrl: mediaUrl || undefined,
-        caption: caption || undefined,
-        fileName: fileName || undefined,
+        variations,
         delay,
       }
 
       if (scheduledAt) {
-        // Convert local datetime to ISO with offset
         const localDate = new Date(scheduledAt)
         data.scheduledAt = localDate.toISOString()
       }
@@ -199,16 +180,8 @@ export function BroadcastWizardDialog({
           )}
           {currentStep === 2 && (
             <StepMessageContent
-              messageType={messageType}
-              messageTexts={messageTexts}
-              mediaUrl={mediaUrl}
-              caption={caption}
-              fileName={fileName}
-              onMessageTypeChange={setMessageType}
-              onMessageTextsChange={setMessageTexts}
-              onMediaUrlChange={setMediaUrl}
-              onCaptionChange={setCaption}
-              onFileNameChange={setFileName}
+              variations={variations}
+              onVariationsChange={setVariations}
             />
           )}
           {currentStep === 3 && (

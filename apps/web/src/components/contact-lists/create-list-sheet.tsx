@@ -64,7 +64,7 @@ export function CreateListSheet({ open, onClose, onCreated }: CreateListSheetPro
         await createList(name.trim(), selectedIds, description.trim() || undefined)
       }
 
-      toast({ title: 'Lista criada com sucesso' })
+      toast({ title: 'Lista criada com sucesso', variant: 'success' })
       onCreated()
       handleReset()
     } catch (err) {
