@@ -56,19 +56,39 @@ export class ContactListsRepository {
     tenantId: string,
     name: string,
     description: string | undefined,
-    contactIds: string[],
+    contactIds?: string[],
+    phones?: string[],
     source: 'GROUP_EXTRACT' | 'CSV_IMPORT' | 'MANUAL' | 'CRM_FILTER' = 'MANUAL',
   ) {
+    let finalContactIds = contactIds
+
+    // If contactIds not provided but phones are, look up contacts by phone
+    if ((!finalContactIds || finalContactIds.length === 0) && phones && phones.length > 0) {
+      const contacts = await this.prisma.contact.findMany({
+        where: {
+          tenantId,
+          phone: { in: phones },
+          deletedAt: null,
+        },
+        select: { id: true },
+      })
+      finalContactIds = contacts.map((c) => c.id)
+    }
+
+    if (!finalContactIds || finalContactIds.length === 0) {
+      throw new Error('Nenhum contato encontrado')
+    }
+
     return this.prisma.contactList.create({
       data: {
         tenantId,
         name,
         description,
         source,
-        contactCount: contactIds.length,
+        contactCount: finalContactIds.length,
         items: {
           createMany: {
-            data: contactIds.map((contactId) => ({ contactId })),
+            data: finalContactIds.map((contactId) => ({ contactId })),
             skipDuplicates: true,
           },
         },

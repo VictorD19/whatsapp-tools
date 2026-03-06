@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { apiGet, apiDelete } from '@/lib/api'
+import { apiGet, apiPost, apiDelete } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 
 export interface ContactList {
@@ -58,6 +58,24 @@ export function useContactLists() {
     }
   }, [])
 
+  const createList = useCallback(
+    async (
+      name: string,
+      contactIds: string[],
+      description?: string,
+      phones?: string[],
+    ) => {
+      const res = await apiPost<{ data: ContactList }>('contact-lists', {
+        name,
+        description,
+        ...(contactIds.length > 0 ? { contactIds } : { phones }),
+      })
+      toast({ title: 'Lista criada com sucesso' })
+      return res.data
+    },
+    [],
+  )
+
   const deleteList = useCallback(async (id: string) => {
     await apiDelete<{ data: { deleted: boolean } }>(`contact-lists/${id}`)
     toast({ title: 'Lista removida com sucesso' })
@@ -69,6 +87,7 @@ export function useContactLists() {
     fetching,
     meta,
     fetchLists,
+    createList,
     deleteList,
   }
 }

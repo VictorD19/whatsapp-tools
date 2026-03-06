@@ -148,6 +148,7 @@ export class GroupExtractProcessor {
       totalExtracted: deduplicated.length,
       totalSaved: upsertedContactIds.length,
       contactListId,
+      contactIds: upsertedContactIds,
       contacts: deduplicated.map((c) => ({
         phone: c.phone,
         name: c.name,

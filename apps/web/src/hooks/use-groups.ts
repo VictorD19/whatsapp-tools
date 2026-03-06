@@ -35,6 +35,7 @@ export interface ExtractCompleted {
   totalExtracted: number
   totalSaved: number
   contactListId?: string
+  contactIds?: string[]
   contacts: GroupMemberExtracted[]
 }
 

@@ -38,6 +38,7 @@ export class ContactListsService {
       dto.name,
       dto.description,
       dto.contactIds,
+      dto.phones,
     )
     return { data: list }
   }

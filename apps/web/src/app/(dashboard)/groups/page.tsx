@@ -31,7 +31,9 @@ import {
   type ExtractCompleted,
   type GroupMemberExtracted,
 } from '@/hooks/use-groups'
+import { useContactLists } from '@/hooks/use-contact-lists'
 import { getSocket } from '@/lib/socket'
+import { toast } from '@/components/ui/toaster'
 
 type Step = 'select-instance' | 'select-groups' | 'extracting' | 'results'
 
@@ -47,16 +49,19 @@ export default function GroupsPage() {
     exportContacts,
     stopExtracting,
   } = useGroups()
+  const { createList } = useContactLists()
 
   const [step, setStep] = useState<Step>('select-instance')
   const [selectedInstanceId, setSelectedInstanceId] = useState<string>('')
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set())
   const [progress, setProgress] = useState<ExtractProgress | null>(null)
   const [extractedContacts, setExtractedContacts] = useState<GroupMemberExtracted[]>([])
+  const [extractedContactIds, setExtractedContactIds] = useState<string[]>([])
   const [extractedListId, setExtractedListId] = useState<string | undefined>()
 
   // Create list dialog
   const [showCreateList, setShowCreateList] = useState(false)
+  const [creatingList, setCreatingList] = useState(false)
   const [listName, setListName] = useState('')
   const [listDescription, setListDescription] = useState('')
   const [createListOnExtract, setCreateListOnExtract] = useState(false)
@@ -75,6 +80,7 @@ export default function GroupsPage() {
 
     const handleCompleted = (data: ExtractCompleted) => {
       setExtractedContacts(data.contacts)
+      setExtractedContactIds(data.contactIds ?? [])
       setExtractedListId(data.contactListId)
       stopExtracting()
       setStep('results')
@@ -180,6 +186,7 @@ export default function GroupsPage() {
     setSelectedGroupIds(new Set())
     setProgress(null)
     setExtractedContacts([])
+    setExtractedContactIds([])
     setExtractedListId(undefined)
     setCreateListOnExtract(false)
     setListName('')
@@ -420,7 +427,11 @@ export default function GroupsPage() {
                 Exportar Excel
               </Button>
               {!extractedListId && (
-                <Button size="sm" onClick={handleCreateListFromResults}>
+                <Button
+                  size="sm"
+                  onClick={handleCreateListFromResults}
+                  disabled={extractedContacts.length === 0}
+                >
                   <ListPlus className="h-4 w-4 mr-2" />
                   Criar lista
                 </Button>
@@ -489,13 +500,29 @@ export default function GroupsPage() {
               Cancelar
             </Button>
             <Button
-              disabled={!listName.trim()}
+              disabled={!listName.trim() || creatingList}
               onClick={async () => {
-                // TODO: call create list API with extracted contact IDs
-                setShowCreateList(false)
+                setCreatingList(true)
+                try {
+                  const phones = extractedContacts.map((c) => c.phone)
+                  await createList(
+                    listName.trim(),
+                    extractedContactIds,
+                    listDescription.trim() || undefined,
+                    phones,
+                  )
+                  setExtractedListId('created')
+                  setShowCreateList(false)
+                  setListName('')
+                  setListDescription('')
+                } catch {
+                  // toast is handled by the hook
+                } finally {
+                  setCreatingList(false)
+                }
               }}
             >
-              Criar lista
+              {creatingList ? 'Criando...' : 'Criar lista'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -226,12 +226,11 @@ export class EvolutionAdapter implements IWhatsAppProvider {
     payload: AudioPayload,
   ): Promise<MessageResult> {
     const res = await this.http.post<EvoMessageResponse>(
-      `/message/sendMedia/${instanceId}`,
+      `/message/sendWhatsAppAudio/${instanceId}`,
       {
         number: to,
-        mediatype: 'audio',
-        mimetype: payload.mimetype,
-        media: payload.url,
+        audio: payload.url,
+        encoding: true,
       },
     )
 
