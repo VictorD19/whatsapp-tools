@@ -22,31 +22,58 @@ interface ApiResponse<T> {
   data: T
 }
 
-export function usePipelineStages() {
+export function usePipelineStages(pipelineId?: string) {
+  const [pipelines, setPipelines] = useState<Pipeline[]>([])
+  const [selectedPipelineId, setSelectedPipelineId] = useState<string | undefined>(pipelineId)
   const [stages, setStages] = useState<PipelineStage[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const fetchStages = useCallback(async () => {
+  const fetchPipelines = useCallback(async () => {
     setIsLoading(true)
     try {
       const res = await apiGet<ApiResponse<Pipeline[]>>('pipelines')
-      const defaultPipeline = res.data.find((p) => p.isDefault) ?? res.data[0]
-      if (defaultPipeline) {
-        setStages(defaultPipeline.stages.sort((a, b) => a.order - b.order))
+      const pipes = res.data
+      setPipelines(pipes)
+
+      if (pipes.length > 0) {
+        const target = pipelineId
+          ? pipes.find((p) => p.id === pipelineId)
+          : (pipes.find((p) => p.isDefault) ?? pipes[0])
+        if (target) {
+          setSelectedPipelineId(target.id)
+          setStages(target.stages.sort((a, b) => a.order - b.order))
+        }
       }
     } catch {
-      toast({ title: 'Erro ao carregar etapas', variant: 'destructive' })
+      toast({ title: 'Erro ao carregar pipelines', variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [pipelineId])
 
   useEffect(() => {
-    fetchStages()
-  }, [fetchStages])
+    fetchPipelines()
+  }, [fetchPipelines])
+
+  const selectPipeline = useCallback((id: string) => {
+    setSelectedPipelineId(id)
+    const pipe = pipelines.find((p) => p.id === id)
+    if (pipe) {
+      setStages(pipe.stages.sort((a, b) => a.order - b.order))
+    }
+  }, [pipelines])
 
   const activeStages = stages.filter((s) => s.type === 'ACTIVE')
   const closedStages = stages.filter((s) => s.type === 'WON' || s.type === 'LOST')
 
-  return { stages, activeStages, closedStages, isLoading, fetchStages }
+  return {
+    pipelines,
+    selectedPipelineId,
+    selectPipeline,
+    stages,
+    activeStages,
+    closedStages,
+    isLoading,
+    fetchPipelines,
+  }
 }

@@ -188,17 +188,25 @@ export const useInboxStore = create<InboxState>()((set) => ({
 
   setMessages: (conversationId, messages) =>
     set((state) => ({
-      messages: { ...state.messages, [conversationId]: messages },
+      messages: {
+        ...state.messages,
+        [conversationId]: [...messages].sort(
+          (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime(),
+        ),
+      },
     })),
 
   appendMessage: (conversationId, message) =>
     set((state) => {
       const existing = state.messages[conversationId] ?? []
       if (existing.some((m) => m.id === message.id)) return state
+      const updated = [...existing, message].sort(
+        (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime(),
+      )
       return {
         messages: {
           ...state.messages,
-          [conversationId]: [...existing, message],
+          [conversationId]: updated,
         },
       }
     }),
