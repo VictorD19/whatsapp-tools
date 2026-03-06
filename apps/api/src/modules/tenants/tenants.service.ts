@@ -22,7 +22,11 @@ export class TenantsService {
   // ── Usage ──
 
   async getUsage(tenantId: string) {
-    const tenant = await this.tenantsRepository.findUsageByTenant(tenantId)
+    const [tenant, broadcastsToday] = await Promise.all([
+      this.tenantsRepository.findUsageByTenant(tenantId),
+      this.tenantsRepository.countTodayBroadcasts(tenantId),
+    ])
+
     if (!tenant) {
       throw AppException.notFound('TENANT_NOT_FOUND', 'Tenant nao encontrado', { tenantId })
     }
@@ -34,7 +38,7 @@ export class TenantsService {
           instances: tenant._count.instances,
           users: tenant._count.users,
           assistants: 0,
-          broadcastsToday: 0,
+          broadcastsToday,
         },
       },
     }

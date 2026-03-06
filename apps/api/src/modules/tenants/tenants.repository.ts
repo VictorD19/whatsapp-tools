@@ -177,6 +177,19 @@ export class TenantsRepository {
     })
   }
 
+  async countTodayBroadcasts(tenantId: string) {
+    const startOfDay = new Date()
+    startOfDay.setHours(0, 0, 0, 0)
+
+    return this.prisma.broadcast.count({
+      where: {
+        tenantId,
+        createdAt: { gte: startOfDay },
+        deletedAt: null,
+      },
+    })
+  }
+
   // ── Locale settings ──
 
   async getLocaleSettings(tenantId: string) {

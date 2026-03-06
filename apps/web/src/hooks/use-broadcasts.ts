@@ -94,9 +94,15 @@ export function useBroadcasts() {
   )
 
   const createBroadcast = useCallback(async (payload: CreateBroadcastPayload) => {
-    const res = await apiPost<{ data: Broadcast }>('broadcasts', payload)
-    toast({ title: 'Campanha criada com sucesso' })
-    return res.data
+    try {
+      const res = await apiPost<{ data: Broadcast }>('broadcasts', payload)
+      toast({ title: 'Campanha criada com sucesso' })
+      return res.data
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao criar campanha'
+      toast({ title: message, variant: 'destructive' })
+      throw err
+    }
   }, [])
 
   const pauseBroadcast = useCallback(async (id: string) => {
