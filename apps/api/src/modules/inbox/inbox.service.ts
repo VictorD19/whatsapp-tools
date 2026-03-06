@@ -12,6 +12,7 @@ import { ConversationImportProducer } from './queues/import.producer'
 import { ConversationStatus } from '@prisma/client'
 import { parseWhatsAppMessage } from './utils/message-parser'
 import { StorageService, isStorageKey, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
+import { DealService } from '@modules/deal/deal.service'
 import { NotificationsService } from '@modules/notifications/notifications.service'
 
 // ─── WhatsApp supported formats & limits ──────────────────────────────────────
@@ -73,6 +74,7 @@ export class InboxService {
     private readonly gateway: InboxGateway,
     private readonly importProducer: ConversationImportProducer,
     private readonly storage: StorageService,
+    private readonly dealService: DealService,
     private readonly logger: LoggerService,
     private readonly notifications: NotificationsService,
   ) {}
@@ -188,6 +190,22 @@ export class InboxService {
       assignedToId: userId,
       status: 'OPEN',
     })
+
+    // Create deal when agent assumes conversation (not on every message)
+    if (!conversation.contact.phone.endsWith('@g.us')) {
+      try {
+        await this.dealService.findOrCreateForContact(
+          tenantId,
+          conversation.contactId,
+          conversationId,
+        )
+      } catch (error) {
+        this.logger.warn(
+          `Failed to find/create deal for contact ${conversation.contactId}: ${(error as Error).message}`,
+          'InboxService',
+        )
+      }
+    }
 
     const contactName = conversation.contact.name || conversation.contact.phone
     void this.notifications.dispatch({

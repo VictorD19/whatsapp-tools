@@ -1,129 +1,81 @@
 'use client'
 
-import React from 'react'
-import { DealCard } from './deal-card'
+import React, { useMemo, useState } from 'react'
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
 import { cn } from '@/lib/utils'
+import { DealCard } from './deal-card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog'
+import type { Deal } from '@/hooks/use-deal'
+import type { PipelineStage } from '@/hooks/use-pipeline-stages'
 
-interface Deal {
-  id: string
-  company: string
-  contactName: string
-  value: number
-  closingDate: string
-  agent: string
-  tags: string[]
-}
-
-interface Column {
-  id: string
-  title: string
-  color: string
+interface KanbanBoardProps {
   deals: Deal[]
+  stages: PipelineStage[]
+  onMoveDeal: (dealId: string, stageId: string, lostReason?: string) => Promise<Deal | null>
+  onDealSelect?: (deal: Deal) => void
 }
 
-const mockColumns: Column[] = [
-  {
-    id: 'new',
-    title: 'Novo',
-    color: 'bg-slate-400',
-    deals: [
-      {
-        id: '1',
-        company: 'Tech Solutions Ltda',
-        contactName: 'Ana Oliveira',
-        value: 5000,
-        closingDate: '2026-03-30',
-        agent: 'João S.',
-        tags: ['WhatsApp'],
-      },
-      {
-        id: '2',
-        company: 'Comércio ABC',
-        contactName: 'Carlos Mendes',
-        value: 1200,
-        closingDate: '2026-04-15',
-        agent: 'Maria L.',
-        tags: ['Inbound'],
-      },
-    ],
-  },
-  {
-    id: 'contact',
-    title: 'Em contato',
-    color: 'bg-blue-400',
-    deals: [
-      {
-        id: '3',
-        company: 'Design Studio',
-        contactName: 'Fernanda Costa',
-        value: 8500,
-        closingDate: '2026-03-25',
-        agent: 'João S.',
-        tags: ['VIP'],
-      },
-    ],
-  },
-  {
-    id: 'demo',
-    title: 'Demo',
-    color: 'bg-purple-400',
-    deals: [
-      {
-        id: '4',
-        company: 'Mega Distribuidora',
-        contactName: 'Roberto Lima',
-        value: 25000,
-        closingDate: '2026-03-20',
-        agent: 'Maria L.',
-        tags: ['Enterprise', 'VIP'],
-      },
-    ],
-  },
-  {
-    id: 'negotiation',
-    title: 'Negociação',
-    color: 'bg-yellow-400',
-    deals: [
-      {
-        id: '5',
-        company: 'StartupX',
-        contactName: 'Juliana Santos',
-        value: 3200,
-        closingDate: '2026-03-18',
-        agent: 'Pedro M.',
-        tags: ['Startup'],
-      },
-    ],
-  },
-  {
-    id: 'won',
-    title: 'Ganho',
-    color: 'bg-green-400',
-    deals: [
-      {
-        id: '6',
-        company: 'Grupo Empresarial',
-        contactName: 'Marcelo R.',
-        value: 15000,
-        closingDate: '2026-03-01',
-        agent: 'João S.',
-        tags: ['Renovação'],
-      },
-    ],
-  },
-  {
-    id: 'lost',
-    title: 'Perdido',
-    color: 'bg-red-400',
-    deals: [],
-  },
-]
+export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanBoardProps) {
+  const [lostDialogOpen, setLostDialogOpen] = useState(false)
+  const [lostReason, setLostReason] = useState('')
+  const [pendingMove, setPendingMove] = useState<{ dealId: string; stageId: string } | null>(null)
 
-export function KanbanBoard() {
-  const totalValue = mockColumns
-    .filter((c) => c.id !== 'lost')
-    .flatMap((c) => c.deals)
-    .reduce((acc, d) => acc + d.value, 0)
+  const columnMap = useMemo(() => {
+    const map = new Map<string, Deal[]>()
+    for (const stage of stages) {
+      map.set(stage.id, [])
+    }
+    for (const deal of deals) {
+      const arr = map.get(deal.stageId)
+      if (arr) arr.push(deal)
+    }
+    return map
+  }, [deals, stages])
+
+  const totalValue = useMemo(() => {
+    return deals
+      .filter((d) => {
+        const stage = stages.find((s) => s.id === d.stageId)
+        return stage?.type !== 'LOST'
+      })
+      .reduce((acc, d) => acc + (d.value ?? 0), 0)
+  }, [deals, stages])
+
+  async function handleDragEnd(result: DropResult) {
+    if (!result.destination) return
+    const { draggableId, destination } = result
+    const newStageId = destination.droppableId
+
+    const deal = deals.find((d) => d.id === draggableId)
+    if (!deal) return
+
+    // Block drag of closed deals
+    const currentStage = stages.find((s) => s.id === deal.stageId)
+    if (currentStage?.type === 'WON' || currentStage?.type === 'LOST') return
+
+    if (deal.stageId === newStageId) return
+
+    const targetStage = stages.find((s) => s.id === newStageId)
+    if (targetStage?.type === 'LOST') {
+      setPendingMove({ dealId: draggableId, stageId: newStageId })
+      setLostDialogOpen(true)
+      return
+    }
+
+    await onMoveDeal(draggableId, newStageId)
+  }
+
+  async function handleConfirmLost() {
+    if (!pendingMove) return
+    await onMoveDeal(pendingMove.dealId, pendingMove.stageId, lostReason || undefined)
+    setLostDialogOpen(false)
+    setLostReason('')
+    setPendingMove(null)
+  }
 
   return (
     <div className="space-y-3">
@@ -133,32 +85,120 @@ export function KanbanBoard() {
           {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
         </span>
       </p>
-      <div className="flex gap-4 min-w-max">
-        {mockColumns.map((column) => (
-          <div key={column.id} className="flex flex-col gap-3 w-[260px] shrink-0">
-            {/* Column header */}
-            <div className="flex items-center gap-2">
-              <div className={cn('h-2.5 w-2.5 rounded-full', column.color)} />
-              <span className="text-sm font-medium">{column.title}</span>
-              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1 text-xs text-muted-foreground">
-                {column.deals.length}
-              </span>
-            </div>
 
-            {/* Drop zone */}
-            <div className="flex flex-col gap-2 min-h-[200px] rounded-lg bg-muted/40 p-2">
-              {column.deals.map((deal) => (
-                <DealCard key={deal.id} deal={deal} />
-              ))}
-              {column.deals.length === 0 && (
-                <div className="flex flex-1 items-center justify-center py-8">
-                  <p className="text-xs text-muted-foreground/60">Sem negócios</p>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex gap-4 min-w-max">
+          {stages.map((stage) => {
+            const columnDeals = columnMap.get(stage.id) ?? []
+            const columnTotal = columnDeals.reduce((acc, d) => acc + (d.value ?? 0), 0)
+
+            return (
+              <div key={stage.id} className="flex flex-col gap-3 w-[260px] shrink-0">
+                {/* Column header */}
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-2.5 w-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: stage.color }}
+                  />
+                  <span className="text-sm font-medium">{stage.name}</span>
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1 text-xs text-muted-foreground">
+                    {columnDeals.length}
+                  </span>
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+                {columnTotal > 0 && (
+                  <p className="text-[11px] text-muted-foreground -mt-2">
+                    {columnTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                )}
+
+                {/* Drop zone */}
+                <Droppable droppableId={stage.id}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn(
+                        'flex flex-col gap-2 min-h-[200px] rounded-lg p-2 transition-colors',
+                        snapshot.isDraggingOver ? 'bg-muted/70' : 'bg-muted/40'
+                      )}
+                    >
+                      {columnDeals.map((deal, index) => {
+                        const dealStage = stages.find((s) => s.id === deal.stageId)
+                        const isClosed = dealStage?.type === 'WON' || dealStage?.type === 'LOST'
+
+                        return (
+                          <Draggable
+                            key={deal.id}
+                            draggableId={deal.id}
+                            index={index}
+                            isDragDisabled={isClosed}
+                          >
+                            {(dragProvided, dragSnapshot) => (
+                              <DealCard
+                                ref={dragProvided.innerRef}
+                                {...dragProvided.draggableProps}
+                                {...dragProvided.dragHandleProps}
+                                deal={deal}
+                                onDealClick={onDealSelect}
+                                className={cn(
+                                  dragSnapshot.isDragging && 'opacity-80 rotate-2',
+                                  isClosed && 'opacity-60'
+                                )}
+                              />
+                            )}
+                          </Draggable>
+                        )
+                      })}
+                      {provided.placeholder}
+                      {columnDeals.length === 0 && (
+                        <div className="flex flex-1 items-center justify-center py-8">
+                          <p className="text-xs text-muted-foreground/60">Sem negócios</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            )
+          })}
+        </div>
+      </DragDropContext>
+
+      {/* Lost reason dialog */}
+      <Dialog open={lostDialogOpen} onOpenChange={(v) => {
+        if (!v) {
+          setLostDialogOpen(false)
+          setPendingMove(null)
+          setLostReason('')
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Marcar como perdido</DialogTitle>
+            <DialogDescription>Informe o motivo da perda (opcional).</DialogDescription>
+          </DialogHeader>
+          <Input
+            value={lostReason}
+            onChange={(e) => setLostReason(e.target.value)}
+            placeholder="Ex: Escolheu concorrente, sem orçamento..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleConfirmLost()
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setLostDialogOpen(false)
+              setPendingMove(null)
+              setLostReason('')
+            }}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmLost}>
+              Confirmar perda
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -8,7 +8,6 @@ import { ContactsService } from '@modules/contacts/contacts.service'
 import { InstancesService } from '@modules/instances/instances.service'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { TenantsService } from '@modules/tenants/tenants.service'
-import { DealService } from '@modules/deal/deal.service'
 import { StorageService, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
 import { parseWhatsAppMessage, extractQuotedStanzaId } from '../utils/message-parser'
 interface InboxWebhookJob {
@@ -26,7 +25,6 @@ export class InboxWebhookProcessor {
     private readonly instancesService: InstancesService,
     private readonly whatsapp: WhatsAppService,
     private readonly tenantsService: TenantsService,
-    private readonly dealService: DealService,
     private readonly storage: StorageService,
     private readonly gateway: InboxGateway,
     private readonly logger: LoggerService,
@@ -190,22 +188,6 @@ export class InboxWebhookProcessor {
         }
       } else if (!fromMe) {
         await this.inboxRepository.incrementUnreadCount(conversation.id)
-      }
-
-      // Find or create deal for this contact (skip groups)
-      if (!isGroup) {
-        try {
-          await this.dealService.findOrCreateForContact(
-            instance.tenantId,
-            contact.id,
-            conversation.id,
-          )
-        } catch (error) {
-          this.logger.warn(
-            `Failed to find/create deal for contact ${contact.id}: ${(error as Error).message}`,
-            'InboxWebhookProcessor',
-          )
-        }
       }
 
       // Create message

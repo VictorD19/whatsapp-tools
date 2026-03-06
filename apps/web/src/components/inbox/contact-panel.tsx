@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
-  Phone, Tag, Radio, User, ChevronDown, Pencil,
-  X, Plus, StickyNote, Check, Loader2,
+  Phone, Radio, User, ChevronDown, Pencil,
+  X, StickyNote, Check, Loader2,
 } from 'lucide-react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -21,13 +20,15 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { getInitials, formatPhone, cn } from '@/lib/utils'
+import { apiPatch } from '@/lib/api'
+import { toast } from '@/components/ui/toaster'
 import { useConversation } from '@/hooks/use-conversation'
-import { useTags, useContactTags, type Tag as TagType } from '@/hooks/use-tags'
 import { usePipelineStages } from '@/hooks/use-pipeline-stages'
 import { useDeal, type DealNote } from '@/hooks/use-deal'
 import { useAuthStore } from '@/stores/auth.store'
 import { useInboxStore } from '@/stores/inbox.store'
 import type { Conversation, ConversationDeal } from '@/stores/inbox.store'
+import { TagsSection } from '@/components/shared/tags-section'
 
 interface ContactPanelProps {
   conversation: Conversation | null
@@ -60,115 +61,6 @@ function formatNoteDate(dateStr: string): string {
 }
 
 // ---- Sub-components ----
-
-function TagsSection({
-  contactId,
-}: {
-  contactId: string
-}) {
-  const { tags: allTags, isLoading: isLoadingTags, addTagToContact, removeTagFromContact } = useTags()
-  const { contactTags, refetchContactTags } = useContactTags(contactId)
-  const [tagPopoverOpen, setTagPopoverOpen] = useState(false)
-
-  const contactTagIds = useMemo(() => new Set(contactTags.map((t) => t.id)), [contactTags])
-
-  const availableTags = useMemo(() => {
-    return allTags.filter((t) => !contactTagIds.has(t.id))
-  }, [allTags, contactTagIds])
-
-  async function handleAddTag(tag: TagType) {
-    const ok = await addTagToContact(contactId, tag.id)
-    if (ok) {
-      await refetchContactTags()
-      setTagPopoverOpen(false)
-    }
-  }
-
-  async function handleRemoveTag(tag: TagType) {
-    const ok = await removeTagFromContact(contactId, tag.id)
-    if (ok) {
-      await refetchContactTags()
-    }
-  }
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Tag className="h-3.5 w-3.5" />
-          <span>Tags</span>
-        </div>
-        <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-5 w-5">
-              <Plus className="h-3 w-3" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56 p-2" align="end">
-            <p className="text-xs font-medium text-muted-foreground mb-2 px-1">
-              Adicionar tag
-            </p>
-            {isLoadingTags ? (
-              <div className="flex justify-center py-3">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            ) : availableTags.length === 0 ? (
-              <p className="text-xs text-muted-foreground px-1 py-2">
-                Nenhuma tag disponivel
-              </p>
-            ) : (
-              <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
-                {availableTags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => handleAddTag(tag)}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted transition-colors"
-                  >
-                    <span
-                      className="h-2.5 w-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: tag.color }}
-                    />
-                    <span className="truncate">{tag.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {contactTags.length > 0 ? (
-          contactTags.map((tag) => (
-            <Badge
-              key={tag.id}
-              variant="secondary"
-              className="text-xs gap-1 pr-1"
-              style={{
-                backgroundColor: `${tag.color}20`,
-                color: tag.color,
-                borderColor: `${tag.color}40`,
-              }}
-            >
-              <span
-                className="h-1.5 w-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: tag.color }}
-              />
-              {tag.name}
-              <button
-                onClick={() => handleRemoveTag(tag)}
-                className="ml-0.5 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-              >
-                <X className="h-2.5 w-2.5" />
-              </button>
-            </Badge>
-          ))
-        ) : (
-          <p className="text-[11px] text-muted-foreground/60">Nenhuma tag</p>
-        )}
-      </div>
-    </div>
-  )
-}
 
 function DealStageSection({
   deal,
@@ -315,7 +207,7 @@ function DealValueSection({
   deal: ConversationDeal
   onValueChanged: (value: number | null) => void
 }) {
-  const { updateDealValue } = useDeal()
+  const { updateDeal } = useDeal()
   const [editing, setEditing] = useState(false)
   const [inputValue, setInputValue] = useState('')
 
@@ -327,8 +219,8 @@ function DealValueSection({
   async function handleSave() {
     const numValue = inputValue.trim() === '' ? null : parseFloat(inputValue.replace(',', '.'))
     if (numValue !== null && isNaN(numValue)) return
-    const ok = await updateDealValue(deal.id, numValue)
-    if (ok) {
+    const result = await updateDeal(deal.id, { value: numValue ?? 0 })
+    if (result) {
       onValueChanged(numValue)
       setEditing(false)
     }
@@ -490,6 +382,9 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
   const { assignConversation, closeConversation } = useConversation()
   const userId = useAuthStore((s) => s.user?.id)
   const upsertConversation = useInboxStore((s) => s.upsertConversation)
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState('')
+  const [savingName, setSavingName] = useState(false)
 
   if (!conversation) {
     return (
@@ -504,6 +399,33 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
   const isAssignedToMe = conversation.assignedToId === userId
   const isPending = conversation.status === 'PENDING'
   const activeDeal = conversation.deals?.[0] ?? null
+
+  function startEditingName() {
+    setNameValue(contact.name ?? '')
+    setEditingName(true)
+  }
+
+  async function handleSaveName() {
+    const trimmed = nameValue.trim()
+    if (!trimmed || trimmed === contact.name) {
+      setEditingName(false)
+      return
+    }
+    setSavingName(true)
+    try {
+      await apiPatch(`contacts/${contact.id}`, { name: trimmed })
+      upsertConversation({
+        ...conversation!,
+        contact: { ...contact, name: trimmed },
+      })
+      toast({ title: 'Nome atualizado' })
+      setEditingName(false)
+    } catch {
+      toast({ title: 'Erro ao atualizar nome', variant: 'destructive' })
+    } finally {
+      setSavingName(false)
+    }
+  }
 
   function handleStageChanged(stageId: string) {
     if (!activeDeal || !conversation) return
@@ -535,10 +457,45 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
             {getInitials(contactName)}
           </AvatarFallback>
         </Avatar>
-        <div className="text-center">
-          <h3 className="text-sm font-semibold">{contactName}</h3>
+        <div className="text-center w-full">
+          {editingName ? (
+            <div className="flex items-center justify-center gap-1">
+              <input
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveName()
+                  if (e.key === 'Escape') setEditingName(false)
+                }}
+                className="text-sm font-semibold text-center bg-transparent border-none outline-none w-full"
+                autoFocus
+                disabled={savingName}
+              />
+              <button
+                onClick={handleSaveName}
+                disabled={savingName}
+                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {savingName ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Check className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-1 group">
+              <h3 className="text-sm font-semibold">{contactName}</h3>
+              <button
+                onClick={startEditingName}
+                className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground transition-all"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            </div>
+          )}
           {!contact.phone.endsWith('@g.us') && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 justify-center">
               <Phone className="h-3 w-3" />
               <span>{formatPhone(contact.phone)}</span>
             </div>

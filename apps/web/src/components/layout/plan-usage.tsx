@@ -77,15 +77,17 @@ function computeOverallPercentage(data: UsageData): number {
     { current: data.usage.broadcastsToday, max: data.plan.maxBroadcastsPerDay },
   ]
 
-  let highest = 0
+  let total = 0
+  let count = 0
   for (const item of items) {
     if (item.max > 0) {
-      const pct = (item.current / item.max) * 100
-      if (pct > highest) highest = pct
+      total += (item.current / item.max) * 100
+      count++
     }
   }
 
-  return Math.min(Math.round(highest), 100)
+  const avg = count > 0 ? total / count : 0
+  return Math.min(Math.round(avg), 100)
 }
 
 function useUsageData() {

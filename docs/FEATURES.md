@@ -6,7 +6,7 @@
 
 ## MVP — Lançamento (v1.0)
 
-> Foco: entregar valor imediato nas 5 funcionalidades core de vendas.
+> Foco: entregar valor imediato nas 4 funcionalidades core de vendas.
 
 ### 1. Disparo em Massa
 - Envio de mensagens para listas de contatos
@@ -16,13 +16,7 @@
 - Controle de intervalo entre mensagens (anti-ban)
 - Relatório básico: enviados / entregues / falhas
 
-### 2. Menções em Grupos
-- Listar grupos vinculados ao número conectado
-- Extrair membros de grupos
-- Enviar mensagens mencionando @todos ou @específicos
-- Agendamento de menções em grupos
-
-### 3. Assistentes Virtuais (IA)
+### 2. Assistentes Virtuais (IA)
 - Criação de assistentes por fluxo (SDR, atendimento, agendamento)
 - Integração com LLM (ex: Claude, OpenAI)
 - Respostas automáticas baseadas em contexto
@@ -30,7 +24,7 @@
 - Configuração de personalidade, tom e instruções do assistente
 - Histórico de conversa como contexto para a IA
 
-### 4. Atendimento por Chat (Inbox)
+### 3. Atendimento por Chat (Inbox) ✅
 - Inbox centralizado de conversas
 - Multi-atendente (vários agentes por conta)
 - Transferência de conversa entre agentes
@@ -39,14 +33,21 @@
 - Notificação de nova mensagem em tempo real
 - Responder/citar mensagens (reply/quote) — envio e recebimento
 - Atualização automática de tabs e contadores via WebSocket (assumir, encerrar, nova conversa)
+- Menções em grupos (@todos e @específicos)
 
-### 5. CRM
-- Cadastro e gestão de contatos
-- Tags e segmentação de contatos
+### 4. CRM
+- Cadastro e gestão de contatos ✅
+- Tags e segmentação de contatos ✅
 - Histórico completo de conversas por contato
 - Funil de vendas em Kanban (etapas customizáveis)
 - Notas e anotações por contato
 - Visualização de timeline do contato
+
+### ~~Menções em Grupos~~ ✅ (incorporado ao Inbox)
+- ~~Listar grupos vinculados ao número conectado~~ ✅
+- ~~Extrair membros de grupos~~ ✅
+- ~~Enviar mensagens mencionando @todos ou @específicos~~ ✅
+- ~~Criar listas de contatos a partir de extração~~ ✅
 
 ### 6. Notificações em Tempo Real
 - Central de notificações in-app com histórico completo (`/notifications`)
@@ -158,7 +159,7 @@
 ## Fases resumidas
 
 ```
-v1.0  MVP         → Disparos, Menções, IA, Chat, CRM
+v1.0  MVP         → Disparos, IA, Chat (+ Menções), CRM
 v1.5  Crescimento → Contatos, Agendamento, Follow-up
 v2.0  Escala      → Multi-número, Analytics, Equipe
 v2.5+ Ecossistema → Integrações, Fluxo visual, Extras
@@ -166,4 +167,4 @@ v2.5+ Ecossistema → Integrações, Fluxo visual, Extras
 
 ---
 
-*Atualizado em: 2026-03-03*
+*Atualizado em: 2026-03-06*

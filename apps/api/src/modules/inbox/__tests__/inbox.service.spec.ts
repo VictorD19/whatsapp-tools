@@ -7,6 +7,7 @@ import { InstancesService } from '@modules/instances/instances.service'
 import { ConversationImportProducer } from '../queues/import.producer'
 import { StorageService } from '@modules/storage/storage.service'
 import { LoggerService } from '@core/logger/logger.service'
+import { DealService } from '@modules/deal/deal.service'
 import { AppException } from '@core/errors/app.exception'
 
 describe('InboxService', () => {
@@ -103,6 +104,7 @@ describe('InboxService', () => {
         { provide: InstancesService, useValue: mockInstancesService },
         { provide: ConversationImportProducer, useValue: mockImportProducer },
         { provide: StorageService, useValue: mockStorage },
+        { provide: DealService, useValue: { findOrCreateForContact: jest.fn() } },
         { provide: LoggerService, useValue: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } },
       ],
     }).compile()
@@ -531,12 +533,12 @@ describe('InboxService', () => {
       ).rejects.toMatchObject({ code: 'CONVERSATION_ALREADY_ASSIGNED' })
     })
 
-    it('should throw FILE_TOO_LARGE when image exceeds 5MB', async () => {
+    it('should throw FILE_TOO_LARGE when image exceeds 16MB', async () => {
       repository.findConversationById.mockResolvedValue(openConversation)
 
       await expect(
         service.sendMediaMessage(tenantId, 'conv-1', userId, 'agent', {
-          buffer: Buffer.alloc(6 * 1024 * 1024), // 6MB
+          buffer: Buffer.alloc(17 * 1024 * 1024), // 17MB > 16MB limit
           mimetype: 'image/jpeg',
           filename: 'big.jpg',
         }),
