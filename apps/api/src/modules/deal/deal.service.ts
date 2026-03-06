@@ -2,17 +2,21 @@ import { Injectable } from '@nestjs/common'
 import { DealRepository } from './deal.repository'
 import { AppException } from '@core/errors/app.exception'
 import { LoggerService } from '@core/logger/logger.service'
+import { PrismaService } from '@core/database/prisma.service'
 import { CreateDealDto } from './dto/create-deal.dto'
 import { UpdateDealDto } from './dto/update-deal.dto'
 import { MoveDealDto } from './dto/move-deal.dto'
 import { CreateDealNoteDto } from './dto/create-deal-note.dto'
 import { DealFiltersDto } from './dto/deal-filters.dto'
+import { NotificationsService } from '@modules/notifications/notifications.service'
 
 @Injectable()
 export class DealService {
   constructor(
     private readonly repository: DealRepository,
     private readonly logger: LoggerService,
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findDeals(tenantId: string, filters: DealFiltersDto) {
@@ -121,6 +125,17 @@ export class DealService {
       assignedToId: dto.assignedToId,
     })
 
+    if (dto.assignedToId) {
+      void this.notifications.dispatch({
+        tenantId,
+        userId: dto.assignedToId,
+        type: 'DEAL_ASSIGNED',
+        title: 'Deal atribuído',
+        body: 'Um deal foi atribuído a você',
+        data: { dealId: id },
+      })
+    }
+
     this.logger.log(`Deal ${id} updated`, 'DealService')
 
     return updated
@@ -169,6 +184,47 @@ export class DealService {
       lostAt,
       lostReason,
     })
+
+    if (newStage.type === 'WON' || newStage.type === 'LOST') {
+      const recipientId = deal.assignedToId ?? null
+      if (recipientId) {
+        void this.notifications.dispatch({
+          tenantId,
+          userId: recipientId,
+          type: newStage.type === 'WON' ? 'DEAL_WON' : 'DEAL_LOST',
+          title: newStage.type === 'WON' ? 'Deal ganho!' : 'Deal perdido',
+          body: newStage.type === 'WON'
+            ? `${deal.title} foi marcado como ganho`
+            : `${deal.title} foi marcado como perdido`,
+          data: { dealId: id },
+        })
+      } else {
+        // No assignee — notify all tenant admins
+        try {
+          const admins = await this.prisma.user.findMany({
+            where: { tenantId, role: 'admin', deletedAt: null },
+            select: { id: true },
+          })
+          for (const admin of admins) {
+            void this.notifications.dispatch({
+              tenantId,
+              userId: admin.id,
+              type: newStage.type === 'WON' ? 'DEAL_WON' : 'DEAL_LOST',
+              title: newStage.type === 'WON' ? 'Deal ganho!' : 'Deal perdido',
+              body: newStage.type === 'WON'
+                ? `${deal.title} foi marcado como ganho`
+                : `${deal.title} foi marcado como perdido`,
+              data: { dealId: id },
+            })
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Failed to dispatch deal notifications: ${(error as Error).message}`,
+            'DealService',
+          )
+        }
+      }
+    }
 
     this.logger.log(
       `Deal ${id} moved to stage ${dto.stageId} (${newStage.type})`,

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { BullModule } from '@nestjs/bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module'
+import { NotificationsModule } from '@modules/notifications/notifications.module'
 import { InstancesController } from './instances.controller'
 import { InstancesWebhookController } from './instances-webhook.controller'
 import { InstancesService } from './instances.service'
@@ -12,6 +13,7 @@ import { InstanceWebhookProcessor } from './queues/instance-webhook.processor'
 @Module({
   imports: [
     WhatsAppModule,
+    NotificationsModule,
     BullModule.registerQueue(
       { name: QUEUES.WEBHOOK_INSTANCE },
       { name: QUEUES.WEBHOOK_INBOUND },

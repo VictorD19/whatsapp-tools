@@ -210,6 +210,13 @@ make migrate
 |-----------|-----------|
 | `20260303175033_init` | Schema inicial (Tenant, User, Instance, Contact, Conversation, Message) |
 | `20260303191346_add_message_tenant_relation` | Relação Message → Tenant |
+| `20260304_add_quoted_message_id` | Campo `quotedMessageId` em Message |
+| `20260304_crm_pipeline_deal_tags` | CRM: Pipeline, Deal, Tag, ContactTag |
+| `20260304_plan_management` | Planos e billing: Plan, TenantPlan |
+| `20260306_contact_lists` | Listas de contatos: ContactList, ContactListItem |
+| *(pendente)* `20260306_notifications` | Notificações: Notification, NotificationPreference, enum NotificationType |
+
+> **Deploy — action required:** após `git pull`, rode `make migrate` para aplicar a migration de notificações antes de subir a API.
 
 ---
 

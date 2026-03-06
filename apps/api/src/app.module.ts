@@ -14,6 +14,7 @@ import { DealModule } from './modules/deal/deal.module'
 import { UsersModule } from './modules/users/users.module'
 import { GroupsModule } from './modules/groups/groups.module'
 import { ContactListsModule } from './modules/contact-lists/contact-lists.module'
+import { NotificationsModule } from './modules/notifications/notifications.module'
 // import { BroadcastsModule } from './modules/broadcasts/broadcasts.module'
 // import { AssistantsModule } from './modules/assistants/assistants.module'
 // import { CrmModule } from './modules/crm/crm.module'
@@ -33,6 +34,7 @@ import { ContactListsModule } from './modules/contact-lists/contact-lists.module
     UsersModule,
     GroupsModule,
     ContactListsModule,
+    NotificationsModule,
     // BroadcastsModule,
     // AssistantsModule,
     // CrmModule,

@@ -48,6 +48,16 @@
 - Notas e anotações por contato
 - Visualização de timeline do contato
 
+### 6. Notificações em Tempo Real
+- Central de notificações in-app com histórico completo (`/notifications`)
+- Sino de notificações na topbar com contador de não lidas e dropdown
+- Entrega em tempo real via WebSocket (sala `user:{userId}`)
+- Processamento assíncrono via fila BullMQ (tolerante a falhas)
+- Browser Notification API — push nativo quando a tab não está em foco
+- Preferências por tipo de notificação (in-app e browser) em `/settings/notifications`
+- Tipos cobertos: `NEW_MESSAGE`, `CONVERSATION_ASSIGNED`, `CONVERSATION_TRANSFERRED`, `CONVERSATIONS_IMPORTED`, `INSTANCE_CONNECTED`, `INSTANCE_DISCONNECTED`, `INSTANCE_BANNED`, `DEAL_WON`, `DEAL_LOST`, `DEAL_ASSIGNED`, `GROUP_EXTRACTION_COMPLETED`
+- Integrações ativas: Inbox, Instances, Deal, Groups
+
 ---
 
 ## Fase 2 — Crescimento (v1.5)

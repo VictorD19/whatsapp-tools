@@ -12,6 +12,7 @@ import { ConversationImportProducer } from './queues/import.producer'
 import { ConversationStatus } from '@prisma/client'
 import { parseWhatsAppMessage } from './utils/message-parser'
 import { StorageService, isStorageKey, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
+import { NotificationsService } from '@modules/notifications/notifications.service'
 
 // ─── WhatsApp supported formats & limits ──────────────────────────────────────
 // Images: JPG, PNG — 16 MB
@@ -73,6 +74,7 @@ export class InboxService {
     private readonly importProducer: ConversationImportProducer,
     private readonly storage: StorageService,
     private readonly logger: LoggerService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findConversations(
@@ -185,6 +187,16 @@ export class InboxService {
       conversationId,
       assignedToId: userId,
       status: 'OPEN',
+    })
+
+    const contactName = conversation.contact.name || conversation.contact.phone
+    void this.notifications.dispatch({
+      tenantId,
+      userId,
+      type: 'CONVERSATION_ASSIGNED',
+      title: 'Conversa assumida',
+      body: `Você assumiu a conversa com ${contactName}`,
+      data: { conversationId },
     })
 
     this.logger.log(
@@ -509,6 +521,15 @@ export class InboxService {
       newAssignedToId,
     })
 
+    void this.notifications.dispatch({
+      tenantId,
+      userId: newAssignedToId,
+      type: 'CONVERSATION_TRANSFERRED',
+      title: 'Conversa transferida',
+      body: 'Uma conversa foi transferida para você',
+      data: { conversationId },
+    })
+
     this.logger.log(
       `Conversation ${conversationId} transferred to ${newAssignedToId}`,
       'InboxService',
@@ -676,6 +697,7 @@ export class InboxService {
     tenantId: string,
     instanceId: string,
     dto: ImportConversationsDto,
+    userId?: string,
   ) {
     const instance = await this.instancesService.findOne(tenantId, instanceId)
 
@@ -704,6 +726,17 @@ export class InboxService {
         )
       }
       throw error
+    }
+
+    if (userId) {
+      void this.notifications.dispatch({
+        tenantId,
+        userId,
+        type: 'CONVERSATIONS_IMPORTED',
+        title: 'Importação concluída',
+        body: 'As conversas foram importadas com sucesso',
+        data: { instanceId },
+      })
     }
 
     this.logger.log(

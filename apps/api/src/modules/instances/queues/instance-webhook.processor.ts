@@ -6,6 +6,8 @@ import { InstancesRepository } from '../instances.repository'
 import { InstancesGateway } from '../instances.gateway'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { InstanceStatus } from '@prisma/client'
+import { PrismaService } from '@core/database/prisma.service'
+import { NotificationsService } from '@modules/notifications/notifications.service'
 
 interface InstanceWebhookJob {
   instanceName: string
@@ -21,6 +23,8 @@ export class InstanceWebhookProcessor {
     private readonly gateway: InstancesGateway,
     private readonly whatsapp: WhatsAppService,
     private readonly logger: LoggerService,
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   @Process('instance-webhook')
@@ -87,7 +91,7 @@ export class InstanceWebhookProcessor {
   }
 
   private async handleConnectionUpdate(
-    instance: { id: string; tenantId: string; evolutionId: string },
+    instance: { id: string; name?: string; tenantId: string; evolutionId: string },
     data: Record<string, unknown>,
   ) {
     const state = data.state as string | undefined
@@ -140,6 +144,51 @@ export class InstanceWebhookProcessor {
       instanceId: instance.id,
       status: newStatus,
     })
+
+    // Dispatch notifications to all tenant admins
+    if (newStatus === 'CONNECTED' || newStatus === 'DISCONNECTED' || newStatus === 'BANNED') {
+      const instanceName = instance.name ?? instance.evolutionId
+      let notifTitle: string
+      let notifBody: string
+
+      if (newStatus === 'CONNECTED') {
+        notifTitle = 'Instância conectada'
+        notifBody = `${instanceName} foi conectada com sucesso`
+      } else if (newStatus === 'BANNED') {
+        notifTitle = 'Instância banida'
+        notifBody = `${instanceName} foi banida pelo WhatsApp`
+      } else {
+        notifTitle = 'Instância desconectada'
+        notifBody = `${instanceName} foi desconectada`
+      }
+
+      try {
+        const admins = await this.prisma.user.findMany({
+          where: { tenantId: instance.tenantId, role: 'admin', deletedAt: null },
+          select: { id: true },
+        })
+
+        for (const admin of admins) {
+          void this.notifications.dispatch({
+            tenantId: instance.tenantId,
+            userId: admin.id,
+            type: newStatus === 'CONNECTED'
+              ? 'INSTANCE_CONNECTED'
+              : newStatus === 'BANNED'
+                ? 'INSTANCE_BANNED'
+                : 'INSTANCE_DISCONNECTED',
+            title: notifTitle,
+            body: notifBody,
+            data: { instanceId: instance.id },
+          })
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Failed to dispatch instance notifications: ${(error as Error).message}`,
+          'InstanceWebhookProcessor',
+        )
+      }
+    }
 
     this.logger.log(
       `Instance ${instance.id} status updated to ${newStatus}`,

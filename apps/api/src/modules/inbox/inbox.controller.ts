@@ -187,9 +187,10 @@ export class InboxController {
   @HttpCode(HttpStatus.ACCEPTED)
   importConversations(
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: { id: string },
     @Param('instanceId') instanceId: string,
     @Body(new ZodValidationPipe(importConversationsSchema)) dto: ImportConversationsDto,
   ) {
-    return this.inboxService.startConversationImport(tenantId, instanceId, dto)
+    return this.inboxService.startConversationImport(tenantId, instanceId, dto, user?.id)
   }
 }
