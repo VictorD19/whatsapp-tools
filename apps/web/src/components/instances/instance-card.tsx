@@ -30,7 +30,7 @@ export function InstanceCard({ instance, importProgress, onConnect, onDisconnect
   const isImporting = importProgress?.importing ?? false
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card data-testid={`instance-card-${instance.id}`} className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>

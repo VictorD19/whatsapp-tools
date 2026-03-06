@@ -8,6 +8,7 @@ import { ConversationImportProducer } from '../queues/import.producer'
 import { StorageService } from '@modules/storage/storage.service'
 import { LoggerService } from '@core/logger/logger.service'
 import { DealService } from '@modules/deal/deal.service'
+import { NotificationsService } from '@modules/notifications/notifications.service'
 import { AppException } from '@core/errors/app.exception'
 
 describe('InboxService', () => {
@@ -15,6 +16,9 @@ describe('InboxService', () => {
   let repository: jest.Mocked<InboxRepository>
   let gateway: jest.Mocked<InboxGateway>
   let whatsapp: jest.Mocked<WhatsAppService>
+  let instancesService: jest.Mocked<InstancesService>
+  let importProducer: jest.Mocked<ConversationImportProducer>
+  let storage: jest.Mocked<StorageService>
 
   const tenantId = 'tenant-123'
   const userId = 'user-456'
@@ -59,6 +63,8 @@ describe('InboxService', () => {
       updateMessageStatusByEvolutionId: jest.fn(),
       createManyMessages: jest.fn(),
       findExistingEvolutionIds: jest.fn(),
+      findMessageById: jest.fn(),
+      findMessageWithInstance: jest.fn(),
     }
 
     const mockGateway = {
@@ -79,6 +85,7 @@ describe('InboxService', () => {
       sendGroupMention: jest.fn(),
       getGroupMembers: jest.fn(),
       findMessages: jest.fn(),
+      getMediaBase64: jest.fn(),
     }
 
     const mockInstancesService = {
@@ -93,6 +100,7 @@ describe('InboxService', () => {
       uploadMedia: jest.fn().mockResolvedValue('tenants/tenant-123/media/2024-03/uuid.jpg'),
       getSignedUrl: jest.fn().mockResolvedValue('http://localhost:9000/bucket/key?signed'),
       delete: jest.fn(),
+      download: jest.fn(),
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -106,6 +114,7 @@ describe('InboxService', () => {
         { provide: StorageService, useValue: mockStorage },
         { provide: DealService, useValue: { findOrCreateForContact: jest.fn() } },
         { provide: LoggerService, useValue: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } },
+        { provide: NotificationsService, useValue: { dispatch: jest.fn() } },
       ],
     }).compile()
 
@@ -113,6 +122,9 @@ describe('InboxService', () => {
     repository = module.get(InboxRepository)
     gateway = module.get(InboxGateway)
     whatsapp = module.get(WhatsAppService)
+    instancesService = module.get(InstancesService)
+    importProducer = module.get(ConversationImportProducer)
+    storage = module.get(StorageService)
   })
 
   describe('findConversations', () => {
@@ -739,6 +751,219 @@ describe('InboxService', () => {
       await expect(
         service.reopenConversation(tenantId, 'conv-1'),
       ).rejects.toThrow(AppException)
+    })
+  })
+
+  describe('findConversations (tab filtering)', () => {
+    it('should filter by tab=all (exclude CLOSE)', async () => {
+      repository.findConversations.mockResolvedValue({ conversations: [], total: 0 })
+
+      await service.findConversations(tenantId, { tab: 'all', page: 1, limit: 20 })
+
+      expect(repository.findConversations).toHaveBeenCalledWith(tenantId, expect.objectContaining({
+        status: undefined,
+        statusNot: 'CLOSE',
+        assignedToId: undefined,
+        unassigned: false,
+      }))
+    })
+
+    it('should filter by tab=mine (assigned to current user)', async () => {
+      repository.findConversations.mockResolvedValue({ conversations: [], total: 0 })
+
+      await service.findConversations(tenantId, { tab: 'mine', page: 1, limit: 20 }, userId)
+
+      expect(repository.findConversations).toHaveBeenCalledWith(tenantId, expect.objectContaining({
+        statusNot: 'CLOSE',
+        assignedToId: userId,
+      }))
+    })
+
+    it('should filter by tab=unassigned (PENDING, no assignee)', async () => {
+      repository.findConversations.mockResolvedValue({ conversations: [], total: 0 })
+
+      await service.findConversations(tenantId, { tab: 'unassigned', page: 1, limit: 20 })
+
+      expect(repository.findConversations).toHaveBeenCalledWith(tenantId, expect.objectContaining({
+        status: 'PENDING',
+        unassigned: true,
+      }))
+    })
+  })
+
+  describe('findMessages', () => {
+    it('should return paginated messages for a conversation', async () => {
+      repository.findConversationById.mockResolvedValue(mockConversation)
+      repository.findMessages.mockResolvedValue({
+        messages: [{ id: 'msg-1', body: 'Hello' } as never],
+        total: 1,
+      })
+
+      const result = await service.findMessages(tenantId, 'conv-1', 1, 20)
+
+      expect(result.data).toHaveLength(1)
+      expect(result.meta.total).toBe(1)
+      expect(result.meta.totalPages).toBe(1)
+    })
+
+    it('should throw CONVERSATION_NOT_FOUND for invalid conversation', async () => {
+      repository.findConversationById.mockResolvedValue(null)
+
+      await expect(service.findMessages(tenantId, 'nonexistent', 1, 20)).rejects.toMatchObject({
+        code: 'CONVERSATION_NOT_FOUND',
+      })
+    })
+  })
+
+  describe('startConversationImport', () => {
+    it('should start import for connected instance', async () => {
+      instancesService.findOne.mockResolvedValue({
+        ...mockConversation.instance,
+        status: 'CONNECTED',
+        tenantId,
+        phone: null,
+        evolutionId: 'acme-vendas',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      } as never)
+      importProducer.startImport.mockResolvedValue(undefined as never)
+
+      const result = await service.startConversationImport(tenantId, 'inst-1', { messageLimit: 10 })
+
+      expect(result.data.message).toBe('Importacao iniciada')
+      expect(importProducer.startImport).toHaveBeenCalledWith({
+        tenantId,
+        instanceId: 'inst-1',
+        evolutionId: 'acme-vendas',
+        messageLimit: 10,
+      })
+    })
+
+    it('should throw IMPORT_INSTANCE_NOT_CONNECTED if instance not connected', async () => {
+      instancesService.findOne.mockResolvedValue({
+        ...mockConversation.instance,
+        status: 'DISCONNECTED',
+        tenantId,
+        phone: null,
+        evolutionId: 'acme-vendas',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      } as never)
+
+      await expect(
+        service.startConversationImport(tenantId, 'inst-1', { messageLimit: 10 }),
+      ).rejects.toMatchObject({ code: 'IMPORT_INSTANCE_NOT_CONNECTED' })
+    })
+
+    it('should throw IMPORT_ALREADY_IN_PROGRESS when duplicate job', async () => {
+      instancesService.findOne.mockResolvedValue({
+        ...mockConversation.instance,
+        status: 'CONNECTED',
+        tenantId,
+        phone: null,
+        evolutionId: 'acme-vendas',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      } as never)
+      importProducer.startImport.mockRejectedValue(new Error('Job is already waiting'))
+
+      await expect(
+        service.startConversationImport(tenantId, 'inst-1', { messageLimit: 10 }),
+      ).rejects.toMatchObject({ code: 'IMPORT_ALREADY_IN_PROGRESS' })
+    })
+  })
+
+  describe('getMedia', () => {
+    const mockMessageWithInstance = {
+      id: 'msg-1',
+      tenantId,
+      conversationId: 'conv-1',
+      mediaUrl: 'tenants/tenant-123/media/2024-03/photo.jpg',
+      evolutionId: 'evo-msg-1',
+      conversation: {
+        instance: { evolutionId: 'acme-vendas' },
+      },
+    }
+
+    it('should download from storage when mediaUrl is a storage key', async () => {
+      repository.findMessageWithInstance.mockResolvedValue(mockMessageWithInstance as never)
+      storage.download.mockResolvedValue({
+        buffer: Buffer.from('image-data'),
+        contentType: 'image/jpeg',
+      })
+
+      const result = await service.getMedia(tenantId, 'msg-1')
+
+      expect(storage.download).toHaveBeenCalledWith('tenants/tenant-123/media/2024-03/photo.jpg')
+      expect(result.mimetype).toBe('image/jpeg')
+    })
+
+    it('should fallback to Evolution API when mediaUrl is not a storage key', async () => {
+      repository.findMessageWithInstance.mockResolvedValue({
+        ...mockMessageWithInstance,
+        mediaUrl: 'has-media',
+      } as never)
+      whatsapp.getMediaBase64.mockResolvedValue({
+        base64: Buffer.from('sticker-data').toString('base64'),
+        mimetype: 'image/webp',
+      })
+
+      const result = await service.getMedia(tenantId, 'msg-1')
+
+      expect(whatsapp.getMediaBase64).toHaveBeenCalledWith('acme-vendas', 'evo-msg-1')
+      expect(result.mimetype).toBe('image/webp')
+    })
+
+    it('should throw MESSAGE_NOT_FOUND when message does not exist', async () => {
+      repository.findMessageWithInstance.mockResolvedValue(null)
+
+      await expect(service.getMedia(tenantId, 'nonexistent')).rejects.toMatchObject({
+        code: 'MESSAGE_NOT_FOUND',
+      })
+    })
+
+    it('should throw MEDIA_NOT_AVAILABLE when no evolutionId and not stored locally', async () => {
+      repository.findMessageWithInstance.mockResolvedValue({
+        ...mockMessageWithInstance,
+        mediaUrl: 'has-media',
+        evolutionId: null,
+      } as never)
+
+      await expect(service.getMedia(tenantId, 'msg-1')).rejects.toMatchObject({
+        code: 'MEDIA_NOT_AVAILABLE',
+      })
+    })
+
+    it('should throw MEDIA_DOWNLOAD_FAILED when Evolution returns null', async () => {
+      repository.findMessageWithInstance.mockResolvedValue({
+        ...mockMessageWithInstance,
+        mediaUrl: 'has-media',
+      } as never)
+      whatsapp.getMediaBase64.mockResolvedValue(null)
+
+      await expect(service.getMedia(tenantId, 'msg-1')).rejects.toMatchObject({
+        code: 'MEDIA_DOWNLOAD_FAILED',
+      })
+    })
+  })
+
+  describe('sendMessage (quoted message)', () => {
+    const openConversation = {
+      ...mockConversation,
+      status: 'OPEN' as const,
+      assignedToId: userId,
+    }
+
+    it('should throw INBOX_QUOTED_MESSAGE_NOT_FOUND when quoted message does not exist', async () => {
+      repository.findConversationById.mockResolvedValue(openConversation)
+      repository.findMessageById.mockResolvedValue(null)
+
+      await expect(
+        service.sendMessage(tenantId, 'conv-1', userId, { body: 'Reply', quotedMessageId: 'nonexistent' }),
+      ).rejects.toMatchObject({ code: 'INBOX_QUOTED_MESSAGE_NOT_FOUND' })
     })
   })
 })

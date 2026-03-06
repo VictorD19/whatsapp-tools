@@ -2,12 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { DealService } from '../deal.service'
 import { DealRepository } from '../deal.repository'
 import { LoggerService } from '@core/logger/logger.service'
+import { PrismaService } from '@core/database/prisma.service'
+import { NotificationsService } from '@modules/notifications/notifications.service'
 import { Decimal } from '@prisma/client/runtime/library'
 import { ConversationStatus } from '@prisma/client'
 
 describe('DealService', () => {
   let service: DealService
   let repository: jest.Mocked<DealRepository>
+  let notifications: jest.Mocked<NotificationsService>
+  let mockPrisma: { user: { findMany: jest.Mock } }
 
   const tenantId = 'tenant-123'
   const userId = 'user-456'
@@ -80,16 +84,23 @@ describe('DealService', () => {
       createNote: jest.fn(),
     }
 
+    mockPrisma = {
+      user: { findMany: jest.fn().mockResolvedValue([]) },
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DealService,
         { provide: DealRepository, useValue: mockRepository },
         { provide: LoggerService, useValue: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } },
+        { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationsService, useValue: { dispatch: jest.fn() } },
       ],
     }).compile()
 
     service = module.get(DealService)
     repository = module.get(DealRepository)
+    notifications = module.get(NotificationsService)
   })
 
   describe('findDeals', () => {
@@ -212,6 +223,25 @@ describe('DealService', () => {
         service.createDeal(tenantId, { contactId: 'contact-1', pipelineId: 'pipe-1', stageId: 'stage-other' }),
       ).rejects.toMatchObject({ code: 'DEAL_STAGE_INVALID_PIPELINE' })
     })
+
+    it('should throw when no default pipeline found', async () => {
+      repository.findActiveDealByContact.mockResolvedValue(null)
+      repository.findDefaultPipeline.mockResolvedValue(null)
+
+      await expect(
+        service.createDeal(tenantId, { contactId: 'contact-1' }),
+      ).rejects.toMatchObject({ code: 'DEAL_STAGE_INVALID_PIPELINE' })
+    })
+
+    it('should throw when no default stage found', async () => {
+      repository.findActiveDealByContact.mockResolvedValue(null)
+      repository.findDefaultPipeline.mockResolvedValue(mockDefaultPipeline)
+      repository.findDefaultStage.mockResolvedValue(null)
+
+      await expect(
+        service.createDeal(tenantId, { contactId: 'contact-1' }),
+      ).rejects.toMatchObject({ code: 'DEAL_STAGE_INVALID_PIPELINE' })
+    })
   })
 
   describe('findOrCreateForContact', () => {
@@ -293,6 +323,30 @@ describe('DealService', () => {
         value: 2000,
         assignedToId: undefined,
       })
+    })
+
+    it('should dispatch notification when assignedToId is set', async () => {
+      repository.findDealById.mockResolvedValue(mockDeal)
+      repository.updateDeal.mockResolvedValue({ ...mockDeal, assignedToId: 'user-789' })
+
+      await service.updateDeal(tenantId, 'deal-1', { assignedToId: 'user-789' })
+
+      expect(notifications.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenantId,
+          userId: 'user-789',
+          type: 'DEAL_ASSIGNED',
+        }),
+      )
+    })
+
+    it('should not dispatch notification when assignedToId is not set', async () => {
+      repository.findDealById.mockResolvedValue(mockDeal)
+      repository.updateDeal.mockResolvedValue(mockDeal)
+
+      await service.updateDeal(tenantId, 'deal-1', { title: 'Novo titulo' })
+
+      expect(notifications.dispatch).not.toHaveBeenCalled()
     })
 
     it('should throw DEAL_NOT_FOUND if deal does not exist', async () => {
@@ -387,6 +441,67 @@ describe('DealService', () => {
       await expect(
         service.moveDeal(tenantId, 'deal-1', { stageId: 'nonexistent' }),
       ).rejects.toMatchObject({ code: 'DEAL_STAGE_INVALID_PIPELINE' })
+    })
+
+    it('should dispatch DEAL_WON notification to assignee', async () => {
+      const assignedDeal = { ...mockDeal, assignedToId: 'user-789' }
+      repository.findDealById.mockResolvedValue(assignedDeal)
+      repository.findStageById.mockResolvedValue({ ...mockFullStage, id: 'stage-won', name: 'Convertido', type: 'WON' as const, order: 6, isDefault: false })
+      repository.moveDeal.mockResolvedValue({ ...assignedDeal, stage: mockWonStage, wonAt: now })
+
+      await service.moveDeal(tenantId, 'deal-1', { stageId: 'stage-won' })
+
+      expect(notifications.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenantId,
+          userId: 'user-789',
+          type: 'DEAL_WON',
+        }),
+      )
+    })
+
+    it('should dispatch DEAL_LOST notification to assignee', async () => {
+      const assignedDeal = { ...mockDeal, assignedToId: 'user-789' }
+      repository.findDealById.mockResolvedValue(assignedDeal)
+      repository.findStageById.mockResolvedValue({ ...mockFullStage, id: 'stage-lost', name: 'Perdido', type: 'LOST' as const, order: 7, isDefault: false })
+      repository.moveDeal.mockResolvedValue({ ...assignedDeal, stage: mockLostStage, lostAt: now })
+
+      await service.moveDeal(tenantId, 'deal-1', { stageId: 'stage-lost' })
+
+      expect(notifications.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenantId,
+          userId: 'user-789',
+          type: 'DEAL_LOST',
+        }),
+      )
+    })
+
+    it('should notify admins when deal is WON but has no assignee', async () => {
+      repository.findDealById.mockResolvedValue(mockDeal) // assignedToId is null
+      repository.findStageById.mockResolvedValue({ ...mockFullStage, id: 'stage-won', name: 'Convertido', type: 'WON' as const, order: 6, isDefault: false })
+      repository.moveDeal.mockResolvedValue({ ...mockDeal, stage: mockWonStage, wonAt: now })
+      mockPrisma.user.findMany.mockResolvedValue([{ id: 'admin-1' }, { id: 'admin-2' }])
+
+      await service.moveDeal(tenantId, 'deal-1', { stageId: 'stage-won' })
+
+      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
+        where: { tenantId, role: 'admin', deletedAt: null },
+        select: { id: true },
+      })
+      expect(notifications.dispatch).toHaveBeenCalledTimes(2)
+    })
+
+    it('should not throw when admin query fails for unassigned deal notification', async () => {
+      repository.findDealById.mockResolvedValue(mockDeal)
+      repository.findStageById.mockResolvedValue({ ...mockFullStage, id: 'stage-won', name: 'Convertido', type: 'WON' as const, order: 6, isDefault: false })
+      repository.moveDeal.mockResolvedValue({ ...mockDeal, stage: mockWonStage, wonAt: now })
+      mockPrisma.user.findMany.mockRejectedValue(new Error('DB error'))
+
+      // Should not throw — notification failure is non-blocking
+      await expect(
+        service.moveDeal(tenantId, 'deal-1', { stageId: 'stage-won' }),
+      ).resolves.toBeDefined()
     })
   })
 

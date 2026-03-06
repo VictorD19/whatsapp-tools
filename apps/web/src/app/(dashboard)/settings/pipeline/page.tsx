@@ -279,6 +279,7 @@ export default function PipelineSettingsPage() {
           {stages.map((stage, idx) => (
             <div
               key={stage.id}
+              data-testid={`stage-row-${stage.id}`}
               className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
             >
               {/* Grip icon */}

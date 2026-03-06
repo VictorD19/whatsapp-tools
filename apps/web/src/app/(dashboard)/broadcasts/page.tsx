@@ -1,109 +1,153 @@
-import React from 'react'
-import { Plus, Megaphone } from 'lucide-react'
-import Link from 'next/link'
+'use client'
+
+import React, { useEffect, useState, useCallback } from 'react'
+import {
+  Plus,
+  Megaphone,
+  Pause,
+  Play,
+  XCircle,
+  Trash2,
+  MoreHorizontal,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/shared/empty-state'
-import type { Metadata } from 'next'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { BroadcastWizardDialog } from '@/components/broadcasts/broadcast-wizard-dialog'
+import type { BroadcastWizardData } from '@/components/broadcasts/broadcast-wizard-dialog'
+import { useBroadcasts, type BroadcastStatus } from '@/hooks/use-broadcasts'
+import { useBroadcastSocket } from '@/hooks/use-broadcast-socket'
+import { useInstances } from '@/hooks/use-instances'
+import { useContactLists } from '@/hooks/use-contact-lists'
+import { useInstancesStore } from '@/stores/instances.store'
+import { formatDate, formatNumber } from '@/lib/formatting'
 
-export const metadata: Metadata = { title: 'Disparos' }
-
-type CampaignStatus = 'running' | 'completed' | 'paused' | 'pending' | 'failed'
-
-interface Campaign {
-  id: string
-  name: string
-  status: CampaignStatus
-  total: number
-  sent: number
-  failed: number
-  instanceName: string
-  createdAt: string
+const statusVariantMap: Record<BroadcastStatus, 'info' | 'success' | 'warning' | 'destructive' | 'secondary'> = {
+  DRAFT: 'secondary',
+  SCHEDULED: 'secondary',
+  RUNNING: 'info',
+  PAUSED: 'warning',
+  COMPLETED: 'success',
+  FAILED: 'destructive',
+  CANCELLED: 'secondary',
 }
 
-const statusVariantMap: Record<CampaignStatus, 'info' | 'success' | 'warning' | 'destructive' | 'secondary'> = {
-  running: 'info',
-  completed: 'success',
-  paused: 'warning',
-  pending: 'secondary',
-  failed: 'destructive',
+const statusLabelMap: Record<BroadcastStatus, string> = {
+  DRAFT: 'Rascunho',
+  SCHEDULED: 'Agendada',
+  RUNNING: 'Em andamento',
+  PAUSED: 'Pausada',
+  COMPLETED: 'Concluida',
+  FAILED: 'Falhou',
+  CANCELLED: 'Cancelada',
 }
-
-const statusLabelMap: Record<CampaignStatus, string> = {
-  running: 'Em andamento',
-  completed: 'Concluído',
-  paused: 'Pausado',
-  pending: 'Pendente',
-  failed: 'Falhou',
-}
-
-const mockCampaigns: Campaign[] = [
-  {
-    id: '1',
-    name: 'Black Friday — Promoção 70%',
-    status: 'completed',
-    total: 1500,
-    sent: 1487,
-    failed: 13,
-    instanceName: 'Vendas Principal',
-    createdAt: '2026-03-01',
-  },
-  {
-    id: '2',
-    name: 'Reativação clientes inativos',
-    status: 'running',
-    total: 800,
-    sent: 342,
-    failed: 5,
-    instanceName: 'Marketing',
-    createdAt: '2026-03-03',
-  },
-  {
-    id: '3',
-    name: 'Lançamento produto X',
-    status: 'paused',
-    total: 2000,
-    sent: 650,
-    failed: 8,
-    instanceName: 'Vendas Principal',
-    createdAt: '2026-03-02',
-  },
-  {
-    id: '4',
-    name: 'Pesquisa de satisfação',
-    status: 'pending',
-    total: 500,
-    sent: 0,
-    failed: 0,
-    instanceName: 'Suporte',
-    createdAt: '2026-03-03',
-  },
-]
 
 export default function BroadcastsPage() {
+  const {
+    broadcasts,
+    initialLoading,
+    meta,
+    fetchBroadcasts,
+    createBroadcast,
+    pauseBroadcast,
+    resumeBroadcast,
+    cancelBroadcast,
+    deleteBroadcast,
+    updateBroadcastProgress,
+    updateBroadcastStatus,
+  } = useBroadcasts()
+
+  const { fetchInstances } = useInstances()
+  const instances = useInstancesStore((s) => s.instances)
+  const { lists: contactLists, fetchLists: fetchContactLists } = useContactLists()
+
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  // Socket for real-time updates
+  const onProgress = useCallback(
+    (broadcastId: string, sent: number, failed: number) => {
+      updateBroadcastProgress(broadcastId, sent, failed)
+    },
+    [updateBroadcastProgress],
+  )
+
+  const onStatusChange = useCallback(
+    (broadcastId: string, status: string) => {
+      updateBroadcastStatus(broadcastId, status as BroadcastStatus)
+    },
+    [updateBroadcastStatus],
+  )
+
+  useBroadcastSocket({ onProgress, onStatusChange })
+
+  useEffect(() => {
+    fetchBroadcasts()
+    fetchInstances()
+    fetchContactLists()
+  }, [fetchBroadcasts, fetchInstances, fetchContactLists])
+
+  const handleCreateBroadcast = async (data: BroadcastWizardData) => {
+    await createBroadcast(data)
+    fetchBroadcasts()
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await deleteBroadcast(deleteTarget)
+      setDeleteTarget(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  // Stats
+  const totalCampaigns = meta.total
+  const totalSent = broadcasts.reduce((sum, b) => sum + b.sentCount, 0)
+  const totalFailed = broadcasts.reduce((sum, b) => sum + b.failedCount, 0)
+  const deliveryRate = totalSent > 0 ? Math.round(((totalSent - totalFailed) / totalSent) * 100) : 0
+  const runningCount = broadcasts.filter((b) => b.status === 'RUNNING').length
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Disparos em Massa</h1>
-          <p className="text-sm text-muted-foreground mt-1">Crie e gerencie campanhas de mensagens</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Crie e gerencie campanhas de mensagens
+          </p>
         </div>
-        <Link href="/broadcasts/new">
-          <Button>
-            <Plus className="h-4 w-4" />
-            Nova campanha
-          </Button>
-        </Link>
+        <Button onClick={() => setWizardOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Nova campanha
+        </Button>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total de campanhas', value: '4' },
-          { label: 'Mensagens enviadas', value: '2.479' },
-          { label: 'Taxa de entrega', value: '98,9%' },
-          { label: 'Em andamento', value: '1' },
+          { label: 'Total de campanhas', value: formatNumber(totalCampaigns) },
+          { label: 'Mensagens enviadas', value: formatNumber(totalSent) },
+          { label: 'Taxa de entrega', value: totalSent > 0 ? `${deliveryRate}%` : '--' },
+          { label: 'Em andamento', value: formatNumber(runningCount) },
         ].map((s) => (
           <Card key={s.label}>
             <CardContent className="p-4">
@@ -114,12 +158,16 @@ export default function BroadcastsPage() {
         ))}
       </div>
 
-      {mockCampaigns.length === 0 ? (
+      {initialLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+        </div>
+      ) : broadcasts.length === 0 ? (
         <EmptyState
           icon={Megaphone}
           title="Nenhuma campanha criada"
-          description="Crie sua primeira campanha para começar a disparar mensagens em massa"
-          action={{ label: 'Criar campanha', onClick: () => {} }}
+          description="Crie sua primeira campanha para comecar a disparar mensagens em massa"
+          action={{ label: 'Criar campanha', onClick: () => setWizardOpen(true) }}
         />
       ) : (
         <div className="rounded-md border border-border overflow-hidden">
@@ -139,55 +187,105 @@ export default function BroadcastsPage() {
                   Taxa
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Instância
+                  Instancias
                 </th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Ações
+                  Acoes
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {mockCampaigns.map((c) => {
-                const progress = c.total > 0 ? Math.round((c.sent / c.total) * 100) : 0
+              {broadcasts.map((b) => {
+                const progress =
+                  b.totalCount > 0
+                    ? Math.round(((b.sentCount + b.failedCount) / b.totalCount) * 100)
+                    : 0
                 const rate =
-                  c.sent > 0 ? Math.round(((c.sent - c.failed) / c.sent) * 100) + '%' : '—'
+                  b.sentCount > 0
+                    ? Math.round(((b.sentCount - b.failedCount) / b.sentCount) * 100) + '%'
+                    : '--'
 
                 return (
-                  <tr key={c.id} className="hover:bg-muted/30 transition-colors">
+                  <tr key={b.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
                       <div>
-                        <p className="font-medium">{c.name}</p>
-                        <p className="text-xs text-muted-foreground">{c.createdAt}</p>
+                        <p className="font-medium">{b.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {b.scheduledAt
+                            ? `Agendada: ${formatDate(b.scheduledAt)}`
+                            : formatDate(b.createdAt)}
+                        </p>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={statusVariantMap[c.status]}>{statusLabelMap[c.status]}</Badge>
+                      <Badge variant={statusVariantMap[b.status]}>
+                        {statusLabelMap[b.status]}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3">
                       <div className="space-y-1 min-w-[120px]">
                         <div className="flex justify-between text-xs">
-                          <span>{c.sent.toLocaleString()}/{c.total.toLocaleString()}</span>
+                          <span>
+                            {formatNumber(b.sentCount)}/{formatNumber(b.totalCount)}
+                          </span>
                           <span>{progress}%</span>
                         </div>
                         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-primary-500 transition-all"
+                            className={`h-full rounded-full transition-all ${
+                              b.status === 'RUNNING'
+                                ? 'bg-primary-500 animate-pulse'
+                                : b.status === 'FAILED'
+                                  ? 'bg-destructive'
+                                  : 'bg-primary-500'
+                            }`}
                             style={{ width: `${progress}%` }}
                           />
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">{rate}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{c.instanceName}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {b.instances.map((bi) => bi.instance.name).join(', ')}
+                    </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm">Detalhes</Button>
-                        {c.status === 'running' && (
-                          <Button variant="outline" size="sm">Pausar</Button>
-                        )}
-                        {c.status === 'paused' && (
-                          <Button size="sm">Retomar</Button>
-                        )}
+                      <div className="flex items-center justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {b.status === 'RUNNING' && (
+                              <DropdownMenuItem onClick={() => pauseBroadcast(b.id)}>
+                                <Pause className="h-4 w-4 mr-2" />
+                                Pausar
+                              </DropdownMenuItem>
+                            )}
+                            {b.status === 'PAUSED' && (
+                              <DropdownMenuItem onClick={() => resumeBroadcast(b.id)}>
+                                <Play className="h-4 w-4 mr-2" />
+                                Retomar
+                              </DropdownMenuItem>
+                            )}
+                            {['RUNNING', 'PAUSED', 'SCHEDULED'].includes(b.status) && (
+                              <DropdownMenuItem onClick={() => cancelBroadcast(b.id)}>
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Cancelar
+                              </DropdownMenuItem>
+                            )}
+                            {b.status !== 'RUNNING' && (
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => setDeleteTarget(b.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </td>
                   </tr>
@@ -197,6 +295,51 @@ export default function BroadcastsPage() {
           </table>
         </div>
       )}
+
+      {/* Pagination */}
+      {meta.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          {Array.from({ length: meta.totalPages }, (_, i) => i + 1).map((page) => (
+            <Button
+              key={page}
+              variant={page === meta.page ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => fetchBroadcasts(undefined, page)}
+            >
+              {page}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {/* Wizard Dialog */}
+      <BroadcastWizardDialog
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        instances={instances}
+        contactLists={contactLists}
+        onSubmit={handleCreateBroadcast}
+      />
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusao</DialogTitle>
+            <DialogDescription>
+              Esta acao nao pode ser desfeita. A campanha e todos os seus dados serao removidos.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Excluindo...' : 'Excluir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

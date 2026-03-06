@@ -393,6 +393,7 @@ export default function TenantsPage() {
             {tenants.map((tenant) => (
               <div
                 key={tenant.id}
+                data-testid={`tenant-row-${tenant.id}`}
                 className="flex flex-col sm:grid sm:grid-cols-[1fr_100px_140px_100px_80px] gap-2 sm:gap-4 sm:items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
               >
                 {/* Name + slug */}

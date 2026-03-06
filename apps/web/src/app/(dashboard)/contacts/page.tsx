@@ -216,7 +216,7 @@ export default function ContactsPage() {
                 className="divide-y divide-border animate-fade-slide-in"
               >
                 {contacts.map((c) => (
-                  <tr key={c.id} className="hover:bg-muted/30 transition-colors">
+                  <tr key={c.id} data-testid={`contact-row-${c.id}`} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">

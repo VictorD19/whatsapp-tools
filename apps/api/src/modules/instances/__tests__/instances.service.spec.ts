@@ -125,6 +125,15 @@ describe('InstancesService', () => {
       })
     })
 
+    it('should throw TENANT_NOT_FOUND when tenant does not exist', async () => {
+      repository.findByName.mockResolvedValue(null)
+      prisma.tenant.findUnique.mockResolvedValue(null)
+
+      await expect(service.create(tenantId, { name: 'vendas' })).rejects.toMatchObject({
+        code: 'TENANT_NOT_FOUND',
+      })
+    })
+
     it('should throw INSTANCE_EVOLUTION_CREATE_FAILED on provider error', async () => {
       repository.findByName.mockResolvedValue(null)
       prisma.tenant.findUnique.mockResolvedValue(mockTenant)
@@ -140,11 +149,55 @@ describe('InstancesService', () => {
   describe('findAll', () => {
     it('should return all instances for tenant', async () => {
       repository.findAllByTenant.mockResolvedValue([mockInstance])
-
+      // getInstanceStatus/getInstanceInfo are not defined in mock, so allSettled will catch
       const result = await service.findAll(tenantId)
 
       expect(result).toEqual([mockInstance])
       expect(repository.findAllByTenant).toHaveBeenCalledWith(tenantId)
+    })
+
+    it('should sync status from Evolution API when out of date', async () => {
+      const connectedInstance = { ...mockInstance, status: 'DISCONNECTED' as const }
+      repository.findAllByTenant.mockResolvedValue([connectedInstance])
+      whatsapp.getInstanceStatus = jest.fn().mockResolvedValue('CONNECTED')
+      whatsapp.getInstanceInfo = jest.fn().mockResolvedValue({ phone: '5511999999999' })
+      repository.updateStatus.mockResolvedValue({ count: 1 })
+
+      const result = await service.findAll(tenantId)
+
+      expect(whatsapp.getInstanceStatus).toHaveBeenCalledWith('acme-vendas')
+      expect(repository.updateStatus).toHaveBeenCalledWith(tenantId, 'inst-1', 'CONNECTED', '5511999999999')
+      expect(result[0].status).toBe('CONNECTED')
+    })
+
+    it('should not update when status matches', async () => {
+      repository.findAllByTenant.mockResolvedValue([mockInstance])
+      whatsapp.getInstanceStatus = jest.fn().mockResolvedValue('DISCONNECTED')
+
+      await service.findAll(tenantId)
+
+      expect(repository.updateStatus).not.toHaveBeenCalled()
+    })
+
+    it('should gracefully handle Evolution API unreachable', async () => {
+      repository.findAllByTenant.mockResolvedValue([mockInstance])
+      whatsapp.getInstanceStatus = jest.fn().mockRejectedValue(new Error('Connection refused'))
+
+      const result = await service.findAll(tenantId)
+
+      // Should still return instances, status stays as-is
+      expect(result).toEqual([mockInstance])
+    })
+  })
+
+  describe('findByEvolutionId', () => {
+    it('should delegate to repository', async () => {
+      repository.findByEvolutionId.mockResolvedValue(mockInstance)
+
+      const result = await service.findByEvolutionId('acme-vendas')
+
+      expect(result).toEqual(mockInstance)
+      expect(repository.findByEvolutionId).toHaveBeenCalledWith('acme-vendas')
     })
   })
 
@@ -196,6 +249,15 @@ describe('InstancesService', () => {
         code: 'INSTANCE_ALREADY_CONNECTED',
       })
     })
+
+    it('should throw INSTANCE_EVOLUTION_SYNC_FAILED when connect fails', async () => {
+      repository.findById.mockResolvedValue(mockInstance)
+      whatsapp.connectInstance.mockRejectedValue(new Error('Timeout'))
+
+      await expect(service.connect(tenantId, 'inst-1')).rejects.toMatchObject({
+        code: 'INSTANCE_EVOLUTION_SYNC_FAILED',
+      })
+    })
   })
 
   describe('disconnect', () => {
@@ -216,6 +278,15 @@ describe('InstancesService', () => {
 
       await expect(service.disconnect(tenantId, 'inst-1')).rejects.toMatchObject({
         code: 'INSTANCE_NOT_CONNECTED',
+      })
+    })
+
+    it('should throw INSTANCE_EVOLUTION_SYNC_FAILED when disconnect fails', async () => {
+      repository.findById.mockResolvedValue({ ...mockInstance, status: 'CONNECTED' })
+      whatsapp.disconnectInstance.mockRejectedValue(new Error('API error'))
+
+      await expect(service.disconnect(tenantId, 'inst-1')).rejects.toMatchObject({
+        code: 'INSTANCE_EVOLUTION_SYNC_FAILED',
       })
     })
   })

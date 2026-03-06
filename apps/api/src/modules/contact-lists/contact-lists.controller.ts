@@ -6,10 +6,13 @@ import {
   Param,
   Body,
   Query,
+  Req,
   Res,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common'
+import type { FastifyRequest } from 'fastify'
 import { Response } from 'express'
 import { ContactListsService } from './contact-lists.service'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
@@ -36,6 +39,37 @@ export class ContactListsController {
     @Param('id') id: string,
   ) {
     return this.service.findById(tenantId, id)
+  }
+
+  @Post('import-csv')
+  async importCsv(
+    @CurrentTenant() tenantId: string,
+    @Req() req: FastifyRequest,
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parts = (req as any).parts()
+    let fileBuffer: Buffer | null = null
+    let name = ''
+    let description: string | undefined
+
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        fileBuffer = await part.toBuffer()
+      } else if (part.fieldname === 'name') {
+        name = part.value as string
+      } else if (part.fieldname === 'description') {
+        description = part.value as string
+      }
+    }
+
+    if (!fileBuffer) {
+      throw new BadRequestException('Nenhum arquivo CSV enviado')
+    }
+    if (!name?.trim()) {
+      throw new BadRequestException('Nome da lista é obrigatório')
+    }
+
+    return this.service.importCsv(tenantId, name.trim(), fileBuffer, description?.trim())
   }
 
   @Post()

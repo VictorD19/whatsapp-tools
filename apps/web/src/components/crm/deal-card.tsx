@@ -19,7 +19,7 @@ export const DealCard = React.forwardRef<HTMLDivElement, DealCardProps & Omit<Re
       : null
 
     return (
-      <div ref={ref} {...props} onClick={() => onDealClick?.(deal)}>
+      <div ref={ref} data-testid={`deal-card-${deal.id}`} {...props} onClick={() => onDealClick?.(deal)}>
         <Card className="cursor-pointer hover:shadow-md transition-shadow bg-background">
           <CardContent className="p-3 space-y-2">
             {/* Title or contact name + value */}

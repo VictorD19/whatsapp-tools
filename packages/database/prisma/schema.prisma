@@ -68,6 +68,7 @@ model Tenant {
   tags          Tag[]
   contactLists  ContactList[]
   notifications Notification[]
+  broadcasts    Broadcast[]
 
   @@index([planId])
 }
@@ -92,6 +93,7 @@ model User {
   dealNotes     DealNote[]     @relation("DealNoteAuthor")
   notifications Notification[]
   notificationPreferences NotificationPreference[]
+  broadcastsCreated Broadcast[] @relation("BroadcastCreator")
 
   @@index([tenantId])
 }
@@ -116,8 +118,9 @@ model Instance {
   updatedAt   DateTime       @updatedAt
   deletedAt   DateTime?
 
-  tenant        Tenant         @relation(fields: [tenantId], references: [id])
-  conversations Conversation[]
+  tenant             Tenant              @relation(fields: [tenantId], references: [id])
+  conversations      Conversation[]
+  broadcastInstances BroadcastInstance[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -136,11 +139,12 @@ model Contact {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  tenant           Tenant             @relation(fields: [tenantId], references: [id])
-  conversations    Conversation[]
-  deals            Deal[]
-  contactTags      ContactTag[]
-  contactListItems ContactListItem[]
+  tenant              Tenant               @relation(fields: [tenantId], references: [id])
+  conversations       Conversation[]
+  deals               Deal[]
+  contactTags         ContactTag[]
+  contactListItems    ContactListItem[]
+  broadcastRecipients BroadcastRecipient[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -372,8 +376,9 @@ model ContactList {
   updatedAt    DateTime          @updatedAt
   deletedAt    DateTime?
 
-  tenant Tenant            @relation(fields: [tenantId], references: [id])
-  items  ContactListItem[]
+  tenant           Tenant            @relation(fields: [tenantId], references: [id])
+  items            ContactListItem[]
+  broadcastSources BroadcastSource[]
 
   @@index([tenantId])
 }
@@ -387,6 +392,114 @@ model ContactListItem {
   contact     Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@id([contactListId, contactId])
+  @@index([contactId])
+}
+
+// ── Broadcasts ───────────────────────────────────
+
+enum BroadcastStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum BroadcastMessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum BroadcastRecipientStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum BroadcastSourceType {
+  CONTACT_LIST
+  GROUP
+}
+
+model Broadcast {
+  id             String               @id @default(cuid())
+  tenantId       String
+  createdById    String
+  name           String
+  status         BroadcastStatus      @default(DRAFT)
+  messageType    BroadcastMessageType @default(TEXT)
+  messageTexts   String[]             @default([])
+  mediaUrl       String?
+  caption        String?
+  fileName       String?
+  delay          Int                  @default(5)
+  totalCount     Int                  @default(0)
+  sentCount      Int                  @default(0)
+  failedCount    Int                  @default(0)
+  scheduledAt    DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  deletedAt      DateTime?
+
+  tenant     Tenant               @relation(fields: [tenantId], references: [id])
+  createdBy  User                 @relation("BroadcastCreator", fields: [createdById], references: [id])
+  instances  BroadcastInstance[]
+  sources    BroadcastSource[]
+  recipients BroadcastRecipient[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([status, scheduledAt])
+}
+
+model BroadcastInstance {
+  broadcastId String
+  instanceId  String
+
+  broadcast Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  instance  Instance  @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+
+  @@id([broadcastId, instanceId])
+  @@index([instanceId])
+}
+
+model BroadcastSource {
+  id            String              @id @default(cuid())
+  broadcastId   String
+  sourceType    BroadcastSourceType
+  contactListId String?
+  groupJid      String?
+  groupName     String?
+
+  broadcast   Broadcast    @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  contactList ContactList? @relation(fields: [contactListId], references: [id])
+
+  @@index([broadcastId])
+}
+
+model BroadcastRecipient {
+  id           String                   @id @default(cuid())
+  broadcastId  String
+  contactId    String
+  phone        String
+  name         String?
+  status       BroadcastRecipientStatus @default(PENDING)
+  sentAt       DateTime?
+  failedReason String?
+
+  broadcast Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  contact   Contact   @relation(fields: [contactId], references: [id])
+
+  @@index([broadcastId, status])
   @@index([contactId])
 }
 
@@ -404,6 +517,8 @@ enum NotificationType {
   DEAL_LOST
   DEAL_ASSIGNED
   GROUP_EXTRACTION_COMPLETED
+  BROADCAST_COMPLETED
+  BROADCAST_FAILED
 }
 
 model Notification {

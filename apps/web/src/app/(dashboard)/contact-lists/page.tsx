@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Search, ClipboardList, Trash2, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { Search, ClipboardList, Trash2, ChevronLeft, ChevronRight, Users, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { CreateListSheet } from '@/components/contact-lists/create-list-sheet'
 import { useContactLists, type ContactList } from '@/hooks/use-contact-lists'
 import { cn, formatDate } from '@/lib/utils'
 import { toast } from '@/components/ui/toaster'
@@ -31,6 +32,9 @@ export default function ContactListsPage() {
 
   const [search, setSearch] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  // Create sheet state
+  const [createOpen, setCreateOpen] = useState(false)
 
   // Delete dialog state
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -94,6 +98,10 @@ export default function ContactListsPage() {
             {meta.total} lista{meta.total !== 1 ? 's' : ''} cadastrada{meta.total !== 1 ? 's' : ''}
           </p>
         </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Lista
+        </Button>
       </div>
 
       {/* Search */}
@@ -159,7 +167,7 @@ export default function ContactListsPage() {
                 {lists.map((list) => {
                   const source = SOURCE_LABELS[list.source]
                   return (
-                    <tr key={list.id} className="hover:bg-muted/30 transition-colors">
+                    <tr key={list.id} data-testid={`list-row-${list.id}`} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
                         <div>
                           <span className="font-medium">{list.name}</span>
@@ -228,6 +236,16 @@ export default function ContactListsPage() {
           )}
         </>
       )}
+
+      {/* Create List Sheet */}
+      <CreateListSheet
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => {
+          setCreateOpen(false)
+          fetchLists(search || undefined, 1)
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>

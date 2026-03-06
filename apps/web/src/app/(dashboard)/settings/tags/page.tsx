@@ -179,6 +179,7 @@ export default function TagsSettingsPage() {
           {tags.map((tag) => (
             <div
               key={tag.id}
+              data-testid={`tag-item-${tag.id}`}
               className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
             >
               {/* Color dot */}

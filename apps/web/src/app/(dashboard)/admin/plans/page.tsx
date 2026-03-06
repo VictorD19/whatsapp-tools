@@ -380,6 +380,7 @@ export default function PlansPage() {
             {plans.map((plan) => (
               <div
                 key={plan.id}
+                data-testid={`plan-row-${plan.id}`}
                 className="flex flex-col sm:grid sm:grid-cols-[1fr_120px_120px_80px_80px] gap-2 sm:gap-4 sm:items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
               >
                 {/* Name + slug + description */}

@@ -329,6 +329,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
             return (
               <div
                 key={member.id}
+                data-testid={`member-row-${member.id}`}
                 className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
               >
                 {/* Avatar */}

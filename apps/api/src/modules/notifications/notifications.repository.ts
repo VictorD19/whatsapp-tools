@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '@core/database/prisma.service'
-import { NotificationType } from '@prisma/client'
+import { NotificationType, Prisma } from '@prisma/client'
 
 export interface CreateNotificationData {
   tenantId: string
@@ -15,8 +15,13 @@ export interface CreateNotificationData {
 export class NotificationsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateNotificationData) {
-    return this.prisma.notification.create({ data })
+  async create(input: CreateNotificationData) {
+    return this.prisma.notification.create({
+      data: {
+        ...input,
+        data: input.data as unknown as Prisma.InputJsonValue,
+      },
+    })
   }
 
   async findByUser(userId: string, page: number, limit: number) {

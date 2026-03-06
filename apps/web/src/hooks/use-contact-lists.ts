@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { apiGet, apiPost, apiDelete } from '@/lib/api'
+import { apiGet, apiPost, apiDelete, apiUpload } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 
 export interface ContactList {
@@ -76,6 +76,22 @@ export function useContactLists() {
     [],
   )
 
+  const importCsv = useCallback(
+    async (name: string, file: File, description?: string) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('name', name)
+      if (description) formData.append('description', description)
+
+      const res = await apiUpload<{ data: ContactList }>(
+        'contact-lists/import-csv',
+        formData,
+      )
+      return res.data
+    },
+    [],
+  )
+
   const deleteList = useCallback(async (id: string) => {
     await apiDelete<{ data: { deleted: boolean } }>(`contact-lists/${id}`)
     toast({ title: 'Lista removida com sucesso' })
@@ -88,6 +104,7 @@ export function useContactLists() {
     meta,
     fetchLists,
     createList,
+    importCsv,
     deleteList,
   }
 }

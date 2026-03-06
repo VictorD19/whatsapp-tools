@@ -94,7 +94,7 @@ export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanB
             const columnTotal = columnDeals.reduce((acc, d) => acc + (Number(d.value) || 0), 0)
 
             return (
-              <div key={stage.id} className="flex flex-col gap-3 w-[260px] shrink-0">
+              <div key={stage.id} data-testid={`kanban-column-${stage.id}`} className="flex flex-col gap-3 w-[260px] shrink-0">
                 {/* Column header */}
                 <div className="flex items-center gap-2">
                   <div

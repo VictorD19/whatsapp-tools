@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing'
-import { createMock } from '@golevelup/ts-jest'
 import { NotificationsService } from '../notifications.service'
 import { NotificationsRepository } from '../notifications.repository'
 import { NotificationsGateway } from '../notifications.gateway'
@@ -39,12 +38,32 @@ describe('NotificationsService', () => {
   }
 
   beforeEach(async () => {
+    const mockRepository = {
+      create: jest.fn(),
+      findByUser: jest.fn(),
+      countUnread: jest.fn(),
+      markAsRead: jest.fn(),
+      markAllAsRead: jest.fn(),
+      findPreferences: jest.fn(),
+      upsertPreference: jest.fn(),
+      findPreference: jest.fn(),
+    }
+
+    const mockGateway = {
+      emitNotification: jest.fn(),
+      emitUnreadCount: jest.fn(),
+    }
+
+    const mockProducer = {
+      enqueue: jest.fn(),
+    }
+
     const module = await Test.createTestingModule({
       providers: [
         NotificationsService,
-        { provide: NotificationsRepository, useValue: createMock<NotificationsRepository>() },
-        { provide: NotificationsGateway, useValue: createMock<NotificationsGateway>() },
-        { provide: NotificationProducer, useValue: createMock<NotificationProducer>() },
+        { provide: NotificationsRepository, useValue: mockRepository },
+        { provide: NotificationsGateway, useValue: mockGateway },
+        { provide: NotificationProducer, useValue: mockProducer },
       ],
     }).compile()
 
