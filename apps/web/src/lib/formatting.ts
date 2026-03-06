@@ -80,6 +80,12 @@ export function formatCurrencyCompact(value: number): string {
   }).format(value)
 }
 
+export function getCurrencySymbol(): string {
+  const { locale, currency } = getLocaleSettings()
+  const parts = new Intl.NumberFormat(locale, { style: 'currency', currency }).formatToParts(0)
+  return parts.find((p) => p.type === 'currency')?.value ?? currency
+}
+
 export function formatNumber(value: number): string {
   const { locale } = getLocaleSettings()
   return new Intl.NumberFormat(locale).format(value)

@@ -23,6 +23,7 @@ import { Separator } from '@/components/ui/separator'
 import { useDeal, type Deal, type DealNote } from '@/hooks/use-deal'
 import type { PipelineStage } from '@/hooks/use-pipeline-stages'
 import { getInitials, formatPhone, cn } from '@/lib/utils'
+import { formatCurrency, getCurrencySymbol, formatDate, formatDateTime } from '@/lib/formatting'
 
 interface DealDetailSheetProps {
   open: boolean
@@ -33,14 +34,8 @@ interface DealDetailSheetProps {
   onDeleted: () => void
 }
 
-function formatBRL(value: number): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
-}
-
 function formatNoteDate(dateStr: string): string {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) +
-    ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return formatDateTime(dateStr)
 }
 
 export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDeleted }: DealDetailSheetProps) {
@@ -230,7 +225,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
               <span className="text-xs text-muted-foreground">Valor</span>
               {editingValue ? (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-muted-foreground">R$</span>
+                  <span className="text-xs text-muted-foreground">{getCurrencySymbol()}</span>
                   <Input
                     value={valueInput}
                     onChange={(e) => setValueInput(e.target.value)}
@@ -255,7 +250,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                   className="flex items-center gap-1 text-xs hover:text-foreground transition-colors"
                 >
                   <span className="font-medium">
-                    {deal.value != null ? formatBRL(deal.value) : 'Sem valor'}
+                    {deal.value != null ? formatCurrency(Number(deal.value)) : 'Sem valor'}
                   </span>
                   <Pencil className="h-3 w-3 text-muted-foreground" />
                 </button>
@@ -301,13 +296,13 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Criado em</span>
-                <span>{new Date(deal.createdAt).toLocaleDateString('pt-BR')}</span>
+                <span>{formatDate(deal.createdAt)}</span>
               </div>
               {deal.wonAt && (
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Ganho em</span>
                   <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-[10px]">
-                    {new Date(deal.wonAt).toLocaleDateString('pt-BR')}
+                    {formatDate(deal.wonAt)}
                   </Badge>
                 </div>
               )}
@@ -315,7 +310,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Perdido em</span>
                   <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-[10px]">
-                    {new Date(deal.lostAt).toLocaleDateString('pt-BR')}
+                    {formatDate(deal.lostAt)}
                   </Badge>
                 </div>
               )}

@@ -11,3 +11,4 @@
 @rules/feature-implementation.md
 @rules/whatsapp-provider-abstraction.md
 @rules/ui-form-patterns.md
+@rules/locale-formatting.md

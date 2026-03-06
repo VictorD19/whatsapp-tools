@@ -17,10 +17,7 @@ import { useContactDetail } from '@/hooks/use-contact-detail'
 import { usePipelineStages } from '@/hooks/use-pipeline-stages'
 import type { Deal } from '@/hooks/use-deal'
 import { getInitials, formatPhone } from '@/lib/utils'
-
-function formatBRL(value: number): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
-}
+import { formatCurrency, formatDate } from '@/lib/formatting'
 
 export default function ContactDetailPage() {
   const params = useParams()
@@ -148,7 +145,7 @@ export default function ContactDetailPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium truncate">{deal.title || 'Sem título'}</span>
                       {deal.value != null && (
-                        <span className="text-sm font-bold text-primary-500">{formatBRL(deal.value)}</span>
+                        <span className="text-sm font-bold text-primary-500">{formatCurrency(deal.value)}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -161,7 +158,7 @@ export default function ContactDetailPage() {
                     </div>
                     <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                       <Calendar className="h-3 w-3" />
-                      <span>{new Date(deal.createdAt).toLocaleDateString('pt-BR')}</span>
+                      <span>{formatDate(deal.createdAt)}</span>
                       {deal.assignedTo && (
                         <span className="ml-auto">{deal.assignedTo.name}</span>
                       )}
@@ -201,7 +198,7 @@ export default function ContactDetailPage() {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {deal.value != null && <span>{formatBRL(deal.value)}</span>}
+                        {deal.value != null && <span>{formatCurrency(deal.value)}</span>}
                         <span className="ml-auto">{deal.pipeline.name}</span>
                       </div>
                       {deal.lostReason && (

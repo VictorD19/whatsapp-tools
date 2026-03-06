@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import type { Deal } from '@/hooks/use-deal'
 import type { PipelineStage } from '@/hooks/use-pipeline-stages'
+import { formatCurrency } from '@/lib/formatting'
 
 interface KanbanBoardProps {
   deals: Deal[]
@@ -42,7 +43,7 @@ export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanB
         const stage = stages.find((s) => s.id === d.stageId)
         return stage?.type !== 'LOST'
       })
-      .reduce((acc, d) => acc + (d.value ?? 0), 0)
+      .reduce((acc, d) => acc + (Number(d.value) || 0), 0)
   }, [deals, stages])
 
   async function handleDragEnd(result: DropResult) {
@@ -82,7 +83,7 @@ export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanB
       <p className="text-xs text-muted-foreground">
         Pipeline total:{' '}
         <span className="font-semibold text-foreground">
-          {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          {formatCurrency(totalValue)}
         </span>
       </p>
 
@@ -90,7 +91,7 @@ export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanB
         <div className="flex gap-4 min-w-max">
           {stages.map((stage) => {
             const columnDeals = columnMap.get(stage.id) ?? []
-            const columnTotal = columnDeals.reduce((acc, d) => acc + (d.value ?? 0), 0)
+            const columnTotal = columnDeals.reduce((acc, d) => acc + (Number(d.value) || 0), 0)
 
             return (
               <div key={stage.id} className="flex flex-col gap-3 w-[260px] shrink-0">
@@ -107,7 +108,7 @@ export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanB
                 </div>
                 {columnTotal > 0 && (
                   <p className="text-[11px] text-muted-foreground -mt-2">
-                    {columnTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {formatCurrency(columnTotal)}
                   </p>
                 )}
 

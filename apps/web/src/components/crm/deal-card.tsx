@@ -4,6 +4,7 @@ import React from 'react'
 import { Calendar, User, DollarSign } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import type { Deal } from '@/hooks/use-deal'
+import { formatCurrencyCompact, formatDateShort } from '@/lib/formatting'
 
 interface DealCardProps {
   deal: Deal
@@ -14,7 +15,7 @@ export const DealCard = React.forwardRef<HTMLDivElement, DealCardProps & Omit<Re
   ({ deal, onDealClick, ...props }, ref) => {
     const contactName = deal.contact.name ?? deal.contact.phone
     const formattedValue = deal.value != null
-      ? deal.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 })
+      ? formatCurrencyCompact(Number(deal.value))
       : null
 
     return (
@@ -47,10 +48,7 @@ export const DealCard = React.forwardRef<HTMLDivElement, DealCardProps & Omit<Re
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 <span>
-                  {new Date(deal.createdAt).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                  })}
+                  {formatDateShort(deal.createdAt)}
                 </span>
               </div>
               {deal.assignedTo && <span>{deal.assignedTo.name}</span>}

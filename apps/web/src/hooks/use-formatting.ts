@@ -8,6 +8,7 @@ import {
   formatRelativeDate,
   formatCurrency,
   formatCurrencyCompact,
+  getCurrencySymbol,
   formatNumber,
   formatDateSeparator,
 } from '@/lib/formatting'
@@ -33,6 +34,8 @@ export function useFormatting() {
     formatCurrency: useCallback((value: number) => formatCurrency(value), [locale, currency]),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     formatCurrencyCompact: useCallback((value: number) => formatCurrencyCompact(value), [locale, currency]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    getCurrencySymbol: useCallback(() => getCurrencySymbol(), [locale, currency]),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     formatNumber: useCallback((value: number) => formatNumber(value), [locale]),
     // eslint-disable-next-line react-hooks/exhaustive-deps

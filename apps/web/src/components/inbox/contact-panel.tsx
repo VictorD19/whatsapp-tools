@@ -29,16 +29,10 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useInboxStore } from '@/stores/inbox.store'
 import type { Conversation, ConversationDeal } from '@/stores/inbox.store'
 import { TagsSection } from '@/components/shared/tags-section'
+import { formatCurrency, getCurrencySymbol, formatDateShort, formatTime } from '@/lib/formatting'
 
 interface ContactPanelProps {
   conversation: Conversation | null
-}
-
-function formatBRL(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
 }
 
 function daysSinceLastContact(dateStr: string | null): number {
@@ -50,14 +44,7 @@ function daysSinceLastContact(dateStr: string | null): number {
 }
 
 function formatNoteDate(dateStr: string): string {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-  }) + ' ' + d.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatDateShort(dateStr) + ' ' + formatTime(dateStr)
 }
 
 // ---- Sub-components ----
@@ -231,7 +218,7 @@ function DealValueSection({
       <div className="flex items-center gap-1.5">
         <span className="text-[11px] text-muted-foreground shrink-0">Valor</span>
         <div className="flex items-center gap-1 flex-1">
-          <span className="text-xs text-muted-foreground">R$</span>
+          <span className="text-xs text-muted-foreground">{getCurrencySymbol()}</span>
           <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -262,7 +249,7 @@ function DealValueSection({
         className="flex items-center gap-1 text-xs hover:text-foreground transition-colors"
       >
         <span className="font-medium">
-          {deal.value != null ? formatBRL(deal.value) : 'Sem valor'}
+          {deal.value != null ? formatCurrency(deal.value) : 'Sem valor'}
         </span>
         <Pencil className="h-3 w-3 text-muted-foreground" />
       </button>
