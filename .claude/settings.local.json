@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xxd:*)",
+      "Bash(sed:*)",
+      "Bash(docker compose:*)",
+      "Bash(pnpm:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx tsc:*)",
+      "Bash(docker ps:*)",
+      "Bash(tasklist:*)",
+      "Bash(netstat:*)",
+      "WebSearch",
+      "Bash(npx:*)",
+      "Bash(npm install:*)",
+      "Bash(npm search:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:til.simonwillison.net)",
+      "Bash(claude mcp:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_network_requests",
+      "mcp__playwright__browser_evaluate",
+      "Bash(xargs grep:*)",
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker port:*)",
+      "Bash(npx prisma:*)"
+    ]
+  }
+}

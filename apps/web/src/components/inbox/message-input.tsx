@@ -75,8 +75,8 @@ function FilePreview({ file, onRemove }: FilePreviewProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name)
-  const isVideo = file.type.startsWith('video/') || /\.(mp4|mov|avi|3gp|mkv|webm)$/i.test(file.name)
-  const isAudio = file.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac|opus)$/i.test(file.name)
+  const isAudio = !isImage && (file.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac|opus)$/i.test(file.name))
+  const isVideo = !isImage && !isAudio && (file.type.startsWith('video/') || /\.(mp4|mov|avi|3gp|mkv|webm)$/i.test(file.name))
 
   useEffect(() => {
     if (isImage || isAudio) {

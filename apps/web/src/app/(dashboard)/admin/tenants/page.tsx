@@ -27,6 +27,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { EmptyState } from '@/components/shared/empty-state'
 import { toast } from '@/components/ui/toaster'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
@@ -97,6 +104,7 @@ export default function TenantsPage() {
 
   // Plans
   const [activePlans, setActivePlans] = useState<PlanOption[]>([])
+  const [loadingPlans, setLoadingPlans] = useState(false)
 
   // List state
   const [tenants, setTenants] = useState<Tenant[]>([])
@@ -145,11 +153,14 @@ export default function TenantsPage() {
 
   // Fetch active plans
   const fetchPlans = useCallback(async () => {
+    setLoadingPlans(true)
     try {
       const res = await apiGet<{ data: PlanOption[] }>('admin/plans/active')
       setActivePlans(res.data)
     } catch {
-      // silent — plans will be empty
+      toast({ title: 'Erro ao carregar planos', variant: 'destructive' })
+    } finally {
+      setLoadingPlans(false)
     }
   }, [])
 
@@ -512,22 +523,30 @@ export default function TenantsPage() {
             {/* Plan select */}
             <div className="space-y-1.5">
               <Label>Plano</Label>
-              <div className="flex flex-wrap gap-2">
-                {activePlans.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setFormPlanId(p.id)}
-                    className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                      formPlanId === p.id
-                        ? 'border-foreground bg-foreground text-background'
-                        : 'border-border hover:bg-accent'
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
+              {loadingPlans ? (
+                <Skeleton className="h-9 w-full" />
+              ) : activePlans.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum plano cadastrado.{' '}
+                  <a href="/admin/plans" className="underline hover:text-foreground">
+                    Criar plano
+                  </a>
+                </p>
+              ) : (
+                <Select value={formPlanId} onValueChange={setFormPlanId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activePlans.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                        {p.isDefault ? ' (Padrao)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <Separator />
@@ -605,22 +624,30 @@ export default function TenantsPage() {
 
             <div className="space-y-1.5">
               <Label>Plano</Label>
-              <div className="flex flex-wrap gap-2">
-                {activePlans.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setEditPlanId(p.id)}
-                    className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                      editPlanId === p.id
-                        ? 'border-foreground bg-foreground text-background'
-                        : 'border-border hover:bg-accent'
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
+              {loadingPlans ? (
+                <Skeleton className="h-9 w-full" />
+              ) : activePlans.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum plano cadastrado.{' '}
+                  <a href="/admin/plans" className="underline hover:text-foreground">
+                    Criar plano
+                  </a>
+                </p>
+              ) : (
+                <Select value={editPlanId} onValueChange={setEditPlanId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activePlans.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                        {p.isDefault ? ' (Padrao)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 

@@ -66,9 +66,9 @@ export function ConversationList() {
 
   const filtered = search
     ? conversations.filter((c) => {
-        const name = c.contact.name ?? c.contact.phone
-        return name.toLowerCase().includes(search.toLowerCase())
-      })
+      const name = c.contact.name ?? c.contact.phone
+      return name.toLowerCase().includes(search.toLowerCase())
+    })
     : conversations
 
   return (

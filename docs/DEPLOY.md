@@ -222,7 +222,10 @@ make migrate
 | `JWT_SECRET`          | `change-me-in-production`            | Segredo do JWT (access token) |
 | `JWT_REFRESH_SECRET`  | `change-me-refresh-in-production`    | Segredo do refresh token |
 | `EVOLUTION_API_KEY`   | `changeme-evolution-key`             | Chave da Evolution API |
-| `ANTHROPIC_API_KEY`   | `sk-ant-...`                         | Chave da API Claude (Anthropic) |
+| `ANTHROPIC_API_KEY`   | *(vazio)*                            | Chave da API Claude (opcional, para funcionalidades de IA) |
+| `MINIO_ACCESS_KEY`    | `minioadmin`                         | Usuário root do MinIO (object storage) |
+| `MINIO_SECRET_KEY`    | `minioadmin123`                      | Senha root do MinIO |
+| `MINIO_BUCKET`        | `whatsapp-media`                     | Nome do bucket para armazenar mídias |
 
 > Em **desenvolvimento**, os defaults funcionam. Em **produção**, troque todos os secrets.
 
@@ -254,6 +257,9 @@ cp .env.example .env
 #   JWT_REFRESH_SECRET=<gere com: openssl rand -hex 32>
 #   EVOLUTION_API_KEY=<gere com: openssl rand -hex 32>
 #   ANTHROPIC_API_KEY=sk-ant-...
+#   MINIO_ACCESS_KEY=<usuário forte para o MinIO>
+#   MINIO_SECRET_KEY=<senha forte para o MinIO>
+#   MINIO_BUCKET=whatsapp-media
 
 # 3. Suba com o compose de produção
 docker compose -f docker-compose.prod.yml up -d --build
@@ -376,24 +382,28 @@ sudo usermod -aG docker $USER
 ## Arquitetura dos Containers
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Docker Network                    │
-│                    (wt-network)                      │
-│                                                     │
-│  ┌─────────┐  ┌─────────┐  ┌────────────────────┐  │
-│  │   web   │  │   api   │  │     evolution      │  │
-│  │ Next.js │  │ NestJS  │  │  (WhatsApp/Baileys)│  │
-│  │  :3000  │  │  :3001  │  │       :8085        │  │
-│  └────┬────┘  └────┬────┘  └────────┬───────────┘  │
-│       │            │                │               │
-│       │       ┌────┴────┐     ┌─────┴─────┐        │
-│       │       │ postgres│     │   redis   │        │
-│       │       │  :5432  │     │   :6379   │        │
-│       │       └─────────┘     └───────────┘        │
-│       │                                             │
-│       └── chama API via http://localhost:3001       │
-│           (do browser do usuário)                   │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                       Docker Network                         │
+│                       (wt-network)                           │
+│                                                              │
+│  ┌─────────┐  ┌─────────┐  ┌────────────────────┐           │
+│  │   web   │  │   api   │  │     evolution      │           │
+│  │ Next.js │  │ NestJS  │  │  (WhatsApp/Baileys)│           │
+│  │  :3000  │  │  :3001  │  │       :8085        │           │
+│  └────┬────┘  └────┬────┘  └────────┬───────────┘           │
+│       │            │                │                        │
+│       │    ┌───────┼────────┐       │                        │
+│       │    │       │        │       │                        │
+│       │  ┌─┴──────┐│  ┌─────┴─────┐│  ┌──────────────────┐  │
+│       │  │postgres││  │   redis   ││  │     minio        │  │
+│       │  │  :5432 ││  │   :6379   ││  │ :9000 (S3 API)   │  │
+│       │  └────────┘│  └───────────┘│  │ :9001 (Console)  │  │
+│       │            │               │  └──────────────────┘  │
+│       │            └───────────────┘                        │
+│       │                                                      │
+│       └── chama API via http://localhost:3001                │
+│           (do browser do usuário)                            │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Volumes
@@ -402,6 +412,7 @@ sudo usermod -aG docker $USER
 |--------|----------|-------------|
 | `postgres_data` | Dados do PostgreSQL | Sim |
 | `redis_data` | Dados do Redis | Sim |
+| `minio_data` | Arquivos de mídia (imagens, vídeos, documentos) | Sim |
 | `api_*_modules` | node_modules da API | Sim (cache) |
 | `web_*_modules` | node_modules do frontend | Sim (cache) |
 
