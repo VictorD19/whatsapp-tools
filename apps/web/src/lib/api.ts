@@ -23,6 +23,19 @@ export const api: KyInstance = ky.create({
         }
       },
     ],
+    beforeError: [
+      async (error) => {
+        try {
+          const body = await error.response.json() as { error?: { message?: string } }
+          if (body?.error?.message) {
+            error.message = body.error.message
+          }
+        } catch {
+          // response is not JSON or already consumed — keep original message
+        }
+        return error
+      },
+    ],
     afterResponse: [
       async (_request, _options, response) => {
         if (response.status === 401) {

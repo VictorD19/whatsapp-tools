@@ -10,6 +10,7 @@ import {
   Users,
   UserCircle,
   Bot,
+  ClipboardList,
   Briefcase,
   Settings,
   ChevronLeft,
@@ -65,6 +66,7 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
       items: [
         { icon: Megaphone, label: tNav('items.broadcasts'), href: '/broadcasts' },
         { icon: Users, label: tNav('items.groups'), href: '/groups' },
+        { icon: ClipboardList, label: tNav('items.contactLists'), href: '/contact-lists' },
       ],
     },
     {

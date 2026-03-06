@@ -8,6 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from '@/components/ui/sheet'
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -426,17 +434,17 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
         </div>
       )}
 
-      {/* ── Create Member Dialog ── */}
-      <Dialog open={dialogMode === 'create'} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Novo Membro</DialogTitle>
-            <DialogDescription>
+      {/* ── Create Member Sheet ── */}
+      <Sheet open={dialogMode === 'create'} onOpenChange={(open) => !open && closeDialog()}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Novo Membro</SheetTitle>
+            <SheetDescription>
               Adicione um novo membro a equipe
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-4">
             <div className="space-y-1.5">
               <Label htmlFor="create-name">Nome</Label>
               <Input
@@ -492,7 +500,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
             </div>
           </div>
 
-          <DialogFooter>
+          <SheetFooter>
             <Button variant="outline" onClick={closeDialog}>
               Cancelar
             </Button>
@@ -502,21 +510,21 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
             >
               {saving ? 'Criando...' : 'Criar'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
-      {/* ── Edit Member Dialog ── */}
-      <Dialog open={dialogMode === 'edit'} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Editar Membro</DialogTitle>
-            <DialogDescription>
+      {/* ── Edit Member Sheet ── */}
+      <Sheet open={dialogMode === 'edit'} onOpenChange={(open) => !open && closeDialog()}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Editar Membro</SheetTitle>
+            <SheetDescription>
               Altere as informacoes de {selectedUser?.name}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-4">
             <div className="space-y-1.5">
               <Label htmlFor="edit-name">Nome</Label>
               <Input
@@ -549,28 +557,28 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
             </div>
           </div>
 
-          <DialogFooter>
+          <SheetFooter>
             <Button variant="outline" onClick={closeDialog}>
               Cancelar
             </Button>
             <Button onClick={handleEdit} disabled={saving || !formName.trim()}>
               {saving ? 'Salvando...' : 'Salvar'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
-      {/* ── Change Password Dialog ── */}
-      <Dialog open={dialogMode === 'password'} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Alterar Senha</DialogTitle>
-            <DialogDescription>
+      {/* ── Change Password Sheet ── */}
+      <Sheet open={dialogMode === 'password'} onOpenChange={(open) => !open && closeDialog()}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Alterar Senha</SheetTitle>
+            <SheetDescription>
               Defina uma nova senha para {selectedUser?.name}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-4">
             <div className="space-y-1.5">
               <Label htmlFor="new-password">Nova senha</Label>
               <Input
@@ -599,7 +607,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
             </div>
           </div>
 
-          <DialogFooter>
+          <SheetFooter>
             <Button variant="outline" onClick={closeDialog}>
               Cancelar
             </Button>
@@ -609,9 +617,9 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
             >
               {saving ? 'Salvando...' : 'Alterar senha'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       {/* ── Deactivate Confirmation Dialog ── */}
       <Dialog open={dialogMode === 'deactivate'} onOpenChange={(open) => !open && closeDialog()}>
