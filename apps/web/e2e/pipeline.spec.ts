@@ -75,8 +75,8 @@ test.describe('Pipeline Settings', () => {
     await expect(page.getByRole('heading', { name: 'Excluir estagio' })).toBeVisible()
     await page.getByRole('button', { name: 'Excluir' }).click()
 
-    // Stage should disappear
-    await expect(page.getByText(stageName)).not.toBeVisible({ timeout: 5_000 })
+    // Stage should disappear from the list
+    await expect(page.locator('[data-testid^="stage-row-"]', { hasText: stageName })).not.toBeVisible({ timeout: 5_000 })
   })
 
   test('default stage delete button is disabled', async ({ page }) => {

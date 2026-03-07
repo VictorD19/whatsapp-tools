@@ -213,16 +213,28 @@ export function DealFormSheet({ open, onClose, onCreated, pipelines, defaultPipe
   const [pipelineId, setPipelineId] = useState(defaultPipelineId ?? '')
   const [stageId, setStageId] = useState('')
   const [saving, setSaving] = useState(false)
+  const wasOpenRef = useRef(false)
 
+  // Reset user-entered fields only when the sheet transitions from closed → open.
+  // Do NOT include pipelines/defaultPipelineId here — that would clear selectedContact
+  // whenever React Query refetches pipelines (new array reference) mid-interaction.
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpenRef.current) {
       setSelectedContact(null)
       setTitle('')
       setValue('')
-      setPipelineId(defaultPipelineId ?? pipelines[0]?.id ?? '')
       setStageId('')
     }
-  }, [open, defaultPipelineId, pipelines])
+    wasOpenRef.current = open
+  }, [open])
+
+  // Keep pipelineId in sync whenever pipelines load or defaultPipelineId changes,
+  // but only while the sheet is open (avoids resetting a mid-flight selection).
+  useEffect(() => {
+    if (open && !pipelineId) {
+      setPipelineId(defaultPipelineId ?? pipelines[0]?.id ?? '')
+    }
+  }, [open, defaultPipelineId, pipelines, pipelineId])
 
   const selectedPipeline = useMemo(() => {
     return pipelines.find((p) => p.id === pipelineId)

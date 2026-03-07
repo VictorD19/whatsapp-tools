@@ -362,4 +362,18 @@ export class InboxRepository {
       data: { mediaUrl },
     })
   }
+
+  async updateMessageStatus(messageId: string, status: 'SENT' | 'DELIVERED' | 'READ' | 'FAILED') {
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { status },
+    })
+  }
+
+  async updateMessageEvolutionId(messageId: string, evolutionId: string) {
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { evolutionId },
+    })
+  }
 }

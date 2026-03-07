@@ -9,10 +9,10 @@ test.describe('Instances Management', () => {
   })
 
   test('displays stats cards', async ({ page }) => {
-    await expect(page.getByText('Total')).toBeVisible()
-    await expect(page.getByText('Conectadas')).toBeVisible()
-    await expect(page.getByText('Conectando')).toBeVisible()
-    await expect(page.getByText('Desconectadas')).toBeVisible()
+    await expect(page.getByText('Total', { exact: true })).toBeVisible()
+    await expect(page.getByText('Conectadas', { exact: true })).toBeVisible()
+    await expect(page.getByText('Conectando', { exact: true })).toBeVisible()
+    await expect(page.getByText('Desconectadas', { exact: true })).toBeVisible()
   })
 
   test('creates an instance via modal', async ({ page }) => {

@@ -94,8 +94,8 @@ test.describe('Tenants CRUD', () => {
     await expect(page.getByRole('heading', { name: 'Excluir tenant' })).toBeVisible()
     await page.getByRole('button', { name: 'Excluir' }).click()
 
-    // Tenant should disappear
-    await expect(page.getByText(tenantName)).not.toBeVisible({ timeout: 5_000 })
+    // Tenant should disappear from the list
+    await expect(page.locator('[data-testid^="tenant-row-"]', { hasText: tenantName })).not.toBeVisible({ timeout: 5_000 })
   })
 
   test('searches tenants by name', async ({ page }) => {
@@ -114,14 +114,14 @@ test.describe('Tenants CRUD', () => {
     await expect(page.getByText(tenantName)).toBeVisible({ timeout: 5_000 })
 
     // Search by name
-    await fillByPlaceholder(page, /Buscar/i, tenantName)
+    await fillByPlaceholder(page, 'Buscar por nome ou slug...', tenantName)
     await page.waitForTimeout(500) // debounce
 
     // Tenant should still be visible
     await expect(page.getByText(tenantName)).toBeVisible({ timeout: 5_000 })
 
     // Search with non-matching term
-    await fillByPlaceholder(page, /Buscar/i, 'zzz_nonexistent_tenant_zzz')
+    await fillByPlaceholder(page, 'Buscar por nome ou slug...', 'zzz_nonexistent_tenant_zzz')
     await page.waitForTimeout(500) // debounce
 
     // Tenant should not be visible

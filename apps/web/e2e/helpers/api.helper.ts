@@ -25,7 +25,7 @@ export class ApiHelper {
     const origin = state.origins?.[0]
     const tokenEntry = origin?.localStorage?.find(
       (entry: { name: string; value: string }) =>
-        entry.name === 'token' || entry.name === 'auth-token',
+        entry.name === 'token' || entry.name === 'auth-token' || entry.name === 'auth_token',
     )
     if (tokenEntry) {
       return new ApiHelper(tokenEntry.value)
@@ -101,5 +101,10 @@ export class ApiHelper {
 
   async deleteDeal(id: string) {
     return this.request('DELETE', `/deals/${id}`)
+  }
+
+  async listDeals(params?: Record<string, string>) {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+    return this.request<{ data: Array<{ id: string; title?: string; contactId: string }> }>('GET', `/deals${qs}`)
   }
 }

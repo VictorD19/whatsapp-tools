@@ -54,6 +54,12 @@ export interface ConversationDeal {
   lostAt: string | null
 }
 
+export interface ConversationAssistant {
+  id: string
+  name: string
+  avatarEmoji: string | null
+}
+
 export interface Conversation {
   id: string
   instanceId: string
@@ -65,10 +71,13 @@ export interface Conversation {
   unreadCount: number
   lastMessageAt: string | null
   closedAt: string | null
+  assistantId: string | null
+  assistantPausedAt: string | null
   createdAt: string
   contact: ConversationContact
   instance: ConversationInstance
   assignedTo: ConversationAssignee | null
+  assistant: ConversationAssistant | null
   messages?: LastMessage[]
   deals?: ConversationDeal[]
 }

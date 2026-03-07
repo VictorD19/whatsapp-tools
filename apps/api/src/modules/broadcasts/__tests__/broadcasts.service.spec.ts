@@ -492,17 +492,15 @@ describe('BroadcastsService', () => {
   })
 
   describe('delete', () => {
-    it('should soft delete a COMPLETED broadcast', async () => {
+    it('should throw BROADCAST_CANNOT_DELETE if COMPLETED', async () => {
       repository.findById.mockResolvedValue({
         ...mockBroadcast,
         status: 'COMPLETED',
       } as never)
-      repository.softDelete.mockResolvedValue({ count: 1 } as never)
 
-      const result = await service.delete(tenantId, 'bc-1')
-
-      expect(result.data.deleted).toBe(true)
-      expect(repository.softDelete).toHaveBeenCalledWith(tenantId, 'bc-1')
+      await expect(service.delete(tenantId, 'bc-1')).rejects.toMatchObject({
+        code: 'BROADCAST_CANNOT_DELETE',
+      })
     })
 
     it('should throw BROADCAST_CANNOT_DELETE if RUNNING', async () => {

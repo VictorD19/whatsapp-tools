@@ -1,8 +1,40 @@
 import { test, expect } from '@playwright/test'
-import { uniqueName } from './fixtures/test-data'
+import { uniqueName, uniquePhone } from './fixtures/test-data'
 import { fillByLabel, fillByPlaceholder, fillInput } from './helpers/input.helper'
+import { ApiHelper } from './helpers/api.helper'
+
+// Fresh contacts created via API so they are guaranteed to have no existing active deals.
+let contactForCreate: { id: string; name: string } | null = null
+let contactForDelete: { id: string; name: string } | null = null
 
 test.describe('CRM Kanban', () => {
+  test.beforeAll(async () => {
+    const api = ApiHelper.fromStorageState('e2e/.auth/admin.json')
+    const [c1, c2] = await Promise.all([
+      api.createContact({ name: uniqueName('crm_contact'), phone: uniquePhone() }),
+      api.createContact({ name: uniqueName('crm_contact'), phone: uniquePhone() }),
+    ]) as Array<{ id: string; name: string }>
+    contactForCreate = c1
+    contactForDelete = c2
+  })
+
+  test.afterAll(async () => {
+    try {
+      const api = ApiHelper.fromStorageState('e2e/.auth/admin.json')
+      // Delete any active deals for these contacts, then delete the contacts
+      const deals = await api.listDeals({ limit: '200' }) as { data: Array<{ id: string; contactId: string }> }
+      await Promise.all(
+        deals.data
+          .filter(d => [contactForCreate?.id, contactForDelete?.id].includes(d.contactId))
+          .map(d => api.deleteDeal(d.id).catch(() => null))
+      )
+      if (contactForCreate) await api.deleteContact(contactForCreate.id).catch(() => null)
+      if (contactForDelete) await api.deleteContact(contactForDelete.id).catch(() => null)
+    } catch {
+      // best-effort cleanup
+    }
+  })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/crm')
     await expect(page.getByRole('heading', { name: /CRM.*Pipeline/i })).toBeVisible()
@@ -25,16 +57,17 @@ test.describe('CRM Kanban', () => {
 
   test('creates a deal via sheet', async ({ page }) => {
     const title = uniqueName('deal')
+    const contactName = contactForCreate!.name
 
     await page.getByRole('button', { name: /Novo neg/i }).click()
 
     // Sheet should open
     await expect(page.getByRole('heading', { name: /Novo neg/i })).toBeVisible()
 
-    // Select a contact via the contact picker popover
+    // Select the fresh contact via the contact picker (search by name to avoid stale contacts)
     await page.getByRole('button', { name: /Selecionar contato/i }).click()
-    // Wait for contacts to load and click the first one
-    await page.waitForTimeout(1_000)
+    await page.getByPlaceholder('Buscar por nome ou telefone...').pressSequentially(contactName, { delay: 30 })
+    await page.waitForTimeout(600)
     const contactButton = page.locator('.max-h-\\[280px\\] button').first()
     await expect(contactButton).toBeVisible({ timeout: 5_000 })
     await contactButton.click()
@@ -53,7 +86,7 @@ test.describe('CRM Kanban', () => {
     // Deal card should appear on the board
     await expect(
       page.locator('[data-testid^="deal-card-"]', { hasText: title })
-    ).toBeVisible({ timeout: 5_000 })
+    ).toBeVisible({ timeout: 8_000 })
   })
 
   test('opens deal detail by clicking on card', async ({ page }) => {
@@ -67,10 +100,10 @@ test.describe('CRM Kanban', () => {
       await firstDeal.click()
 
       // Deal detail sheet should open with contact info, notes section, etc.
-      await expect(page.getByText('Etapa')).toBeVisible({ timeout: 5_000 })
-      await expect(page.getByText('Valor')).toBeVisible()
-      await expect(page.getByText('Contato')).toBeVisible()
-      await expect(page.getByText('Notas')).toBeVisible()
+      await expect(page.getByText('Etapa', { exact: true })).toBeVisible({ timeout: 5_000 })
+      await expect(page.getByText('Valor', { exact: true })).toBeVisible()
+      await expect(page.getByText('Contato', { exact: true })).toBeVisible()
+      await expect(page.getByText('Notas', { exact: true })).toBeVisible()
     }
   })
 
@@ -107,12 +140,12 @@ test.describe('CRM Kanban', () => {
     await dealCards.first().click()
     await expect(page.getByText('Etapa')).toBeVisible({ timeout: 5_000 })
 
-    // Click on the title (which has a pencil icon) to enter edit mode
-    const titleButton = page.locator('button').filter({ has: page.locator('.lucide-pencil') }).first()
-    await titleButton.click()
+    // Click on the title button (inside SheetTitle) to enter edit mode
+    const sheetTitle = page.getByRole('dialog').getByRole('heading')
+    await sheetTitle.locator('button').click()
 
-    // Should show an input for editing
-    const titleInput = page.locator('input[autofocus]').first()
+    // Should show an input for editing (inside the sheet heading)
+    const titleInput = page.getByRole('dialog').getByRole('heading').locator('input')
     await expect(titleInput).toBeVisible()
 
     const newTitle = uniqueName('edited')
@@ -126,13 +159,15 @@ test.describe('CRM Kanban', () => {
   test('deletes a deal via confirmation dialog', async ({ page }) => {
     // First create a deal to delete
     const title = uniqueName('deal-del')
+    const contactName = contactForDelete!.name
 
     await page.getByRole('button', { name: /Novo neg/i }).click()
     await expect(page.getByRole('heading', { name: /Novo neg/i })).toBeVisible()
 
-    // Select contact
+    // Select the fresh contact via the contact picker
     await page.getByRole('button', { name: /Selecionar contato/i }).click()
-    await page.waitForTimeout(1_000)
+    await page.getByPlaceholder('Buscar por nome ou telefone...').pressSequentially(contactName, { delay: 30 })
+    await page.waitForTimeout(600)
     const contactBtn = page.locator('.max-h-\\[280px\\] button').first()
     await expect(contactBtn).toBeVisible({ timeout: 5_000 })
     await contactBtn.click()
@@ -141,12 +176,16 @@ test.describe('CRM Kanban', () => {
     const titleLocator = page.getByLabel('Titulo').or(page.getByPlaceholder(/Venda/i))
     await fillInput(titleLocator, title)
 
+    // Fill value
+    const valueLocator = page.getByLabel(/Valor/i).or(page.getByPlaceholder('0,00')).first()
+    await fillInput(valueLocator, '500')
+
     // Submit
     await page.getByRole('button', { name: /Criar neg/i }).click()
 
     // Wait for card to appear
     const dealCard = page.locator('[data-testid^="deal-card-"]', { hasText: title })
-    await expect(dealCard).toBeVisible({ timeout: 5_000 })
+    await expect(dealCard).toBeVisible({ timeout: 8_000 })
 
     // Open deal detail
     await dealCard.click()

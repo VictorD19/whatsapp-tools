@@ -1,109 +1,192 @@
-import React from 'react'
-import { Plus, Bot, Zap } from 'lucide-react'
+'use client'
+
+import React, { useState, useCallback } from 'react'
+import { Plus, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
-import type { Metadata } from 'next'
+import { AssistantCard } from '@/components/assistants/assistant-card'
+import { AssistantSheet, type AssistantFormData } from '@/components/assistants/assistant-sheet'
+import { DeleteAssistantDialog } from '@/components/assistants/delete-assistant-dialog'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
+import { toast } from '@/components/ui/toaster'
+import type { Assistant, ApiResponse } from '@/components/assistants/types'
 
-export const metadata: Metadata = { title: 'Assistentes IA' }
-
-const mockAssistants = [
-  {
-    id: '1',
-    name: 'SDR — Qualificação de Leads',
-    type: 'sdr',
-    status: 'active',
-    instanceName: 'Vendas Principal',
-    conversationsToday: 23,
-    model: 'Claude Sonnet 4.6',
-  },
-  {
-    id: '2',
-    name: 'Suporte Técnico Básico',
-    type: 'support',
-    status: 'active',
-    instanceName: 'Suporte',
-    conversationsToday: 15,
-    model: 'Claude Haiku 4.5',
-  },
-  {
-    id: '3',
-    name: 'Agendamento de Reuniões',
-    type: 'scheduling',
-    status: 'inactive',
-    instanceName: '—',
-    conversationsToday: 0,
-    model: 'Claude Sonnet 4.6',
-  },
-]
+const ASSISTANTS_QUERY_KEY = ['assistants']
 
 export default function AssistantsPage() {
+  const queryClient = useQueryClient()
+
+  const { data: assistants = [], isLoading } = useQuery({
+    queryKey: ASSISTANTS_QUERY_KEY,
+    queryFn: () => apiGet<ApiResponse<Assistant[]>>('assistants').then((r) => r.data),
+  })
+
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [editingAssistant, setEditingAssistant] = useState<Assistant | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deletingAssistant, setDeletingAssistant] = useState<Assistant | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const openCreateSheet = useCallback(() => {
+    setEditingAssistant(null)
+    setSheetOpen(true)
+  }, [])
+
+  const openEditSheet = useCallback((assistant: Assistant) => {
+    setEditingAssistant(assistant)
+    setSheetOpen(true)
+  }, [])
+
+  const openDeleteDialog = useCallback((assistant: Assistant) => {
+    setDeletingAssistant(assistant)
+    setDeleteDialogOpen(true)
+  }, [])
+
+  const handleSave = useCallback(
+    async (data: AssistantFormData) => {
+      setSaving(true)
+      try {
+        const { knowledgeBaseIds, aiToolIds, ...body } = data
+
+        if (editingAssistant) {
+          await apiPatch<ApiResponse<Assistant>>(`assistants/${editingAssistant.id}`, body)
+
+          // Sync knowledge bases
+          const currentKBs = editingAssistant.knowledgeBases.map((kb) => kb.knowledgeBaseId)
+          const kbsToAdd = knowledgeBaseIds.filter((id) => !currentKBs.includes(id))
+          const kbsToRemove = currentKBs.filter((id) => !knowledgeBaseIds.includes(id))
+          for (const kbId of kbsToAdd) {
+            await apiPost(`assistants/${editingAssistant.id}/knowledge-bases`, { knowledgeBaseId: kbId })
+          }
+          for (const kbId of kbsToRemove) {
+            await apiDelete(`assistants/${editingAssistant.id}/knowledge-bases/${kbId}`)
+          }
+
+          // Sync tools
+          const currentTools = editingAssistant.tools.map((t) => t.aiToolId)
+          const toolsToAdd = aiToolIds.filter((id) => !currentTools.includes(id))
+          const toolsToRemove = currentTools.filter((id) => !aiToolIds.includes(id))
+          for (const toolId of toolsToAdd) {
+            await apiPost(`assistants/${editingAssistant.id}/tools`, { aiToolId: toolId })
+          }
+          for (const toolId of toolsToRemove) {
+            await apiDelete(`assistants/${editingAssistant.id}/tools/${toolId}`)
+          }
+
+          toast({ title: 'Assistente atualizado', variant: 'success' })
+        } else {
+          const res = await apiPost<ApiResponse<Assistant>>('assistants', body)
+          const newId = res.data.id
+
+          for (const kbId of knowledgeBaseIds) {
+            await apiPost(`assistants/${newId}/knowledge-bases`, { knowledgeBaseId: kbId })
+          }
+          for (const toolId of aiToolIds) {
+            await apiPost(`assistants/${newId}/tools`, { aiToolId: toolId })
+          }
+
+          toast({ title: 'Assistente criado', variant: 'success' })
+        }
+
+        queryClient.invalidateQueries({ queryKey: ASSISTANTS_QUERY_KEY })
+        setSheetOpen(false)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erro ao salvar assistente'
+        toast({ title: message, variant: 'destructive' })
+      } finally {
+        setSaving(false)
+      }
+    },
+    [editingAssistant, queryClient],
+  )
+
+  const handleDelete = useCallback(async () => {
+    if (!deletingAssistant) return
+    setSaving(true)
+    try {
+      await apiDelete(`assistants/${deletingAssistant.id}`)
+      queryClient.invalidateQueries({ queryKey: ASSISTANTS_QUERY_KEY })
+      toast({ title: 'Assistente excluido', variant: 'success' })
+      setDeleteDialogOpen(false)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao excluir assistente'
+      toast({ title: message, variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }, [deletingAssistant, queryClient])
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-9 w-36" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Assistentes Virtuais</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure IAs para atendimento, SDR e agendamento automático
+            Configure IAs para atendimento, SDR e agendamento automatico
           </p>
         </div>
-        <Button>
+        <Button onClick={openCreateSheet}>
           <Plus className="h-4 w-4" />
           Novo assistente
         </Button>
       </div>
 
-      {mockAssistants.length === 0 ? (
+      {assistants.length === 0 ? (
         <EmptyState
           icon={Bot}
           title="Nenhum assistente configurado"
           description="Crie um assistente de IA para automatizar o atendimento via WhatsApp"
-          action={{ label: 'Criar assistente', onClick: () => {} }}
+          action={{ label: 'Criar assistente', onClick: openCreateSheet }}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {mockAssistants.map((a) => (
-            <Card key={a.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-500/10">
-                      <Bot className="h-5 w-5 text-primary-500" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-sm">{a.name}</CardTitle>
-                      <CardDescription className="text-xs mt-0.5">{a.model}</CardDescription>
-                    </div>
-                  </div>
-                  <Badge variant={a.status === 'active' ? 'success' : 'secondary'}>
-                    {a.status === 'active' ? 'Ativo' : 'Inativo'}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Conversas hoje</span>
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <Zap className="h-3.5 w-3.5 text-primary-500" />
-                    {a.conversationsToday}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Instância</span>
-                  <span className="font-medium">{a.instanceName}</span>
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <Button variant="outline" size="sm" className="flex-1">Configurar</Button>
-                  <Button variant="ghost" size="sm">
-                    {a.status === 'active' ? 'Pausar' : 'Ativar'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          {assistants.map((a) => (
+            <AssistantCard
+              key={a.id}
+              assistant={a}
+              onEdit={openEditSheet}
+              onDelete={openDeleteDialog}
+            />
           ))}
         </div>
       )}
+
+      <AssistantSheet
+        open={sheetOpen}
+        assistant={editingAssistant}
+        saving={saving}
+        onClose={() => setSheetOpen(false)}
+        onSave={handleSave}
+      />
+
+      <DeleteAssistantDialog
+        open={deleteDialogOpen}
+        name={deletingAssistant?.name ?? ''}
+        loading={saving}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

@@ -117,6 +117,11 @@ export class ConversationImportProcessor {
     })
 
     if (validChats.length === 0) {
+      this.gateway.emitImportStarted(tenantId, {
+        instanceId,
+        totalChats: 0,
+        jobId: job.id as string,
+      })
       this.gateway.emitImportCompleted(tenantId, {
         instanceId,
         totalImported: 0,

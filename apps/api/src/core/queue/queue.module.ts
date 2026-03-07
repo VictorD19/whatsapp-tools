@@ -10,6 +10,7 @@ export const QUEUES = {
   NOTIFICATION: 'notification',
   CONVERSATION_IMPORT: 'conversation-import',
   GROUP_CONTACT_EXTRACT: 'group-contact-extract',
+  KB_INGESTION: 'kb-ingestion',
 } as const
 
 function parseRedisConfig() {

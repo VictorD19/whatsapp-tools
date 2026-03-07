@@ -78,8 +78,8 @@ test.describe('Contacts CRUD', () => {
     await expect(page.getByRole('heading', { name: 'Remover contato' })).toBeVisible()
     await page.getByRole('button', { name: 'Remover' }).click()
 
-    // Contact should disappear
-    await expect(page.getByText(name)).not.toBeVisible({ timeout: 5_000 })
+    // Contact should disappear from the list
+    await expect(page.locator('[data-testid^="contact-row-"]', { hasText: name })).not.toBeVisible({ timeout: 5_000 })
   })
 
   test('searches contacts by name', async ({ page }) => {
@@ -94,7 +94,7 @@ test.describe('Contacts CRUD', () => {
     await expect(page.getByText(name)).toBeVisible({ timeout: 5_000 })
 
     // Search by name
-    const searchInput = page.getByPlaceholder(/Buscar/i)
+    const searchInput = page.getByPlaceholder('Buscar por nome ou telefone...')
     await fillInput(searchInput, name)
 
     // Wait for debounce

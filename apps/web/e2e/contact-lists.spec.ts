@@ -45,7 +45,7 @@ test.describe('Contact Lists', () => {
   })
 
   test('searches by name', async ({ page }) => {
-    const searchInput = page.getByPlaceholder(/Buscar/i)
+    const searchInput = page.getByPlaceholder('Buscar por nome...')
     await expect(searchInput).toBeVisible()
 
     // Type a search term

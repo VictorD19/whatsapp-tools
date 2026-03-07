@@ -41,8 +41,8 @@ test.describe('Tags CRUD', () => {
     await expect(page.getByText(tagName)).toBeVisible({ timeout: 5_000 })
 
     // Find the tag row and click edit
-    const tagRow = page.getByText(tagName).locator('..')
-    await tagRow.locator('..').getByRole('button').first().click()
+    const tagRow = page.locator('[data-testid^="tag-item-"]', { hasText: tagName })
+    await tagRow.getByRole('button').first().click()
 
     // Dialog should open with "Editar tag"
     await expect(page.getByRole('heading', { name: 'Editar tag' })).toBeVisible()
@@ -51,9 +51,12 @@ test.describe('Tags CRUD', () => {
     await fillByLabel(page, 'Nome', updatedName)
     await page.getByRole('button', { name: 'Salvar' }).click()
 
-    // Updated name should appear
-    await expect(page.getByText(updatedName)).toBeVisible({ timeout: 5_000 })
-    await expect(page.getByText(tagName)).not.toBeVisible()
+    // Wait for dialog to close (ensures the list has been refetched)
+    await expect(page.getByRole('heading', { name: 'Editar tag' })).not.toBeVisible({ timeout: 5_000 })
+
+    // Updated name should appear in the list and old name should be gone
+    await expect(page.getByText(updatedName, { exact: true })).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('[data-testid^="tag-item-"]', { hasText: tagName })).not.toBeVisible({ timeout: 5_000 })
   })
 
   test('deletes a tag via dialog', async ({ page }) => {
@@ -73,7 +76,7 @@ test.describe('Tags CRUD', () => {
     await expect(page.getByRole('heading', { name: 'Excluir tag' })).toBeVisible()
     await page.getByRole('button', { name: 'Excluir' }).click()
 
-    // Tag should disappear
-    await expect(page.getByText(tagName)).not.toBeVisible({ timeout: 5_000 })
+    // Tag should disappear from the list
+    await expect(page.locator('[data-testid^="tag-item-"]', { hasText: tagName })).not.toBeVisible({ timeout: 5_000 })
   })
 })

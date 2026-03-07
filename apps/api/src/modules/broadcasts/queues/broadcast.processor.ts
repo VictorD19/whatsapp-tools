@@ -135,7 +135,7 @@ export class BroadcastProcessor implements OnModuleInit {
           const instance = connectedInstances[instanceIndex % connectedInstances.length]
           instanceIndex++
 
-          // Pick random variation
+          // Pick random variation — one per contact
           const variation = this.pickRandom(variations)
           const text = this.interpolateVariables(
             variation.text,

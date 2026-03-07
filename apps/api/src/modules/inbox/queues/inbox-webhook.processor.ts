@@ -1,5 +1,6 @@
 import { Process, Processor } from '@nestjs/bull'
-import { Job } from 'bull'
+import { InjectQueue } from '@nestjs/bull'
+import { Job, Queue } from 'bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { LoggerService } from '@core/logger/logger.service'
 import { InboxRepository } from '../inbox.repository'
@@ -10,6 +11,9 @@ import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { TenantsService } from '@modules/tenants/tenants.service'
 import { StorageService, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
 import { parseWhatsAppMessage, extractQuotedStanzaId } from '../utils/message-parser'
+
+const DEFAULT_AI_WAIT_MS = 5000
+
 interface InboxWebhookJob {
   instanceName: string
   event: string
@@ -28,6 +32,8 @@ export class InboxWebhookProcessor {
     private readonly storage: StorageService,
     private readonly gateway: InboxGateway,
     private readonly logger: LoggerService,
+    @InjectQueue(QUEUES.AI_RESPONSE)
+    private readonly aiResponseQueue: Queue,
   ) {}
 
   @Process('inbox-webhook')
@@ -255,6 +261,41 @@ export class InboxWebhookProcessor {
         `New message in conversation ${conversation.id} from ${phone}`,
         'InboxWebhookProcessor',
       )
+
+      // Enfileira resposta da IA se conversa tem assistente ativo e mensagem é inbound
+      if (!fromMe && conversation!.assistantId && !conversation!.assistantPausedAt) {
+        const convId = conversation!.id
+        const jobId = `ai-response:${convId}`
+        const existingJob = await this.aiResponseQueue.getJob(jobId)
+        if (existingJob) {
+          const state = await existingJob.getState()
+          if (state === 'delayed' || state === 'waiting') {
+            await existingJob.remove()
+          }
+        }
+
+        await this.aiResponseQueue.add(
+          'process-ai-response',
+          {
+            conversationId: convId,
+            tenantId: instance.tenantId,
+            instanceEvolutionId: instance.evolutionId,
+          },
+          {
+            jobId,
+            delay: DEFAULT_AI_WAIT_MS,
+            attempts: 2,
+            backoff: { type: 'fixed', delay: 5000 },
+            removeOnComplete: true,
+            removeOnFail: false,
+          },
+        )
+
+        this.logger.debug(
+          `AI response enqueued for conversation ${convId} (delay: ${DEFAULT_AI_WAIT_MS}ms)`,
+          'InboxWebhookProcessor',
+        )
+      }
     }
   }
 

@@ -410,10 +410,12 @@ export class BroadcastsService {
     if (!broadcast) {
       throw AppException.notFound('BROADCAST_NOT_FOUND', 'Campanha não encontrada')
     }
-    if (broadcast.status === 'RUNNING') {
+    if (broadcast.status === 'RUNNING' || broadcast.status === 'COMPLETED') {
       throw new AppException(
         'BROADCAST_CANNOT_DELETE',
-        'Não é possível excluir uma campanha em andamento. Pause ou cancele primeiro.',
+        broadcast.status === 'COMPLETED'
+          ? 'Não é possível excluir uma campanha já concluída.'
+          : 'Não é possível excluir uma campanha em andamento. Pause ou cancele primeiro.',
       )
     }
 

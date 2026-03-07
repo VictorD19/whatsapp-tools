@@ -6,7 +6,19 @@ interface ImportProgressBarProps {
 }
 
 export function ImportProgressBar({ progress }: ImportProgressBarProps) {
-  if (!progress.importing || progress.total === 0) return null
+  if (!progress.importing) return null
+
+  // Ainda aguardando import:started — mostra estado de busca
+  if (progress.total === 0) {
+    return (
+      <div className="mt-3 space-y-1.5">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="h-3 w-3 rounded-full border-2 border-primary-500 border-t-transparent animate-spin" />
+          <span>Buscando conversas...</span>
+        </div>
+      </div>
+    )
+  }
 
   const processed = progress.imported + progress.skipped
   const percent = Math.round((processed / progress.total) * 100)

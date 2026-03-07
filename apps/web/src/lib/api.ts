@@ -39,7 +39,10 @@ export const api: KyInstance = ky.create({
     afterResponse: [
       async (_request, _options, response) => {
         if (response.status === 401) {
-          if (typeof window !== 'undefined') {
+          // Skip the redirect for the login endpoint itself — a 401 there means
+          // "invalid credentials" (expected), not "session expired".
+          const isAuthLogin = _request.url.includes('auth/login')
+          if (!isAuthLogin && typeof window !== 'undefined') {
             localStorage.removeItem('auth_token')
             window.location.href = '/login'
           }

@@ -36,6 +36,8 @@ describe('InboxService', () => {
     unreadCount: 1,
     lastMessageAt: new Date(),
     closedAt: null,
+    assistantId: null,
+    assistantPausedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,

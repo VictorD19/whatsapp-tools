@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { MessageBubble } from './message-bubble'
 import { MessageInput } from './message-input'
+import { ConversationAiControl } from './conversation-ai-control'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInboxStore, type Conversation, type Message } from '@/stores/inbox.store'
 import { useConversation } from '@/hooks/use-conversation'
@@ -178,7 +179,9 @@ export function MessageThread({ conversation }: MessageThreadProps) {
           </h3>
           <p className="text-xs text-muted-foreground">{conversation.instance.name}</p>
         </div>
-        <div className="flex items-center gap-2" />
+        <div className="flex items-center gap-2">
+          <ConversationAiControl conversation={conversation} />
+        </div>
       </div>
 
       {/* Summary banner for escalated conversations */}

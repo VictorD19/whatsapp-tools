@@ -746,17 +746,6 @@ export class InboxService {
       throw error
     }
 
-    if (userId) {
-      void this.notifications.dispatch({
-        tenantId,
-        userId,
-        type: 'CONVERSATIONS_IMPORTED',
-        title: 'Importação concluída',
-        body: 'As conversas foram importadas com sucesso',
-        data: { instanceId },
-      })
-    }
-
     this.logger.log(
       `Conversation import started for instance ${instanceId}`,
       'InboxService',

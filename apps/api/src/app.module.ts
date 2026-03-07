@@ -16,7 +16,9 @@ import { GroupsModule } from './modules/groups/groups.module'
 import { ContactListsModule } from './modules/contact-lists/contact-lists.module'
 import { NotificationsModule } from './modules/notifications/notifications.module'
 import { BroadcastsModule } from './modules/broadcasts/broadcasts.module'
-// import { AssistantsModule } from './modules/assistants/assistants.module'
+import { AiToolsModule } from './modules/ai-tools/ai-tools.module'
+import { AssistantsModule } from './modules/assistants/assistants.module'
+import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.module'
 // import { CrmModule } from './modules/crm/crm.module'
 
 @Module({
@@ -36,7 +38,9 @@ import { BroadcastsModule } from './modules/broadcasts/broadcasts.module'
     ContactListsModule,
     NotificationsModule,
     BroadcastsModule,
-    // AssistantsModule,
+    AiToolsModule,
+    AssistantsModule,
+    KnowledgeBaseModule,
     // CrmModule,
   ],
 })

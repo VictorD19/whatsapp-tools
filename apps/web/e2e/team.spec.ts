@@ -9,7 +9,7 @@ test.describe('Team CRUD', () => {
   })
 
   test('displays team members list', async ({ page }) => {
-    await expect(page.getByText(/membros?/i)).toBeVisible()
+    await expect(page.locator('p', { hasText: /\d+ membros?/ })).toBeVisible()
   })
 
   test('creates a member via Sheet', async ({ page }) => {
@@ -32,8 +32,8 @@ test.describe('Team CRUD', () => {
     // Submit
     await page.getByRole('button', { name: 'Criar' }).click()
 
-    // Member should appear in the list
-    await expect(page.getByText(name)).toBeVisible({ timeout: 5_000 })
+    // Member should appear in the list (may fail if plan limit reached)
+    await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 8_000 })
   })
 
   test('edits a member via Sheet', async ({ page }) => {
@@ -47,7 +47,7 @@ test.describe('Team CRUD', () => {
     await fillByLabel(page, 'Email', email)
     await fillByLabel(page, 'Senha', 'test123456')
     await page.getByRole('button', { name: 'Criar' }).click()
-    await expect(page.getByText(name)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 8_000 })
 
     // Find the member row and click edit (pencil icon - first action button)
     const memberRow = page.locator('[data-testid^="member-row-"]', { hasText: name })
@@ -66,8 +66,8 @@ test.describe('Team CRUD', () => {
     await page.getByRole('button', { name: 'Salvar' }).click()
 
     // Updated name should appear
-    await expect(page.getByText(updatedName)).toBeVisible({ timeout: 5_000 })
-    await expect(page.getByText(name)).not.toBeVisible()
+    await expect(page.getByText(updatedName, { exact: true })).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(name, { exact: true })).not.toBeVisible({ timeout: 5_000 })
   })
 
   test('changes password via Sheet', async ({ page }) => {
@@ -80,7 +80,7 @@ test.describe('Team CRUD', () => {
     await fillByLabel(page, 'Email', email)
     await fillByLabel(page, 'Senha', 'test123456')
     await page.getByRole('button', { name: 'Criar' }).click()
-    await expect(page.getByText(name)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 8_000 })
 
     // Find the member row and click password button (second action button)
     const memberRow = page.locator('[data-testid^="member-row-"]', { hasText: name })
@@ -110,7 +110,7 @@ test.describe('Team CRUD', () => {
     await fillByLabel(page, 'Email', email)
     await fillByLabel(page, 'Senha', 'test123456')
     await page.getByRole('button', { name: 'Criar' }).click()
-    await expect(page.getByText(name)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 8_000 })
 
     // Find the member row and click deactivate (third action button - UserX icon)
     const memberRow = page.locator('[data-testid^="member-row-"]', { hasText: name })

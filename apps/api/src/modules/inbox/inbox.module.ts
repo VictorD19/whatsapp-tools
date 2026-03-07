@@ -29,6 +29,7 @@ import { ConversationImportProcessor } from './queues/import.processor'
     BullModule.registerQueue(
       { name: QUEUES.WEBHOOK_INBOUND },
       { name: QUEUES.CONVERSATION_IMPORT },
+      { name: QUEUES.AI_RESPONSE },
     ),
   ],
   controllers: [InboxController],
@@ -41,6 +42,6 @@ import { ConversationImportProcessor } from './queues/import.processor'
     ConversationImportProducer,
     ConversationImportProcessor,
   ],
-  exports: [InboxService, WebhookInboundProducer, InboxGateway],
+  exports: [InboxService, WebhookInboundProducer, InboxGateway, InboxRepository],
 })
 export class InboxModule {}

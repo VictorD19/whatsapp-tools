@@ -69,6 +69,9 @@ model Tenant {
   contactLists  ContactList[]
   notifications Notification[]
   broadcasts    Broadcast[]
+  assistants    Assistant[]
+  knowledgeBases KnowledgeBase[]
+  aiTools       AiTool[]
 
   @@index([planId])
 }
@@ -171,15 +174,18 @@ model Conversation {
   summary       String?
   unreadCount   Int                @default(0)
   lastMessageAt DateTime?
-  closedAt      DateTime?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  deletedAt     DateTime?
+  closedAt          DateTime?
+  assistantId       String?
+  assistantPausedAt DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
 
-  tenant     Tenant    @relation(fields: [tenantId], references: [id])
-  instance   Instance  @relation(fields: [instanceId], references: [id])
-  contact    Contact   @relation(fields: [contactId], references: [id])
-  assignedTo User?     @relation("AssignedConversations", fields: [assignedToId], references: [id])
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  instance   Instance   @relation(fields: [instanceId], references: [id])
+  contact    Contact    @relation(fields: [contactId], references: [id])
+  assignedTo User?      @relation("AssignedConversations", fields: [assignedToId], references: [id])
+  assistant  Assistant? @relation(fields: [assistantId], references: [id])
   messages   Message[]
   deals      Deal[]
 
@@ -568,4 +574,156 @@ model NotificationPreference {
 
   @@unique([userId, type])
   @@index([userId])
+}
+
+// ── AI: Assistants ──────────────────────────────
+
+model Assistant {
+  id                 String    @id @default(cuid())
+  tenantId           String
+  name               String
+  description        String?
+  avatarUrl          String?
+  avatarEmoji        String?
+  model              String    @default("gpt-4o-mini")
+  systemPrompt       String    @db.Text
+  waitTimeSeconds    Int       @default(5)
+  isActive           Boolean   @default(true)
+  handoffKeywords    String[]
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  tenant             Tenant              @relation(fields: [tenantId], references: [id])
+  knowledgeBases     AssistantKnowledgeBase[]
+  tools              AssistantTool[]
+  conversations      Conversation[]
+
+  @@index([tenantId])
+}
+
+// ── AI: Knowledge Base ──────────────────────────
+
+model KnowledgeBase {
+  id          String    @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  isActive    Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  sources     KnowledgeSource[]
+  assistants  AssistantKnowledgeBase[]
+
+  @@index([tenantId])
+}
+
+model KnowledgeSource {
+  id              String              @id @default(cuid())
+  knowledgeBaseId String
+  tenantId        String
+  type            KnowledgeSourceType
+  name            String
+  originalUrl     String?
+  fileKey         String?
+  fileMimeType    String?
+  status          IngestionStatus     @default(PENDING)
+  errorMessage    String?
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  knowledgeBase   KnowledgeBase       @relation(fields: [knowledgeBaseId], references: [id])
+  chunks          KnowledgeChunk[]
+
+  @@index([knowledgeBaseId])
+  @@index([tenantId])
+}
+
+model KnowledgeChunk {
+  id         String   @id @default(cuid())
+  sourceId   String
+  tenantId   String
+  content    String   @db.Text
+  embedding  Unsupported("vector(1536)")
+  chunkIndex Int
+
+  source     KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId])
+  @@index([tenantId])
+}
+
+// ── AI: Tools ───────────────────────────────────
+
+model AiTool {
+  id          String      @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  type        AiToolType
+  config      Json        @default("{}")
+  isActive    Boolean     @default(true)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  assistants  AssistantTool[]
+
+  @@index([tenantId])
+}
+
+// ── AI: Junction Tables ─────────────────────────
+
+model AssistantKnowledgeBase {
+  assistantId     String
+  knowledgeBaseId String
+  createdAt       DateTime @default(now())
+
+  assistant       Assistant     @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  @@id([assistantId, knowledgeBaseId])
+}
+
+model AssistantTool {
+  assistantId String
+  aiToolId    String
+  createdAt   DateTime @default(now())
+
+  assistant   Assistant @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  aiTool      AiTool    @relation(fields: [aiToolId], references: [id], onDelete: Cascade)
+
+  @@id([assistantId, aiToolId])
+}
+
+// ── AI Enums ────────────────────────────────────
+
+enum KnowledgeSourceType {
+  FILE
+  URL
+  TEXT
+}
+
+enum IngestionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AiToolType {
+  BUSCAR_CONTATO
+  CRIAR_CONTATO
+  ADICIONAR_TAG
+  CRIAR_DEAL
+  TRANSFERIR_HUMANO
+  WEBHOOK_EXTERNO
 }
