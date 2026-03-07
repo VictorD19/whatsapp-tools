@@ -57,11 +57,6 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
         { icon: Megaphone, label: tNav('items.broadcasts'), href: '/broadcasts' },
         { icon: Users, label: tNav('items.groups'), href: '/groups' },
         { icon: ClipboardList, label: tNav('items.contactLists'), href: '/contact-lists' },
-      ],
-    },
-    {
-      label: tNav('groups.clients'),
-      items: [
         { icon: UserCircle, label: tNav('items.contacts'), href: '/contacts' },
       ],
     },
