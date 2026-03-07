@@ -17,12 +17,23 @@ import { StepConfig } from './step-config'
 import type { ContactList } from '@/hooks/use-contact-lists'
 import type { Instance } from '@/stores/instances.store'
 
+export interface BroadcastEditData {
+  id: string
+  name: string
+  instanceIds: string[]
+  contactListIds: string[]
+  variations: BroadcastVariation[]
+  delay: number
+  scheduledAt?: string
+}
+
 interface BroadcastWizardDialogProps {
   open: boolean
   onClose: () => void
   instances: Instance[]
   contactLists: ContactList[]
   onSubmit: (data: BroadcastWizardData) => Promise<void>
+  editData?: BroadcastEditData | null
 }
 
 export interface BroadcastWizardData {
@@ -47,6 +58,7 @@ export function BroadcastWizardDialog({
   instances,
   contactLists,
   onSubmit,
+  editData,
 }: BroadcastWizardDialogProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -62,6 +74,23 @@ export function BroadcastWizardDialog({
   const [name, setName] = useState('')
   const [delay, setDelay] = useState(5)
   const [scheduledAt, setScheduledAt] = useState('')
+
+  // Pre-populate when editing
+  const editIdRef = React.useRef<string | null>(null)
+  React.useEffect(() => {
+    if (editData && open && editIdRef.current !== editData.id) {
+      editIdRef.current = editData.id
+      setSelectedInstanceIds(editData.instanceIds)
+      setSelectedContactListIds(editData.contactListIds)
+      setVariations(editData.variations)
+      setName(editData.name)
+      setDelay(editData.delay)
+      setScheduledAt(editData.scheduledAt ?? '')
+    }
+    if (!open) {
+      editIdRef.current = null
+    }
+  }, [editData, open])
 
   const totalEstimatedRecipients = contactLists
     .filter((l) => selectedContactListIds.includes(l.id))
@@ -81,7 +110,7 @@ export function BroadcastWizardDialog({
 
   const canProceedStep1 = selectedInstanceIds.length > 0 && selectedContactListIds.length > 0
   const canProceedStep2 = variations.length > 0 && variations.every(
-    (v) => v.messageType === 'TEXT' ? v.text.trim().length > 0 : !!v.file,
+    (v) => v.messageType === 'TEXT' ? v.text.trim().length > 0 : (!!v.file || !!v.existingMediaUrl),
   )
   const canProceedStep3 = name.trim().length > 0
 
@@ -127,8 +156,10 @@ export function BroadcastWizardDialog({
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nova campanha</DialogTitle>
-          <DialogDescription>Configure e inicie um disparo em massa</DialogDescription>
+          <DialogTitle>{editData ? 'Editar campanha' : 'Nova campanha'}</DialogTitle>
+          <DialogDescription>
+            {editData ? 'Edite as configurações da campanha' : 'Configure e inicie um disparo em massa'}
+          </DialogDescription>
         </DialogHeader>
 
         {/* Step indicator */}
@@ -222,10 +253,12 @@ export function BroadcastWizardDialog({
           ) : (
             <Button onClick={handleSubmit} disabled={!canProceedStep3 || submitting}>
               {submitting
-                ? 'Criando...'
-                : scheduledAt
-                  ? 'Agendar campanha'
-                  : 'Iniciar campanha'}
+                ? (editData ? 'Salvando...' : 'Criando...')
+                : editData
+                  ? 'Salvar campanha'
+                  : scheduledAt
+                    ? 'Agendar campanha'
+                    : 'Iniciar campanha'}
             </Button>
           )}
         </DialogFooter>

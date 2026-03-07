@@ -102,6 +102,7 @@ describe('BroadcastsService', () => {
       findScheduledReady: jest.fn(),
       getStatus: jest.fn(),
       softDelete: jest.fn(),
+      update: jest.fn(),
     }
 
     const mockProducer = {
@@ -403,6 +404,90 @@ describe('BroadcastsService', () => {
       await expect(service.findOne(tenantId, 'invalid')).rejects.toMatchObject({
         code: 'BROADCAST_NOT_FOUND',
       })
+    })
+  })
+
+  describe('update', () => {
+    const scheduledBroadcast = {
+      ...mockBroadcast,
+      status: 'SCHEDULED' as const,
+      scheduledAt: new Date(Date.now() + 3600000),
+    }
+
+    it('should update a SCHEDULED broadcast', async () => {
+      repository.findById.mockResolvedValue(scheduledBroadcast as never)
+      repository.findInstancesByIds.mockResolvedValue([mockInstance])
+      repository.resolveContactListRecipients.mockResolvedValue([
+        { contactId: 'c1', phone: '5511999999999', name: 'John' },
+      ])
+      repository.update.mockResolvedValue({ ...scheduledBroadcast, name: 'Updated' } as never)
+      producer.removeJob.mockResolvedValue(undefined)
+      producer.enqueue.mockResolvedValue({} as never)
+
+      const scheduledAt = new Date(Date.now() + 7200000).toISOString()
+      const result = await service.update(tenantId, 'bc-1', { ...baseDto, scheduledAt }, baseVariations)
+
+      expect(result.data.name).toBe('Updated')
+      expect(producer.removeJob).toHaveBeenCalledWith('bc-1')
+      expect(repository.update).toHaveBeenCalledWith(
+        'bc-1',
+        expect.objectContaining({ name: 'Campanha Teste', status: 'SCHEDULED' }),
+      )
+    })
+
+    it('should throw BROADCAST_NOT_FOUND when broadcast does not exist', async () => {
+      repository.findById.mockResolvedValue(null)
+
+      await expect(
+        service.update(tenantId, 'invalid', baseDto, baseVariations),
+      ).rejects.toMatchObject({ code: 'BROADCAST_NOT_FOUND' })
+    })
+
+    it('should throw BROADCAST_CANNOT_EDIT for RUNNING broadcast', async () => {
+      repository.findById.mockResolvedValue(mockBroadcast as never) // status = RUNNING
+
+      await expect(
+        service.update(tenantId, 'bc-1', baseDto, baseVariations),
+      ).rejects.toMatchObject({ code: 'BROADCAST_CANNOT_EDIT' })
+    })
+
+    it('should throw BROADCAST_NO_VARIATIONS when empty variations', async () => {
+      repository.findById.mockResolvedValue(scheduledBroadcast as never)
+
+      await expect(
+        service.update(tenantId, 'bc-1', baseDto, []),
+      ).rejects.toMatchObject({ code: 'BROADCAST_NO_VARIATIONS' })
+    })
+
+    it('should keep existing media when no new file uploaded', async () => {
+      repository.findById.mockResolvedValue(scheduledBroadcast as never)
+      repository.findInstancesByIds.mockResolvedValue([mockInstance])
+      repository.resolveContactListRecipients.mockResolvedValue([
+        { contactId: 'c1', phone: '5511999999999', name: 'John' },
+      ])
+      repository.update.mockResolvedValue(scheduledBroadcast as never)
+      producer.removeJob.mockResolvedValue(undefined)
+
+      const variations: VariationInput[] = [{
+        messageType: 'IMAGE',
+        text: 'Legenda',
+        existingMediaUrl: 'tenants/t1/media/img.jpg',
+        existingFileName: 'foto.jpg',
+      }]
+
+      await service.update(tenantId, 'bc-1', baseDto, variations)
+
+      expect(repository.update).toHaveBeenCalledWith(
+        'bc-1',
+        expect.objectContaining({
+          variationRecords: expect.arrayContaining([
+            expect.objectContaining({
+              mediaUrl: 'tenants/t1/media/img.jpg',
+              fileName: 'foto.jpg',
+            }),
+          ]),
+        }),
+      )
     })
   })
 

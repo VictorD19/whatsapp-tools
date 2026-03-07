@@ -70,3 +70,7 @@ export async function apiDelete<T>(path: string): Promise<T> {
 export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
   return api.post(path, { body: formData }).json<T>()
 }
+
+export async function apiUploadPut<T>(path: string, formData: FormData): Promise<T> {
+  return api.put(path, { body: formData }).json<T>()
+}

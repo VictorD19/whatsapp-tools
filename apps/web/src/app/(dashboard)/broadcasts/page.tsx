@@ -9,6 +9,7 @@ import {
   XCircle,
   Trash2,
   MoreHorizontal,
+  Pencil,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,13 +30,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { BroadcastWizardDialog } from '@/components/broadcasts/broadcast-wizard-dialog'
-import type { BroadcastWizardData } from '@/components/broadcasts/broadcast-wizard-dialog'
+import type { BroadcastWizardData, BroadcastEditData } from '@/components/broadcasts/broadcast-wizard-dialog'
 import { useBroadcasts, type BroadcastStatus } from '@/hooks/use-broadcasts'
 import { useBroadcastSocket } from '@/hooks/use-broadcast-socket'
 import { useInstances } from '@/hooks/use-instances'
 import { useContactLists } from '@/hooks/use-contact-lists'
 import { useInstancesStore } from '@/stores/instances.store'
-import { formatDate, formatNumber } from '@/lib/formatting'
+import { formatDate, formatDateTime, formatNumber } from '@/lib/formatting'
 
 const statusVariantMap: Record<BroadcastStatus, 'info' | 'success' | 'warning' | 'destructive' | 'secondary'> = {
   DRAFT: 'secondary',
@@ -63,7 +64,9 @@ export default function BroadcastsPage() {
     initialLoading,
     meta,
     fetchBroadcasts,
+    fetchBroadcast,
     createBroadcast,
+    updateBroadcast,
     pauseBroadcast,
     resumeBroadcast,
     cancelBroadcast,
@@ -77,6 +80,7 @@ export default function BroadcastsPage() {
   const { lists: contactLists, fetchLists: fetchContactLists } = useContactLists()
 
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [editData, setEditData] = useState<BroadcastEditData | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -104,8 +108,47 @@ export default function BroadcastsPage() {
   }, [fetchBroadcasts, fetchInstances, fetchContactLists])
 
   const handleCreateBroadcast = async (data: BroadcastWizardData) => {
-    await createBroadcast(data)
+    if (editData) {
+      await updateBroadcast(editData.id, data)
+    } else {
+      await createBroadcast(data)
+    }
     fetchBroadcasts()
+  }
+
+  const handleEdit = async (broadcastId: string) => {
+    try {
+      const full = await fetchBroadcast(broadcastId)
+      // Convert scheduledAt to local datetime-local format
+      let localScheduledAt: string | undefined
+      if (full.scheduledAt) {
+        const d = new Date(full.scheduledAt)
+        const offset = d.getTimezoneOffset()
+        const local = new Date(d.getTime() - offset * 60 * 1000)
+        localScheduledAt = local.toISOString().slice(0, 16)
+      }
+
+      setEditData({
+        id: full.id,
+        name: full.name,
+        instanceIds: full.instances.map((bi: any) => bi.instance.id),
+        contactListIds: (full as any).sources
+          ?.filter((s: any) => s.sourceType === 'CONTACT_LIST' && s.contactListId)
+          .map((s: any) => s.contactListId) ?? [],
+        variations: (full.variations ?? []).map((v: any) => ({
+          messageType: v.messageType,
+          text: v.text ?? '',
+          file: null,
+          existingMediaUrl: v.mediaUrl ?? undefined,
+          existingFileName: v.fileName ?? undefined,
+        })),
+        delay: full.delay,
+        scheduledAt: localScheduledAt,
+      })
+      setWizardOpen(true)
+    } catch {
+      // Error handled by fetchBroadcast
+    }
   }
 
   const handleDelete = async () => {
@@ -212,7 +255,7 @@ export default function BroadcastsPage() {
                         <p className="font-medium">{b.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {b.scheduledAt
-                            ? `Agendada: ${formatDate(b.scheduledAt)}`
+                            ? `Agendada: ${formatDateTime(b.scheduledAt)}`
                             : formatDate(b.createdAt)}
                         </p>
                       </div>
@@ -257,6 +300,12 @@ export default function BroadcastsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {['DRAFT', 'SCHEDULED'].includes(b.status) && (
+                              <DropdownMenuItem onClick={() => handleEdit(b.id)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                            )}
                             {b.status === 'RUNNING' && (
                               <DropdownMenuItem onClick={() => pauseBroadcast(b.id)}>
                                 <Pause className="h-4 w-4 mr-2" />
@@ -315,10 +364,14 @@ export default function BroadcastsPage() {
       {/* Wizard Dialog */}
       <BroadcastWizardDialog
         open={wizardOpen}
-        onClose={() => setWizardOpen(false)}
+        onClose={() => {
+          setWizardOpen(false)
+          setEditData(null)
+        }}
         instances={instances}
         contactLists={contactLists}
         onSubmit={handleCreateBroadcast}
+        editData={editData}
       />
 
       {/* Delete confirmation dialog */}

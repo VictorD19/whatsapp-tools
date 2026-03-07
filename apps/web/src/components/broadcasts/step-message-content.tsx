@@ -20,6 +20,9 @@ export interface BroadcastVariation {
   messageType: VariationMessageType
   text: string
   file?: File | null
+  /** Existing media URL from server (used when editing). */
+  existingMediaUrl?: string
+  existingFileName?: string
 }
 
 interface StepMessageContentProps {
@@ -95,6 +98,9 @@ function VariationModal({
   const [msgType, setMsgType] = useState<VariationMessageType>(initial?.messageType ?? 'TEXT')
   const [text, setText] = useState(initial?.text ?? '')
   const [file, setFile] = useState<File | null>(initial?.file ?? null)
+  const [existingMedia, setExistingMedia] = useState<{ url: string; name: string } | null>(
+    initial?.existingMediaUrl ? { url: initial.existingMediaUrl, name: initial.existingFileName || 'arquivo' } : null,
+  )
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isMediaType = msgType !== 'TEXT'
@@ -131,13 +137,22 @@ function VariationModal({
 
   const handleTypeChange = (type: VariationMessageType) => {
     setMsgType(type)
-    if (type !== msgType) setFile(null)
+    if (type !== msgType) {
+      setFile(null)
+      setExistingMedia(null)
+    }
   }
 
-  const canSave = isMediaType ? !!file : text.trim().length > 0
+  const canSave = isMediaType ? (!!file || !!existingMedia) : text.trim().length > 0
 
   const handleSave = () => {
-    onSave({ messageType: msgType, text, file })
+    onSave({
+      messageType: msgType,
+      text,
+      file,
+      existingMediaUrl: !file && existingMedia ? existingMedia.url : undefined,
+      existingFileName: !file && existingMedia ? existingMedia.name : undefined,
+    })
     onClose()
   }
 
@@ -206,6 +221,25 @@ function VariationModal({
                     size="sm"
                     className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                     onClick={() => setFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : existingMedia ? (
+                <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <File className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{existingMedia.name}</p>
+                    <p className="text-xs text-muted-foreground">Arquivo existente</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => setExistingMedia(null)}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -392,6 +426,10 @@ export function StepMessageContent({
                     {v.file ? (
                       <span className="text-xs text-muted-foreground truncate block max-w-[120px]">
                         {v.file.name}
+                      </span>
+                    ) : v.existingFileName ? (
+                      <span className="text-xs text-muted-foreground truncate block max-w-[120px]">
+                        {v.existingFileName}
                       </span>
                     ) : v.messageType !== 'TEXT' ? (
                       <span className="text-xs text-destructive">Sem arquivo</span>

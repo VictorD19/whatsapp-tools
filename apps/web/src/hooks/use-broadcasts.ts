@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { apiGet, apiDelete, apiUpload } from '@/lib/api'
+import { apiGet, apiDelete, apiUpload, apiUploadPut } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 import type { BroadcastVariation } from '@/components/broadcasts/step-message-content'
 
@@ -54,7 +54,10 @@ interface CreateBroadcastPayload {
   instanceIds: string[]
   contactListIds: string[]
   groups: Array<{ jid: string; name?: string }>
-  variations: BroadcastVariation[]
+  variations: Array<BroadcastVariation & {
+    existingMediaUrl?: string
+    existingFileName?: string
+  }>
   delay: number
   scheduledAt?: string
 }
@@ -97,6 +100,11 @@ export function useBroadcasts() {
     [],
   )
 
+  const fetchBroadcast = useCallback(async (id: string) => {
+    const res = await apiGet<{ data: Broadcast }>(`broadcasts/${id}`)
+    return res.data
+  }, [])
+
   const createBroadcast = useCallback(async (payload: CreateBroadcastPayload) => {
     try {
       const formData = new FormData()
@@ -135,6 +143,50 @@ export function useBroadcasts() {
       return res.data
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao criar campanha'
+      toast({ title: message, variant: 'destructive' })
+      throw err
+    }
+  }, [])
+
+  const updateBroadcast = useCallback(async (id: string, payload: CreateBroadcastPayload) => {
+    try {
+      const formData = new FormData()
+      formData.append('name', payload.name)
+      formData.append('delay', String(payload.delay))
+
+      for (const iid of payload.instanceIds) {
+        formData.append('instanceIds', iid)
+      }
+      for (const cid of payload.contactListIds) {
+        formData.append('contactListIds', cid)
+      }
+      if (payload.groups.length > 0) {
+        formData.append('groups', JSON.stringify(payload.groups))
+      }
+      if (payload.scheduledAt) {
+        formData.append('scheduledAt', payload.scheduledAt)
+      }
+
+      const variationsMeta = payload.variations.map((v) => ({
+        messageType: v.messageType,
+        text: v.text,
+        existingMediaUrl: v.existingMediaUrl,
+        existingFileName: v.existingFileName,
+      }))
+      formData.append('variations', JSON.stringify(variationsMeta))
+
+      for (let i = 0; i < payload.variations.length; i++) {
+        const v = payload.variations[i]
+        if (v.file) {
+          formData.append(`file-${i}`, v.file)
+        }
+      }
+
+      const res = await apiUploadPut<{ data: Broadcast }>(`broadcasts/${id}`, formData)
+      toast({ title: 'Campanha atualizada com sucesso', variant: 'success' })
+      return res.data
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao atualizar campanha'
       toast({ title: message, variant: 'destructive' })
       throw err
     }
@@ -199,7 +251,9 @@ export function useBroadcasts() {
     fetching,
     meta,
     fetchBroadcasts,
+    fetchBroadcast,
     createBroadcast,
+    updateBroadcast,
     pauseBroadcast,
     resumeBroadcast,
     cancelBroadcast,

@@ -222,6 +222,98 @@ export class BroadcastsRepository {
     return b?.status ?? null
   }
 
+  async update(
+    id: string,
+    data: {
+      name: string
+      delay: number
+      scheduledAt?: Date | null
+      status: 'DRAFT' | 'SCHEDULED'
+      messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
+      messageTexts: string[]
+      instanceIds: string[]
+      contactListIds: string[]
+      sources: Array<{
+        sourceType: 'CONTACT_LIST' | 'GROUP'
+        contactListId?: string
+        groupJid?: string
+        groupName?: string
+      }>
+      recipients: Array<{
+        contactId: string
+        phone: string
+        name?: string | null
+      }>
+      variationRecords: Array<{
+        messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
+        text: string
+        mediaUrl?: string
+        fileName?: string
+        sortOrder: number
+      }>
+    },
+  ) {
+    const {
+      instanceIds,
+      contactListIds: _clIds,
+      sources,
+      recipients,
+      variationRecords,
+      ...broadcastData
+    } = data
+
+    return this.prisma.$transaction(async (tx) => {
+      // Delete old relations
+      await tx.broadcastInstance.deleteMany({ where: { broadcastId: id } })
+      await tx.broadcastSource.deleteMany({ where: { broadcastId: id } })
+      await tx.broadcastRecipient.deleteMany({ where: { broadcastId: id } })
+      await tx.broadcastVariation.deleteMany({ where: { broadcastId: id } })
+
+      return tx.broadcast.update({
+        where: { id },
+        data: {
+          ...broadcastData,
+          totalCount: recipients.length,
+          sentCount: 0,
+          failedCount: 0,
+          instances: {
+            createMany: {
+              data: instanceIds.map((instanceId) => ({ instanceId })),
+            },
+          },
+          sources: {
+            createMany: { data: sources },
+          },
+          recipients: {
+            createMany: {
+              data: recipients.map((r) => ({
+                contactId: r.contactId,
+                phone: r.phone,
+                name: r.name,
+              })),
+            },
+          },
+          variations: {
+            createMany: {
+              data: variationRecords.map((v) => ({
+                messageType: v.messageType,
+                text: v.text,
+                mediaUrl: v.mediaUrl,
+                fileName: v.fileName,
+                sortOrder: v.sortOrder,
+              })),
+            },
+          },
+        },
+        include: {
+          instances: { include: { instance: { select: { id: true, name: true, evolutionId: true, status: true } } } },
+          variations: { orderBy: { sortOrder: 'asc' } },
+          _count: { select: { recipients: true } },
+        },
+      })
+    })
+  }
+
   async softDelete(tenantId: string, id: string) {
     return this.prisma.broadcast.updateMany({
       where: { id, tenantId, deletedAt: null },

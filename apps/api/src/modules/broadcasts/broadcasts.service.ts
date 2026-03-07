@@ -202,6 +202,154 @@ export class BroadcastsService {
     return { data: { ...broadcast, recipientStats: stats } }
   }
 
+  async update(
+    tenantId: string,
+    id: string,
+    dto: CreateBroadcastDto,
+    variations: VariationInput[],
+  ) {
+    const broadcast = await this.repository.findById(tenantId, id)
+    if (!broadcast) {
+      throw AppException.notFound('BROADCAST_NOT_FOUND', 'Campanha não encontrada')
+    }
+
+    if (!['DRAFT', 'SCHEDULED'].includes(broadcast.status)) {
+      throw new AppException(
+        'BROADCAST_CANNOT_EDIT',
+        'Apenas campanhas agendadas ou em rascunho podem ser editadas',
+      )
+    }
+
+    if (variations.length === 0) {
+      throw new AppException('BROADCAST_NO_VARIATIONS', 'Adicione pelo menos uma variação de mensagem')
+    }
+
+    // Upload media files
+    const variationRecords: Array<{
+      messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
+      text: string
+      mediaUrl?: string
+      fileName?: string
+      sortOrder: number
+    }> = []
+
+    for (let i = 0; i < variations.length; i++) {
+      const v = variations[i]
+      let mediaUrl: string | undefined
+      let fileName: string | undefined
+
+      if (v.file && v.messageType !== 'TEXT') {
+        const sizeLimit = SIZE_LIMITS[v.messageType] ?? 16 * 1024 * 1024
+        if (v.file.buffer.length > sizeLimit) {
+          throw new AppException(
+            'FILE_TOO_LARGE',
+            `Variação ${i + 1}: arquivo excede o limite de ${sizeLimit / (1024 * 1024)} MB`,
+          )
+        }
+        mediaUrl = await this.storage.uploadMedia(tenantId, v.file.buffer, v.file.mimetype, v.file.filename)
+        fileName = v.file.filename
+      } else if (v.messageType !== 'TEXT' && v.existingMediaUrl) {
+        // Keep existing media from previous version
+        mediaUrl = v.existingMediaUrl
+        fileName = v.existingFileName
+      }
+
+      variationRecords.push({
+        messageType: v.messageType,
+        text: v.text,
+        mediaUrl,
+        fileName,
+        sortOrder: i,
+      })
+    }
+
+    // Validate instances
+    const instances = await this.repository.findInstancesByIds(tenantId, dto.instanceIds)
+    if (instances.length === 0) {
+      throw AppException.notFound('INSTANCE_NOT_FOUND', 'Nenhuma instância encontrada')
+    }
+
+    const connectedInstances = instances.filter((i) => i.status === 'CONNECTED')
+    if (connectedInstances.length === 0) {
+      throw new AppException(
+        'BROADCAST_NO_CONNECTED_INSTANCE',
+        'Nenhuma instância conectada.',
+      )
+    }
+
+    // Resolve recipients
+    const contactListRecipients = await this.repository.resolveContactListRecipients(
+      tenantId,
+      dto.contactListIds,
+    )
+
+    const recipientMap = new Map<string, { contactId: string; phone: string; name?: string | null }>()
+    for (const r of contactListRecipients) {
+      if (!recipientMap.has(r.phone)) {
+        recipientMap.set(r.phone, r)
+      }
+    }
+
+    const recipients = Array.from(recipientMap.values())
+    if (recipients.length === 0 && dto.groups.length === 0) {
+      throw new AppException('BROADCAST_EMPTY_LIST', 'Nenhum destinatário selecionado')
+    }
+
+    // Remove old scheduled job if any
+    if (broadcast.status === 'SCHEDULED') {
+      await this.producer.removeJob(id)
+    }
+
+    // Determine status
+    const isScheduled = !!dto.scheduledAt
+    const status = isScheduled ? ('SCHEDULED' as const) : ('DRAFT' as const)
+
+    // Build sources
+    const sources: Array<{
+      sourceType: 'CONTACT_LIST' | 'GROUP'
+      contactListId?: string
+      groupJid?: string
+      groupName?: string
+    }> = [
+      ...dto.contactListIds.map((cid) => ({
+        sourceType: 'CONTACT_LIST' as const,
+        contactListId: cid,
+      })),
+      ...dto.groups.map((g) => ({
+        sourceType: 'GROUP' as const,
+        groupJid: g.jid,
+        groupName: g.name,
+      })),
+    ]
+
+    const updated = await this.repository.update(id, {
+      name: dto.name,
+      delay: dto.delay,
+      scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+      status,
+      messageType: variationRecords[0].messageType,
+      messageTexts: variationRecords.map((v) => v.text),
+      instanceIds: dto.instanceIds,
+      contactListIds: dto.contactListIds,
+      sources,
+      recipients,
+      variationRecords,
+    })
+
+    // Re-enqueue if scheduled
+    if (isScheduled && dto.scheduledAt) {
+      const delayMs = this.calculateDelayMs(dto.scheduledAt)
+      await this.producer.enqueue(id, tenantId, delayMs)
+    }
+
+    this.logger.log(
+      `Broadcast ${id} updated: ${recipients.length} recipients, ${variationRecords.length} variations, status=${status}`,
+      'BroadcastsService',
+    )
+
+    return { data: updated }
+  }
+
   async pause(tenantId: string, id: string) {
     const broadcast = await this.repository.findById(tenantId, id)
     if (!broadcast) {

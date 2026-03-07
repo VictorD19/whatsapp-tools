@@ -23,4 +23,7 @@ export interface VariationInput {
   messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
   text: string
   file?: { buffer: Buffer; mimetype: string; filename: string }
+  /** Existing media URL (kept when editing without uploading a new file). */
+  existingMediaUrl?: string
+  existingFileName?: string
 }
