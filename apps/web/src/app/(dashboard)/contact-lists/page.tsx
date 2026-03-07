@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Search, ClipboardList, Trash2, ChevronLeft, ChevronRight, Users, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { CreateListSheet } from '@/components/contact-lists/create-list-sheet'
 import { useContactLists, type ContactList } from '@/hooks/use-contact-lists'
+import { useDebounce } from '@/hooks/use-debounce'
 import { cn, formatDate } from '@/lib/utils'
 import { toast } from '@/components/ui/toaster'
 
@@ -28,10 +29,14 @@ const SOURCE_LABELS: Record<ContactList['source'], { label: string; variant: 'de
 }
 
 export default function ContactListsPage() {
-  const { lists, initialLoading, fetching, meta, fetchLists, deleteList } = useContactLists()
-
   const [search, setSearch] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const [page, setPage] = useState(1)
+  const debouncedSearch = useDebounce(search, 300)
+
+  const { lists, initialLoading, fetching, meta, deleteList } = useContactLists({
+    search: debouncedSearch || undefined,
+    page,
+  })
 
   // Create sheet state
   const [createOpen, setCreateOpen] = useState(false)
@@ -41,29 +46,14 @@ export default function ContactListsPage() {
   const [deletingList, setDeletingList] = useState<ContactList | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // Initial fetch
-  useEffect(() => {
-    fetchLists()
-  }, [fetchLists])
+  const handleSearch = useCallback((value: string) => {
+    setSearch(value)
+    setPage(1)
+  }, [])
 
-  // Debounced search
-  const handleSearch = useCallback(
-    (value: string) => {
-      setSearch(value)
-      clearTimeout(debounceRef.current)
-      debounceRef.current = setTimeout(() => {
-        fetchLists(value || undefined, 1)
-      }, 300)
-    },
-    [fetchLists],
-  )
-
-  const handlePageChange = useCallback(
-    (page: number) => {
-      fetchLists(search || undefined, page)
-    },
-    [fetchLists, search],
-  )
+  const handlePageChange = useCallback((p: number) => {
+    setPage(p)
+  }, [])
 
   // Open delete dialog
   const openDelete = useCallback((list: ContactList) => {
@@ -79,14 +69,13 @@ export default function ContactListsPage() {
       await deleteList(deletingList.id)
       setDeleteOpen(false)
       setDeletingList(null)
-      fetchLists(search || undefined, meta.page)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao remover lista'
       toast({ title: message, variant: 'destructive' })
     } finally {
       setDeleting(false)
     }
-  }, [deletingList, deleteList, fetchLists, search, meta.page])
+  }, [deletingList, deleteList])
 
   return (
     <div className="p-6 space-y-6">
@@ -243,7 +232,6 @@ export default function ContactListsPage() {
         onClose={() => setCreateOpen(false)}
         onCreated={() => {
           setCreateOpen(false)
-          fetchLists(search || undefined, 1)
         }}
       />
 

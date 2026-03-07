@@ -4,6 +4,7 @@ import { ThemeProvider } from 'next-themes'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/toaster'
 import { IntlProvider } from '@/components/providers/intl-provider'
+import { QueryProvider } from '@/components/providers/query-provider'
 import './globals.css'
 
 const inter = Inter({
@@ -24,14 +25,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`}>
-        <IntlProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <TooltipProvider delayDuration={300}>
-              {children}
-              <Toaster />
-            </TooltipProvider>
-          </ThemeProvider>
-        </IntlProvider>
+        <QueryProvider>
+          <IntlProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              <TooltipProvider delayDuration={300}>
+                {children}
+                <Toaster />
+              </TooltipProvider>
+            </ThemeProvider>
+          </IntlProvider>
+        </QueryProvider>
       </body>
     </html>
   )

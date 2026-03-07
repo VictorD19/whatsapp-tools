@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 
@@ -13,70 +14,64 @@ interface ApiResponse<T> {
   data: T
 }
 
+export const TAGS_QUERY_KEY = ['tags']
+export const contactTagsKey = (contactId: string) => ['contact-tags', contactId]
+
 export function useTags() {
-  const [tags, setTags] = useState<Tag[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const queryClient = useQueryClient()
 
-  const fetchTags = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const res = await apiGet<ApiResponse<Tag[]>>('tags')
-      setTags(res.data)
-    } catch {
-      toast({ title: 'Erro ao carregar tags', variant: 'destructive' })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+  const { data, isLoading } = useQuery({
+    queryKey: TAGS_QUERY_KEY,
+    queryFn: () => apiGet<ApiResponse<Tag[]>>('tags').then((r) => r.data),
+  })
 
-  useEffect(() => {
-    fetchTags()
-  }, [fetchTags])
+  const addTagToContact = useCallback(
+    async (contactId: string, tagId: string) => {
+      try {
+        await apiPost<ApiResponse<unknown>>(`contacts/${contactId}/tags`, { tagId })
+        queryClient.invalidateQueries({ queryKey: contactTagsKey(contactId) })
+        return true
+      } catch {
+        toast({ title: 'Erro ao adicionar tag', variant: 'destructive' })
+        return false
+      }
+    },
+    [queryClient],
+  )
 
-  const addTagToContact = useCallback(async (contactId: string, tagId: string) => {
-    try {
-      await apiPost<ApiResponse<unknown>>(`contacts/${contactId}/tags`, { tagId })
-      return true
-    } catch {
-      toast({ title: 'Erro ao adicionar tag', variant: 'destructive' })
-      return false
-    }
-  }, [])
+  const removeTagFromContact = useCallback(
+    async (contactId: string, tagId: string) => {
+      try {
+        await apiDelete<ApiResponse<unknown>>(`contacts/${contactId}/tags/${tagId}`)
+        queryClient.invalidateQueries({ queryKey: contactTagsKey(contactId) })
+        return true
+      } catch {
+        toast({ title: 'Erro ao remover tag', variant: 'destructive' })
+        return false
+      }
+    },
+    [queryClient],
+  )
 
-  const removeTagFromContact = useCallback(async (contactId: string, tagId: string) => {
-    try {
-      await apiDelete<ApiResponse<unknown>>(`contacts/${contactId}/tags/${tagId}`)
-      return true
-    } catch {
-      toast({ title: 'Erro ao remover tag', variant: 'destructive' })
-      return false
-    }
-  }, [])
-
-  return { tags, isLoading, fetchTags, addTagToContact, removeTagFromContact }
+  return {
+    tags: data ?? [],
+    isLoading,
+    addTagToContact,
+    removeTagFromContact,
+  }
 }
 
-/** Fetch tags assigned to a specific contact */
 export function useContactTags(contactId: string | undefined) {
-  const [contactTags, setContactTags] = useState<Tag[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: contactId ? contactTagsKey(contactId) : [],
+    queryFn: () =>
+      apiGet<ApiResponse<Tag[]>>(`contacts/${contactId}/tags`).then((r) => r.data),
+    enabled: !!contactId,
+  })
 
-  const fetchContactTags = useCallback(async () => {
-    if (!contactId) return
-    setIsLoading(true)
-    try {
-      const res = await apiGet<ApiResponse<Tag[]>>(`contacts/${contactId}/tags`)
-      setContactTags(res.data)
-    } catch {
-      // silent — contact may not have tags yet
-    } finally {
-      setIsLoading(false)
-    }
-  }, [contactId])
-
-  useEffect(() => {
-    fetchContactTags()
-  }, [fetchContactTags])
-
-  return { contactTags, isLoadingContactTags: isLoading, refetchContactTags: fetchContactTags }
+  return {
+    contactTags: data ?? [],
+    isLoadingContactTags: isLoading,
+    refetchContactTags: refetch,
+  }
 }

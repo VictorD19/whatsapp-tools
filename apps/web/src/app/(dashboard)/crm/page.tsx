@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { KanbanBoard } from '@/components/crm/kanban-board'
@@ -12,18 +12,14 @@ import { useDeal, type Deal } from '@/hooks/use-deal'
 
 export default function CRMPage() {
   const { pipelines, selectedPipelineId, selectPipeline, stages, isLoading: isLoadingStages } = usePipelineStages()
-  const { deals, setDeals, isLoadingDeals, fetchDeals, moveDeal } = useDeal()
+  const { deals, isLoadingDeals, setCachedDeals, moveDeal } = useDeal(
+    selectedPipelineId ? { pipelineId: selectedPipelineId } : undefined,
+  )
 
   const [filterAssignee, setFilterAssignee] = useState('')
   const [filterSearch, setFilterSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [detailDeal, setDetailDeal] = useState<Deal | null>(null)
-
-  useEffect(() => {
-    if (selectedPipelineId) {
-      fetchDeals({ pipelineId: selectedPipelineId })
-    }
-  }, [selectedPipelineId, fetchDeals])
 
   const filteredDeals = useMemo(() => {
     let result = deals
@@ -57,28 +53,26 @@ export default function CRMPage() {
       lostAt: newStage.type === 'LOST' ? new Date().toISOString() : deal.lostAt,
       lostReason: newStage.type === 'LOST' ? (lostReason ?? null) : deal.lostReason,
     }
-    setDeals((prev) => prev.map((d) => (d.id === dealId ? optimistic : d)))
+    setCachedDeals((prev) => prev.map((d) => (d.id === dealId ? optimistic : d)))
 
     const result = await moveDeal(dealId, stageId, lostReason)
     if (!result) {
       // Revert on failure
-      setDeals((prev) => prev.map((d) => (d.id === dealId ? deal : d)))
+      setCachedDeals((prev) => prev.map((d) => (d.id === dealId ? deal : d)))
     }
     return result
   }
 
   function handleDealCreated() {
     setCreateOpen(false)
-    if (selectedPipelineId) fetchDeals({ pipelineId: selectedPipelineId })
   }
 
   function handleDealUpdated() {
-    if (selectedPipelineId) fetchDeals({ pipelineId: selectedPipelineId })
+    // invalidateQueries inside useDeal mutations handles refetch
   }
 
   function handleDealDeleted() {
     setDetailDeal(null)
-    if (selectedPipelineId) fetchDeals({ pipelineId: selectedPipelineId })
   }
 
   function handlePipelineChange(id: string) {

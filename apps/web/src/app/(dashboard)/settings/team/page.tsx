@@ -31,8 +31,10 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { EmptyState } from '@/components/shared/empty-state'
 import { toast } from '@/components/ui/toaster'
+import { useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
+import { USAGE_QUERY_KEY } from '@/components/layout/plan-usage'
 import { getInitials } from '@/lib/utils'
 
 // ── Types ──
@@ -94,6 +96,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
+  const queryClient = useQueryClient()
 
   // Dialog state
   const [dialogMode, setDialogMode] = useState<DialogMode>(null)
@@ -189,6 +192,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
         role: formRole,
       })
       setUsers((prev) => [...prev, res.data])
+      queryClient.invalidateQueries({ queryKey: USAGE_QUERY_KEY })
       toast({ title: 'Membro criado com sucesso', variant: 'success' })
       closeDialog()
     } catch (err) {

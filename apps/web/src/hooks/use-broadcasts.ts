@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiDelete, apiUpload, apiUploadPut } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
+import { USAGE_QUERY_KEY } from '@/components/layout/plan-usage'
 import type { BroadcastVariation } from '@/components/broadcasts/step-message-content'
 
 export type BroadcastStatus = 'DRAFT' | 'SCHEDULED' | 'RUNNING' | 'PAUSED' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
@@ -67,6 +69,7 @@ export function useBroadcasts() {
   const [initialLoading, setInitialLoading] = useState(true)
   const [fetching, setFetching] = useState(false)
   const hasFetched = useRef(false)
+  const queryClient = useQueryClient()
   const [meta, setMeta] = useState<PaginationMeta>({
     page: 1,
     limit: 20,
@@ -139,6 +142,7 @@ export function useBroadcasts() {
       }
 
       const res = await apiUpload<{ data: Broadcast }>('broadcasts', formData)
+      queryClient.invalidateQueries({ queryKey: USAGE_QUERY_KEY })
       toast({ title: 'Campanha criada com sucesso', variant: 'success' })
       return res.data
     } catch (err) {
@@ -146,7 +150,7 @@ export function useBroadcasts() {
       toast({ title: message, variant: 'destructive' })
       throw err
     }
-  }, [])
+  }, [queryClient])
 
   const updateBroadcast = useCallback(async (id: string, payload: CreateBroadcastPayload) => {
     try {

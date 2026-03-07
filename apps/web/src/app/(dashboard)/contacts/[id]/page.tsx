@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   Phone, ArrowLeft, Pencil, Check, X, Loader2, Calendar,
@@ -24,20 +24,13 @@ export default function ContactDetailPage() {
   const router = useRouter()
   const contactId = params.id as string
 
-  const {
-    contact, deals, isLoadingContact, isLoadingDeals,
-    fetchContact, fetchContactDeals, updateContact,
-  } = useContactDetail(contactId)
+  const { contact, deals, isLoadingContact, isLoadingDeals, updateContact } =
+    useContactDetail(contactId)
   const { stages } = usePipelineStages()
 
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [detailDeal, setDetailDeal] = useState<Deal | null>(null)
-
-  useEffect(() => {
-    fetchContact()
-    fetchContactDeals()
-  }, [fetchContact, fetchContactDeals])
 
   if (isLoadingContact && !contact) {
     return (
@@ -65,7 +58,7 @@ export default function ContactDetailPage() {
   }
 
   function handleDealUpdated() {
-    fetchContactDeals()
+    // invalidateQueries inside useDeal mutations handles refetch
   }
 
   const activeDeals = deals.filter((d) => d.stage.type === 'ACTIVE')
@@ -223,7 +216,7 @@ export default function ContactDetailPage() {
           deal={detailDeal}
           stages={stages}
           onUpdated={handleDealUpdated}
-          onDeleted={() => { setDetailDeal(null); fetchContactDeals() }}
+          onDeleted={() => { setDetailDeal(null) }}
         />
       )}
     </div>

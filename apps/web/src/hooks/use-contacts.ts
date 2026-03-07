@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 
@@ -29,63 +30,59 @@ interface ContactPayload {
   name?: string
 }
 
-export function useContacts() {
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [initialLoading, setInitialLoading] = useState(true)
-  const [fetching, setFetching] = useState(false)
-  const hasFetched = useRef(false)
-  const [meta, setMeta] = useState<PaginationMeta>({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  })
+const defaultMeta: PaginationMeta = { page: 1, limit: 10, total: 0, totalPages: 0 }
 
-  const fetchContacts = useCallback(async (search?: string, page = 1) => {
-    setFetching(true)
-    try {
+export const CONTACTS_QUERY_KEY = ['contacts']
+
+export function useContacts({ search, page = 1 }: { search?: string; page?: number } = {}) {
+  const queryClient = useQueryClient()
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: [...CONTACTS_QUERY_KEY, { search, page }],
+    queryFn: () => {
       const params = new URLSearchParams()
       if (search) params.set('search', search)
       params.set('page', String(page))
       params.set('limit', '10')
+      return apiGet<PaginatedResponse>(`contacts?${params}`)
+    },
+    placeholderData: keepPreviousData,
+  })
 
-      const res = await apiGet<PaginatedResponse>(`contacts?${params}`)
-      setContacts(res.data)
-      setMeta(res.meta)
-    } catch {
-      toast({ title: 'Erro ao carregar contatos', variant: 'destructive' })
-    } finally {
-      setFetching(false)
-      if (!hasFetched.current) {
-        hasFetched.current = true
-        setInitialLoading(false)
-      }
-    }
-  }, [])
+  const createContact = useCallback(
+    async (dto: ContactPayload) => {
+      const res = await apiPost<{ data: Contact }>('contacts', dto)
+      queryClient.invalidateQueries({ queryKey: CONTACTS_QUERY_KEY })
+      toast({ title: 'Contato criado com sucesso', variant: 'success' })
+      return res.data
+    },
+    [queryClient],
+  )
 
-  const createContact = useCallback(async (dto: ContactPayload) => {
-    const res = await apiPost<{ data: Contact }>('contacts', dto)
-    toast({ title: 'Contato criado com sucesso', variant: 'success' })
-    return res.data
-  }, [])
+  const updateContact = useCallback(
+    async (id: string, dto: Partial<ContactPayload>) => {
+      const res = await apiPatch<{ data: Contact }>(`contacts/${id}`, dto)
+      queryClient.invalidateQueries({ queryKey: CONTACTS_QUERY_KEY })
+      toast({ title: 'Contato atualizado com sucesso', variant: 'success' })
+      return res.data
+    },
+    [queryClient],
+  )
 
-  const updateContact = useCallback(async (id: string, dto: Partial<ContactPayload>) => {
-    const res = await apiPatch<{ data: Contact }>(`contacts/${id}`, dto)
-    toast({ title: 'Contato atualizado com sucesso', variant: 'success' })
-    return res.data
-  }, [])
-
-  const deleteContact = useCallback(async (id: string) => {
-    await apiDelete<{ data: { deleted: boolean } }>(`contacts/${id}`)
-    toast({ title: 'Contato removido com sucesso', variant: 'success' })
-  }, [])
+  const deleteContact = useCallback(
+    async (id: string) => {
+      await apiDelete<{ data: { deleted: boolean } }>(`contacts/${id}`)
+      queryClient.invalidateQueries({ queryKey: CONTACTS_QUERY_KEY })
+      toast({ title: 'Contato removido com sucesso', variant: 'success' })
+    },
+    [queryClient],
+  )
 
   return {
-    contacts,
-    initialLoading,
-    fetching,
-    meta,
-    fetchContacts,
+    contacts: data?.data ?? [],
+    initialLoading: isLoading,
+    fetching: isFetching,
+    meta: data?.meta ?? defaultMeta,
     createContact,
     updateContact,
     deleteContact,

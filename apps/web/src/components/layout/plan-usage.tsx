@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Radio, Users, Bot, Megaphone, Gauge, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Progress } from '@/components/ui/progress'
@@ -90,17 +91,16 @@ function computeOverallPercentage(data: UsageData): number {
   return Math.min(Math.round(avg), 100)
 }
 
+export const USAGE_QUERY_KEY = ['tenants-usage']
+
 function useUsageData() {
-  const [data, setData] = useState<UsageData | null>(null)
   const [open, setOpen] = useState(false)
+  const { data } = useQuery({
+    queryKey: USAGE_QUERY_KEY,
+    queryFn: () => apiGet<{ data: UsageData }>('tenants/usage').then((res) => res.data),
+  })
 
-  useEffect(() => {
-    apiGet<{ data: UsageData }>('tenants/usage')
-      .then((res) => setData(res.data))
-      .catch(() => {})
-  }, [])
-
-  return { data, open, setOpen }
+  return { data: data ?? null, open, setOpen }
 }
 
 /* ──────────────────────────────────────────────

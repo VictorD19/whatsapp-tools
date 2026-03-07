@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
-import { toast } from '@/components/ui/toaster'
 import type { DealStageType } from '@/stores/inbox.store'
 
 export interface PipelineStage {
@@ -22,58 +22,43 @@ interface ApiResponse<T> {
   data: T
 }
 
+export const PIPELINES_QUERY_KEY = ['pipelines']
+
 export function usePipelineStages(pipelineId?: string) {
-  const [pipelines, setPipelines] = useState<Pipeline[]>([])
-  const [selectedPipelineId, setSelectedPipelineId] = useState<string | undefined>(pipelineId)
-  const [stages, setStages] = useState<PipelineStage[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: pipelines = [], isLoading } = useQuery({
+    queryKey: PIPELINES_QUERY_KEY,
+    queryFn: () => apiGet<ApiResponse<Pipeline[]>>('pipelines').then((r) => r.data),
+  })
 
-  const fetchPipelines = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const res = await apiGet<ApiResponse<Pipeline[]>>('pipelines')
-      const pipes = res.data
-      setPipelines(pipes)
+  const defaultPipeline = pipelineId
+    ? pipelines.find((p) => p.id === pipelineId)
+    : (pipelines.find((p) => p.isDefault) ?? pipelines[0])
 
-      if (pipes.length > 0) {
-        const target = pipelineId
-          ? pipes.find((p) => p.id === pipelineId)
-          : (pipes.find((p) => p.isDefault) ?? pipes[0])
-        if (target) {
-          setSelectedPipelineId(target.id)
-          setStages(target.stages.sort((a, b) => a.order - b.order))
-        }
-      }
-    } catch {
-      toast({ title: 'Erro ao carregar pipelines', variant: 'destructive' })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [pipelineId])
+  const [selectedPipelineId, setSelectedPipelineId] = useState<string | undefined>(
+    defaultPipeline?.id,
+  )
 
-  useEffect(() => {
-    fetchPipelines()
-  }, [fetchPipelines])
+  const resolvedId = selectedPipelineId ?? defaultPipeline?.id
+
+  const stages = useMemo(() => {
+    const pipe = pipelines.find((p) => p.id === resolvedId)
+    return pipe ? [...pipe.stages].sort((a, b) => a.order - b.order) : []
+  }, [pipelines, resolvedId])
 
   const selectPipeline = useCallback((id: string) => {
     setSelectedPipelineId(id)
-    const pipe = pipelines.find((p) => p.id === id)
-    if (pipe) {
-      setStages(pipe.stages.sort((a, b) => a.order - b.order))
-    }
-  }, [pipelines])
+  }, [])
 
   const activeStages = stages.filter((s) => s.type === 'ACTIVE')
   const closedStages = stages.filter((s) => s.type === 'WON' || s.type === 'LOST')
 
   return {
     pipelines,
-    selectedPipelineId,
+    selectedPipelineId: resolvedId,
     selectPipeline,
     stages,
     activeStages,
     closedStages,
     isLoading,
-    fetchPipelines,
   }
 }

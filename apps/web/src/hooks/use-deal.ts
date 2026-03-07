@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 
@@ -87,31 +88,42 @@ export interface UpdateDealDto {
   assignedToId?: string | null
 }
 
-export function useDeal() {
-  const [deals, setDeals] = useState<Deal[]>([])
-  const [isLoadingDeals, setIsLoadingDeals] = useState(false)
-  const [notes, setNotes] = useState<DealNote[]>([])
-  const [isLoadingNotes, setIsLoadingNotes] = useState(false)
+export interface DealFilters {
+  pipelineId?: string
+  assignedToId?: string
+  contactId?: string
+}
 
-  const fetchDeals = useCallback(async (filters?: { pipelineId?: string; assignedToId?: string; contactId?: string }) => {
-    setIsLoadingDeals(true)
-    try {
+export const dealsKey = (filters?: DealFilters) => ['deals', filters ?? null]
+
+export function useDeal(filters?: DealFilters) {
+  const queryClient = useQueryClient()
+
+  const { data, isLoading: isLoadingDeals } = useQuery({
+    queryKey: dealsKey(filters),
+    queryFn: () => {
       const params = new URLSearchParams()
       if (filters?.pipelineId) params.set('pipelineId', filters.pipelineId)
       if (filters?.assignedToId) params.set('assignedToId', filters.assignedToId)
       if (filters?.contactId) params.set('contactId', filters.contactId)
       params.set('limit', '100')
+      return apiGet<PaginatedResponse<Deal>>(`deals?${params}`)
+    },
+    enabled: !!(filters?.pipelineId || filters?.contactId),
+  })
 
-      const res = await apiGet<PaginatedResponse<Deal>>(`deals?${params}`)
-      setDeals(res.data)
-      return res.data
-    } catch {
-      toast({ title: 'Erro ao carregar negócios', variant: 'destructive' })
-      return []
-    } finally {
-      setIsLoadingDeals(false)
-    }
-  }, [])
+  const deals = data?.data ?? []
+
+  // For optimistic updates on the kanban board
+  const setCachedDeals = useCallback(
+    (updater: (prev: Deal[]) => Deal[]) => {
+      queryClient.setQueryData(dealsKey(filters), (old: PaginatedResponse<Deal> | undefined) => {
+        if (!old) return old
+        return { ...old, data: updater(old.data) }
+      })
+    },
+    [filters, queryClient],
+  )
 
   const fetchDealById = useCallback(async (id: string) => {
     try {
@@ -123,53 +135,69 @@ export function useDeal() {
     }
   }, [])
 
-  const createDeal = useCallback(async (dto: CreateDealDto) => {
-    try {
-      const res = await apiPost<ApiResponse<Deal>>('deals', dto)
-      setDeals((prev) => [res.data, ...prev])
-      toast({ title: 'Negócio criado com sucesso', variant: 'success' })
-      return res.data
-    } catch (err) {
-      toast({ title: (err as Error).message || 'Erro ao criar negócio', variant: 'destructive' })
-      return null
-    }
-  }, [])
+  const createDeal = useCallback(
+    async (dto: CreateDealDto) => {
+      try {
+        const res = await apiPost<ApiResponse<Deal>>('deals', dto)
+        queryClient.invalidateQueries({ queryKey: ['deals'] })
+        toast({ title: 'Negócio criado com sucesso', variant: 'success' })
+        return res.data
+      } catch (err) {
+        toast({ title: (err as Error).message || 'Erro ao criar negócio', variant: 'destructive' })
+        return null
+      }
+    },
+    [queryClient],
+  )
 
-  const updateDeal = useCallback(async (id: string, dto: UpdateDealDto) => {
-    try {
-      const res = await apiPatch<ApiResponse<Deal>>(`deals/${id}`, dto)
-      setDeals((prev) => prev.map((d) => (d.id === id ? res.data : d)))
-      return res.data
-    } catch {
-      toast({ title: 'Erro ao atualizar negócio', variant: 'destructive' })
-      return null
-    }
-  }, [])
+  const updateDeal = useCallback(
+    async (id: string, dto: UpdateDealDto) => {
+      try {
+        const res = await apiPatch<ApiResponse<Deal>>(`deals/${id}`, dto)
+        queryClient.invalidateQueries({ queryKey: ['deals'] })
+        return res.data
+      } catch {
+        toast({ title: 'Erro ao atualizar negócio', variant: 'destructive' })
+        return null
+      }
+    },
+    [queryClient],
+  )
 
-  const deleteDeal = useCallback(async (id: string) => {
-    try {
-      await apiDelete<ApiResponse<{ message: string }>>(`deals/${id}`)
-      setDeals((prev) => prev.filter((d) => d.id !== id))
-      toast({ title: 'Negócio removido com sucesso', variant: 'success' })
-      return true
-    } catch {
-      toast({ title: 'Erro ao remover negócio', variant: 'destructive' })
-      return false
-    }
-  }, [])
+  const deleteDeal = useCallback(
+    async (id: string) => {
+      try {
+        await apiDelete<ApiResponse<{ message: string }>>(`deals/${id}`)
+        queryClient.invalidateQueries({ queryKey: ['deals'] })
+        toast({ title: 'Negócio removido com sucesso', variant: 'success' })
+        return true
+      } catch {
+        toast({ title: 'Erro ao remover negócio', variant: 'destructive' })
+        return false
+      }
+    },
+    [queryClient],
+  )
 
-  const moveDeal = useCallback(async (dealId: string, stageId: string, lostReason?: string) => {
-    try {
-      const payload: Record<string, string> = { stageId }
-      if (lostReason) payload.lostReason = lostReason
-      const res = await apiPatch<ApiResponse<Deal>>(`deals/${dealId}/move`, payload)
-      setDeals((prev) => prev.map((d) => (d.id === dealId ? res.data : d)))
-      return res.data
-    } catch {
-      toast({ title: 'Erro ao mover negócio', variant: 'destructive' })
-      return null
-    }
-  }, [])
+  const moveDeal = useCallback(
+    async (dealId: string, stageId: string, lostReason?: string) => {
+      try {
+        const payload: Record<string, string> = { stageId }
+        if (lostReason) payload.lostReason = lostReason
+        const res = await apiPatch<ApiResponse<Deal>>(`deals/${dealId}/move`, payload)
+        queryClient.invalidateQueries({ queryKey: dealsKey(filters) })
+        return res.data
+      } catch {
+        toast({ title: 'Erro ao mover negócio', variant: 'destructive' })
+        return null
+      }
+    },
+    [filters, queryClient],
+  )
+
+  // Notes — kept as local state (on-demand, not cached globally)
+  const [notes, setNotes] = useState<DealNote[]>([])
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false)
 
   const fetchNotes = useCallback(async (dealId: string) => {
     setIsLoadingNotes(true)
@@ -196,9 +224,8 @@ export function useDeal() {
 
   return {
     deals,
-    setDeals,
     isLoadingDeals,
-    fetchDeals,
+    setCachedDeals,
     fetchDealById,
     createDeal,
     updateDeal,

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState } from 'react'
 import { Plus, Pencil, Trash2, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,8 +16,10 @@ import {
 } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ColorPicker } from '@/components/shared/color-picker'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/components/ui/toaster'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
+import { TAGS_QUERY_KEY } from '@/hooks/use-tags'
 
 // ── Types ──
 
@@ -37,8 +39,12 @@ interface ApiResponse<T> {
 // ── Component ──
 
 export default function TagsSettingsPage() {
-  const [tags, setTags] = useState<TagItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const { data: tags = [], isLoading: loading } = useQuery({
+    queryKey: TAGS_QUERY_KEY,
+    queryFn: () => apiGet<ApiResponse<TagItem[]>>('tags').then((r) => r.data),
+  })
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [editingTag, setEditingTag] = useState<TagItem | null>(null)
@@ -48,22 +54,6 @@ export default function TagsSettingsPage() {
   // Form state
   const [formName, setFormName] = useState('')
   const [formColor, setFormColor] = useState('#6B7280')
-
-  const fetchTags = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await apiGet<ApiResponse<TagItem[]>>('tags')
-      setTags(res.data)
-    } catch {
-      toast({ title: 'Erro ao carregar tags', variant: 'destructive' })
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchTags()
-  }, [fetchTags])
 
   const openCreateDialog = () => {
     setEditingTag(null)
@@ -89,22 +79,19 @@ export default function TagsSettingsPage() {
     setSaving(true)
     try {
       if (editingTag) {
-        const res = await apiPatch<ApiResponse<TagItem>>(
+        await apiPatch<ApiResponse<TagItem>>(
           `tags/${editingTag.id}`,
           { name: formName.trim(), color: formColor },
         )
-        setTags((prev) =>
-          prev.map((t) => (t.id === editingTag.id ? res.data : t)),
-        )
         toast({ title: 'Tag atualizada', variant: 'success' })
       } else {
-        const res = await apiPost<ApiResponse<TagItem>>('tags', {
+        await apiPost<ApiResponse<TagItem>>('tags', {
           name: formName.trim(),
           color: formColor,
         })
-        setTags((prev) => [...prev, res.data])
         toast({ title: 'Tag criada', variant: 'success' })
       }
+      queryClient.invalidateQueries({ queryKey: TAGS_QUERY_KEY })
       setDialogOpen(false)
     } catch (err) {
       const message =
@@ -120,7 +107,7 @@ export default function TagsSettingsPage() {
     setSaving(true)
     try {
       await apiDelete(`tags/${deletingTag.id}`)
-      setTags((prev) => prev.filter((t) => t.id !== deletingTag.id))
+      queryClient.invalidateQueries({ queryKey: TAGS_QUERY_KEY })
       toast({ title: 'Tag excluida', variant: 'success' })
       setDeleteDialogOpen(false)
     } catch (err) {

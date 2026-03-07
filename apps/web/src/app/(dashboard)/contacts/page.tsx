@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Plus, Search, UserCircle, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,15 +26,17 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { useContacts, type Contact } from '@/hooks/use-contacts'
+import { useDebounce } from '@/hooks/use-debounce'
 import { cn, getInitials, formatPhone, formatDate } from '@/lib/utils'
 import { toast } from '@/components/ui/toaster'
 
 export default function ContactsPage() {
-  const { contacts, initialLoading, fetching, meta, fetchContacts, createContact, updateContact, deleteContact } =
-    useContacts()
-
   const [search, setSearch] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const [page, setPage] = useState(1)
+  const debouncedSearch = useDebounce(search, 300)
+
+  const { contacts, initialLoading, fetching, meta, createContact, updateContact, deleteContact } =
+    useContacts({ search: debouncedSearch || undefined, page })
 
   // Sheet state (create/edit)
   const [formOpen, setFormOpen] = useState(false)
@@ -47,29 +49,14 @@ export default function ContactsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null)
 
-  // Initial fetch
-  useEffect(() => {
-    fetchContacts()
-  }, [fetchContacts])
+  const handleSearch = useCallback((value: string) => {
+    setSearch(value)
+    setPage(1)
+  }, [])
 
-  // Debounced search
-  const handleSearch = useCallback(
-    (value: string) => {
-      setSearch(value)
-      clearTimeout(debounceRef.current)
-      debounceRef.current = setTimeout(() => {
-        fetchContacts(value || undefined, 1)
-      }, 300)
-    },
-    [fetchContacts],
-  )
-
-  const handlePageChange = useCallback(
-    (page: number) => {
-      fetchContacts(search || undefined, page)
-    },
-    [fetchContacts, search],
-  )
+  const handlePageChange = useCallback((p: number) => {
+    setPage(p)
+  }, [])
 
   // Open create sheet
   const openCreate = useCallback(() => {
@@ -110,7 +97,6 @@ export default function ContactsPage() {
         })
       }
       setFormOpen(false)
-      fetchContacts(search || undefined, meta.page)
     } catch (err: unknown) {
       const message =
         err && typeof err === 'object' && 'message' in err
@@ -120,7 +106,7 @@ export default function ContactsPage() {
     } finally {
       setSubmitting(false)
     }
-  }, [editingContact, formPhone, formName, createContact, updateContact, fetchContacts, search, meta.page])
+  }, [editingContact, formPhone, formName, createContact, updateContact])
 
   // Confirm delete
   const handleDelete = useCallback(async () => {
@@ -130,13 +116,12 @@ export default function ContactsPage() {
       await deleteContact(deletingContact.id)
       setDeleteOpen(false)
       setDeletingContact(null)
-      fetchContacts(search || undefined, meta.page)
     } catch {
       toast({ title: 'Erro ao remover contato', variant: 'destructive' })
     } finally {
       setSubmitting(false)
     }
-  }, [deletingContact, deleteContact, fetchContacts, search, meta.page])
+  }, [deletingContact, deleteContact])
 
   return (
     <div className="p-6 space-y-6">

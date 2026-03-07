@@ -77,7 +77,7 @@ export default function BroadcastsPage() {
 
   const { fetchInstances } = useInstances()
   const instances = useInstancesStore((s) => s.instances)
-  const { lists: contactLists, fetchLists: fetchContactLists } = useContactLists()
+  const { lists: contactLists } = useContactLists()
 
   const [wizardOpen, setWizardOpen] = useState(false)
   const [editData, setEditData] = useState<BroadcastEditData | null>(null)
@@ -104,8 +104,7 @@ export default function BroadcastsPage() {
   useEffect(() => {
     fetchBroadcasts()
     fetchInstances()
-    fetchContactLists()
-  }, [fetchBroadcasts, fetchInstances, fetchContactLists])
+  }, [fetchBroadcasts, fetchInstances])
 
   const handleCreateBroadcast = async (data: BroadcastWizardData) => {
     if (editData) {
@@ -324,7 +323,7 @@ export default function BroadcastsPage() {
                                 Cancelar
                               </DropdownMenuItem>
                             )}
-                            {b.status !== 'RUNNING' && (
+                            {!['RUNNING', 'COMPLETED'].includes(b.status) && (
                               <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() => setDeleteTarget(b.id)}

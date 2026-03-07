@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPatch } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 import type { Contact } from '@/hooks/use-contacts'
@@ -18,59 +19,49 @@ interface PaginatedResponse<T> {
   }
 }
 
+export const contactKey = (id: string) => ['contact', id]
+export const contactDealsKey = (id: string) => ['contact-deals', id]
+
 export function useContactDetail(contactId: string) {
-  const [contact, setContact] = useState<Contact | null>(null)
-  const [deals, setDeals] = useState<Deal[]>([])
-  const [isLoadingContact, setIsLoadingContact] = useState(false)
-  const [isLoadingDeals, setIsLoadingDeals] = useState(false)
+  const queryClient = useQueryClient()
 
-  const fetchContact = useCallback(async () => {
-    setIsLoadingContact(true)
-    try {
-      const res = await apiGet<ApiResponse<Contact>>(`contacts/${contactId}`)
-      setContact(res.data)
-      return res.data
-    } catch {
-      toast({ title: 'Erro ao carregar contato', variant: 'destructive' })
-      return null
-    } finally {
-      setIsLoadingContact(false)
-    }
-  }, [contactId])
+  const { data: contact = null, isLoading: isLoadingContact } = useQuery({
+    queryKey: contactKey(contactId),
+    queryFn: () =>
+      apiGet<ApiResponse<Contact>>(`contacts/${contactId}`).then((r) => r.data),
+    enabled: !!contactId,
+  })
 
-  const fetchContactDeals = useCallback(async () => {
-    setIsLoadingDeals(true)
-    try {
-      const res = await apiGet<PaginatedResponse<Deal>>(`deals?contactId=${contactId}&limit=50`)
-      setDeals(res.data)
-      return res.data
-    } catch {
-      toast({ title: 'Erro ao carregar negócios', variant: 'destructive' })
-      return []
-    } finally {
-      setIsLoadingDeals(false)
-    }
-  }, [contactId])
+  const { data: deals = [], isLoading: isLoadingDeals } = useQuery({
+    queryKey: contactDealsKey(contactId),
+    queryFn: () =>
+      apiGet<PaginatedResponse<Deal>>(`deals?contactId=${contactId}&limit=50`).then(
+        (r) => r.data,
+      ),
+    enabled: !!contactId,
+  })
 
-  const updateContact = useCallback(async (dto: { name?: string; phone?: string }) => {
-    try {
-      const res = await apiPatch<ApiResponse<Contact>>(`contacts/${contactId}`, dto)
-      setContact(res.data)
-      toast({ title: 'Contato atualizado', variant: 'success' })
-      return res.data
-    } catch {
-      toast({ title: 'Erro ao atualizar contato', variant: 'destructive' })
-      return null
-    }
-  }, [contactId])
+  const updateContact = useCallback(
+    async (dto: { name?: string; phone?: string }) => {
+      try {
+        const res = await apiPatch<ApiResponse<Contact>>(`contacts/${contactId}`, dto)
+        queryClient.invalidateQueries({ queryKey: contactKey(contactId) })
+        queryClient.invalidateQueries({ queryKey: ['contacts'] })
+        toast({ title: 'Contato atualizado', variant: 'success' })
+        return res.data
+      } catch {
+        toast({ title: 'Erro ao atualizar contato', variant: 'destructive' })
+        return null
+      }
+    },
+    [contactId, queryClient],
+  )
 
   return {
     contact,
     deals,
     isLoadingContact,
     isLoadingDeals,
-    fetchContact,
-    fetchContactDeals,
     updateContact,
   }
 }

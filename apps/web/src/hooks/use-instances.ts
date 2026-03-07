@@ -1,6 +1,8 @@
 import { useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete } from '@/lib/api'
 import { useInstancesStore, type Instance } from '@/stores/instances.store'
+import { USAGE_QUERY_KEY } from '@/components/layout/plan-usage'
 import { toast } from '@/components/ui/toaster'
 
 interface ApiResponse<T> {
@@ -15,6 +17,7 @@ interface ConnectResult {
 export function useInstances() {
   const { setInstances, setLoading, addInstance, removeInstance, updateInstanceStatus, setImportProgress } =
     useInstancesStore()
+  const queryClient = useQueryClient()
 
   const fetchInstances = useCallback(async () => {
     setLoading(true)
@@ -32,10 +35,11 @@ export function useInstances() {
     async (name: string) => {
       const res = await apiPost<ApiResponse<Instance>>('instances', { name })
       addInstance(res.data)
+      queryClient.invalidateQueries({ queryKey: USAGE_QUERY_KEY })
       toast({ title: 'Instancia criada', variant: 'success' })
       return res.data
     },
-    [addInstance],
+    [addInstance, queryClient],
   )
 
   const connectInstance = useCallback(

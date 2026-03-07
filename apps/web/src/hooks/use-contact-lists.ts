@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete, apiUpload } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 
@@ -24,39 +25,27 @@ interface PaginatedResponse {
   meta: PaginationMeta
 }
 
-export function useContactLists() {
-  const [lists, setLists] = useState<ContactList[]>([])
-  const [initialLoading, setInitialLoading] = useState(true)
-  const [fetching, setFetching] = useState(false)
-  const hasFetched = useRef(false)
-  const [meta, setMeta] = useState<PaginationMeta>({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
-  })
+const defaultMeta: PaginationMeta = { page: 1, limit: 20, total: 0, totalPages: 0 }
 
-  const fetchLists = useCallback(async (search?: string, page = 1) => {
-    setFetching(true)
-    try {
+export const CONTACT_LISTS_QUERY_KEY = ['contact-lists']
+
+export function useContactLists({
+  search,
+  page = 1,
+}: { search?: string; page?: number } = {}) {
+  const queryClient = useQueryClient()
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: [...CONTACT_LISTS_QUERY_KEY, { search, page }],
+    queryFn: () => {
       const params = new URLSearchParams()
       if (search) params.set('search', search)
       params.set('page', String(page))
       params.set('limit', '20')
-
-      const res = await apiGet<PaginatedResponse>(`contact-lists?${params}`)
-      setLists(res.data)
-      setMeta(res.meta)
-    } catch {
-      toast({ title: 'Erro ao carregar listas', variant: 'destructive' })
-    } finally {
-      setFetching(false)
-      if (!hasFetched.current) {
-        hasFetched.current = true
-        setInitialLoading(false)
-      }
-    }
-  }, [])
+      return apiGet<PaginatedResponse>(`contact-lists?${params}`)
+    },
+    placeholderData: keepPreviousData,
+  })
 
   const createList = useCallback(
     async (
@@ -70,10 +59,11 @@ export function useContactLists() {
         description,
         ...(contactIds.length > 0 ? { contactIds } : { phones }),
       })
+      queryClient.invalidateQueries({ queryKey: CONTACT_LISTS_QUERY_KEY })
       toast({ title: 'Lista criada com sucesso', variant: 'success' })
       return res.data
     },
-    [],
+    [queryClient],
   )
 
   const importCsv = useCallback(
@@ -87,22 +77,26 @@ export function useContactLists() {
         'contact-lists/import-csv',
         formData,
       )
+      queryClient.invalidateQueries({ queryKey: CONTACT_LISTS_QUERY_KEY })
       return res.data
     },
-    [],
+    [queryClient],
   )
 
-  const deleteList = useCallback(async (id: string) => {
-    await apiDelete<{ data: { deleted: boolean } }>(`contact-lists/${id}`)
-    toast({ title: 'Lista removida com sucesso', variant: 'success' })
-  }, [])
+  const deleteList = useCallback(
+    async (id: string) => {
+      await apiDelete<{ data: { deleted: boolean } }>(`contact-lists/${id}`)
+      queryClient.invalidateQueries({ queryKey: CONTACT_LISTS_QUERY_KEY })
+      toast({ title: 'Lista removida com sucesso', variant: 'success' })
+    },
+    [queryClient],
+  )
 
   return {
-    lists,
-    initialLoading,
-    fetching,
-    meta,
-    fetchLists,
+    lists: data?.data ?? [],
+    initialLoading: isLoading,
+    fetching: isFetching,
+    meta: data?.meta ?? defaultMeta,
     createList,
     importCsv,
     deleteList,
