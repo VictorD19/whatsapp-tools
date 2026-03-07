@@ -10,6 +10,8 @@ import {
   Users,
   UserCircle,
   Bot,
+  BookOpen,
+  Wrench,
   ClipboardList,
   Briefcase,
   ChevronLeft,
@@ -61,7 +63,14 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
       label: tNav('groups.clients'),
       items: [
         { icon: UserCircle, label: tNav('items.contacts'), href: '/contacts' },
+      ],
+    },
+    {
+      label: tNav('groups.ai'),
+      items: [
         { icon: Bot, label: tNav('items.assistants'), href: '/assistants' },
+        { icon: BookOpen, label: tNav('items.knowledgeBases'), href: '/assistants/knowledge-bases' },
+        { icon: Wrench, label: tNav('items.aiTools'), href: '/assistants/tools' },
       ],
     },
   ]

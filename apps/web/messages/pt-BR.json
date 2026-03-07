@@ -101,7 +101,8 @@
       "marketing": "Marketing",
       "clients": "Clientes",
       "settings": "Configurações",
-      "admin": "Administração"
+      "admin": "Administração",
+      "ai": "Inteligência Artificial"
     },
     "items": {
       "inbox": "Inbox",
@@ -117,7 +118,9 @@
       "team": "Equipe",
       "settings": "Configurações",
       "tenants": "Tenants",
-      "plans": "Planos"
+      "plans": "Planos",
+      "knowledgeBases": "Bases de Conhecimento",
+      "aiTools": "Ferramentas de IA"
     },
     "user": {
       "myProfile": "Meu perfil",
