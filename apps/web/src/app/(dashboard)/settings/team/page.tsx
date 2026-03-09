@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Plus, Pencil, KeyRound, UserX, UserCheck, Users, Search, ShieldCheck } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -73,18 +74,20 @@ type DialogMode = 'create' | 'edit' | 'password' | 'deactivate' | null
 // ── Component ──
 
 export default function TeamSettingsPage() {
+  React.useEffect(() => { document.title = 'Equipe | SistemaZapChat' }, [])
+
   const { user: currentUser } = useAuthStore()
 
   // If not admin, show access denied
   if (currentUser && currentUser.role !== 'admin' && !currentUser.isSuperAdmin) {
     return (
-      <div className="p-6 space-y-6 max-w-3xl">
+      <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Equipe' }]}>
         <EmptyState
           icon={ShieldCheck}
           title="Acesso negado"
           description="Apenas administradores podem gerenciar a equipe."
         />
-      </div>
+      </PageLayout>
     )
   }
 
@@ -273,7 +276,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 max-w-3xl">
+      <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Equipe' }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-4 w-56" />
@@ -284,12 +287,12 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
             <Skeleton key={i} className="h-14 w-full" />
           ))}
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
+    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Equipe' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -646,6 +649,6 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

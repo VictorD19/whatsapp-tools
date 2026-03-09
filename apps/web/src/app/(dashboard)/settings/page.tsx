@@ -16,6 +16,7 @@ import {
   Smartphone,
   Globe,
 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -67,20 +68,21 @@ function SectionBlock({
 
 /* ──────────────────── Page ──────────────────── */
 export default function SettingsPage() {
+  React.useEffect(() => { document.title = 'Configurações | SistemaZapChat' }, [])
   return (
-    <div className="p-8 max-w-2xl space-y-10">
-      {/* Page title */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Configurações</h1>
-        <p className="text-sm text-gray-500 mt-1">Gerencie sua conta, preferências e integrações.</p>
-      </div>
+    <PageLayout breadcrumb={[{ label: 'Configurações' }]}>
+        {/* Page title */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Configurações</h1>
+          <p className="text-sm text-gray-500 mt-1">Gerencie sua conta, preferências e integrações.</p>
+        </div>
 
-      <ProfileSection />
-      <LocaleSection />
-      <NotificationsSection />
-      <IntegrationsSection />
-      <DangerSection />
-    </div>
+        <ProfileSection />
+        <LocaleSection />
+        <NotificationsSection />
+        <IntegrationsSection />
+        <DangerSection />
+    </PageLayout>
   )
 }
 

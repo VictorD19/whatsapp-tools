@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Plus, Pencil, Trash2, Tag } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,6 +40,8 @@ interface ApiResponse<T> {
 // ── Component ──
 
 export default function TagsSettingsPage() {
+  React.useEffect(() => { document.title = 'Tags | SistemaZapChat' }, [])
+
   const queryClient = useQueryClient()
   const { data: tags = [], isLoading: loading } = useQuery({
     queryKey: TAGS_QUERY_KEY,
@@ -123,7 +126,7 @@ export default function TagsSettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 max-w-3xl">
+      <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Tags' }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-4 w-56" />
@@ -133,12 +136,12 @@ export default function TagsSettingsPage() {
             <Skeleton key={i} className="h-12 w-full" />
           ))}
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
+    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Tags' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -267,6 +270,6 @@ export default function TagsSettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

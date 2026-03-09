@@ -10,6 +10,7 @@ import {
   ArrowDown,
   GitBranch,
 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -68,6 +69,8 @@ const TYPE_VARIANTS: Record<StageType, 'info' | 'success' | 'destructive'> = {
 // ── Component ──
 
 export default function PipelineSettingsPage() {
+  React.useEffect(() => { document.title = 'Pipeline | SistemaZapChat' }, [])
+
   const [pipeline, setPipeline] = useState<Pipeline | null>(null)
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [loading, setLoading] = useState(true)
@@ -225,7 +228,7 @@ export default function PipelineSettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 max-w-3xl">
+      <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Pipeline' }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-4 w-72" />
@@ -235,12 +238,12 @@ export default function PipelineSettingsPage() {
             <Skeleton key={i} className="h-14 w-full" />
           ))}
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
+    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Pipeline' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -437,6 +440,6 @@ export default function PipelineSettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

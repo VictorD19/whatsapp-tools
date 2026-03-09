@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { Users, Download, ListPlus, RefreshCw, Check, Loader2 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -38,6 +39,8 @@ import { toast } from '@/components/ui/toaster'
 type Step = 'select-instance' | 'select-groups' | 'extracting' | 'results'
 
 export default function GroupsPage() {
+  React.useEffect(() => { document.title = 'Grupos | SistemaZapChat' }, [])
+
   const { fetchInstances } = useInstances()
   const instances = useInstancesStore((s) => s.instances)
   const {
@@ -194,7 +197,7 @@ export default function GroupsPage() {
   }, [])
 
   return (
-    <div className="p-6 space-y-6">
+    <PageLayout breadcrumb={[{ label: 'Marketing' }, { label: 'Grupos' }]}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Extração de Contatos</h1>
@@ -527,7 +530,7 @@ export default function GroupsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }
 

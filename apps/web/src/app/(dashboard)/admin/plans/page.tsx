@@ -14,6 +14,7 @@ import {
   Users,
   Building,
 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -84,6 +85,8 @@ function toSlug(value: string): string {
 // ── Component ──
 
 export default function PlansPage() {
+  React.useEffect(() => { document.title = 'Planos | SistemaZapChat' }, [])
+
   const router = useRouter()
   const { user } = useAuthStore()
 
@@ -299,7 +302,7 @@ export default function PlansPage() {
 
   if (loading && plans.length === 0) {
     return (
-      <div className="p-6 space-y-6">
+      <PageLayout breadcrumb={[{ label: 'Administração' }, { label: 'Planos' }]}>
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton className="h-7 w-32" />
@@ -313,7 +316,7 @@ export default function PlansPage() {
             <Skeleton key={i} className="h-20 w-full" />
           ))}
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
@@ -322,7 +325,7 @@ export default function PlansPage() {
   const formValid = formName.trim() && (editingPlan || formSlug.trim())
 
   return (
-    <div className="p-6 space-y-6">
+    <PageLayout breadcrumb={[{ label: 'Administração' }, { label: 'Planos' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -691,6 +694,6 @@ export default function PlansPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

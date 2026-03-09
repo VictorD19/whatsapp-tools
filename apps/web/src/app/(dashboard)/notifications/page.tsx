@@ -13,12 +13,13 @@ import {
   Users,
   CheckCheck,
 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNotificationsStore, type Notification } from '@/stores/notifications.store'
 import { cn } from '@/lib/utils'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api'
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null
@@ -94,6 +95,8 @@ function NotificationTypeIcon({ type }: { type: string }) {
 }
 
 export default function NotificationsPage() {
+  React.useEffect(() => { document.title = 'Notificações | SistemaZapChat' }, [])
+
   const { notifications, unreadCount, isLoading, hasMore, page, setNotifications, appendNotifications, markAsRead, markAllAsRead, setLoading } =
     useNotificationsStore()
 
@@ -168,7 +171,7 @@ export default function NotificationsPage() {
   const groups = groupByDate(notifications)
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
+    <PageLayout breadcrumb={[{ label: 'Notificações' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -269,6 +272,6 @@ export default function NotificationsPage() {
           )}
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Plus, Wrench } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,6 +18,8 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 const AI_TOOLS_KEY = ['ai-tools']
 
 export default function AiToolsPage() {
+  React.useEffect(() => { document.title = 'Ferramentas de IA | SistemaZapChat' }, [])
+
   const queryClient = useQueryClient()
 
   const { data: tools = [], isLoading } = useQuery({
@@ -97,7 +100,7 @@ export default function AiToolsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
+      <PageLayout breadcrumb={[{ label: 'Inteligência Artificial' }, { label: 'Ferramentas de IA' }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-4 w-64" />
@@ -107,12 +110,12 @@ export default function AiToolsPage() {
             <Skeleton key={i} className="h-36 w-full rounded-xl" />
           ))}
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <PageLayout breadcrumb={[{ label: 'Inteligência Artificial' }, { label: 'Ferramentas de IA' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -178,6 +181,6 @@ export default function AiToolsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

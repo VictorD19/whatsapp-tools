@@ -9,11 +9,12 @@ import {
   Users,
   Loader2,
 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNotificationsStore, type NotificationPreference } from '@/stores/notifications.store'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api'
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null
@@ -80,6 +81,8 @@ const PREFERENCE_GROUPS: {
 ]
 
 export default function NotificationPreferencesPage() {
+  React.useEffect(() => { document.title = 'Preferências de Notificação | SistemaZapChat' }, [])
+
   const { preferences, setPreferences } = useNotificationsStore()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
@@ -147,7 +150,7 @@ export default function NotificationPreferencesPage() {
   )
 
   return (
-    <div className="p-8 max-w-2xl space-y-8">
+    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Notificações' }]}>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Preferencias de Notificacao</h1>
@@ -245,6 +248,6 @@ export default function NotificationPreferencesPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   )
 }

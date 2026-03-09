@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react'
 import { Plus, Loader2 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { KanbanBoard } from '@/components/crm/kanban-board'
 import { DealFilters } from '@/components/crm/deal-filters'
@@ -11,6 +12,8 @@ import { usePipelineStages } from '@/hooks/use-pipeline-stages'
 import { useDeal, type Deal } from '@/hooks/use-deal'
 
 export default function CRMPage() {
+  React.useEffect(() => { document.title = 'CRM | SistemaZapChat' }, [])
+
   const { pipelines, selectedPipelineId, selectPipeline, stages, isLoading: isLoadingStages } = usePipelineStages()
   const { deals, isLoadingDeals, setCachedDeals, moveDeal } = useDeal(
     selectedPipelineId ? { pipelineId: selectedPipelineId } : undefined,
@@ -82,6 +85,10 @@ export default function CRMPage() {
   const isLoading = isLoadingStages || isLoadingDeals
 
   return (
+    <PageLayout
+      breadcrumb={[{ label: 'Atendimento' }, { label: 'CRM' }]}
+      cardClassName="flex flex-col overflow-hidden"
+    >
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
@@ -150,5 +157,6 @@ export default function CRMPage() {
         />
       )}
     </div>
+    </PageLayout>
   )
 }

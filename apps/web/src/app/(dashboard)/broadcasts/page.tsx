@@ -11,6 +11,7 @@ import {
   MoreHorizontal,
   Pencil,
 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -59,6 +60,8 @@ const statusLabelMap: Record<BroadcastStatus, string> = {
 }
 
 export default function BroadcastsPage() {
+  React.useEffect(() => { document.title = 'Disparos em Massa | SistemaZapChat' }, [])
+
   const {
     broadcasts,
     initialLoading,
@@ -169,7 +172,7 @@ export default function BroadcastsPage() {
   const runningCount = broadcasts.filter((b) => b.status === 'RUNNING').length
 
   return (
-    <div className="p-6 space-y-6">
+    <PageLayout breadcrumb={[{ label: 'Marketing' }, { label: 'Disparos' }]}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Disparos em Massa</h1>
@@ -392,6 +395,6 @@ export default function BroadcastsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

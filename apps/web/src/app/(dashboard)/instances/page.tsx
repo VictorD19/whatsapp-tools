@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Plus, Radio } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/components/shared/empty-state'
@@ -14,10 +15,12 @@ import { useImportSocket } from '@/hooks/use-import-socket'
 import { useInstancesStore } from '@/stores/instances.store'
 
 export default function InstancesPage() {
+  React.useEffect(() => { document.title = 'Instâncias | SistemaZapChat' }, [])
+
   const instances = useInstancesStore((s) => s.instances)
   const isLoading = useInstancesStore((s) => s.isLoading)
   const importProgress = useInstancesStore((s) => s.importProgress)
-  const { fetchInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, importConversations } =
+  const { fetchInstances, refreshInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, importConversations } =
     useInstances()
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -32,6 +35,18 @@ export default function InstancesPage() {
   useEffect(() => {
     fetchInstances()
   }, [fetchInstances])
+
+  // Fallback polling: when any instance is CONNECTING, poll every 3s
+  // This handles WebSocket failures and ensures the page reflects the real status
+  const connectingCount = useMemo(
+    () => instances.filter((i) => i.status === 'CONNECTING').length,
+    [instances],
+  )
+  useEffect(() => {
+    if (connectingCount === 0) return
+    const interval = setInterval(refreshInstances, 3_000)
+    return () => clearInterval(interval)
+  }, [connectingCount, refreshInstances])
 
   const handleConnect = useCallback(
     (id: string) => {
@@ -48,6 +63,18 @@ export default function InstancesPage() {
     [connectInstance],
   )
 
+  // When QR modal closes, do a fresh fetch to ensure the page reflects
+  // the current status (covers cases where WebSocket events were missed)
+  const handleQrOpenChange = useCallback(
+    (open: boolean) => {
+      setQrOpen(open)
+      if (!open) {
+        fetchInstances()
+      }
+    },
+    [fetchInstances],
+  )
+
   // Stats
   const stats = {
     total: instances.length,
@@ -57,7 +84,7 @@ export default function InstancesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Instâncias' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -117,10 +144,10 @@ export default function InstancesPage() {
       />
       <QrCodeModal
         open={qrOpen}
-        onOpenChange={setQrOpen}
+        onOpenChange={handleQrOpenChange}
         instanceId={qrInstanceId}
         onRequestQr={handleRequestQr}
       />
-    </div>
+    </PageLayout>
   )
 }

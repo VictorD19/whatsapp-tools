@@ -12,6 +12,8 @@ import { useInboxSocket } from '@/hooks/use-inbox-socket'
 import { cn } from '@/lib/utils'
 
 export default function InboxPage() {
+  React.useEffect(() => { document.title = 'Inbox | SistemaZapChat' }, [])
+
   const selectedId = useInboxStore((s) => s.selectedConversationId)
   const conversations = useInboxStore((s) => s.conversations)
   const selectConversation = useInboxStore((s) => s.selectConversation)

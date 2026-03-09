@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState } from 'react'
 import { Plus, Search, UserCircle, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -31,6 +32,8 @@ import { cn, getInitials, formatPhone, formatDate } from '@/lib/utils'
 import { toast } from '@/components/ui/toaster'
 
 export default function ContactsPage() {
+  React.useEffect(() => { document.title = 'Contatos | SistemaZapChat' }, [])
+
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const debouncedSearch = useDebounce(search, 300)
@@ -124,7 +127,7 @@ export default function ContactsPage() {
   }, [deletingContact, deleteContact])
 
   return (
-    <div className="p-6 space-y-6">
+    <PageLayout breadcrumb={[{ label: 'Marketing' }, { label: 'Contatos' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -342,6 +345,6 @@ export default function ContactsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

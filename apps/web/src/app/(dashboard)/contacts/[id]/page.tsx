@@ -27,6 +27,11 @@ export default function ContactDetailPage() {
 
   const { contact, deals, isLoadingContact, isLoadingDeals, updateContact } =
     useContactDetail(contactId)
+
+  React.useEffect(() => {
+    const name = contact?.name ?? contact?.phone ?? 'Contato'
+    document.title = `${name} | SistemaZapChat`
+  }, [contact])
   const { stages } = usePipelineStages()
 
   const [editingName, setEditingName] = useState(false)

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState } from 'react'
 import { Search, ClipboardList, Trash2, ChevronLeft, ChevronRight, Users, Plus } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -29,6 +30,8 @@ const SOURCE_LABELS: Record<ContactList['source'], { label: string; variant: 'de
 }
 
 export default function ContactListsPage() {
+  React.useEffect(() => { document.title = 'Listas de Contatos | SistemaZapChat' }, [])
+
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const debouncedSearch = useDebounce(search, 300)
@@ -78,7 +81,7 @@ export default function ContactListsPage() {
   }, [deletingList, deleteList])
 
   return (
-    <div className="p-6 space-y-6">
+    <PageLayout breadcrumb={[{ label: 'Marketing' }, { label: 'Listas de Contatos' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -259,6 +262,6 @@ export default function ContactListsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, BookOpen, Pencil, Trash2 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -36,6 +37,8 @@ interface ApiResponse<T> {
 const KB_QUERY_KEY = ['knowledge-bases']
 
 export default function KnowledgeBasesPage() {
+  React.useEffect(() => { document.title = 'Bases de Conhecimento | SistemaZapChat' }, [])
+
   const router = useRouter()
   const queryClient = useQueryClient()
 
@@ -100,7 +103,7 @@ export default function KnowledgeBasesPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
+      <PageLayout breadcrumb={[{ label: 'Inteligência Artificial' }, { label: 'Bases de Conhecimento' }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-4 w-64" />
@@ -110,12 +113,12 @@ export default function KnowledgeBasesPage() {
             <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <PageLayout breadcrumb={[{ label: 'Inteligência Artificial' }, { label: 'Bases de Conhecimento' }]}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Bases de Conhecimento</h1>
@@ -206,6 +209,6 @@ export default function KnowledgeBasesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

@@ -13,6 +13,7 @@ import {
   Users,
   Radio,
 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -95,6 +96,8 @@ function toSlug(value: string): string {
 // ── Component ──
 
 export default function TenantsPage() {
+  React.useEffect(() => { document.title = 'Tenants | SistemaZapChat' }, [])
+
   const router = useRouter()
   const { user } = useAuthStore()
 
@@ -306,7 +309,7 @@ export default function TenantsPage() {
 
   if (loading && tenants.length === 0) {
     return (
-      <div className="p-6 space-y-6">
+      <PageLayout breadcrumb={[{ label: 'Administração' }, { label: 'Tenants' }]}>
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton className="h-7 w-32" />
@@ -320,7 +323,7 @@ export default function TenantsPage() {
             <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
-      </div>
+      </PageLayout>
     )
   }
 
@@ -335,7 +338,7 @@ export default function TenantsPage() {
     formAdminPassword.length >= 6
 
   return (
-    <div className="p-6 space-y-6">
+    <PageLayout breadcrumb={[{ label: 'Administração' }, { label: 'Tenants' }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -684,6 +687,6 @@ export default function TenantsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   )
 }

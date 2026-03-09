@@ -36,6 +36,8 @@ interface ApiResponse<T> {
 }
 
 export default function KnowledgeBaseDetailPage() {
+  React.useEffect(() => { document.title = 'Base de Conhecimento | SistemaZapChat' }, [])
+
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const queryClient = useQueryClient()
