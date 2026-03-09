@@ -1,10 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Pencil, Trash2, Bot } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Trash2, Bot } from 'lucide-react'
 import type { Assistant } from './types'
 
 interface AssistantCardProps {
@@ -15,58 +12,39 @@ interface AssistantCardProps {
 
 export function AssistantCard({ assistant, onEdit, onDelete }: AssistantCardProps) {
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-lg">
-              {assistant.avatarEmoji || <Bot className="h-5 w-5 text-primary" />}
-            </div>
-            <div>
-              <CardTitle className="text-sm">{assistant.name}</CardTitle>
-              <CardDescription className="text-xs mt-0.5">{assistant.model}</CardDescription>
-            </div>
-          </div>
-          <Badge variant={assistant.isActive ? 'success' : 'secondary'}>
-            {assistant.isActive ? 'Ativo' : 'Inativo'}
-          </Badge>
+    <div
+      className="group relative flex items-start gap-3 rounded-xl border bg-card p-4 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all"
+      onClick={() => onEdit(assistant)}
+    >
+      {/* Delete button — aparece no hover */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onDelete(assistant)
+        }}
+        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+
+      {/* Avatar */}
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-2xl">
+        {assistant.avatarEmoji || <Bot className="h-6 w-6 text-primary" />}
+      </div>
+
+      {/* Conteúdo */}
+      <div className="min-w-0 flex-1 pr-5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-semibold truncate">{assistant.name}</span>
         </div>
-      </CardHeader>
-      <CardContent className="pt-0 space-y-3">
+        <span className={`text-xs font-medium ${assistant.isActive ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+          {assistant.isActive ? 'Ativo' : 'Inativo'}
+        </span>
         {assistant.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">{assistant.description}</p>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">{assistant.description}</p>
         )}
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Tempo de espera</span>
-          <span className="font-medium">{assistant.waitTimeSeconds}s</span>
-        </div>
-        {assistant.knowledgeBases.length > 0 && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Bases de conhecimento</span>
-            <span className="font-medium">{assistant.knowledgeBases.length}</span>
-          </div>
-        )}
-        {assistant.tools.length > 0 && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Ferramentas</span>
-            <span className="font-medium">{assistant.tools.length}</span>
-          </div>
-        )}
-        <div className="flex gap-2 pt-1">
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(assistant)}>
-            <Pencil className="h-3.5 w-3.5" />
-            Editar
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(assistant)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

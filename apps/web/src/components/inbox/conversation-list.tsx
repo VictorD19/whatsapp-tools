@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { useInboxStore, type InboxTab } from '@/stores/inbox.store'
 import { useConversations } from '@/hooks/use-conversations'
 import { ConversationListItem } from './conversation-list-item'
+import { NewConversationDialog } from './new-conversation-dialog'
 import { cn } from '@/lib/utils'
 
 const tabs: { key: InboxTab; label: string; shortLabel: string }[] = [
@@ -18,6 +19,7 @@ const tabs: { key: InboxTab; label: string; shortLabel: string }[] = [
 
 export function ConversationList() {
   const [search, setSearch] = useState('')
+  const [newConvOpen, setNewConvOpen] = useState(false)
   const activeTab = useInboxStore((s) => s.activeTab)
   const setActiveTab = useInboxStore((s) => s.setActiveTab)
   const conversations = useInboxStore((s) => s.conversations)
@@ -73,6 +75,17 @@ export function ConversationList() {
 
   return (
     <div className="flex h-full flex-col bg-background">
+      <NewConversationDialog
+        open={newConvOpen}
+        onClose={() => setNewConvOpen(false)}
+        onConversationCreated={(id) => {
+          setNewConvOpen(false)
+          // Deseleciona primeiro para forçar re-mount do MessageThread
+          // caso a conversa já estivesse selecionada (useEffect não re-executa com mesmo id)
+          selectConversation(null)
+          setTimeout(() => selectConversation(id), 0)
+        }}
+      />
       {/* Header */}
       <div className="flex h-12 items-center justify-between border-b border-border px-3 shrink-0">
         <h2 className="text-[13px] font-semibold text-foreground">Conversas</h2>
@@ -80,7 +93,13 @@ export function ConversationList() {
           <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
             <SlidersHorizontal className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            onClick={() => setNewConvOpen(true)}
+            title="Nova conversa"
+          >
             <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>

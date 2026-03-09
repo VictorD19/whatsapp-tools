@@ -58,26 +58,6 @@ export class ConversationImportProcessor {
       return
     }
 
-    // Fetch contacts to enrich names (findChats often has empty names for 1:1)
-    const contactNameMap = new Map<string, string>()
-    try {
-      const contacts = await this.whatsapp.findContacts(evolutionId)
-      for (const c of contacts) {
-        if (c.pushName) {
-          contactNameMap.set(c.remoteJid, c.pushName)
-        }
-      }
-      this.logger.log(
-        `Fetched ${contacts.length} contacts (${contactNameMap.size} with names) for name enrichment`,
-        'ConversationImportProcessor',
-      )
-    } catch {
-      this.logger.warn(
-        'Failed to fetch contacts for name enrichment — continuing with chat names only',
-        'ConversationImportProcessor',
-      )
-    }
-
     // Log and filter out unresolvable JIDs
     const lidChats = chats.filter((chat) => chat.remoteJid.includes('@lid'))
     if (lidChats.length > 0) {
@@ -139,12 +119,34 @@ export class ConversationImportProcessor {
       total: validChats.length,
     })
 
-    // Emit import:started
+    // Emit import:started NOW — before fetchContacts — so the frontend
+    // immediately shows the total count instead of waiting another 30-60s
     this.gateway.emitImportStarted(tenantId, {
       instanceId,
       totalChats: validChats.length,
       jobId: job.id as string,
     })
+
+    // Fetch contacts to enrich names (findChats often has empty names for 1:1)
+    // Runs AFTER emitting import:started so it doesn't block the UI update
+    const contactNameMap = new Map<string, string>()
+    try {
+      const contacts = await this.whatsapp.findContacts(evolutionId)
+      for (const c of contacts) {
+        if (c.pushName) {
+          contactNameMap.set(c.remoteJid, c.pushName)
+        }
+      }
+      this.logger.log(
+        `Fetched ${contacts.length} contacts (${contactNameMap.size} with names) for name enrichment`,
+        'ConversationImportProcessor',
+      )
+    } catch {
+      this.logger.warn(
+        'Failed to fetch contacts for name enrichment — continuing with chat names only',
+        'ConversationImportProcessor',
+      )
+    }
 
     // Create sub-jobs for each conversation
     for (let i = 0; i < validChats.length; i++) {

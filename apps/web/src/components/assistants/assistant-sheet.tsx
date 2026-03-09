@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { X, User, FileText, Settings2 } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -34,6 +34,8 @@ const MODEL_OPTIONS = [
   { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
 ]
 
+type Tab = 'profile' | 'instructions' | 'advanced'
+
 interface AssistantSheetProps {
   open: boolean
   assistant: Assistant | null
@@ -56,6 +58,7 @@ export interface AssistantFormData {
 }
 
 export function AssistantSheet({ open, assistant, saving, onClose, onSave }: AssistantSheetProps) {
+  const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [avatarEmoji, setAvatarEmoji] = useState('')
@@ -82,6 +85,7 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
 
   useEffect(() => {
     if (open) {
+      setActiveTab('profile')
       if (assistant) {
         setName(assistant.name)
         setDescription(assistant.description ?? '')
@@ -151,171 +155,266 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
     })
   }, [name, description, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, handoffKeywords, selectedKBs, selectedTools, onSave])
 
+  const tabs = [
+    { id: 'profile' as Tab, label: 'Perfil', icon: User },
+    { id: 'instructions' as Tab, label: 'Instruções', icon: FileText },
+    { id: 'advanced' as Tab, label: 'Avançado', icon: Settings2 },
+  ]
+
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
+      <SheetContent className="sm:max-w-lg flex flex-col p-0">
+        <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle>{assistant ? 'Editar assistente' : 'Novo assistente'}</SheetTitle>
           <SheetDescription>
-            {assistant ? 'Altere as configuracoes do assistente' : 'Configure um novo assistente de IA'}
+            {assistant ? 'Altere as configurações do assistente' : 'Configure um novo assistente de IA'}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="assistant-name">Nome *</Label>
-            <Input
-              id="assistant-name"
-              placeholder="Ex: SDR de Vendas"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-1 px-6 mt-4 border-b">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={[
+                  'flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+                  activeTab === tab.id
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                ].join(' ')}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="assistant-desc">Descricao</Label>
-            <Input
-              id="assistant-desc"
-              placeholder="Breve descricao do assistente"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          {/* Avatar Emoji */}
-          <div className="space-y-2">
-            <Label htmlFor="assistant-emoji">Emoji do avatar</Label>
-            <Input
-              id="assistant-emoji"
-              placeholder="Ex: \uD83E\uDD16"
-              value={avatarEmoji}
-              onChange={(e) => setAvatarEmoji(e.target.value)}
-              className="w-20"
-            />
-          </div>
-
-          {/* Model */}
-          <div className="space-y-2">
-            <Label>Modelo</Label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MODEL_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Wait Time */}
-          <div className="space-y-2">
-            <Label htmlFor="assistant-wait">Tempo de espera (segundos)</Label>
-            <Input
-              id="assistant-wait"
-              type="number"
-              min={1}
-              max={60}
-              value={waitTimeSeconds}
-              onChange={(e) => setWaitTimeSeconds(Number(e.target.value))}
-              className="w-24"
-            />
-          </div>
-
-          {/* Active toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="assistant-active">Ativo</Label>
-            <Switch
-              id="assistant-active"
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-          </div>
-
-          {/* System Prompt */}
-          <div className="space-y-2">
-            <Label htmlFor="assistant-prompt">Prompt do sistema</Label>
-            <Textarea
-              id="assistant-prompt"
-              placeholder="Voce e um assistente de vendas..."
-              value={systemPrompt}
-              onChange={(e) => setSystemPrompt(e.target.value)}
-              rows={6}
-            />
-          </div>
-
-          {/* Handoff Keywords */}
-          <div className="space-y-2">
-            <Label htmlFor="assistant-keywords">Palavras de transferencia</Label>
-            <Input
-              id="assistant-keywords"
-              placeholder="Digite e pressione Enter"
-              value={keywordInput}
-              onChange={(e) => setKeywordInput(e.target.value)}
-              onKeyDown={handleKeywordKeyDown}
-            />
-            {handoffKeywords.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {handoffKeywords.map((kw) => (
-                  <Badge key={kw} variant="secondary" className="gap-1">
-                    {kw}
-                    <button type="button" onClick={() => removeKeyword(kw)} className="hover:text-destructive">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {/* PERFIL */}
+          {activeTab === 'profile' && (
+            <div className="space-y-4">
+              {/* Avatar Emoji + Name */}
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-3xl border-2 border-dashed border-primary/30">
+                  {avatarEmoji || '🤖'}
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="assistant-emoji" className="text-xs text-muted-foreground">
+                    Emoji do avatar
+                  </Label>
+                  <Input
+                    id="assistant-emoji"
+                    placeholder="🤖"
+                    value={avatarEmoji}
+                    onChange={(e) => setAvatarEmoji(e.target.value)}
+                    className="w-20 text-center text-lg"
+                  />
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Knowledge Bases */}
-          {knowledgeBases.length > 0 && (
-            <div className="space-y-2">
-              <Label>Bases de conhecimento</Label>
-              <div className="space-y-1.5 max-h-32 overflow-y-auto rounded-md border p-2">
-                {knowledgeBases.map((kb) => (
-                  <label key={kb.id} className="flex items-center gap-2 text-sm cursor-pointer">
+              <div className="space-y-2">
+                <Label htmlFor="assistant-name">Nome *</Label>
+                <Input
+                  id="assistant-name"
+                  placeholder="Ex: SDR de Vendas"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="assistant-desc">Descrição</Label>
+                <Textarea
+                  id="assistant-desc"
+                  placeholder="Ex: Ajuda clientes a solucionar dúvidas sobre o nosso sistema"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* Status */}
+              <div className="rounded-lg border p-4 space-y-3">
+                <Label className="text-sm font-medium">Status</Label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
-                      type="checkbox"
-                      checked={selectedKBs.includes(kb.id)}
-                      onChange={() => toggleKB(kb.id)}
-                      className="rounded border-border"
+                      type="radio"
+                      name="status"
+                      checked={isActive}
+                      onChange={() => setIsActive(true)}
+                      className="text-primary"
                     />
-                    {kb.name}
+                    <span className="text-sm">Ativo</span>
                   </label>
-                ))}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="status"
+                      checked={!isActive}
+                      onChange={() => setIsActive(false)}
+                      className="text-primary"
+                    />
+                    <span className="text-sm">Inativo</span>
+                  </label>
+                </div>
               </div>
+
+              {/* Knowledge Bases */}
+              {knowledgeBases.length > 0 && (
+                <div className="space-y-2">
+                  <Label>
+                    Bases de conhecimento{' '}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </Label>
+                  <div className="rounded-lg border divide-y">
+                    {knowledgeBases.map((kb) => (
+                      <label
+                        key={kb.id}
+                        className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedKBs.includes(kb.id)}
+                          onChange={() => toggleKB(kb.id)}
+                          className="rounded border-border"
+                        />
+                        <span className="text-sm">{kb.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* AI Tools */}
-          {aiTools.length > 0 && (
-            <div className="space-y-2">
-              <Label>Ferramentas</Label>
-              <div className="space-y-1.5 max-h-32 overflow-y-auto rounded-md border p-2">
-                {aiTools.map((tool) => (
-                  <label key={tool.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedTools.includes(tool.id)}
-                      onChange={() => toggleTool(tool.id)}
-                      className="rounded border-border"
-                    />
-                    {tool.name}
-                    <span className="text-muted-foreground text-xs">({tool.type})</span>
-                  </label>
-                ))}
+          {/* INSTRUÇÕES */}
+          {activeTab === 'instructions' && (
+            <div className="space-y-2 h-full">
+              <Label htmlFor="assistant-prompt">Instruções do sistema</Label>
+              <p className="text-xs text-muted-foreground">
+                Descreva o comportamento, tom e objetivos do assistente
+              </p>
+              <Textarea
+                id="assistant-prompt"
+                placeholder="Você é um assistente de vendas especializado em... Seu objetivo é... Sempre responda em..."
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                rows={16}
+                className="resize-none font-mono text-sm"
+              />
+            </div>
+          )}
+
+          {/* AVANÇADO */}
+          {activeTab === 'advanced' && (
+            <div className="space-y-5">
+              {/* Model */}
+              <div className="space-y-2">
+                <Label>Modelo de inteligência</Label>
+                <Select value={model} onValueChange={setModel}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MODEL_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Wait Time */}
+              <div className="space-y-2">
+                <Label htmlFor="assistant-wait">
+                  Tempo para coletar mensagens
+                  <span className="text-muted-foreground font-normal ml-1 text-xs">
+                    (aguarda antes de responder)
+                  </span>
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="assistant-wait"
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={waitTimeSeconds}
+                    onChange={(e) => setWaitTimeSeconds(Number(e.target.value))}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-muted-foreground">segundos</span>
+                </div>
+              </div>
+
+              {/* Handoff Keywords */}
+              <div className="space-y-2">
+                <Label htmlFor="assistant-keywords">Palavras de transferência</Label>
+                <p className="text-xs text-muted-foreground">
+                  Quando o cliente digitar estas palavras, o bot transfere para um atendente
+                </p>
+                <Input
+                  id="assistant-keywords"
+                  placeholder="Ex: humano, atendente — pressione Enter"
+                  value={keywordInput}
+                  onChange={(e) => setKeywordInput(e.target.value)}
+                  onKeyDown={handleKeywordKeyDown}
+                />
+                {handoffKeywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {handoffKeywords.map((kw) => (
+                      <Badge key={kw} variant="secondary" className="gap-1">
+                        {kw}
+                        <button
+                          type="button"
+                          onClick={() => removeKeyword(kw)}
+                          className="hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* AI Tools */}
+              {aiTools.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Ferramentas</Label>
+                  <div className="rounded-lg border divide-y">
+                    {aiTools.map((tool) => (
+                      <label
+                        key={tool.id}
+                        className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedTools.includes(tool.id)}
+                          onChange={() => toggleTool(tool.id)}
+                          className="rounded border-border"
+                        />
+                        <span className="text-sm flex-1">{tool.name}</span>
+                        <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 rounded">
+                          {tool.type}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        <SheetFooter>
+        <SheetFooter className="px-6 py-4 border-t">
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>

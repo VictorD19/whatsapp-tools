@@ -3,10 +3,14 @@ import { InboxRepository } from './inbox.repository'
 import { InboxGateway } from './inbox.gateway'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { InstancesService } from '@modules/instances/instances.service'
+import { ContactsService } from '@modules/contacts/contacts.service'
+import { TenantsService } from '@modules/tenants/tenants.service'
+import { EvolutionApiError } from '@modules/whatsapp/adapters/evolution/evolution-http.client'
 import { AppException } from '@core/errors/app.exception'
 import { LoggerService } from '@core/logger/logger.service'
 import { ConversationFiltersDto } from './dto/conversation-filters.dto'
 import { SendMessageDto } from './dto/send-message.dto'
+import { StartConversationDto } from './dto/start-conversation.dto'
 import { ImportConversationsDto } from './dto/import-conversations.dto'
 import { ConversationImportProducer } from './queues/import.producer'
 import { ConversationStatus } from '@prisma/client'
@@ -71,6 +75,8 @@ export class InboxService {
     private readonly repository: InboxRepository,
     private readonly whatsapp: WhatsAppService,
     private readonly instancesService: InstancesService,
+    private readonly contactsService: ContactsService,
+    private readonly tenantsService: TenantsService,
     private readonly gateway: InboxGateway,
     private readonly importProducer: ConversationImportProducer,
     private readonly storage: StorageService,
@@ -140,6 +146,99 @@ export class InboxService {
       throw AppException.notFound('CONVERSATION_NOT_FOUND', 'Conversa nao encontrada', { id })
     }
     return conversation
+  }
+
+  async startOutboundConversation(
+    tenantId: string,
+    userId: string,
+    dto: StartConversationDto,
+  ) {
+    // 1. Validate instance exists and is connected
+    const instance = await this.instancesService.findOne(tenantId, dto.instanceId)
+    if (!instance) {
+      throw AppException.notFound('INSTANCE_NOT_FOUND', 'Instancia nao encontrada', { instanceId: dto.instanceId })
+    }
+    if (instance.status !== 'CONNECTED') {
+      throw new AppException(
+        'INSTANCE_NOT_CONNECTED',
+        'A instancia precisa estar conectada para iniciar uma conversa',
+        { status: instance.status },
+      )
+    }
+
+    // 2. Find or create contact
+    const contact = await this.contactsService.findOrCreate(tenantId, dto.phone, dto.contactName)
+
+    // 3. Find any active (non-closed) conversation with this contact across all instances
+    let conversation = await this.repository.findActiveConversationByContact(tenantId, contact.id)
+    let sendingInstance = instance
+
+    if (!conversation) {
+      // No active conversation — create a new one on the selected instance
+      const protocol = await this.tenantsService.getNextProtocol(tenantId)
+      conversation = await this.repository.createConversation({
+        tenantId,
+        instanceId: dto.instanceId,
+        contactId: contact.id,
+        protocol,
+        lastMessageAt: new Date(),
+      })
+    } else if (conversation.instanceId !== dto.instanceId) {
+      // Active conversation exists on a different instance — use that instance to send
+      try {
+        sendingInstance = await this.instancesService.findOne(tenantId, conversation.instanceId)
+      } catch {
+        // Instance not found — fall back to the selected instance
+      }
+    }
+
+    // 4. Assign to current user if not yet open
+    if (conversation.status !== 'OPEN') {
+      await this.repository.assignConversation(tenantId, conversation.id, userId)
+    }
+
+    // 5. Send the message via WhatsApp (on the conversation's instance)
+    let messageResult: { messageId: string; status: string }
+    try {
+      messageResult = await this.whatsapp.sendText(sendingInstance.evolutionId, dto.phone, dto.message)
+    } catch (error) {
+      this.logger.error(
+        `Failed to send outbound message: ${(error as Error).message}`,
+        (error as Error).stack,
+        'InboxService',
+      )
+      if (error instanceof EvolutionApiError && error.isPhoneNotOnWhatsApp()) {
+        throw new AppException(
+          'PHONE_NOT_ON_WHATSAPP',
+          'Este número não foi encontrado no WhatsApp. Verifique se o número está correto e inclui o DDI (ex: 5511999999999)',
+          { phone: dto.phone },
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        )
+      }
+      throw new AppException(
+        'MESSAGE_SEND_FAILED',
+        'Falha ao enviar mensagem via WhatsApp',
+        { reason: (error as Error).message },
+        HttpStatus.BAD_GATEWAY,
+      )
+    }
+
+    // 6. Save message to DB
+    await this.repository.createMessage({
+      tenantId,
+      conversationId: conversation.id,
+      fromMe: true,
+      body: dto.message,
+      type: 'TEXT',
+      status: 'SENT',
+      evolutionId: messageResult.messageId,
+    })
+
+    await this.repository.updateLastMessageAt(conversation.id)
+
+    // 7. Return full conversation data
+    const full = await this.findConversationById(tenantId, conversation.id)
+    return { data: full }
   }
 
   async findMessages(tenantId: string, conversationId: string, page: number, limit: number) {

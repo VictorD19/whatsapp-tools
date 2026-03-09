@@ -99,6 +99,18 @@ export class InboxRepository {
     })
   }
 
+  async findActiveConversationByContact(tenantId: string, contactId: string) {
+    return this.prisma.conversation.findFirst({
+      where: {
+        tenantId,
+        contactId,
+        status: { not: 'CLOSE' },
+        deletedAt: null,
+      },
+      orderBy: { lastMessageAt: 'desc' },
+    })
+  }
+
   async createConversation(data: {
     tenantId: string
     instanceId: string

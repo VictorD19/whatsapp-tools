@@ -14,8 +14,12 @@ interface ConnectResult {
   qrCode: string
 }
 
+// Safety timeout: if import:started is not received within 90s, clear stuck state.
+// The backend findChats now has a 60s HTTP timeout, so 90s covers the full round-trip.
+const IMPORT_START_TIMEOUT_MS = 90_000
+
 export function useInstances() {
-  const { setInstances, setLoading, addInstance, removeInstance, updateInstanceStatus, setImportProgress } =
+  const { setInstances, setLoading, addInstance, removeInstance, updateInstanceStatus, setImportProgress, clearImportProgress } =
     useInstancesStore()
   const queryClient = useQueryClient()
 
@@ -30,6 +34,17 @@ export function useInstances() {
       setLoading(false)
     }
   }, [setInstances, setLoading])
+
+  // Silent refresh: syncs with Evolution API without triggering loading state
+  // Used for background polling while instances are connecting
+  const refreshInstances = useCallback(async () => {
+    try {
+      const res = await apiGet<ApiResponse<Instance[]>>('instances')
+      setInstances(res.data)
+    } catch {
+      // Ignore polling errors silently
+    }
+  }, [setInstances])
 
   const createInstance = useCallback(
     async (name: string) => {
@@ -72,16 +87,32 @@ export function useInstances() {
   const importConversations = useCallback(
     async (instanceId: string) => {
       setImportProgress(instanceId, { importing: true, imported: 0, total: 0, skipped: 0 })
+
+      // Safety net: if import:started WebSocket event is not received within 90s,
+      // the job likely failed silently or the socket missed the event. Clear stuck UI.
+      const safetyTimer = setTimeout(() => {
+        const current = useInstancesStore.getState().importProgress[instanceId]
+        if (current?.importing && current.total === 0) {
+          clearImportProgress(instanceId)
+          toast({
+            title: 'Importação sem resposta',
+            description: 'Verifique os logs do servidor e tente novamente.',
+            variant: 'destructive',
+          })
+        }
+      }, IMPORT_START_TIMEOUT_MS)
+
       try {
         await apiPost<ApiResponse<{ message: string }>>(`inbox/instances/${instanceId}/import-conversations`, {})
         toast({ title: 'Importacao iniciada', variant: 'success' })
       } catch {
-        setImportProgress(instanceId, { importing: false, imported: 0, total: 0, skipped: 0 })
+        clearTimeout(safetyTimer)
+        clearImportProgress(instanceId)
         toast({ title: 'Erro ao iniciar importacao', variant: 'destructive' })
       }
     },
-    [setImportProgress],
+    [setImportProgress, clearImportProgress],
   )
 
-  return { fetchInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, importConversations }
+  return { fetchInstances, refreshInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, importConversations }
 }

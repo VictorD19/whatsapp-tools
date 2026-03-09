@@ -29,10 +29,24 @@ import {
   importConversationsSchema,
   ImportConversationsDto,
 } from './dto/import-conversations.dto'
+import {
+  startConversationSchema,
+  StartConversationDto,
+} from './dto/start-conversation.dto'
 
 @Controller('inbox')
 export class InboxController {
   constructor(private readonly inboxService: InboxService) {}
+
+  @Post('conversations/start')
+  @HttpCode(HttpStatus.OK)
+  startConversation(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: { id: string },
+    @Body(new ZodValidationPipe(startConversationSchema)) dto: StartConversationDto,
+  ) {
+    return this.inboxService.startOutboundConversation(tenantId, user.id, dto)
+  }
 
   @Get('conversations')
   findConversations(

@@ -34,6 +34,7 @@ export class ConversationImportProducer {
       jobId: `import-${payload.tenantId}-${payload.instanceId}`,
       attempts: 1,
       removeOnComplete: true,
+      removeOnFail: true,
     })
   }
 

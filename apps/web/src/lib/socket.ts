@@ -10,7 +10,7 @@ export function getSocket(): Socket {
 
   socket = io(WS_URL, {
     autoConnect: false,
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
     auth: (cb) => {
       const { token, user } = useAuthStore.getState()
       cb({

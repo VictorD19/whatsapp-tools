@@ -196,8 +196,20 @@ export class InboxWebhookProcessor {
         await this.inboxRepository.incrementUnreadCount(conversation.id)
       }
 
-      // Create message
+      // Deduplicate: skip if message already exists (e.g. fromMe sent via API — Evolution echoes it back)
       const evolutionMsgId = key.id as string | undefined
+      if (evolutionMsgId) {
+        const existing = await this.inboxRepository.findMessageByEvolutionId(evolutionMsgId)
+        if (existing) {
+          this.logger.debug(
+            `Skipping duplicate message evolutionId=${evolutionMsgId}`,
+            'InboxWebhookProcessor',
+          )
+          continue
+        }
+      }
+
+      // Create message
       const newMessage = await this.inboxRepository.createMessage({
         tenantId: instance.tenantId,
         conversationId: conversation.id,

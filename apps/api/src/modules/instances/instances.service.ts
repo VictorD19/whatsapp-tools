@@ -226,17 +226,23 @@ export class InstancesService {
   async remove(tenantId: string, id: string) {
     const instance = await this.findOne(tenantId, id)
 
-    // Delete from Evolution API
+    // Delete from Evolution API first — must succeed before removing from DB
     try {
       await this.whatsapp.deleteInstance(instance.evolutionId)
     } catch (error) {
-      this.logger.warn(
-        `Failed to delete instance from Evolution: ${(error as Error).message}`,
+      this.logger.error(
+        `Failed to delete instance from Evolution API (evolutionId=${instance.evolutionId}): ${(error as Error).message}`,
         'InstancesService',
+      )
+      throw new AppException(
+        'INSTANCE_EVOLUTION_DELETE_FAILED',
+        'Falha ao remover instância no provedor WhatsApp',
+        { reason: (error as Error).message },
+        HttpStatus.BAD_GATEWAY,
       )
     }
 
-    // Soft delete in DB
+    // Soft delete in DB only after Evolution confirms deletion
     await this.repository.softDelete(tenantId, id)
 
     this.logger.log(`Instance ${id} deleted (soft)`, 'InstancesService')

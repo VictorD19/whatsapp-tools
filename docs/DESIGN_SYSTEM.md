@@ -124,6 +124,34 @@ Escala completa em `apps/web/tailwind.config.ts`:
 
 ---
 
+## Padrão de Layout de Páginas
+
+### Regra: conteúdo sempre dentro de um card
+
+O fundo geral da app (`--background`) é um off-white acinzentado (`#f8f9f5`).
+Para criar contraste visual, **todo conteúdo de formulário ou listagem de uma página deve estar dentro de um card branco** (`bg-card` / `rounded-xl border bg-card p-5`).
+
+**Nunca** colocar campos de formulário ou seções diretamente sobre o fundo — isso elimina o contraste e deixa a interface sem profundidade.
+
+```tsx
+// CORRETO — conteúdo dentro de card
+<div className="p-6">
+  <div className="rounded-xl border bg-card p-5 space-y-4">
+    {/* campos aqui */}
+  </div>
+</div>
+
+// ERRADO — campos soltos sobre o fundo
+<div className="p-6 space-y-4">
+  <Input ... />
+  <Textarea ... />
+</div>
+```
+
+Para páginas de detalhe/edição com múltiplos campos, usar **um único card por tab** (não quebrar em múltiplos cards por seção) para manter a consistência e legibilidade.
+
+---
+
 ## Arquivos-chave
 
 | Arquivo | Conteúdo |

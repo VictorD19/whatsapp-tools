@@ -38,7 +38,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   React.useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
     if (!token) return
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api'
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
     fetch(`${apiUrl}/notifications/unread-count`, {
       headers: { Authorization: `Bearer ${token}` },
     })
