@@ -31,7 +31,8 @@ export function ConversationListItem({
   isActive,
   onClick,
 }: ConversationListItemProps) {
-  const contactName = conversation.contact?.name ?? conversation.contact?.phone ?? 'Sem nome'
+  const rawPhone = conversation.contact?.phone
+  const contactName = conversation.contact?.name ?? (rawPhone && !rawPhone.includes('@g.us') ? rawPhone : null) ?? 'Sem nome'
   const hasUnread = conversation.unreadCount > 0
   const lastMsg = conversation.messages?.[0]
   const lastMsgPreview = lastMsg

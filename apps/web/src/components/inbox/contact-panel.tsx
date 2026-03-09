@@ -382,7 +382,7 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
   }
 
   const contact = conversation.contact
-  const contactName = contact.name ?? contact.phone
+  const contactName = contact.name ?? (contact.phone.includes('@g.us') ? 'Grupo' : contact.phone)
   const isAssignedToMe = conversation.assignedToId === userId
   const isPending = conversation.status === 'PENDING'
   const activeDeal = conversation.deals?.[0] ?? null

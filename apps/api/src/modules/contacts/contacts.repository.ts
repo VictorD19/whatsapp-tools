@@ -40,7 +40,7 @@ export class ContactsRepository {
 
   async findAllByTenant(tenantId: string) {
     return this.prisma.contact.findMany({
-      where: { tenantId, deletedAt: null },
+      where: { tenantId, deletedAt: null, NOT: { phone: { contains: '@g.us' } } },
       orderBy: { createdAt: 'desc' },
     })
   }
@@ -50,6 +50,7 @@ export class ContactsRepository {
 
     const where = {
       tenantId,
+      NOT: { phone: { contains: '@g.us' } },
       ...(!includeDeleted && { deletedAt: null }),
       ...(search && {
         OR: [

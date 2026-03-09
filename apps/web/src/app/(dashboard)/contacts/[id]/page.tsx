@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   Phone, ArrowLeft, Pencil, Check, X, Loader2, Calendar,
 } from 'lucide-react'
+import { PageLayout } from '@/components/layout/page-layout'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -48,7 +49,7 @@ export default function ContactDetailPage() {
     )
   }
 
-  const contactName = contact.name ?? contact.phone
+  const contactName = contact.name ?? (contact.phone.includes('@g.us') ? 'Grupo' : contact.phone)
 
   async function handleSaveName() {
     const name = nameInput.trim()
@@ -65,7 +66,11 @@ export default function ContactDetailPage() {
   const closedDeals = deals.filter((d) => d.stage.type === 'WON' || d.stage.type === 'LOST')
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <PageLayout
+      breadcrumb={[{ label: 'Marketing' }, { label: 'Contatos' }]}
+      cardClassName="flex flex-col overflow-hidden"
+    >
+      <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-border px-6 py-4 shrink-0">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -220,5 +225,6 @@ export default function ContactDetailPage() {
         />
       )}
     </div>
+    </PageLayout>
   )
 }
