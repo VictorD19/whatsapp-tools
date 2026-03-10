@@ -8,13 +8,18 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
 import { AiToolsService } from './ai-tools.service'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
+import { Roles } from '@shared/decorators/roles.decorator'
+import { RoleGuard } from '@core/guards/role.guard'
 import { ZodValidationPipe } from '@shared/pipes/zod-validation.pipe'
 import { createAiToolSchema, CreateAiToolDto } from './dto/create-ai-tool.dto'
 import { updateAiToolSchema, UpdateAiToolDto } from './dto/update-ai-tool.dto'
 
+@UseGuards(RoleGuard)
+@Roles('admin')
 @Controller()
 export class AiToolsController {
   constructor(private readonly aiToolsService: AiToolsService) {}

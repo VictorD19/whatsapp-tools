@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common'
+import { Controller, Get, Post, Patch, Delete, Param, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
 import { ZodValidationPipe } from '@shared/pipes/zod-validation.pipe'
+import { Roles } from '@shared/decorators/roles.decorator'
+import { RoleGuard } from '@core/guards/role.guard'
 import { AssistantsService } from './assistants.service'
 import { CreateAssistantSchema, type CreateAssistantDto } from './dto/create-assistant.dto'
 import { UpdateAssistantSchema, type UpdateAssistantDto } from './dto/update-assistant.dto'
@@ -8,6 +10,8 @@ import { LinkKnowledgeBaseSchema, type LinkKnowledgeBaseDto } from './dto/link-k
 import { LinkToolSchema, type LinkToolDto } from './dto/link-tool.dto'
 import { SetConversationAssistantSchema, type SetConversationAssistantDto } from './dto/set-conversation-assistant.dto'
 
+@UseGuards(RoleGuard)
+@Roles('admin')
 @Controller()
 export class AssistantsController {
   constructor(private readonly assistantsService: AssistantsService) {}
@@ -84,6 +88,7 @@ export class AssistantsController {
   }
 
   @Patch('inbox/conversations/:conversationId/assistant')
+  @Roles('admin', 'agent')
   setConversationAssistant(
     @CurrentTenant() tenantId: string,
     @Param('conversationId') conversationId: string,

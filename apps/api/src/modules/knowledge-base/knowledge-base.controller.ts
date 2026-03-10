@@ -9,15 +9,20 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  UseGuards,
 } from '@nestjs/common'
 import type { FastifyRequest } from 'fastify'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
 import { ZodValidationPipe } from '@shared/pipes/zod-validation.pipe'
+import { Roles } from '@shared/decorators/roles.decorator'
+import { RoleGuard } from '@core/guards/role.guard'
 import { KnowledgeBaseService } from './knowledge-base.service'
 import { CreateKnowledgeBaseSchema, type CreateKnowledgeBaseDto } from './dto/create-knowledge-base.dto'
 import { UpdateKnowledgeBaseSchema, type UpdateKnowledgeBaseDto } from './dto/update-knowledge-base.dto'
 import { AddSourceSchema, type AddSourceDto } from './dto/add-source.dto'
 
+@UseGuards(RoleGuard)
+@Roles('admin')
 @Controller('knowledge-bases')
 export class KnowledgeBaseController {
   constructor(private readonly service: KnowledgeBaseService) {}

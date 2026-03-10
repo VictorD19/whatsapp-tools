@@ -60,17 +60,17 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
         { icon: UserCircle, label: tNav('items.contacts'), href: '/contacts' },
       ],
     },
-    {
+  ]
+
+  if (role === 'admin' || isSuperAdmin) {
+    groups.push({
       label: tNav('groups.ai'),
       items: [
         { icon: Bot, label: tNav('items.assistants'), href: '/assistants' },
         { icon: BookOpen, label: tNav('items.knowledgeBases'), href: '/assistants/knowledge-bases' },
         { icon: Wrench, label: tNav('items.aiTools'), href: '/assistants/tools' },
       ],
-    },
-  ]
-
-  if (role === 'admin' || isSuperAdmin) {
+    })
     const settingsItems: NavItem[] = [
       { icon: Radio, label: tNav('items.instances'), href: '/instances' },
       { icon: GitBranch, label: tNav('items.pipeline'), href: '/settings/pipeline' },
