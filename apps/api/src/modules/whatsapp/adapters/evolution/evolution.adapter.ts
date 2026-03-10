@@ -109,10 +109,23 @@ export class EvolutionAdapter implements IWhatsAppProvider {
       body,
     )
 
+    const instanceName = res.instance.instanceName
+
+    // Garante que syncFullHistory esteja sempre ativo
+    await this.http.post(`/settings/set/${instanceName}`, {
+      rejectCall: false,
+      msgCall: '',
+      groupsIgnore: false,
+      alwaysOnline: false,
+      readMessages: false,
+      readStatus: false,
+      syncFullHistory: true,
+    })
+
     const status = STATE_MAP[res.instance.status] ?? 'DISCONNECTED'
 
     return {
-      instanceId: res.instance.instanceName,
+      instanceId: instanceName,
       status,
     }
   }
