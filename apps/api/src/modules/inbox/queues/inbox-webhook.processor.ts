@@ -123,6 +123,14 @@ export class InboxWebhookProcessor {
 
       // Extract message body and quoted context
       const message = msg.message as Record<string, unknown> | undefined
+
+      // Reações: tratar separadamente — nunca criar nova mensagem
+      const reactionMessage = message?.reactionMessage as Record<string, unknown> | undefined
+      if (reactionMessage) {
+        const senderJid = (key.participant as string | undefined) ?? (fromMe ? 'me' : phone)
+        await this.handleReaction(instance, reactionMessage, senderJid)
+        continue
+      }
       const parsed = parseWhatsAppMessage(message)
       const { body, type, mediaUrl } = parsed
 
@@ -309,6 +317,51 @@ export class InboxWebhookProcessor {
         )
       }
     }
+  }
+
+  private async handleReaction(
+    instance: { id: string; tenantId: string },
+    reactionMessage: Record<string, unknown>,
+    senderJid: string,
+  ) {
+    const targetKey = reactionMessage.key as Record<string, unknown> | undefined
+    const targetEvolutionId = targetKey?.id as string | undefined
+    const emoji = reactionMessage.text as string | undefined
+
+    if (!targetEvolutionId) return
+
+    const targetMessage = await this.inboxRepository.findMessageByEvolutionId(targetEvolutionId)
+    if (!targetMessage) {
+      this.logger.debug(
+        `Reaction target message not found: evolutionId=${targetEvolutionId}`,
+        'InboxWebhookProcessor',
+      )
+      return
+    }
+
+    if (!emoji) {
+      await this.inboxRepository.deleteReaction(targetMessage.id, senderJid)
+    } else {
+      await this.inboxRepository.upsertReaction({
+        tenantId: instance.tenantId,
+        messageId: targetMessage.id,
+        senderJid,
+        emoji,
+      })
+    }
+
+    const reactions = await this.inboxRepository.findReactionsByMessageId(targetMessage.id)
+
+    this.gateway.emitMessageReactionUpdated(instance.tenantId, {
+      messageId: targetMessage.id,
+      conversationId: targetMessage.conversationId,
+      reactions,
+    })
+
+    this.logger.debug(
+      `Reaction ${emoji ?? '(removed)'} on message ${targetMessage.id} by ${senderJid}`,
+      'InboxWebhookProcessor',
+    )
   }
 
   private async downloadAndStoreInboundMedia(

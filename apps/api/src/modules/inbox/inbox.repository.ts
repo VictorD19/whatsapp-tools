@@ -245,10 +245,15 @@ export class InboxRepository {
       type: true,
     } as const
 
+    const reactionSelect = { senderJid: true, emoji: true } as const
+
     const [messages, total] = await Promise.all([
       this.prisma.message.findMany({
         where,
-        include: { quotedMessage: { select: quotedSelect } },
+        include: {
+          quotedMessage: { select: quotedSelect },
+          reactions: { select: reactionSelect },
+        },
         orderBy: { sentAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -291,7 +296,10 @@ export class InboxRepository {
         mediaUrl: data.mediaUrl,
         quotedMessageId: data.quotedMessageId,
       },
-      include: { quotedMessage: { select: quotedSelect } },
+      include: {
+        quotedMessage: { select: quotedSelect },
+        reactions: { select: { senderJid: true, emoji: true } },
+      },
     })
   }
 
@@ -386,6 +394,39 @@ export class InboxRepository {
     return this.prisma.message.update({
       where: { id: messageId },
       data: { evolutionId },
+    })
+  }
+
+  // ── Reactions ──
+
+  async upsertReaction(data: {
+    tenantId: string
+    messageId: string
+    senderJid: string
+    emoji: string
+  }) {
+    return this.prisma.messageReaction.upsert({
+      where: { messageId_senderJid: { messageId: data.messageId, senderJid: data.senderJid } },
+      create: {
+        tenantId: data.tenantId,
+        messageId: data.messageId,
+        senderJid: data.senderJid,
+        emoji: data.emoji,
+      },
+      update: { emoji: data.emoji },
+    })
+  }
+
+  async deleteReaction(messageId: string, senderJid: string) {
+    await this.prisma.messageReaction.deleteMany({
+      where: { messageId, senderJid },
+    })
+  }
+
+  async findReactionsByMessageId(messageId: string) {
+    return this.prisma.messageReaction.findMany({
+      where: { messageId },
+      select: { senderJid: true, emoji: true },
     })
   }
 }

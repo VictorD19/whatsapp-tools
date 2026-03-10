@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { getSocket } from '@/lib/socket'
 import { apiGet } from '@/lib/api'
-import { useInboxStore, type Conversation, type InboxTab, type Message, type MessageStatus } from '@/stores/inbox.store'
+import { useInboxStore, type Conversation, type InboxTab, type Message, type MessageReaction, type MessageStatus } from '@/stores/inbox.store'
 
 const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3'
 
@@ -59,6 +59,7 @@ export function useInboxSocket() {
   const appendMessage = useInboxStore((s) => s.appendMessage)
   const incrementUnread = useInboxStore((s) => s.incrementUnread)
   const updateMessageStatus = useInboxStore((s) => s.updateMessageStatus)
+  const updateMessageReactions = useInboxStore((s) => s.updateMessageReactions)
   const selectedConversationId = useInboxStore((s) => s.selectedConversationId)
   const selectedRef = useRef(selectedConversationId)
   selectedRef.current = selectedConversationId
@@ -165,6 +166,14 @@ export function useInboxSocket() {
       updateMessageStatus(payload.conversationId, payload.messageId, payload.status)
     }
 
+    function handleMessageReactionUpdated(payload: {
+      conversationId: string
+      messageId: string
+      reactions: MessageReaction[]
+    }) {
+      updateMessageReactions(payload.conversationId, payload.messageId, payload.reactions)
+    }
+
     // Restore document title when tab gains focus
     function handleVisibilityChange() {
       if (!document.hidden) {
@@ -181,6 +190,7 @@ export function useInboxSocket() {
     socket.on('conversation:closed', handleConversationClosed)
     socket.on('conversation:transferred', handleConversationTransferred)
     socket.on('message:status_updated', handleMessageStatusUpdated)
+    socket.on('message:reaction_updated', handleMessageReactionUpdated)
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
@@ -190,7 +200,8 @@ export function useInboxSocket() {
       socket.off('conversation:closed', handleConversationClosed)
       socket.off('conversation:transferred', handleConversationTransferred)
       socket.off('message:status_updated', handleMessageStatusUpdated)
+      socket.off('message:reaction_updated', handleMessageReactionUpdated)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [upsertConversation, removeConversation, appendMessage, incrementUnread, updateMessageStatus])
+  }, [upsertConversation, removeConversation, appendMessage, incrementUnread, updateMessageStatus, updateMessageReactions])
 }

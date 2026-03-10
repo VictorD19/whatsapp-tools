@@ -89,6 +89,11 @@ export interface QuotedMessage {
   type: MessageType
 }
 
+export interface MessageReaction {
+  senderJid: string
+  emoji: string
+}
+
 export interface Message {
   id: string
   conversationId: string
@@ -100,6 +105,7 @@ export interface Message {
   mediaUrl: string | null
   quotedMessageId: string | null
   quotedMessage: QuotedMessage | null
+  reactions: MessageReaction[]
   sentAt: string
   createdAt: string
 }
@@ -136,6 +142,7 @@ interface InboxState {
   setMessages: (conversationId: string, messages: Message[]) => void
   appendMessage: (conversationId: string, message: Message) => void
   updateMessageStatus: (conversationId: string, messageId: string, status: MessageStatus) => void
+  updateMessageReactions: (conversationId: string, messageId: string, reactions: MessageReaction[]) => void
   incrementUnread: (conversationId: string) => void
   clearUnread: (conversationId: string) => void
   setReplyingTo: (message: Message | null) => void
@@ -226,6 +233,16 @@ export const useInboxStore = create<InboxState>()((set) => ({
         ...state.messages,
         [conversationId]: (state.messages[conversationId] ?? []).map((m) =>
           m.id === messageId ? { ...m, status } : m
+        ),
+      },
+    })),
+
+  updateMessageReactions: (conversationId, messageId, reactions) =>
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [conversationId]: (state.messages[conversationId] ?? []).map((m) =>
+          m.id === messageId ? { ...m, reactions } : m
         ),
       },
     })),
