@@ -18,7 +18,7 @@ function playNotificationSound() {
 }
 
 function updateDocumentTitle(unreadTotal: number) {
-  const base = 'WhatsApp Tools'
+  const base = 'SistemaZapChat'
   document.title = unreadTotal > 0 ? `(${unreadTotal}) ${base}` : base
 }
 

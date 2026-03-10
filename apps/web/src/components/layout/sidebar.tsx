@@ -119,7 +119,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </div>
           {!collapsed && (
             <span className="truncate text-[13px] font-semibold tracking-tight text-sidebar-foreground">
-              WhatsApp Tools
+              SistemaZapChat
             </span>
           )}
         </Link>

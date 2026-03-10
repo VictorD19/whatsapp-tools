@@ -98,7 +98,7 @@ export default function LoginPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/30">
               <MessageSquare className="h-4 w-4 text-white" />
             </div>
-            <span className="text-[14px] font-semibold text-white tracking-tight">WhatsApp Tools</span>
+            <span className="text-[14px] font-semibold text-white tracking-tight">SistemaZapChat</span>
           </div>
 
           {/* Copy */}
@@ -152,7 +152,7 @@ export default function LoginPage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
               <MessageSquare className="h-3.5 w-3.5 text-white" />
             </div>
-            <span className="text-[13px] font-semibold text-white">WhatsApp Tools</span>
+            <span className="text-[13px] font-semibold text-white">SistemaZapChat</span>
           </div>
 
           <div className="rounded-2xl border border-white/8 bg-white/5 p-8 shadow-2xl shadow-black/50 backdrop-blur-md">
