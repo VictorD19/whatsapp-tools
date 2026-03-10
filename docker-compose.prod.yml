@@ -75,7 +75,7 @@ services:
 
   # ── Evolution API (WhatsApp) ───────────────────────
   evolution:
-    image: atendai/evolution-api:latest
+    image: evoapicloud/evolution-api:v2.3.7
     container_name: wt-evolution
     restart: unless-stopped
     ports:
@@ -90,13 +90,16 @@ services:
       DATABASE_SAVE_MESSAGE_UPDATE: "true"
       DATABASE_SAVE_DATA_CONTACTS: "true"
       DATABASE_SAVE_DATA_CHATS: "true"
-      REDIS_ENABLED: "true"
-      REDIS_URI: redis://redis:6379
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/6
+      CACHE_REDIS_PREFIX_KEY: evolution
       AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
       WEBHOOK_GLOBAL_ENABLED: "false"
       DEL_INSTANCE: "false"
-      CONFIG_SESSION_PHONE_VERSION: "2.3000.1023394088"
+      CONFIG_SESSION_PHONE_VERSION: "2.3000.1033994345"
       LANGUAGE: pt-BR
+      LOG_LEVEL: WARN
+      LOG_BAILEYS: silent
     depends_on:
       postgres:
         condition: service_healthy
