@@ -10,13 +10,7 @@ import { z } from 'zod'
 import { apiPost } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 import { useLocaleStore } from '@/stores/locale.store'
-
-const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Mínimo 6 caracteres'),
-})
-
-type LoginFormData = z.infer<typeof loginSchema>
+import { useTranslations } from 'next-intl'
 
 interface LoginResponse {
   data: {
@@ -32,17 +26,21 @@ interface LoginResponse {
   }
 }
 
-const features = [
-  { icon: Zap, text: 'Disparo em massa com personalização' },
-  { icon: Users, text: 'Inbox multi-atendente em tempo real' },
-  { icon: BarChart3, text: 'CRM integrado com funil Kanban' },
-]
-
 export default function LoginPage() {
   const router = useRouter()
   const setAuth = useAuthStore((s) => s.setAuth)
   const setLocaleSettings = useLocaleStore((s) => s.setLocaleSettings)
   const [showPassword, setShowPassword] = useState(false)
+
+  const t = useTranslations('auth.login')
+  const tb = useTranslations('auth.branding')
+
+  const loginSchema = z.object({
+    email: z.string().email(t('invalidEmail')),
+    password: z.string().min(6, t('minPassword')),
+  })
+
+  type LoginFormData = z.infer<typeof loginSchema>
 
   const {
     register,
@@ -52,6 +50,12 @@ export default function LoginPage() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   })
+
+  const features = [
+    { icon: Zap, text: tb('feature1') },
+    { icon: Users, text: tb('feature2') },
+    { icon: BarChart3, text: tb('feature3') },
+  ]
 
   async function onSubmit(data: LoginFormData) {
     try {
@@ -78,7 +82,7 @@ export default function LoginPage() {
       }
       router.push('/inbox')
     } catch {
-      setError('root', { message: 'Email ou senha incorretos' })
+      setError('root', { message: t('invalidCredentials') })
     }
   }
 
@@ -105,14 +109,14 @@ export default function LoginPage() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1">
               <span className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse" />
-              <span className="text-[11px] font-medium text-primary-400 tracking-wide uppercase">Plataforma completa</span>
+              <span className="text-[11px] font-medium text-primary-400 tracking-wide uppercase">{tb('platformBadge')}</span>
             </div>
             <h2 className="text-[38px] font-bold leading-[1.1] text-white">
-              Venda mais pelo<br />
-              <span className="text-primary-400">WhatsApp</span>
+              {tb('loginHeadline')}<br />
+              <span className="text-primary-400">{tb('loginHighlight')}</span>
             </h2>
             <p className="text-[14px] leading-relaxed text-zinc-400 max-w-[380px]">
-              Gerencie conversas, dispare campanhas e feche negócios — tudo em um só lugar.
+              {tb('loginDescription')}
             </p>
           </div>
 
@@ -131,15 +135,15 @@ export default function LoginPage() {
           {/* Testimonial */}
           <div className="rounded-xl border border-white/6 bg-white/4 p-4 backdrop-blur-sm max-w-[380px]">
             <p className="text-[13px] leading-relaxed text-zinc-400 italic">
-              &quot;Triplicamos nossas vendas em 60 dias usando a plataforma para atendimento e disparos.&quot;
+              &quot;{tb('testimonial')}&quot;
             </p>
             <div className="mt-3.5 flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 ring-1 ring-primary/30">
                 <span className="text-[10px] font-bold text-primary-400">MO</span>
               </div>
               <div>
-                <p className="text-[12px] font-medium text-white/80">Marcos Oliveira</p>
-                <p className="text-[11px] text-zinc-500">CEO · VendaMais Brasil</p>
+                <p className="text-[12px] font-medium text-white/80">{tb('testimonialAuthor')}</p>
+                <p className="text-[11px] text-zinc-500">{tb('testimonialRole')}</p>
               </div>
             </div>
           </div>
@@ -157,17 +161,17 @@ export default function LoginPage() {
 
           <div className="rounded-2xl border border-white/8 bg-white/5 p-8 shadow-2xl shadow-black/50 backdrop-blur-md">
             <div className="mb-6">
-              <h1 className="text-[20px] font-bold tracking-tight text-white">Bem-vindo de volta</h1>
-              <p className="mt-1 text-[12.5px] text-zinc-400">Entre com sua conta para continuar</p>
+              <h1 className="text-[20px] font-bold tracking-tight text-white">{t('title')}</h1>
+              <p className="mt-1 text-[12.5px] text-zinc-400">{t('subtitle')}</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <label htmlFor="email" className="block text-[12px] font-medium text-zinc-300">Email</label>
+                <label htmlFor="email" className="block text-[12px] font-medium text-zinc-300">{t('email')}</label>
                 <input
                   id="email"
                   type="email"
-                  placeholder="voce@empresa.com"
+                  placeholder={t('emailPlaceholder')}
                   autoComplete="email"
                   className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 text-sm text-gray-900 dark:text-white placeholder:text-zinc-600 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                   {...register('email')}
@@ -177,16 +181,16 @@ export default function LoginPage() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="block text-[12px] font-medium text-zinc-300">Senha</label>
+                  <label htmlFor="password" className="block text-[12px] font-medium text-zinc-300">{t('password')}</label>
                   <Link href="/forgot-password" className="text-[11px] text-zinc-500 hover:text-primary-400 transition-colors">
-                    Esqueceu a senha?
+                    {t('forgotPassword')}
                   </Link>
                 </div>
                 <div className="relative">
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder={t('passwordPlaceholder')}
                     autoComplete="current-password"
                     className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 pr-9 text-sm text-gray-900 dark:text-white placeholder:text-zinc-600 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                     {...register('password')}
@@ -214,15 +218,15 @@ export default function LoginPage() {
                 className="w-full h-9 rounded-lg bg-primary text-[13px] font-medium text-white shadow-lg shadow-primary/25 hover:bg-primary-500 active:bg-primary-800 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
-                  <><Loader2 className="h-3.5 w-3.5 animate-spin" />Entrando...</>
-                ) : 'Entrar'}
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('submitting')}</>
+                ) : t('submit')}
               </button>
             </form>
 
             <p className="mt-5 text-center text-[12px] text-zinc-500">
-              Não tem uma conta?{' '}
+              {t('noAccount')}{' '}
               <Link href="/register" className="font-medium text-primary-400 hover:text-primary-300 transition-colors">
-                Criar conta grátis
+                {t('createAccount')}
               </Link>
             </p>
           </div>

@@ -238,7 +238,12 @@ export function MessageThread({ conversation }: MessageThreadProps) {
                     <div className="flex-1 border-t border-border" />
                   </div>
                 )}
-                <MessageBubble message={msg} contactName={conversation.contact.name ?? conversation.contact.phone} onReply={canSend ? handleReply : undefined} />
+                <MessageBubble
+                  message={msg}
+                  contactName={conversation.contact.name ?? conversation.contact.phone}
+                  contactPhone={conversation.contact.phone}
+                  onReply={canSend ? handleReply : undefined}
+                />
               </React.Fragment>
             ))}
             <div ref={bottomRef} />

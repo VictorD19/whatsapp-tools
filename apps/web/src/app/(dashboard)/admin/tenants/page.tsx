@@ -509,7 +509,7 @@ export default function TenantsPage() {
                 id="create-name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="Minha Empresa LTDA"
+                placeholder={t('create.companyNamePlaceholder')}
                 maxLength={100}
               />
             </div>
@@ -521,7 +521,7 @@ export default function TenantsPage() {
                 id="create-slug"
                 value={formSlug}
                 onChange={(e) => handleSlugChange(e.target.value)}
-                placeholder="minha-empresa"
+                placeholder={t('create.slugPlaceholder')}
                 maxLength={60}
               />
               <p className="text-[11px] text-muted-foreground">
@@ -569,7 +569,7 @@ export default function TenantsPage() {
                 id="create-admin-name"
                 value={formAdminName}
                 onChange={(e) => setFormAdminName(e.target.value)}
-                placeholder="Joao Silva"
+                placeholder={t('create.adminNamePlaceholder')}
                 maxLength={100}
               />
             </div>
@@ -581,7 +581,7 @@ export default function TenantsPage() {
                 type="email"
                 value={formAdminEmail}
                 onChange={(e) => setFormAdminEmail(e.target.value)}
-                placeholder="joao@empresa.com"
+                placeholder={t('create.adminEmailPlaceholder')}
               />
             </div>
 
@@ -592,7 +592,7 @@ export default function TenantsPage() {
                 type="password"
                 value={formAdminPassword}
                 onChange={(e) => setFormAdminPassword(e.target.value)}
-                placeholder="Min. 6 caracteres"
+                placeholder={t('create.adminPasswordPlaceholder')}
                 minLength={6}
               />
             </div>

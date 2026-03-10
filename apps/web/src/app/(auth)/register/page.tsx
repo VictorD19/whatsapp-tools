@@ -11,19 +11,7 @@ import { apiPost } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 import { useLocaleStore } from '@/stores/locale.store'
 import { toast } from '@/components/ui/toaster'
-
-const registerSchema = z.object({
-  tenantName: z.string().min(2, 'Minimo 2 caracteres'),
-  name: z.string().min(2, 'Minimo 2 caracteres'),
-  email: z.string().email('Email invalido'),
-  password: z.string().min(6, 'Minimo 6 caracteres'),
-  confirmPassword: z.string(),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: 'As senhas nao conferem',
-  path: ['confirmPassword'],
-})
-
-type RegisterFormData = z.infer<typeof registerSchema>
+import { useTranslations } from 'next-intl'
 
 interface RegisterResponse {
   data: {
@@ -39,18 +27,28 @@ interface RegisterResponse {
   }
 }
 
-const features = [
-  { icon: Zap, text: 'Configure em menos de 5 minutos' },
-  { icon: Users, text: 'Equipe ilimitada no plano Pro' },
-  { icon: BarChart3, text: 'Relatorios e metricas em tempo real' },
-]
-
 export default function RegisterPage() {
   const router = useRouter()
   const setAuth = useAuthStore((s) => s.setAuth)
   const setLocaleSettings = useLocaleStore((s) => s.setLocaleSettings)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+
+  const t = useTranslations('auth.register')
+  const tb = useTranslations('auth.branding')
+
+  const registerSchema = z.object({
+    tenantName: z.string().min(2, t('minName')),
+    name: z.string().min(2, t('minName')),
+    email: z.string().email(t('invalidEmail')),
+    password: z.string().min(6, t('minPassword')),
+    confirmPassword: z.string(),
+  }).refine((d) => d.password === d.confirmPassword, {
+    message: t('passwordMismatch'),
+    path: ['confirmPassword'],
+  })
+
+  type RegisterFormData = z.infer<typeof registerSchema>
 
   const {
     register,
@@ -60,6 +58,12 @@ export default function RegisterPage() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   })
+
+  const features = [
+    { icon: Zap, text: tb('registerFeature1') },
+    { icon: Users, text: tb('registerFeature2') },
+    { icon: BarChart3, text: tb('registerFeature3') },
+  ]
 
   async function onSubmit(data: RegisterFormData) {
     try {
@@ -91,8 +95,8 @@ export default function RegisterPage() {
       }
       router.push('/inbox')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao criar conta'
-      toast({ title: 'Erro', description: message, variant: 'destructive' })
+      const message = err instanceof Error ? err.message : t('errorCreating')
+      toast({ title: message, variant: 'destructive' })
       setError('root', { message })
     }
   }
@@ -106,7 +110,7 @@ export default function RegisterPage() {
 
       <div className="relative z-10 flex w-full max-w-5xl items-center gap-16 lg:gap-24">
 
-        {/* -- Branding -- */}
+        {/* ── Branding ── */}
         <div className="hidden lg:flex flex-1 flex-col space-y-10">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
@@ -120,14 +124,14 @@ export default function RegisterPage() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1">
               <span className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse" />
-              <span className="text-[11px] font-medium text-primary-400 tracking-wide uppercase">Gratuito para comecar</span>
+              <span className="text-[11px] font-medium text-primary-400 tracking-wide uppercase">{tb('registerBadge')}</span>
             </div>
             <h2 className="text-[38px] font-bold leading-[1.1] text-white">
-              Comece a vender<br />
-              <span className="text-primary-400">hoje mesmo</span>
+              {tb('registerHeadline')}<br />
+              <span className="text-primary-400">{tb('registerHighlight')}</span>
             </h2>
             <p className="text-[14px] leading-relaxed text-zinc-400 max-w-[380px]">
-              Crie sua conta em segundos e conecte seu WhatsApp. Sem cartao de credito.
+              {tb('registerDescription')}
             </p>
           </div>
 
@@ -146,9 +150,9 @@ export default function RegisterPage() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 max-w-[380px]">
             {[
-              { value: '10k+', label: 'Mensagens/dia' },
-              { value: '98%', label: 'Uptime' },
-              { value: '4.9', label: 'Avaliacao' },
+              { value: '10k+', label: tb('statsMessages') },
+              { value: '98%', label: tb('statsUptime') },
+              { value: '4.9', label: tb('statsRating') },
             ].map(({ value, label }) => (
               <div key={label} className="rounded-xl border border-white/6 bg-white/4 p-3 text-center">
                 <p className="text-[18px] font-bold text-white">{value}</p>
@@ -158,7 +162,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* -- Card do formulario -- */}
+        {/* ── Card do formulário ── */}
         <div className="w-full lg:w-[360px] shrink-0">
           {/* Mobile logo */}
           <div className="mb-8 flex items-center gap-2 lg:hidden">
@@ -170,16 +174,16 @@ export default function RegisterPage() {
 
           <div className="rounded-2xl border border-white/8 bg-white/5 p-8 shadow-2xl shadow-black/50 backdrop-blur-md">
             <div className="mb-6">
-              <h1 className="text-[20px] font-bold tracking-tight text-white">Criar sua conta</h1>
-              <p className="mt-1 text-[12.5px] text-zinc-400">Preencha seus dados para comecar</p>
+              <h1 className="text-[20px] font-bold tracking-tight text-white">{t('title')}</h1>
+              <p className="mt-1 text-[12.5px] text-zinc-400">{t('subtitle')}</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
               <div className="space-y-1.5">
-                <label htmlFor="tenantName" className="block text-[12px] font-medium text-zinc-300">Nome da empresa</label>
+                <label htmlFor="tenantName" className="block text-[12px] font-medium text-zinc-300">{t('tenantName')}</label>
                 <input
                   id="tenantName"
-                  placeholder="Minha Empresa LTDA"
+                  placeholder={t('tenantPlaceholder')}
                   autoComplete="organization"
                   className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                   {...register('tenantName')}
@@ -188,10 +192,10 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="name" className="block text-[12px] font-medium text-zinc-300">Seu nome</label>
+                <label htmlFor="name" className="block text-[12px] font-medium text-zinc-300">{t('name')}</label>
                 <input
                   id="name"
-                  placeholder="Joao Silva"
+                  placeholder={t('namePlaceholder')}
                   autoComplete="name"
                   className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                   {...register('name')}
@@ -200,11 +204,11 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="email" className="block text-[12px] font-medium text-zinc-300">Email</label>
+                <label htmlFor="email" className="block text-[12px] font-medium text-zinc-300">{t('email')}</label>
                 <input
                   id="email"
                   type="email"
-                  placeholder="voce@empresa.com"
+                  placeholder={t('emailPlaceholder')}
                   autoComplete="email"
                   className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                   {...register('email')}
@@ -213,12 +217,12 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="password" className="block text-[12px] font-medium text-zinc-300">Senha</label>
+                <label htmlFor="password" className="block text-[12px] font-medium text-zinc-300">{t('password')}</label>
                 <div className="relative">
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Minimo 6 caracteres"
+                    placeholder={t('passwordPlaceholder')}
                     autoComplete="new-password"
                     className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 pr-9 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                     {...register('password')}
@@ -231,12 +235,12 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="confirmPassword" className="block text-[12px] font-medium text-zinc-300">Confirmar senha</label>
+                <label htmlFor="confirmPassword" className="block text-[12px] font-medium text-zinc-300">{t('confirmPassword')}</label>
                 <div className="relative">
                   <input
                     id="confirmPassword"
                     type={showConfirm ? 'text' : 'password'}
-                    placeholder="Repita a senha"
+                    placeholder={t('confirmPlaceholder')}
                     autoComplete="new-password"
                     className="w-full h-9 rounded-lg border border-white/10 bg-white/6 px-3 pr-9 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                     {...register('confirmPassword')}
@@ -260,22 +264,22 @@ export default function RegisterPage() {
                 className="w-full h-9 rounded-lg bg-primary text-[13px] font-medium text-white shadow-lg shadow-primary/25 hover:bg-primary-500 active:bg-primary-800 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 mt-0.5"
               >
                 {isSubmitting ? (
-                  <><Loader2 className="h-3.5 w-3.5 animate-spin" />Criando conta...</>
-                ) : 'Criar conta gratis'}
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('submitting')}</>
+                ) : t('submit')}
               </button>
 
               <p className="text-center text-[11px] text-zinc-600 pt-0.5">
-                Ao criar conta voce concorda com os{' '}
-                <Link href="/terms" className="text-zinc-400 underline underline-offset-2 hover:text-white transition-colors">Termos</Link>
-                {' '}e{' '}
-                <Link href="/privacy" className="text-zinc-400 underline underline-offset-2 hover:text-white transition-colors">Privacidade</Link>
+                {t('agreeTerms')}{' '}
+                <Link href="/terms" className="text-zinc-400 underline underline-offset-2 hover:text-white transition-colors">{t('terms')}</Link>
+                {' '}{t('termsConnector')}{' '}
+                <Link href="/privacy" className="text-zinc-400 underline underline-offset-2 hover:text-white transition-colors">{t('privacy')}</Link>
               </p>
             </form>
 
             <p className="mt-5 text-center text-[12px] text-zinc-500">
-              Ja tem uma conta?{' '}
+              {t('hasAccount')}{' '}
               <Link href="/login" className="font-medium text-primary-400 hover:text-primary-300 transition-colors">
-                Entrar
+                {t('signIn')}
               </Link>
             </p>
           </div>

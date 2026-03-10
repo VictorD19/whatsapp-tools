@@ -14,7 +14,7 @@ import { PlanModule } from '@modules/plan/plan.module'
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET ?? 'change-me-in-production',
-      signOptions: { expiresIn: '15m' },
+      signOptions: { expiresIn: '7d' },
     }),
     PipelineModule,
     TagModule,

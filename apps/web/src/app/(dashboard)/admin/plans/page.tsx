@@ -455,7 +455,7 @@ export default function PlansPage() {
           {meta.totalPages > 1 && (
             <div className="flex items-center justify-between pt-2">
               <p className="text-xs text-muted-foreground">
-                {t('planCount', { count: meta.total })}
+                {t('count', { count: meta.total })}
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -492,7 +492,7 @@ export default function PlansPage() {
             <DialogTitle>{editingPlan ? t('edit.title') : t('create.title')}</DialogTitle>
             <DialogDescription>
               {editingPlan
-                ? t('edit.descriptionWithName', { name: editingPlan.name })
+                ? t('edit.description', { name: editingPlan.name })
                 : t('create.description')}
             </DialogDescription>
           </DialogHeader>
@@ -674,7 +674,7 @@ export default function PlansPage() {
                 </Button>
               </div>
               <div className="space-y-1.5">
-                <Label>Ativo</Label>
+                <Label>{t('create.isActive')}</Label>
                 <Button
                   type="button"
                   variant={formIsActive ? 'default' : 'outline'}
@@ -683,7 +683,7 @@ export default function PlansPage() {
                   onClick={() => setFormIsActive(!formIsActive)}
                 >
                   {formIsActive ? <Check className="h-4 w-4 mr-1" /> : null}
-                  {formIsActive ? 'Sim' : 'Nao'}
+                  {formIsActive ? tc('yes') : tc('no')}
                 </Button>
               </div>
             </div>
@@ -691,10 +691,10 @@ export default function PlansPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={saving || !formValid}>
-              {saving ? 'Salvando...' : editingPlan ? 'Salvar' : 'Criar Plano'}
+              {saving ? t('create.creating') : editingPlan ? tc('save') : t('createPlan')}
             </Button>
           </DialogFooter>
         </DialogContent>

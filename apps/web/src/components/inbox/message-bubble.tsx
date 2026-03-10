@@ -6,6 +6,7 @@ import type { Message } from '@/stores/inbox.store'
 interface MessageBubbleProps {
   message: Message
   contactName?: string
+  contactPhone?: string
   onReply?: (message: Message) => void
 }
 
@@ -238,7 +239,7 @@ function ReactionBubbles({ reactions, fromMe }: { reactions: { senderJid: string
   )
 }
 
-export function MessageBubble({ message, contactName, onReply }: MessageBubbleProps) {
+export function MessageBubble({ message, contactName, contactPhone, onReply }: MessageBubbleProps) {
   const time = new Date(message.sentAt).toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -260,7 +261,7 @@ export function MessageBubble({ message, contactName, onReply }: MessageBubblePr
       )}
 
       {/* Bubble + reactions column */}
-      <div className="flex flex-col max-w-[70%]">
+      <div className="flex flex-col max-w-[336px]">
         <div
           className={cn(
             'rounded-xl px-3 py-2 text-sm',
@@ -269,6 +270,20 @@ export function MessageBubble({ message, contactName, onReply }: MessageBubblePr
               : 'bg-muted text-foreground rounded-tl-sm'
           )}
         >
+          {/* Contact name + phone header (received messages only) */}
+          {!message.fromMe && contactName && (
+            <div className="mb-1">
+              <span className="text-[11px] font-semibold text-primary leading-none">
+                {contactName}
+              </span>
+              {contactPhone && contactPhone !== contactName && (
+                <span className="text-[10px] text-muted-foreground ml-1.5 leading-none">
+                  {contactPhone.replace(/@s\.whatsapp\.net$/, '').replace(/@g\.us$/, '')}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Quoted message preview */}
           {message.quotedMessage && (
             <div

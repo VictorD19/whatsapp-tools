@@ -30,5 +30,6 @@
       "Bash(docker port:*)",
       "Bash(npx prisma:*)"
     ]
-  }
+  },
+  "spinnerTipsEnabled": false
 }
