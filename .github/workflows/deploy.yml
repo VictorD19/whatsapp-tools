@@ -1,0 +1,90 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master, main]
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: whatsapp_tools_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @repo/database db:generate
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/whatsapp_tools_test?schema=public
+        run: pnpm --filter @repo/database exec prisma migrate deploy
+
+      - name: Run API tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/whatsapp_tools_test?schema=public
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: ci-test-secret
+          JWT_REFRESH_SECRET: ci-test-refresh-secret
+        run: pnpm --filter @repo/api test
+
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 137.184.68.84
+          username: root
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/whatsapp-tools
+
+            echo "▶ Pulling latest code..."
+            git pull origin master
+
+            echo "▶ Rebuilding and restarting containers..."
+            docker compose -f docker-compose.prod.yml up -d --build
+
+            echo "▶ Cleaning up old images..."
+            docker image prune -f
+
+            echo "✓ Deploy concluído!"
