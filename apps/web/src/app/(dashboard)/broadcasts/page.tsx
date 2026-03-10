@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Plus,
   Megaphone,
@@ -49,18 +50,11 @@ const statusVariantMap: Record<BroadcastStatus, 'info' | 'success' | 'warning' |
   CANCELLED: 'secondary',
 }
 
-const statusLabelMap: Record<BroadcastStatus, string> = {
-  DRAFT: 'Rascunho',
-  SCHEDULED: 'Agendada',
-  RUNNING: 'Em andamento',
-  PAUSED: 'Pausada',
-  COMPLETED: 'Concluida',
-  FAILED: 'Falhou',
-  CANCELLED: 'Cancelada',
-}
-
 export default function BroadcastsPage() {
   React.useEffect(() => { document.title = 'Disparos em Massa | SistemaZapChat' }, [])
+  const t = useTranslations('broadcasts')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
 
   const {
     broadcasts,
@@ -172,27 +166,27 @@ export default function BroadcastsPage() {
   const runningCount = broadcasts.filter((b) => b.status === 'RUNNING').length
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Marketing' }, { label: 'Disparos' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.marketing') }, { label: tn('items.broadcasts') }]}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Disparos em Massa</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Crie e gerencie campanhas de mensagens
+            {t('subtitle')}
           </p>
         </div>
         <Button onClick={() => setWizardOpen(true)}>
           <Plus className="h-4 w-4" />
-          Nova campanha
+          {t('new')}
         </Button>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total de campanhas', value: formatNumber(totalCampaigns) },
-          { label: 'Mensagens enviadas', value: formatNumber(totalSent) },
-          { label: 'Taxa de entrega', value: totalSent > 0 ? `${deliveryRate}%` : '--' },
-          { label: 'Em andamento', value: formatNumber(runningCount) },
+          { label: t('stats.totalCampaigns'), value: formatNumber(totalCampaigns) },
+          { label: t('stats.messagesSent'), value: formatNumber(totalSent) },
+          { label: t('stats.deliveryRate'), value: totalSent > 0 ? `${deliveryRate}%` : '--' },
+          { label: t('stats.running'), value: formatNumber(runningCount) },
         ].map((s) => (
           <Card key={s.label}>
             <CardContent className="p-4">
@@ -210,9 +204,9 @@ export default function BroadcastsPage() {
       ) : broadcasts.length === 0 ? (
         <EmptyState
           icon={Megaphone}
-          title="Nenhuma campanha criada"
-          description="Crie sua primeira campanha para comecar a disparar mensagens em massa"
-          action={{ label: 'Criar campanha', onClick: () => setWizardOpen(true) }}
+          title={t('empty')}
+          description={t('emptyDescription')}
+          action={{ label: t('createCampaign'), onClick: () => setWizardOpen(true) }}
         />
       ) : (
         <div className="rounded-md border border-border overflow-hidden">
@@ -220,22 +214,22 @@ export default function BroadcastsPage() {
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Campanha
+                  {t('table.campaign')}
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Status
+                  {t('table.status')}
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Progresso
+                  {t('table.progress')}
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Taxa
+                  {t('table.rate')}
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Instancias
+                  {t('table.instances')}
                 </th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Acoes
+                  {t('table.actions')}
                 </th>
               </tr>
             </thead>
@@ -257,14 +251,14 @@ export default function BroadcastsPage() {
                         <p className="font-medium">{b.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {b.scheduledAt
-                            ? `Agendada: ${formatDateTime(b.scheduledAt)}`
+                            ? t('table.scheduled', { date: formatDateTime(b.scheduledAt) })
                             : formatDate(b.createdAt)}
                         </p>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={statusVariantMap[b.status]}>
-                        {statusLabelMap[b.status]}
+                        {t(`status.${b.status}`)}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
@@ -305,25 +299,25 @@ export default function BroadcastsPage() {
                             {['DRAFT', 'SCHEDULED'].includes(b.status) && (
                               <DropdownMenuItem onClick={() => handleEdit(b.id)}>
                                 <Pencil className="h-4 w-4 mr-2" />
-                                Editar
+                                {t('actions.edit')}
                               </DropdownMenuItem>
                             )}
                             {b.status === 'RUNNING' && (
                               <DropdownMenuItem onClick={() => pauseBroadcast(b.id)}>
                                 <Pause className="h-4 w-4 mr-2" />
-                                Pausar
+                                {t('actions.pause')}
                               </DropdownMenuItem>
                             )}
                             {b.status === 'PAUSED' && (
                               <DropdownMenuItem onClick={() => resumeBroadcast(b.id)}>
                                 <Play className="h-4 w-4 mr-2" />
-                                Retomar
+                                {t('actions.resume')}
                               </DropdownMenuItem>
                             )}
                             {['RUNNING', 'PAUSED', 'SCHEDULED'].includes(b.status) && (
                               <DropdownMenuItem onClick={() => cancelBroadcast(b.id)}>
                                 <XCircle className="h-4 w-4 mr-2" />
-                                Cancelar
+                                {t('actions.cancel')}
                               </DropdownMenuItem>
                             )}
                             {!['RUNNING', 'COMPLETED'].includes(b.status) && (
@@ -332,7 +326,7 @@ export default function BroadcastsPage() {
                                 onClick={() => setDeleteTarget(b.id)}
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Excluir
+                                {t('actions.delete')}
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -380,17 +374,17 @@ export default function BroadcastsPage() {
       <Dialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirmar exclusao</DialogTitle>
+            <DialogTitle>{t('deleteConfirmTitle')}</DialogTitle>
             <DialogDescription>
-              Esta acao nao pode ser desfeita. A campanha e todos os seus dados serao removidos.
+              {t('deleteConfirmDesc')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Excluindo...' : 'Excluir'}
+              {deleting ? t('deleting') : tc('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

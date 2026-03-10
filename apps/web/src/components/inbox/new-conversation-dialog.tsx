@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, UserPlus, Loader2, Phone, X, ChevronsUpDown, Check } from 'lucide-react'
 import {
   Sheet,
@@ -69,6 +70,7 @@ function ContactCombobox({
   onAddNew,
   disabled,
 }: ContactComboboxProps) {
+  const t = useTranslations('inbox')
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -159,7 +161,7 @@ function ContactCombobox({
             </span>
           ) : (
             <span className="flex min-w-0 flex-1 items-center gap-2 text-muted-foreground">
-              <span>Nome ou número (ex: 5511999999999)</span>
+              <span>{t('nameOrNumber')}</span>
             </span>
           )}
 
@@ -192,7 +194,7 @@ function ContactCombobox({
             ref={inputRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar contato ou digitar número..."
+            placeholder={t('searchContactOrNumber')}
             className="flex h-10 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
           />
           {searching && (
@@ -204,7 +206,7 @@ function ContactCombobox({
         <div className="max-h-[280px] overflow-y-auto">
           {!search.trim() && (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              Digite para buscar contatos
+              {t('typeToSearch')}
             </p>
           )}
 
@@ -245,7 +247,7 @@ function ContactCombobox({
                   <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-medium">Usar este número</p>
+                  <p className="font-medium">{t('useThisNumber')}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {isPhoneSearch ? search.trim() : search.trim()}
                   </p>
@@ -267,6 +269,8 @@ export function NewConversationDialog({
   onClose,
   onConversationCreated,
 }: NewConversationDialogProps) {
+  const t = useTranslations('inbox')
+  const tc = useTranslations('common')
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [phoneOverride, setPhoneOverride] = useState('')   // número sem contato cadastrado
   const [showNameField, setShowNameField] = useState(false)
@@ -313,17 +317,17 @@ export function NewConversationDialog({
 
   async function handleSubmit() {
     if (!instanceId) {
-      toast({ title: 'Selecione uma instância conectada', variant: 'destructive' })
+      toast({ title: t('selectConnectedInstance'), variant: 'destructive' })
       return
     }
     if (!message.trim()) {
-      toast({ title: 'Digite uma mensagem', variant: 'destructive' })
+      toast({ title: t('typeAMessage'), variant: 'destructive' })
       return
     }
 
     const phone = selectedContact?.phone ?? phoneOverride.trim()
     if (!phone) {
-      toast({ title: 'Selecione ou digite um contato', variant: 'destructive' })
+      toast({ title: t('selectOrTypeContact'), variant: 'destructive' })
       return
     }
 
@@ -336,11 +340,11 @@ export function NewConversationDialog({
 
       const res = await apiPost<{ data: Conversation }>('inbox/conversations/start', payload)
       upsertConversation(res.data)
-      toast({ title: 'Conversa iniciada com sucesso', variant: 'success' })
+      toast({ title: t('conversationStarted'), variant: 'success' })
       onConversationCreated(res.data.id)
       handleClose()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao iniciar conversa'
+      const msg = err instanceof Error ? err.message : t('errorStartingConversation')
       toast({ title: msg, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -367,16 +371,16 @@ export function NewConversationDialog({
     <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
       <SheetContent className="flex flex-col p-0 sm:max-w-md">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <SheetTitle>Nova conversa</SheetTitle>
+          <SheetTitle>{t('newConversationTitle')}</SheetTitle>
           <SheetDescription>
-            Busque um contato ou digite o número para iniciar
+            {t('newConversationDescription')}
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* Contact combobox */}
           <div className="space-y-1.5">
-            <Label>Contato ou número</Label>
+            <Label>{t('contactOrNumber')}</Label>
             <ContactCombobox
               selectedContact={selectedContact}
               onSelect={handleSelectContact}
@@ -389,14 +393,14 @@ export function NewConversationDialog({
             {showNameField && phoneOverride && (
               <div className="mt-2 rounded-md border border-border bg-muted/30 px-3 py-3 space-y-2">
                 <p className="text-xs text-muted-foreground">
-                  Número <span className="font-mono font-medium text-foreground">{phoneOverride}</span> não encontrado nos contatos.
+                  {t('numberNotFound', { phone: phoneOverride })}
                 </p>
                 <div className="relative">
                   <Phone className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                   <Input
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    placeholder="Nome do contato (opcional)"
+                    placeholder={t('contactNameOptional')}
                     className="pl-8 bg-background"
                     disabled={saving}
                   />
@@ -407,15 +411,15 @@ export function NewConversationDialog({
 
           {/* Instance selector */}
           <div className="space-y-1.5">
-            <Label>Instância WhatsApp</Label>
+            <Label>{t('whatsappInstance')}</Label>
             {connectedInstances.length === 0 ? (
               <p className="text-xs text-destructive">
-                Nenhuma instância conectada. Conecte uma antes de iniciar.
+                {t('noConnectedInstance')}
               </p>
             ) : (
               <Select value={instanceId} onValueChange={setInstanceId} disabled={saving}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a instância" />
+                  <SelectValue placeholder={t('selectInstance')} />
                 </SelectTrigger>
                 <SelectContent>
                   {connectedInstances.map((inst) => (
@@ -433,11 +437,11 @@ export function NewConversationDialog({
 
           {/* Message */}
           <div className="space-y-1.5">
-            <Label>Mensagem</Label>
+            <Label>{t('message')}</Label>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Digite a primeira mensagem..."
+              placeholder={t('typeFirstMessage')}
               className="min-h-[120px] resize-none"
               disabled={saving}
               onKeyDown={(e) => {
@@ -447,22 +451,22 @@ export function NewConversationDialog({
                 }
               }}
             />
-            <p className="text-[11px] text-muted-foreground">Ctrl+Enter para enviar</p>
+            <p className="text-[11px] text-muted-foreground">{t('ctrlEnterToSend')}</p>
           </div>
         </div>
 
         <SheetFooter className="px-6 py-4 border-t border-border shrink-0">
           <Button variant="outline" onClick={handleClose} disabled={saving}>
-            Cancelar
+            {tc('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                Enviando...
+                {t('sending')}
               </>
             ) : (
-              'Iniciar conversa'
+              t('startConversation')
             )}
           </Button>
         </SheetFooter>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { useTranslations } from 'next-intl'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ToolTypeSelector, type AiToolType } from './tool-type-selector'
 import { TagConfig } from './config-forms/tag-config'
@@ -40,6 +41,8 @@ interface AiToolSheetProps {
 }
 
 export function AiToolSheet({ open, onClose, onSave, tool, saving }: AiToolSheetProps) {
+  const t = useTranslations('aiTools')
+  const tc = useTranslations('common')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [type, setType] = useState<AiToolType | ''>('')
@@ -87,11 +90,9 @@ export function AiToolSheet({ open, onClose, onSave, tool, saving }: AiToolSheet
       <SheetContent className="sm:max-w-lg flex flex-col p-0">
         <div className="px-6 pt-6">
           <SheetHeader>
-            <SheetTitle>{isEditing ? 'Editar ferramenta' : 'Nova ferramenta'}</SheetTitle>
+            <SheetTitle>{isEditing ? t('sheet.editTitle') : t('sheet.newTitle')}</SheetTitle>
             <SheetDescription>
-              {isEditing
-                ? 'Altere as configuracoes da ferramenta de IA'
-                : 'Configure uma ferramenta que o assistente podera usar'}
+              {isEditing ? t('sheet.editDescription') : t('sheet.newDescription')}
             </SheetDescription>
           </SheetHeader>
         </div>
@@ -100,7 +101,7 @@ export function AiToolSheet({ open, onClose, onSave, tool, saving }: AiToolSheet
           <div className="space-y-4 py-4">
             {/* Type selector */}
             <div className="space-y-2">
-              <Label>Tipo *</Label>
+              <Label>{t('fields.type')}</Label>
               <ToolTypeSelector
                 value={type}
                 onChange={handleTypeChange}
@@ -110,22 +111,22 @@ export function AiToolSheet({ open, onClose, onSave, tool, saving }: AiToolSheet
 
             {/* Name */}
             <div className="space-y-2">
-              <Label>Nome *</Label>
+              <Label>{t('fields.name')}</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Buscar dados do cliente"
+                placeholder={t('fields.namePlaceholder')}
                 maxLength={100}
               />
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>Descricao</Label>
+              <Label>{t('fields.description')}</Label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Descreva o que esta ferramenta faz..."
+                placeholder={t('fields.descriptionPlaceholder')}
                 rows={2}
               />
             </div>
@@ -160,9 +161,9 @@ export function AiToolSheet({ open, onClose, onSave, tool, saving }: AiToolSheet
 
         <div className="px-6 pb-6">
           <SheetFooter>
-            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button variant="outline" onClick={onClose}>{tc('cancel')}</Button>
             <Button onClick={handleSubmit} disabled={!canSubmit || saving}>
-              {saving ? 'Salvando...' : isEditing ? 'Salvar' : 'Criar'}
+              {saving ? tc('loading') : isEditing ? tc('save') : tc('create')}
             </Button>
           </SheetFooter>
         </div>

@@ -3,11 +3,13 @@
 import React, { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { AssistantForm, type AssistantFormData } from '@/components/assistants/assistant-form'
+import { useTranslations } from 'next-intl'
 import { apiPost } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 import type { Assistant, ApiResponse } from '@/components/assistants/types'
 
 export default function NewAssistantPage() {
+  const t = useTranslations('assistants')
   React.useEffect(() => { document.title = 'Novo Assistente | SistemaZapChat' }, [])
 
   const router = useRouter()
@@ -28,10 +30,10 @@ export default function NewAssistantPage() {
           await apiPost(`assistants/${newId}/tools`, { aiToolId: toolId })
         }
 
-        toast({ title: 'Assistente criado', variant: 'success' })
+        toast({ title: t('success.created'), variant: 'success' })
         router.push('/assistants')
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erro ao criar assistente'
+        const message = err instanceof Error ? err.message : t('error.creating')
         toast({ title: message, variant: 'destructive' })
       } finally {
         setSaving(false)

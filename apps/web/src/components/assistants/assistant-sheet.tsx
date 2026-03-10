@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
 import type { Assistant, KnowledgeBase, AiTool, ApiResponse } from './types'
@@ -58,6 +59,8 @@ export interface AssistantFormData {
 }
 
 export function AssistantSheet({ open, assistant, saving, onClose, onSave }: AssistantSheetProps) {
+  const t = useTranslations('assistants')
+  const tc = useTranslations('common')
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -156,18 +159,18 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
   }, [name, description, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, handoffKeywords, selectedKBs, selectedTools, onSave])
 
   const tabs = [
-    { id: 'profile' as Tab, label: 'Perfil', icon: User },
-    { id: 'instructions' as Tab, label: 'Instruções', icon: FileText },
-    { id: 'advanced' as Tab, label: 'Avançado', icon: Settings2 },
+    { id: 'profile' as Tab, label: t('tabs.profile'), icon: User },
+    { id: 'instructions' as Tab, label: t('tabs.instructions'), icon: FileText },
+    { id: 'advanced' as Tab, label: t('tabs.advanced'), icon: Settings2 },
   ]
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent className="sm:max-w-lg flex flex-col p-0">
         <SheetHeader className="px-6 pt-6 pb-0">
-          <SheetTitle>{assistant ? 'Editar assistente' : 'Novo assistente'}</SheetTitle>
+          <SheetTitle>{assistant ? t('sheet.editTitle') : t('sheet.newTitle')}</SheetTitle>
           <SheetDescription>
-            {assistant ? 'Altere as configurações do assistente' : 'Configure um novo assistente de IA'}
+            {assistant ? t('sheet.editDescription') : t('sheet.newDescription')}
           </SheetDescription>
         </SheetHeader>
 
@@ -206,7 +209,7 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
                 </div>
                 <div className="flex-1 space-y-1">
                   <Label htmlFor="assistant-emoji" className="text-xs text-muted-foreground">
-                    Emoji do avatar
+                    {t('fields.avatarEmoji')}
                   </Label>
                   <Input
                     id="assistant-emoji"
@@ -219,20 +222,20 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assistant-name">Nome *</Label>
+                <Label htmlFor="assistant-name">{t('fields.name')}</Label>
                 <Input
                   id="assistant-name"
-                  placeholder="Ex: SDR de Vendas"
+                  placeholder={t('fields.namePlaceholder')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assistant-desc">Descrição</Label>
+                <Label htmlFor="assistant-desc">{t('fields.description')}</Label>
                 <Textarea
                   id="assistant-desc"
-                  placeholder="Ex: Ajuda clientes a solucionar dúvidas sobre o nosso sistema"
+                  placeholder={t('fields.descriptionPlaceholder')}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
@@ -241,7 +244,7 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
 
               {/* Status */}
               <div className="rounded-lg border p-4 space-y-3">
-                <Label className="text-sm font-medium">Status</Label>
+                <Label className="text-sm font-medium">{t('fields.status')}</Label>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -251,7 +254,7 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
                       onChange={() => setIsActive(true)}
                       className="text-primary"
                     />
-                    <span className="text-sm">Ativo</span>
+                    <span className="text-sm">{t('fields.active')}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -261,7 +264,7 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
                       onChange={() => setIsActive(false)}
                       className="text-primary"
                     />
-                    <span className="text-sm">Inativo</span>
+                    <span className="text-sm">{t('fields.inactive')}</span>
                   </label>
                 </div>
               </div>
@@ -270,8 +273,8 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
               {knowledgeBases.length > 0 && (
                 <div className="space-y-2">
                   <Label>
-                    Bases de conhecimento{' '}
-                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                    {t('fields.knowledgeBases')}{' '}
+                    <span className="text-muted-foreground font-normal">{t('fields.optional')}</span>
                   </Label>
                   <div className="rounded-lg border divide-y">
                     {knowledgeBases.map((kb) => (
@@ -297,9 +300,9 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
           {/* INSTRUÇÕES */}
           {activeTab === 'instructions' && (
             <div className="space-y-2 h-full">
-              <Label htmlFor="assistant-prompt">Instruções do sistema</Label>
+              <Label htmlFor="assistant-prompt">{t('fields.systemPrompt')}</Label>
               <p className="text-xs text-muted-foreground">
-                Descreva o comportamento, tom e objetivos do assistente
+                {t('fields.systemPromptHint')}
               </p>
               <Textarea
                 id="assistant-prompt"
@@ -317,7 +320,7 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
             <div className="space-y-5">
               {/* Model */}
               <div className="space-y-2">
-                <Label>Modelo de inteligência</Label>
+                <Label>{t('fields.model')}</Label>
                 <Select value={model} onValueChange={setModel}>
                   <SelectTrigger>
                     <SelectValue />
@@ -335,9 +338,9 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
               {/* Wait Time */}
               <div className="space-y-2">
                 <Label htmlFor="assistant-wait">
-                  Tempo para coletar mensagens
+                  {t('fields.waitTime')}
                   <span className="text-muted-foreground font-normal ml-1 text-xs">
-                    (aguarda antes de responder)
+                    {t('fields.waitTimeHint')}
                   </span>
                 </Label>
                 <div className="flex items-center gap-2">
@@ -350,19 +353,19 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
                     onChange={(e) => setWaitTimeSeconds(Number(e.target.value))}
                     className="w-24"
                   />
-                  <span className="text-sm text-muted-foreground">segundos</span>
+                  <span className="text-sm text-muted-foreground">{t('fields.seconds')}</span>
                 </div>
               </div>
 
               {/* Handoff Keywords */}
               <div className="space-y-2">
-                <Label htmlFor="assistant-keywords">Palavras de transferência</Label>
+                <Label htmlFor="assistant-keywords">{t('fields.handoffKeywords')}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Quando o cliente digitar estas palavras, o bot transfere para um atendente
+                  {t('fields.handoffKeywordsHint')}
                 </p>
                 <Input
                   id="assistant-keywords"
-                  placeholder="Ex: humano, atendente — pressione Enter"
+                  placeholder={t('fields.handoffKeywordsPlaceholder')}
                   value={keywordInput}
                   onChange={(e) => setKeywordInput(e.target.value)}
                   onKeyDown={handleKeywordKeyDown}
@@ -388,7 +391,7 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
               {/* AI Tools */}
               {aiTools.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Ferramentas</Label>
+                  <Label>{t('fields.tools')}</Label>
                   <div className="rounded-lg border divide-y">
                     {aiTools.map((tool) => (
                       <label
@@ -416,10 +419,10 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
 
         <SheetFooter className="px-6 py-4 border-t">
           <Button variant="outline" onClick={onClose}>
-            Cancelar
+            {tc('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={saving || !name.trim()}>
-            {saving ? 'Salvando...' : assistant ? 'Salvar' : 'Criar'}
+            {saving ? t('form.saving') : assistant ? tc('save') : tc('create')}
           </Button>
         </SheetFooter>
       </SheetContent>

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Loader2, Search, ChevronsUpDown } from 'lucide-react'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter,
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { apiGet } from '@/lib/api'
+import { getCurrencySymbol } from '@/lib/formatting'
 import { useDeal } from '@/hooks/use-deal'
 import type { Contact } from '@/hooks/use-contacts'
 import type { Pipeline } from '@/hooks/use-pipeline-stages'
@@ -41,6 +43,7 @@ function ContactPicker({
   selected: Contact | null
   onSelect: (c: Contact) => void
 }) {
+  const t = useTranslations('crm')
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -142,7 +145,7 @@ function ContactPicker({
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-full justify-between font-normal">
           <span className="truncate">
-            {selected ? (selected.name ?? selected.phone) : 'Selecionar contato...'}
+            {selected ? (selected.name ?? selected.phone) : t('selectContact')}
           </span>
           <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Button>
@@ -155,7 +158,7 @@ function ContactPicker({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.stopPropagation()}
-            placeholder="Buscar por nome ou telefone..."
+            placeholder={t('searchContactPlaceholder')}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             autoFocus
           />
@@ -169,7 +172,7 @@ function ContactPicker({
         >
           {contacts.length === 0 && !loading ? (
             <p className="text-xs text-muted-foreground text-center py-6">
-              Nenhum contato encontrado
+              {t('noContactFound')}
             </p>
           ) : (
             contacts.map((c) => (
@@ -205,6 +208,8 @@ function ContactPicker({
 // ─── Main Sheet ──────────────────────────────────────────────────────────────
 
 export function DealFormSheet({ open, onClose, onCreated, pipelines, defaultPipelineId }: DealFormSheetProps) {
+  const t = useTranslations('crm')
+  const tc = useTranslations('common')
   const { createDeal } = useDeal()
 
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
@@ -269,14 +274,14 @@ export function DealFormSheet({ open, onClose, onCreated, pipelines, defaultPipe
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Novo negócio</SheetTitle>
-          <SheetDescription>Crie um novo negócio no pipeline</SheetDescription>
+          <SheetTitle>{t('newDeal')}</SheetTitle>
+          <SheetDescription>{t('newDealDescription')}</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 py-4">
           {/* Contact selector */}
           <div className="space-y-2">
-            <Label>Contato *</Label>
+            <Label>{t('contact')} *</Label>
             <ContactPicker
               selected={selectedContact}
               onSelect={setSelectedContact}
@@ -285,17 +290,17 @@ export function DealFormSheet({ open, onClose, onCreated, pipelines, defaultPipe
 
           {/* Title */}
           <div className="space-y-2">
-            <Label>Título</Label>
+            <Label>{t('dealTitle')}</Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Venda de plano anual"
+              placeholder={t('dealTitlePlaceholder')}
             />
           </div>
 
           {/* Value */}
           <div className="space-y-2">
-            <Label>Valor (R$)</Label>
+            <Label>{t('dealValue')} ({getCurrencySymbol()})</Label>
             <Input
               value={value}
               onChange={(e) => setValue(e.target.value)}
@@ -307,10 +312,10 @@ export function DealFormSheet({ open, onClose, onCreated, pipelines, defaultPipe
           {/* Pipeline */}
           {pipelines.length > 1 && (
             <div className="space-y-2">
-              <Label>Pipeline</Label>
+              <Label>{t('pipeline')}</Label>
               <Select value={pipelineId} onValueChange={(v) => { setPipelineId(v); setStageId('') }}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecionar pipeline" />
+                  <SelectValue placeholder={t('selectPipeline')} />
                 </SelectTrigger>
                 <SelectContent>
                   {pipelines.map((p) => (
@@ -324,10 +329,10 @@ export function DealFormSheet({ open, onClose, onCreated, pipelines, defaultPipe
           {/* Stage */}
           {sortedStages.length > 0 && (
             <div className="space-y-2">
-              <Label>Etapa</Label>
+              <Label>{t('stage')}</Label>
               <Select value={stageId} onValueChange={setStageId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Etapa padrão" />
+                  <SelectValue placeholder={t('defaultStage')} />
                 </SelectTrigger>
                 <SelectContent>
                   {sortedStages.map((s) => (
@@ -345,9 +350,9 @@ export function DealFormSheet({ open, onClose, onCreated, pipelines, defaultPipe
         </div>
 
         <SheetFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose}>{tc('cancel')}</Button>
           <Button onClick={handleSubmit} disabled={!selectedContact || saving}>
-            {saving ? 'Criando...' : 'Criar negócio'}
+            {saving ? t('creating') : t('createDeal')}
           </Button>
         </SheetFooter>
       </SheetContent>

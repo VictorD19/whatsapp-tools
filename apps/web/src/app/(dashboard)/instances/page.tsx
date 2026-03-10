@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Plus, Radio } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,7 +16,9 @@ import { useImportSocket } from '@/hooks/use-import-socket'
 import { useInstancesStore } from '@/stores/instances.store'
 
 export default function InstancesPage() {
-  React.useEffect(() => { document.title = 'Instâncias | SistemaZapChat' }, [])
+  const t = useTranslations('instances')
+  const tn = useTranslations('nav')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
 
   const instances = useInstancesStore((s) => s.instances)
   const isLoading = useInstancesStore((s) => s.isLoading)
@@ -84,28 +87,28 @@ export default function InstancesPage() {
   }
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Instâncias' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.settings') }, { label: tn('items.instances') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Instancias WhatsApp</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie suas conexoes com o WhatsApp
+            {t('subtitle')}
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
-          Nova instancia
+          {t('newInstance')}
         </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total', value: stats.total, color: 'text-foreground' },
-          { label: 'Conectadas', value: stats.connected, color: 'text-green-600 dark:text-green-400' },
-          { label: 'Conectando', value: stats.connecting, color: 'text-yellow-600 dark:text-yellow-400' },
-          { label: 'Desconectadas', value: stats.disconnected, color: 'text-red-600 dark:text-red-400' },
+          { label: t('stats.total'), value: stats.total, color: 'text-foreground' },
+          { label: t('stats.connected'), value: stats.connected, color: 'text-green-600 dark:text-green-400' },
+          { label: t('stats.connecting'), value: stats.connecting, color: 'text-yellow-600 dark:text-yellow-400' },
+          { label: t('stats.disconnected'), value: stats.disconnected, color: 'text-red-600 dark:text-red-400' },
         ].map((stat) => (
           <Card key={stat.label}>
             <CardContent className="p-4">
@@ -120,9 +123,9 @@ export default function InstancesPage() {
       {!isLoading && instances.length === 0 ? (
         <EmptyState
           icon={Radio}
-          title="Nenhuma instancia criada"
-          description="Conecte seu WhatsApp para comecar a enviar e receber mensagens"
-          action={{ label: 'Criar primeira instancia', onClick: () => setCreateOpen(true) }}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          action={{ label: t('empty.action'), onClick: () => setCreateOpen(true) }}
         />
       ) : (
         <InstanceGrid

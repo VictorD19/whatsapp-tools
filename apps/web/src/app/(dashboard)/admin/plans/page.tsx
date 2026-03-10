@@ -33,7 +33,9 @@ import {
 import { EmptyState } from '@/components/shared/empty-state'
 import { toast } from '@/components/ui/toaster'
 import { apiGet, apiPost, apiPatch } from '@/lib/api'
+import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/auth.store'
+import { formatCurrency, getCurrencySymbol } from '@/lib/formatting'
 
 // ── Types ──
 
@@ -85,7 +87,10 @@ function toSlug(value: string): string {
 // ── Component ──
 
 export default function PlansPage() {
-  React.useEffect(() => { document.title = 'Planos | SistemaZapChat' }, [])
+  const t = useTranslations('admin.plans')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
 
   const router = useRouter()
   const { user } = useAuthStore()
@@ -154,7 +159,7 @@ export default function PlansPage() {
       setPlans(res.data)
       setMeta(res.meta)
     } catch {
-      toast({ title: 'Erro ao carregar planos', variant: 'destructive' })
+      toast({ title: t('error.loading'), variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -251,15 +256,15 @@ export default function PlansPage() {
         setPlans((prev) =>
           prev.map((p) => (p.id === editingPlan.id ? { ...p, ...res.data } : p)),
         )
-        toast({ title: 'Plano atualizado', variant: 'success' })
+        toast({ title: t('success.updated'), variant: 'success' })
       } else {
         await apiPost<{ data: Plan }>('admin/plans', buildPayload())
-        toast({ title: 'Plano criado com sucesso', variant: 'success' })
+        toast({ title: t('success.created'), variant: 'success' })
         fetchPlans(page, debouncedSearch)
       }
       setDialogOpen(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao salvar plano'
+      const message = err instanceof Error ? err.message : t('error.saving')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -275,11 +280,11 @@ export default function PlansPage() {
         prev.map((p) => (p.id === plan.id ? { ...p, ...res.data } : p)),
       )
       toast({
-        title: res.data.isActive ? 'Plano ativado' : 'Plano desativado',
+        title: res.data.isActive ? t('success.activated') : t('success.deactivated'),
         variant: 'success',
       })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao alterar status'
+      const message = err instanceof Error ? err.message : t('error.toggling')
       toast({ title: message, variant: 'destructive' })
     }
   }
@@ -302,7 +307,7 @@ export default function PlansPage() {
 
   if (loading && plans.length === 0) {
     return (
-      <PageLayout breadcrumb={[{ label: 'Administração' }, { label: 'Planos' }]}>
+      <PageLayout breadcrumb={[{ label: tn('groups.admin') }, { label: tn('items.plans') }]}>
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton className="h-7 w-32" />
@@ -325,18 +330,18 @@ export default function PlansPage() {
   const formValid = formName.trim() && (editingPlan || formSlug.trim())
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Administração' }, { label: 'Planos' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.admin') }, { label: tn('items.plans') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Planos</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie os planos disponiveis na plataforma
+            {t('subtitle')}
           </p>
         </div>
         <Button size="sm" onClick={openCreateDialog}>
           <Plus className="h-4 w-4" />
-          Novo Plano
+          {t('newPlan')}
         </Button>
       </div>
 
@@ -344,7 +349,7 @@ export default function PlansPage() {
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome ou slug..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9"
@@ -355,16 +360,16 @@ export default function PlansPage() {
       {plans.length === 0 && !loading ? (
         <EmptyState
           icon={CreditCard}
-          title={debouncedSearch ? 'Nenhum plano encontrado' : 'Nenhum plano cadastrado'}
+          title={debouncedSearch ? t('emptySearch') : t('empty')}
           description={
             debouncedSearch
-              ? 'Tente buscar com outros termos'
-              : 'Crie o primeiro plano para comecar'
+              ? t('tryOtherTerms')
+              : t('createFirst')
           }
           action={
             debouncedSearch
               ? undefined
-              : { label: 'Criar plano', onClick: openCreateDialog }
+              : { label: t('createPlan'), onClick: openCreateDialog }
           }
         />
       ) : (
@@ -372,11 +377,11 @@ export default function PlansPage() {
           <div className="rounded-md border border-border overflow-hidden">
             {/* Table header */}
             <div className="hidden sm:grid sm:grid-cols-[1fr_120px_120px_80px_80px] gap-4 px-4 py-2.5 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              <span>Plano</span>
-              <span>Limites</span>
-              <span>Tenants</span>
-              <span>Status</span>
-              <span className="text-right">Acoes</span>
+              <span>{t('table.plan')}</span>
+              <span>{t('table.limits')}</span>
+              <span>{t('table.tenants')}</span>
+              <span>{t('table.status')}</span>
+              <span className="text-right">{t('table.actions')}</span>
             </div>
 
             {/* Rows */}
@@ -392,12 +397,12 @@ export default function PlansPage() {
                     <p className="font-medium text-sm truncate">{plan.name}</p>
                     {plan.isDefault && (
                       <Badge variant="secondary" className="text-[10px]">
-                        Padrao
+                        {t('defaultBadge')}
                       </Badge>
                     )}
                     {plan.price != null && (
                       <span className="text-xs text-muted-foreground">
-                        R$ {Number(plan.price).toFixed(2)}
+                        {formatCurrency(Number(plan.price))}
                       </span>
                     )}
                   </div>
@@ -426,7 +431,7 @@ export default function PlansPage() {
                       variant={plan.isActive ? 'default' : 'secondary'}
                       className="text-[10px]"
                     >
-                      {plan.isActive ? 'Ativo' : 'Inativo'}
+                      {plan.isActive ? t('active') : t('inactive')}
                     </Badge>
                   </button>
                 </div>
@@ -450,7 +455,7 @@ export default function PlansPage() {
           {meta.totalPages > 1 && (
             <div className="flex items-center justify-between pt-2">
               <p className="text-xs text-muted-foreground">
-                {meta.total} {meta.total === 1 ? 'plano' : 'planos'}
+                {t('planCount', { count: meta.total })}
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -460,7 +465,7 @@ export default function PlansPage() {
                   onClick={() => setPage((p) => p - 1)}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Anterior
+                  {t('pagination.previous')}
                 </Button>
                 <span className="text-sm text-muted-foreground">
                   {page} / {meta.totalPages}
@@ -471,7 +476,7 @@ export default function PlansPage() {
                   disabled={page >= meta.totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Proximo
+                  {t('pagination.next')}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -484,18 +489,18 @@ export default function PlansPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingPlan ? 'Editar Plano' : 'Novo Plano'}</DialogTitle>
+            <DialogTitle>{editingPlan ? t('edit.title') : t('create.title')}</DialogTitle>
             <DialogDescription>
               {editingPlan
-                ? `Altere as informacoes do plano ${editingPlan.name}`
-                : 'Crie um novo plano para a plataforma'}
+                ? t('edit.descriptionWithName', { name: editingPlan.name })
+                : t('create.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Name */}
             <div className="space-y-1.5">
-              <Label htmlFor="plan-name">Nome</Label>
+              <Label htmlFor="plan-name">{t('create.nameLabel')}</Label>
               <Input
                 id="plan-name"
                 value={formName}
@@ -508,7 +513,7 @@ export default function PlansPage() {
             {/* Slug (only on create) */}
             {!editingPlan && (
               <div className="space-y-1.5">
-                <Label htmlFor="plan-slug">Slug</Label>
+                <Label htmlFor="plan-slug">{t('create.slugLabel')}</Label>
                 <Input
                   id="plan-slug"
                   value={formSlug}
@@ -517,31 +522,31 @@ export default function PlansPage() {
                   maxLength={50}
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Identificador unico. Apenas letras minusculas, numeros e hifens.
+                  {t('create.slugHint')}
                 </p>
               </div>
             )}
 
             {/* Description */}
             <div className="space-y-1.5">
-              <Label htmlFor="plan-description">Descricao</Label>
+              <Label htmlFor="plan-description">{t('create.descriptionLabel')}</Label>
               <Textarea
                 id="plan-description"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="Descricao do plano..."
+                placeholder={t('create.descriptionPlaceholder')}
                 rows={2}
               />
             </div>
 
             {/* Benefits */}
             <div className="space-y-1.5">
-              <Label>Beneficios</Label>
+              <Label>{t('create.benefitsLabel')}</Label>
               <div className="flex gap-2">
                 <Input
                   value={formBenefitInput}
                   onChange={(e) => setFormBenefitInput(e.target.value)}
-                  placeholder="Ex: 10 instancias"
+                  placeholder={t('create.benefitPlaceholder')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
@@ -574,11 +579,11 @@ export default function PlansPage() {
             <Separator />
 
             {/* Limits */}
-            <p className="text-sm font-medium text-muted-foreground">Limites</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('create.limitsSection')}</p>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="plan-max-instances">Max instancias</Label>
+                <Label htmlFor="plan-max-instances">{t('create.maxInstances')}</Label>
                 <Input
                   id="plan-max-instances"
                   type="number"
@@ -588,7 +593,7 @@ export default function PlansPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="plan-max-users">Max usuarios</Label>
+                <Label htmlFor="plan-max-users">{t('create.maxUsers')}</Label>
                 <Input
                   id="plan-max-users"
                   type="number"
@@ -598,7 +603,7 @@ export default function PlansPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="plan-max-assistants">Max assistentes</Label>
+                <Label htmlFor="plan-max-assistants">{t('create.maxAssistants')}</Label>
                 <Input
                   id="plan-max-assistants"
                   type="number"
@@ -608,7 +613,7 @@ export default function PlansPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="plan-max-broadcasts">Disparos/dia</Label>
+                <Label htmlFor="plan-max-broadcasts">{t('create.broadcastsPerDay')}</Label>
                 <Input
                   id="plan-max-broadcasts"
                   type="number"
@@ -618,7 +623,7 @@ export default function PlansPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="plan-max-contacts">Contatos/disparo</Label>
+                <Label htmlFor="plan-max-contacts">{t('create.contactsPerBroadcast')}</Label>
                 <Input
                   id="plan-max-contacts"
                   type="number"
@@ -628,7 +633,7 @@ export default function PlansPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="plan-price">Preco (R$)</Label>
+                <Label htmlFor="plan-price">{t('create.priceLabel')} ({getCurrencySymbol()})</Label>
                 <Input
                   id="plan-price"
                   type="number"
@@ -646,7 +651,7 @@ export default function PlansPage() {
             {/* Toggles */}
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="plan-sort-order">Ordem</Label>
+                <Label htmlFor="plan-sort-order">{t('create.orderLabel')}</Label>
                 <Input
                   id="plan-sort-order"
                   type="number"
@@ -656,7 +661,7 @@ export default function PlansPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Padrao</Label>
+                <Label>{t('create.isDefault')}</Label>
                 <Button
                   type="button"
                   variant={formIsDefault ? 'default' : 'outline'}
@@ -665,7 +670,7 @@ export default function PlansPage() {
                   onClick={() => setFormIsDefault(!formIsDefault)}
                 >
                   {formIsDefault ? <Check className="h-4 w-4 mr-1" /> : null}
-                  {formIsDefault ? 'Sim' : 'Nao'}
+                  {formIsDefault ? tc('yes') : tc('no')}
                 </Button>
               </div>
               <div className="space-y-1.5">

@@ -166,7 +166,105 @@
     "dateSeparator": {
       "today": "Today",
       "yesterday": "Yesterday"
-    }
+    },
+    "tabs": {
+      "all": "All",
+      "mine": "Mine",
+      "unassigned": "Unassigned",
+      "unassignedShort": "Free"
+    },
+    "searchContact": "Search contact...",
+    "newConversation": "New conversation",
+    "conversationCount": "{count} of {total} conversations",
+    "conversationCountSingle": "{count} of {total} conversation",
+    "conversationCountSearch": "{count} conversations",
+    "conversationCountSearchSingle": "{count} conversation",
+    "noConversationsHere": "No conversations here",
+    "conversationsWillAppear": "Conversations will appear here when they arrive",
+    "noResultsSearch": "No results",
+    "newConversationTitle": "New conversation",
+    "newConversationDescription": "Search a contact or type a number to start",
+    "contactOrNumber": "Contact or number",
+    "nameOrNumber": "Name or number (e.g. 5511999999999)",
+    "searchContactOrNumber": "Search contact or type number...",
+    "typeToSearch": "Type to search contacts",
+    "useThisNumber": "Use this number",
+    "contactNameOptional": "Contact name (optional)",
+    "numberNotFound": "Number {phone} not found in contacts.",
+    "whatsappInstance": "WhatsApp Instance",
+    "noConnectedInstance": "No connected instance. Connect one before starting.",
+    "selectInstance": "Select instance",
+    "message": "Message",
+    "typeFirstMessage": "Type the first message...",
+    "ctrlEnterToSend": "Ctrl+Enter to send",
+    "sending": "Sending...",
+    "startConversation": "Start conversation",
+    "selectConnectedInstance": "Select a connected instance",
+    "typeAMessage": "Type a message",
+    "selectOrTypeContact": "Select or type a contact",
+    "conversationStarted": "Conversation started successfully",
+    "errorStartingConversation": "Error starting conversation",
+    "loadingMembers": "Loading members...",
+    "noMemberFound": "No member found",
+    "addCaption": "Add caption... (optional)",
+    "cancelRecording": "Cancel recording",
+    "confirmRecording": "Confirm recording",
+    "recordAudio": "Record audio",
+    "attachImage": "Image",
+    "attachVideo": "Video",
+    "attachAudio": "Recorded audio",
+    "attachDocument": "Document",
+    "videoLabel": "Video",
+    "ai": {
+      "label": "AI",
+      "active": "AI Active",
+      "paused": "AI Paused",
+      "noAssistants": "No assistants available",
+      "createAssistant": "Create an assistant in Virtual Assistants",
+      "selectAssistant": "Select assistant",
+      "pauseAi": "Pause AI",
+      "resumeAi": "Resume AI",
+      "resumeDescription": "Reactivate previous assistant",
+      "disableAi": "Disable AI",
+      "switchAssistant": "Switch assistant",
+      "activated": "AI activated in conversation",
+      "removed": "AI removed from conversation",
+      "errorLoadingAssistants": "Error loading assistants",
+      "errorUpdating": "Error updating assistant"
+    },
+    "contactPanel": {
+      "selectConversationDetails": "Select a conversation to see contact details",
+      "stage": "Stage",
+      "activeStages": "Active",
+      "closedStages": "Closed",
+      "lostReasonLabel": "Loss reason (optional):",
+      "lostReasonPlaceholder": "E.g. Chose competitor...",
+      "value": "Value",
+      "noValue": "No value",
+      "lastContact": "Last contact",
+      "notes": "Notes",
+      "noNotes": "No notes",
+      "addNotePlaceholder": "Add note...",
+      "noDealAssociated": "No deal associated",
+      "service": "Service",
+      "instanceLabel": "Instance",
+      "attendant": "Attendant",
+      "none": "None",
+      "nameUpdated": "Name updated",
+      "errorUpdatingName": "Error updating name",
+      "joinConversation": "Join conversation",
+      "endConversation": "End",
+      "statusOpen": "Open",
+      "statusPending": "Pending",
+      "statusClosed": "Closed",
+      "group": "Group",
+      "todayLabel": "Today",
+      "daysLabel": "{count} days",
+      "oneDayLabel": "1 day",
+      "twoDaysLabel": "2 days"
+    },
+    "errorLoadingConversations": "Error loading conversations",
+    "errorLoadingMore": "Error loading more conversations"
   },
   "crm": {
     "title": "CRM",
@@ -189,7 +287,53 @@
     "markAsWon": "Mark as won",
     "markAsLost": "Mark as lost",
     "lostReason": "Loss reason",
-    "noDeals": "No deals in this stage"
+    "noDeals": "No deals in this stage",
+    "pageTitle": "CRM — Sales Pipeline",
+    "pageSubtitle": "Manage your leads and opportunities",
+    "searchPlaceholder": "Search by name, title or phone...",
+    "noPipelineConfigured": "No pipeline configured. Create one in Settings.",
+    "selectContact": "Select contact...",
+    "searchContactPlaceholder": "Search by name or phone...",
+    "noContactFound": "No contact found",
+    "dealTitlePlaceholder": "E.g. Annual plan sale",
+    "valueCurrency": "Value ($)",
+    "selectPipeline": "Select pipeline",
+    "defaultStage": "Default stage",
+    "createDeal": "Create deal",
+    "creating": "Creating...",
+    "newDealDescription": "Create a new deal in the pipeline",
+    "activeStages": "Active",
+    "closedStages": "Closed",
+    "lostReasonLabel": "Loss reason (optional):",
+    "lostReasonPlaceholder": "E.g. Chose competitor...",
+    "noValue": "No value",
+    "attendant": "Attendant",
+    "noneAssigned": "None",
+    "wonAt": "Won at",
+    "lostAt": "Lost at",
+    "noNotes": "No notes",
+    "addNotePlaceholder": "Add note...",
+    "saveNote": "Save note",
+    "deleteDeal": "Delete deal",
+    "deleteDealDesc": "Are you sure you want to delete this deal? This action cannot be undone.",
+    "confirmDeletion": "Confirm deletion",
+    "deleting": "Deleting...",
+    "pipelineTotal": "Pipeline total:",
+    "noDealsInStage": "No deals",
+    "markAsLostTitle": "Mark as lost",
+    "markAsLostDesc": "Enter the loss reason (optional).",
+    "lostReasonExample": "E.g. Chose competitor, no budget...",
+    "confirmLoss": "Confirm loss",
+    "assigneeFilter": "Assignee",
+    "allAssignees": "All",
+    "saving": "Saving...",
+    "success": {
+      "deleted": "Deal deleted",
+      "noteAdded": "Note added"
+    },
+    "error": {
+      "deleting": "Error deleting deal"
+    }
   },
   "instances": {
     "title": "WhatsApp Instances",
@@ -209,7 +353,62 @@
     "createdAt": "Created at",
     "noInstances": "No instances configured",
     "createFirst": "Create your first instance to get started",
-    "maxReached": "Instance limit reached"
+    "maxReached": "Instance limit reached",
+    "noNumber": "No number",
+    "connectQR": "Connect QR",
+    "viewQR": "View QR Code",
+    "importConversations": "Import conversations",
+    "connectWhatsApp": "Connect WhatsApp",
+    "scanQRDescription": "Scan the QR Code with your WhatsApp",
+    "qrExpiresIn": "QR expires in",
+    "refreshQR": "Refresh QR Code",
+    "qrInstructions": {
+      "step1": "Open WhatsApp on your phone",
+      "step2": "Tap More options or Settings",
+      "step3": "Tap Linked devices",
+      "step4": "Tap Link a device",
+      "step5": "Point your phone at this QR Code"
+    },
+    "createModal": {
+      "title": "New WhatsApp instance",
+      "description": "Choose a name to identify this connection.",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. sales-main",
+      "creating": "Creating...",
+      "createButton": "Create instance",
+      "minChars": "Name must be at least 2 characters",
+      "maxChars": "Name must be at most 50 characters",
+      "onlyAlphanumeric": "Only letters, numbers, _ or -"
+    },
+    "stats": {
+      "total": "Total",
+      "connected": "Connected",
+      "connecting": "Connecting",
+      "disconnected": "Disconnected"
+    },
+    "empty": {
+      "title": "No instances created",
+      "description": "Connect your WhatsApp to start sending and receiving messages",
+      "action": "Create first instance"
+    },
+    "import": {
+      "searching": "Searching conversations...",
+      "importing": "Importing conversations...",
+      "of": "of"
+    },
+    "success": {
+      "created": "Instance created",
+      "disconnected": "Instance disconnected",
+      "deleted": "Instance deleted",
+      "importStarted": "Import started"
+    },
+    "error": {
+      "loading": "Error loading instances",
+      "creating": "Error creating instance",
+      "importTimeout": "Import unresponsive",
+      "importTimeoutDesc": "Check server logs and try again.",
+      "importFailed": "Error starting import"
+    }
   },
   "contacts": {
     "title": "Contacts",
@@ -220,7 +419,552 @@
     "tags": "Tags",
     "createdAt": "Created at",
     "noContacts": "No contacts found",
-    "totalContacts": "{count} contacts"
+    "totalContacts": "{count} contacts",
+    "new": "New contact",
+    "editContact": "Edit contact",
+    "newContact": "New contact",
+    "searchByNameOrPhone": "Search by name or phone...",
+    "contactCount": "{count} contact registered",
+    "contactCountPlural": "{count} contacts registered",
+    "noContactYet": "No contacts yet",
+    "noContactFound": "No contact found",
+    "tryOtherTerms": "Try searching with other terms",
+    "contactsAutoCreated": "Contacts are created automatically when messages are received or add manually",
+    "contactHeader": "Contact",
+    "tagsHeader": "Tags",
+    "createdAtHeader": "Created at",
+    "actionsHeader": "Actions",
+    "phoneHeader": "Phone",
+    "noName": "No name",
+    "phoneLabel": "Phone",
+    "nameOptional": "Name (optional)",
+    "namePlaceholder": "Contact name",
+    "editDescription": "Update contact information",
+    "newDescription": "Add a new contact manually",
+    "saving": "Saving...",
+    "removeContact": "Remove contact",
+    "removeConfirmation": "Are you sure you want to remove {name}? This action can be reversed.",
+    "removing": "Removing...",
+    "remove": "Remove",
+    "errorSaving": "Error saving contact",
+    "errorRemoving": "Error removing contact",
+    "pageOf": "Page {page} of {totalPages}",
+    "previous": "Previous",
+    "nextPage": "Next",
+    "success": {
+      "created": "Contact created successfully",
+      "updated": "Contact updated successfully",
+      "deleted": "Contact removed successfully"
+    }
+  },
+  "broadcasts": {
+    "title": "Mass Broadcasts",
+    "subtitle": "Create and manage message campaigns",
+    "new": "New campaign",
+    "edit": "Edit campaign",
+    "editDescription": "Edit campaign settings",
+    "newDescription": "Configure and start a mass broadcast",
+    "searchPlaceholder": "Search campaigns...",
+    "empty": "No campaigns created",
+    "emptyDescription": "Create your first campaign to start sending mass messages",
+    "createCampaign": "Create campaign",
+    "steps": {
+      "recipients": "Recipients",
+      "message": "Message",
+      "settings": "Settings"
+    },
+    "back": "Back",
+    "nextStep": "Next",
+    "saveCampaign": "Save campaign",
+    "scheduleCampaign": "Schedule campaign",
+    "startCampaign": "Start campaign",
+    "saving": "Saving...",
+    "creating": "Creating...",
+    "variation": {
+      "new": "New variation",
+      "edit": "Edit variation",
+      "add": "Variation",
+      "description": "Configure the type, content and media of this message variation.",
+      "label": "Message variations",
+      "hint": "Each variation can have its own type (text, image, video, etc.). One will be randomly chosen for each recipient.",
+      "empty": "No variations added. Click \"Variation\" to create the first one.",
+      "preview": "Preview (variation 1)",
+      "moreVariations": "+{count} variation(s) — each recipient will receive one randomly",
+      "noText": "No text",
+      "noFile": "No file",
+      "existingFile": "Existing file"
+    },
+    "messageType": {
+      "text": "Text",
+      "image": "Image",
+      "video": "Video",
+      "audio": "Audio",
+      "document": "Document"
+    },
+    "typeLabel": "Type",
+    "contentLabel": "Content",
+    "fileLabel": "File",
+    "actionsLabel": "Actions",
+    "captionLabel": "Caption",
+    "messageLabel": "Message",
+    "captionPlaceholder": "File caption (optional for audio)...",
+    "messagePlaceholder": "Write the message...",
+    "fileDragDrop": "Drag the file here or click to select",
+    "fileMaxSize": "Maximum {size}",
+    "fileSizeExceeded": "File exceeds the {limit} limit",
+    "status": {
+      "DRAFT": "Draft",
+      "SCHEDULED": "Scheduled",
+      "RUNNING": "Running",
+      "PAUSED": "Paused",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed",
+      "CANCELLED": "Cancelled"
+    },
+    "stats": {
+      "totalCampaigns": "Total campaigns",
+      "messagesSent": "Messages sent",
+      "deliveryRate": "Delivery rate",
+      "running": "Running"
+    },
+    "table": {
+      "campaign": "Campaign",
+      "status": "Status",
+      "progress": "Progress",
+      "rate": "Rate",
+      "instances": "Instances",
+      "actions": "Actions",
+      "scheduled": "Scheduled: {date}"
+    },
+    "actions": {
+      "edit": "Edit",
+      "pause": "Pause",
+      "resume": "Resume",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "deleteConfirmTitle": "Confirm deletion",
+    "deleteConfirmDesc": "This action cannot be undone. The campaign and all its data will be removed.",
+    "deleting": "Deleting...",
+    "success": {
+      "created": "Campaign created successfully",
+      "updated": "Campaign updated successfully",
+      "paused": "Campaign paused",
+      "resumed": "Campaign resumed",
+      "cancelled": "Campaign cancelled",
+      "deleted": "Campaign removed"
+    },
+    "error": {
+      "loading": "Error loading campaigns",
+      "creating": "Error creating campaign",
+      "updating": "Error updating campaign"
+    },
+    "sources": {
+      "instancesLabel": "WhatsApp Instances (connected only)",
+      "noConnectedInstances": "No connected instances. Connect at least one instance before creating the campaign.",
+      "contactListsLabel": "Contact lists",
+      "noListsCreated": "No lists created. Create a contact list first.",
+      "contacts": "contacts",
+      "summary": "{instances} instance(s) and {lists} list(s) selected"
+    },
+    "config": {
+      "campaignName": "Campaign name *",
+      "campaignNamePlaceholder": "E.g.: March promotion",
+      "delayLabel": "Interval between messages",
+      "delayUnit": "seconds (1-120)",
+      "delayDescription": "Wait interval between each sent message. Higher values reduce the risk of blocking.",
+      "scheduleLabel": "Start date/time (optional)",
+      "scheduleActiveDesc": "The campaign will start automatically at the configured date/time (in the tenant timezone).",
+      "scheduleEmptyDesc": "Leave empty to start immediately after creation.",
+      "summaryTitle": "Campaign summary",
+      "summaryInstances": "Instances:",
+      "summaryLists": "Lists:",
+      "summaryRecipients": "Recipients:",
+      "summaryDelay": "Delay:",
+      "estimatedTime": "Estimated time: ~{minutes} minutes"
+    }
+  },
+  "contactLists": {
+    "title": "Contact Lists",
+    "subtitle": "{count} list registered",
+    "subtitlePlural": "{count} lists registered",
+    "new": "New List",
+    "creating": "Creating...",
+    "createList": "Create List",
+    "empty": "No lists yet",
+    "emptySearch": "No lists found",
+    "emptyDescription": "Lists are created when extracting contacts from groups or importing CSV",
+    "tryOtherTerms": "Try searching with other terms",
+    "searchPlaceholder": "Search by name...",
+    "newListTitle": "New Contact List",
+    "newListDescription": "Create a list from CSV or select existing contacts",
+    "listName": "List name",
+    "listNamePlaceholder": "E.g. Hot Leads",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "Brief description of the list...",
+    "csvTab": "CSV",
+    "contactsTab": "Existing Contacts",
+    "table": {
+      "name": "Name",
+      "contacts": "Contacts",
+      "source": "Source",
+      "createdAt": "Created at",
+      "actions": "Actions"
+    },
+    "source": {
+      "GROUP_EXTRACT": "Group",
+      "CSV_IMPORT": "CSV",
+      "MANUAL": "Manual",
+      "CRM_FILTER": "CRM"
+    },
+    "deleteTitle": "Remove list",
+    "deleteDesc": "Are you sure you want to remove the list {name}? Contacts will not be deleted.",
+    "removing": "Removing...",
+    "remove": "Remove",
+    "pageOf": "Page {page} of {totalPages}",
+    "previous": "Previous",
+    "nextPage": "Next",
+    "csv": {
+      "dragDrop": "Drag a CSV file or click to select",
+      "hint": "Accepts .csv and .txt with columns: phone, name",
+      "emptyFile": "Empty file or no data",
+      "noValidContacts": "No valid contacts found in file",
+      "phoneColumnNotFound": "Column \"phone\" not found. Accepted: {columns}",
+      "phoneHeader": "Phone",
+      "nameHeader": "Name",
+      "contactCount": "{count} contact",
+      "contactCountPlural": "{count} contacts",
+      "andMore": "... and {count} more contact",
+      "andMorePlural": "... and {count} more contacts"
+    },
+    "selectContacts": {
+      "selected": "{count} selected",
+      "selectedPlural": "{count} selected",
+      "searchPlaceholder": "Search by name or phone...",
+      "noContactFound": "No contact found",
+      "noContactRegistered": "No contacts registered",
+      "noName": "No name"
+    },
+    "success": {
+      "created": "List created successfully",
+      "deleted": "List removed successfully"
+    },
+    "error": {
+      "loading": "Error loading lists",
+      "creating": "Error creating list",
+      "deleting": "Error removing list"
+    }
+  },
+  "groups": {
+    "title": "Contact Extraction",
+    "subtitle": "Extract contacts from WhatsApp groups to create broadcast lists",
+    "restart": "Restart",
+    "steps": {
+      "instance": "Instance",
+      "groups": "Groups",
+      "extraction": "Extraction",
+      "results": "Results"
+    },
+    "selectInstanceLabel": "Select WhatsApp instance",
+    "noConnectedInstance": "No connected instance",
+    "noConnectedInstanceDesc": "Connect a WhatsApp instance before extracting contacts",
+    "chooseInstance": "Choose an instance...",
+    "loadingGroups": "Loading groups...",
+    "noGroupsFound": "No groups found",
+    "noGroupsDesc": "This instance has no groups",
+    "groupsFound": "{count} groups found — {selected} selected",
+    "deselectAll": "Deselect all",
+    "selectAll": "Select all",
+    "groupHeader": "Group",
+    "membersHeader": "Members",
+    "membersCount": "{count} members",
+    "createListAuto": "Create contact list automatically",
+    "listNamePlaceholder": "List name (e.g. VIP Contacts)",
+    "descriptionPlaceholder": "Description (optional)",
+    "extractContacts": "Extract contacts ({count} {countLabel})",
+    "groupSingular": "group",
+    "groupPlural": "groups",
+    "extracting": "Extracting contacts...",
+    "groupsProcessed": "{processed}/{total} groups processed — {contacts} contacts found",
+    "contactsExtracted": "{count} contacts extracted",
+    "listCreatedSuccess": "Contact list created successfully",
+    "exportCsv": "Export CSV",
+    "exportExcel": "Export Excel",
+    "createList": "Create list",
+    "createListTitle": "Create contact list",
+    "createListDesc": "Save the {count} extracted contacts in a reusable list",
+    "listNameLabel": "List name",
+    "listNameExample": "E.g. VIP group contacts",
+    "descriptionLabel": "Description (optional)",
+    "descriptionListPlaceholder": "List description",
+    "creatingList": "Creating...",
+    "phoneHeader": "Phone",
+    "nameHeader": "Name",
+    "sourceGroupHeader": "Source group",
+    "success": {
+      "extracted": "Extraction started",
+      "exported": "Export completed"
+    },
+    "error": {
+      "loading": "Error loading groups",
+      "extracting": "Error starting extraction",
+      "exporting": "Error exporting contacts"
+    }
+  },
+  "assistants": {
+    "title": "Assistants",
+    "breadcrumb": "Assistants",
+    "aiBreadcrumb": "Artificial Intelligence",
+    "searchPlaceholder": "Search assistants...",
+    "addNew": "Add new",
+    "noResults": "No assistants found for \"{search}\"",
+    "empty": {
+      "title": "No assistants configured",
+      "description": "Create an AI assistant to automate WhatsApp customer service",
+      "action": "Create assistant"
+    },
+    "sheet": {
+      "editTitle": "Edit assistant",
+      "newTitle": "New assistant",
+      "editDescription": "Change assistant settings",
+      "newDescription": "Configure a new AI assistant"
+    },
+    "form": {
+      "newAssistant": "New assistant",
+      "cancelButton": "Cancel",
+      "saving": "Saving...",
+      "saveChanges": "Save changes",
+      "createAssistant": "Create assistant"
+    },
+    "tabs": {
+      "profile": "Profile",
+      "instructions": "Instructions",
+      "advanced": "Advanced"
+    },
+    "fields": {
+      "avatarEmoji": "Avatar emoji",
+      "name": "Name *",
+      "namePlaceholder": "E.g. Sales SDR",
+      "description": "Description",
+      "descriptionPlaceholder": "E.g. Helps customers solve questions about our system",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "knowledgeBases": "Knowledge bases",
+      "optional": "(optional)",
+      "noKnowledgeBases": "No knowledge bases created.",
+      "systemPrompt": "System instructions",
+      "systemPromptHint": "Describe the behavior, tone and goals of the assistant",
+      "systemPromptPlaceholder": "You are a sales assistant specialized in...\n\nYour goal is...\n\nAlways respond in a...\n\nWhen the customer asks about pricing, you should...",
+      "model": "AI model",
+      "waitTime": "Message collection time",
+      "waitTimeHint": "(waits before responding)",
+      "waitTimeFormHint": "The bot waits this time before responding, to group sequential messages",
+      "seconds": "seconds",
+      "handoffKeywords": "Handoff keywords",
+      "handoffKeywordsHint": "When the customer types these words, the bot transfers to an agent",
+      "handoffKeywordsPlaceholder": "E.g. human, agent — press Enter",
+      "tools": "Tools"
+    },
+    "delete": {
+      "title": "Delete assistant",
+      "description": "Are you sure you want to delete the assistant <strong>{name}</strong>? This action cannot be undone.",
+      "deleting": "Deleting..."
+    },
+    "notFound": "Assistant not found.",
+    "success": {
+      "created": "Assistant created",
+      "updated": "Assistant updated",
+      "deleted": "Assistant deleted"
+    },
+    "error": {
+      "creating": "Error creating assistant",
+      "saving": "Error saving assistant",
+      "deleting": "Error deleting assistant"
+    }
+  },
+  "knowledgeBases": {
+    "title": "Knowledge Bases",
+    "breadcrumb": "Knowledge Bases",
+    "count": "{count} knowledge base registered",
+    "countPlural": "{count} knowledge bases registered",
+    "newButton": "New knowledge base",
+    "empty": {
+      "title": "No knowledge bases",
+      "description": "Knowledge bases allow your assistants to access specific information about your business",
+      "action": "Create base"
+    },
+    "sourceCount": "{count} source",
+    "sourceCountPlural": "{count} sources",
+    "sourcesLabel": "Sources ({count})",
+    "sheet": {
+      "editTitle": "Edit knowledge base",
+      "newTitle": "New knowledge base",
+      "editDescription": "Change knowledge base information",
+      "newDescription": "Fill in the details to create a new knowledge base"
+    },
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "E.g. Product manual",
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Describe the content of this knowledge base"
+    },
+    "sources": {
+      "addTitle": "Add source",
+      "fileTab": "File",
+      "urlTab": "URL",
+      "textTab": "Text",
+      "uploading": "Uploading...",
+      "selectFile": "Select file",
+      "fileFormats": "PDF, DOCX, TXT or MD",
+      "name": "Name",
+      "namePlaceholderUrl": "E.g. Product documentation",
+      "urlPlaceholder": "https://example.com/page",
+      "content": "Content",
+      "contentPlaceholder": "Paste textual content here...",
+      "namePlaceholderText": "E.g. Product FAQ",
+      "addingUrl": "Adding...",
+      "addUrl": "Add URL",
+      "addingText": "Adding...",
+      "addText": "Add text",
+      "empty": "No sources added. Add files, URLs or texts below.",
+      "typeFile": "File",
+      "typeUrl": "URL",
+      "typeText": "Text",
+      "statusPending": "Pending",
+      "statusProcessing": "Processing",
+      "statusCompleted": "Completed",
+      "statusFailed": "Failed",
+      "reingest": "Re-ingest",
+      "deleteTitle": "Delete source",
+      "deleteDescription": "Are you sure you want to delete the source <strong>{name}</strong>? This action cannot be undone."
+    },
+    "delete": {
+      "title": "Delete knowledge base",
+      "description": "Are you sure you want to delete the base <strong>{name}</strong>? All sources will be removed."
+    },
+    "notFound": "Knowledge base not found.",
+    "success": {
+      "created": "Knowledge base created",
+      "updated": "Knowledge base updated",
+      "deleted": "Knowledge base deleted",
+      "fileUploaded": "File uploaded",
+      "urlAdded": "URL added",
+      "textAdded": "Text added",
+      "sourceDeleted": "Source deleted",
+      "reingestStarted": "Re-ingestion started"
+    },
+    "error": {
+      "creating": "Error creating base",
+      "deleting": "Error deleting base",
+      "uploadingFile": "Error uploading file",
+      "addingUrl": "Error adding URL",
+      "addingText": "Error adding text",
+      "deletingSource": "Error deleting source",
+      "reingesting": "Error re-ingesting"
+    }
+  },
+  "aiTools": {
+    "title": "AI Tools",
+    "count": "{count} tool registered",
+    "countPlural": "{count} tools registered",
+    "newButton": "New tool",
+    "empty": {
+      "title": "No tools configured",
+      "description": "Tools allow your assistants to perform actions like searching contacts, creating deals and more",
+      "action": "Create tool"
+    },
+    "sheet": {
+      "editTitle": "Edit tool",
+      "newTitle": "New tool",
+      "editDescription": "Change AI tool settings",
+      "newDescription": "Configure a tool the assistant can use"
+    },
+    "fields": {
+      "type": "Type *",
+      "name": "Name *",
+      "namePlaceholder": "E.g. Search customer data",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe what this tool does..."
+    },
+    "types": {
+      "BUSCAR_CONTATO": { "label": "Search Contact", "description": "Searches contact data in CRM" },
+      "CRIAR_CONTATO": { "label": "Create Contact", "description": "Registers contact in CRM" },
+      "ADICIONAR_TAG": { "label": "Add Tag", "description": "Applies tags to contact" },
+      "CRIAR_DEAL": { "label": "Create Deal", "description": "Opens a deal in CRM" },
+      "TRANSFERIR_HUMANO": { "label": "Transfer to Human", "description": "Pauses AI, transfers to agent" },
+      "WEBHOOK_EXTERNO": { "label": "External Webhook", "description": "Calls external URL with data" }
+    },
+    "delete": {
+      "title": "Delete tool",
+      "description": "Are you sure you want to delete the tool <strong>{name}</strong>? This action cannot be undone."
+    },
+    "success": {
+      "created": "Tool created",
+      "updated": "Tool updated",
+      "deleted": "Tool deleted",
+      "toggled": "Tool updated"
+    },
+    "error": {
+      "creating": "Error creating tool",
+      "updating": "Error updating tool",
+      "deleting": "Error deleting tool"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "bell": {
+      "title": "Notifications",
+      "markAllRead": "Mark all",
+      "loading": "Loading...",
+      "empty": "No notifications",
+      "viewAll": "View all notifications"
+    },
+    "page": {
+      "unreadCount": "{count} unread",
+      "unreadCountPlural": "{count} unread",
+      "markAllRead": "Mark all as read",
+      "marking": "Marking...",
+      "loadMore": "Load more",
+      "loading": "Loading..."
+    },
+    "empty": {
+      "title": "No notifications",
+      "description": "You will be notified when there are updates"
+    },
+    "dateGroups": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This week",
+      "older": "Older"
+    },
+    "preferences": {
+      "title": "Notification Preferences",
+      "description": "Choose which notifications you want to receive and how",
+      "typeColumn": "Type",
+      "inAppColumn": "In app",
+      "browserColumn": "Browser",
+      "browserPermission": "Browser notification permissions not granted"
+    },
+    "types": {
+      "NEW_MESSAGE": "New message",
+      "CONVERSATION_ASSIGNED": "Conversation assigned",
+      "CONVERSATION_CLOSED": "Conversation closed",
+      "INSTANCE_CONNECTED": "Instance connected",
+      "INSTANCE_DISCONNECTED": "Instance disconnected",
+      "BROADCAST_COMPLETED": "Broadcast completed",
+      "BROADCAST_FAILED": "Broadcast failed",
+      "DEAL_WON": "Deal won",
+      "DEAL_LOST": "Deal lost",
+      "CONTACT_CREATED": "Contact created",
+      "GROUP_EXTRACTION_DONE": "Extraction completed"
+    },
+    "groups": {
+      "inbox": "Inbox",
+      "instances": "Instances",
+      "deals": "Deals",
+      "groups": "Groups"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -229,7 +973,9 @@
       "title": "Profile",
       "description": "Your account information",
       "name": "Name",
-      "email": "Email"
+      "email": "Email",
+      "role": "Role",
+      "changePhoto": "Change photo"
     },
     "locale": {
       "title": "Language & Region",
@@ -237,31 +983,339 @@
       "language": "Language",
       "timezone": "Timezone",
       "currency": "Currency",
-      "saved": "Regional settings saved"
+      "saving": "Saving...",
+      "saved": "Saved!",
+      "saveButton": "Save settings",
+      "savedToast": "Settings saved",
+      "savedDescription": "Language and region updated.",
+      "errorSaving": "Error saving settings"
     },
     "notifications": {
       "title": "Notifications",
       "description": "Control how you are notified",
-      "comingSoon": "Notification settings coming soon."
+      "comingSoon": "Notification settings coming soon.",
+      "newMessage": "New message received",
+      "conversationAssigned": "Conversation assigned to me",
+      "instanceDisconnected": "Instance disconnected",
+      "broadcastCompleted": "Mass broadcast completed",
+      "pushWarning": "Push notifications require browser permission"
     },
     "integrations": {
       "title": "Integrations",
-      "description": "Connect external tools"
+      "description": "Connect external tools",
+      "comingSoon": "Coming soon",
+      "comingSoonDescription": "Integrations will be available in a future version.",
+      "connect": "Connect",
+      "n8n": "Custom automations and workflows",
+      "googleCalendar": "Sync appointments with your calendar",
+      "zapier": "Connect with over 5,000 apps",
+      "googleSheets": "Export contacts and conversations to spreadsheets",
+      "automation": "Automation",
+      "productivity": "Productivity"
     },
     "danger": {
       "title": "Danger zone",
       "description": "Irreversible actions",
-      "deleteAccount": "Delete account"
-    }
+      "exportData": "Export data",
+      "exportDescription": "Download all your data in CSV format",
+      "deleteAccount": "Delete account",
+      "deleteDescription": "Permanently delete your account and all data"
+    },
+    "team": {
+      "title": "Team",
+      "memberCount": "{count} member",
+      "memberCountPlural": "{count} members",
+      "newMember": "New Member",
+      "searchPlaceholder": "Search by name or email...",
+      "you": "You",
+      "deactivated": "Deactivated",
+      "activeStatus": "Active",
+      "accessDenied": "Access denied",
+      "accessDeniedDesc": "Only administrators can manage the team.",
+      "roles": {
+        "admin": "Admin",
+        "attendant": "Attendant",
+        "viewer": "Viewer"
+      },
+      "create": {
+        "title": "New member",
+        "description": "Add a new team member",
+        "nameLabel": "Name",
+        "emailLabel": "Email",
+        "passwordLabel": "Password",
+        "roleLabel": "Role",
+        "creating": "Creating..."
+      },
+      "edit": {
+        "title": "Edit member",
+        "description": "Change member information"
+      },
+      "password": {
+        "title": "Change password",
+        "description": "Set a new password for {name}",
+        "newPassword": "New password",
+        "saving": "Saving..."
+      },
+      "deactivate": {
+        "title": "Deactivate member",
+        "description": "Are you sure you want to deactivate {name}? They will no longer be able to access the system.",
+        "deactivating": "Deactivating...",
+        "button": "Deactivate"
+      },
+      "activate": {
+        "title": "Activate member",
+        "activating": "Activating...",
+        "button": "Activate"
+      },
+      "tooltips": {
+        "editMember": "Edit member",
+        "changePassword": "Change password",
+        "deactivateMember": "Deactivate member",
+        "activateMember": "Activate member"
+      },
+      "success": {
+        "created": "Member created",
+        "updated": "Member updated",
+        "passwordChanged": "Password changed",
+        "deactivated": "Member deactivated",
+        "activated": "Member activated"
+      },
+      "error": {
+        "creating": "Error creating member",
+        "updating": "Error updating member",
+        "changingPassword": "Error changing password",
+        "toggling": "Error changing status"
+      }
+    },
+    "pipeline": {
+      "title": "Pipeline",
+      "subtitle": "Manage your sales pipeline stages",
+      "newStage": "New stage",
+      "default": "Default",
+      "stageTypes": {
+        "ACTIVE": "Active",
+        "WON": "Won",
+        "LOST": "Lost"
+      },
+      "empty": {
+        "title": "No stages configured",
+        "description": "Create stages to organize your sales pipeline",
+        "action": "Create stage"
+      },
+      "create": {
+        "title": "New stage",
+        "description": "Add a new stage to the pipeline",
+        "nameLabel": "Name",
+        "colorLabel": "Color",
+        "typeLabel": "Type",
+        "creating": "Creating..."
+      },
+      "edit": {
+        "title": "Edit stage",
+        "description": "Change stage settings"
+      },
+      "delete": {
+        "title": "Delete stage",
+        "description": "Are you sure you want to delete the stage <strong>{name}</strong>? Deals will be moved to the default stage."
+      },
+      "success": {
+        "created": "Stage created",
+        "updated": "Stage updated",
+        "deleted": "Stage deleted",
+        "reordered": "Order updated"
+      },
+      "error": {
+        "creating": "Error creating stage",
+        "updating": "Error updating stage",
+        "deleting": "Error deleting stage"
+      }
+    },
+    "tags": {
+      "title": "Tags",
+      "count": "{count} tag registered",
+      "countPlural": "{count} tags registered",
+      "newTag": "New tag",
+      "empty": {
+        "title": "No tags created",
+        "description": "Tags help organize contacts and conversations",
+        "action": "Create tag"
+      },
+      "create": {
+        "title": "New tag",
+        "description": "Create a new tag for organization",
+        "nameLabel": "Name",
+        "colorLabel": "Color",
+        "creating": "Creating..."
+      },
+      "edit": {
+        "title": "Edit tag",
+        "description": "Change tag settings"
+      },
+      "delete": {
+        "title": "Delete tag",
+        "description": "Are you sure you want to delete the tag <strong>{name}</strong>? It will be removed from all contacts."
+      },
+      "success": {
+        "created": "Tag created",
+        "updated": "Tag updated",
+        "deleted": "Tag deleted"
+      },
+      "error": {
+        "creating": "Error creating tag",
+        "updating": "Error updating tag",
+        "deleting": "Error deleting tag"
+      }
+    },
+    "saving": "Saving...",
+    "saved": "Saved!",
+    "saveChanges": "Save changes"
   },
   "admin": {
     "tenants": {
       "title": "Tenants",
-      "subtitle": "Manage platform tenants"
+      "subtitle": "Manage platform tenants",
+      "newTenant": "New Tenant",
+      "searchPlaceholder": "Search by name or slug...",
+      "table": {
+        "tenant": "Tenant",
+        "plan": "Plan",
+        "resources": "Resources",
+        "createdAt": "Created at",
+        "actions": "Actions"
+      },
+      "empty": "No tenants registered",
+      "emptySearch": "No tenants found",
+      "pagination": {
+        "pageOf": "Page {page} of {totalPages}",
+        "previous": "Previous",
+        "next": "Next"
+      },
+      "create": {
+        "title": "New Tenant",
+        "description": "Configure a new company on the platform",
+        "companyName": "Company name",
+        "slug": "Slug",
+        "plan": "Plan",
+        "adminSection": "Administrator user",
+        "adminName": "Admin name",
+        "adminEmail": "Admin email",
+        "adminPassword": "Admin password",
+        "creating": "Creating...",
+        "slugHint": "Unique identifier. Only lowercase letters, numbers and hyphens.",
+        "noPlan": "No plans registered.",
+        "createPlan": "Create plan",
+        "selectPlan": "Select a plan"
+      },
+      "edit": {
+        "title": "Edit Tenant",
+        "description": "Change tenant settings"
+      },
+      "delete": {
+        "title": "Delete Tenant",
+        "description": "Are you sure you want to delete the tenant <strong>{name}</strong>? All data will be lost."
+      },
+      "resources": {
+        "instances": "instances",
+        "users": "users",
+        "assistants": "assistants"
+      },
+      "success": {
+        "created": "Tenant created",
+        "updated": "Tenant updated",
+        "deleted": "Tenant deleted"
+      },
+      "default": "Default",
+      "validation": {
+        "minPassword": "Password must be at least 6 characters"
+      },
+      "error": {
+        "loading": "Error loading tenants",
+        "creating": "Error creating tenant",
+        "updating": "Error updating tenant",
+        "deleting": "Error deleting tenant"
+      }
     },
     "plans": {
       "title": "Plans",
-      "subtitle": "Manage available plans"
+      "subtitle": "Manage available plans",
+      "newPlan": "New Plan",
+      "searchPlaceholder": "Search by name or slug...",
+      "table": {
+        "plan": "Plan",
+        "limits": "Limits",
+        "tenants": "Tenants",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "empty": "No plans registered",
+      "emptySearch": "No plans found",
+      "tryOtherTerms": "Try searching with different terms",
+      "createFirst": "Create the first plan to get started",
+      "createPlan": "Create plan",
+      "defaultBadge": "Default",
+      "default": "Default",
+      "active": "Active",
+      "inactive": "Inactive",
+      "instances": "inst.",
+      "users": "users",
+      "count": "{count} plan",
+      "countPlural": "{count} plans",
+      "subtitleFull": "Manage available plans on the platform",
+      "activated": "Plan activated",
+      "deactivated": "Plan deactivated",
+      "toggleError": "Error changing status",
+      "pagination": {
+        "pageOf": "Page {page} of {totalPages}",
+        "previous": "Previous",
+        "next": "Next"
+      },
+      "create": {
+        "title": "New Plan",
+        "description": "Configure a new subscription plan",
+        "nameLabel": "Name",
+        "slugLabel": "Slug",
+        "slugHint": "Unique identifier. Only lowercase letters, numbers and hyphens.",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Plan description...",
+        "benefitsLabel": "Benefits",
+        "benefitPlaceholder": "E.g.: 10 instances",
+        "limitsSection": "Limits",
+        "maxInstances": "Max instances",
+        "maxUsers": "Max users",
+        "maxAssistants": "Max assistants",
+        "broadcastsPerDay": "Broadcasts/day",
+        "contactsPerBroadcast": "Contacts/broadcast",
+        "priceLabel": "Price",
+        "isDefault": "Default",
+        "isActive": "Active",
+        "orderLabel": "Order",
+        "creating": "Creating...",
+        "yes": "Yes",
+        "no": "No"
+      },
+      "edit": {
+        "title": "Edit Plan",
+        "description": "Change settings for plan {name}"
+      },
+      "delete": {
+        "title": "Delete Plan",
+        "description": "Are you sure you want to delete the plan <strong>{name}</strong>?"
+      },
+      "success": {
+        "created": "Plan created",
+        "updated": "Plan updated",
+        "deleted": "Plan deleted",
+        "activated": "Plan activated",
+        "deactivated": "Plan deactivated"
+      },
+      "error": {
+        "loading": "Error loading plans",
+        "creating": "Error creating plan",
+        "saving": "Error saving plan",
+        "updating": "Error updating plan",
+        "deleting": "Error deleting plan",
+        "toggling": "Error changing status"
+      }
     }
   },
   "validation": {

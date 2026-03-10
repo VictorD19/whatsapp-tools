@@ -5,6 +5,7 @@ import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTranslations } from 'next-intl'
 import { apiGet } from '@/lib/api'
 
 interface Contact {
@@ -24,6 +25,7 @@ interface SelectContactsTabProps {
 }
 
 export function SelectContactsTab({ selectedIds, onSelectionChange }: SelectContactsTabProps) {
+  const t = useTranslations('contactLists.selectContacts')
   const [search, setSearch] = useState('')
   const [contacts, setContacts] = useState<Contact[]>([])
   const [selectedContacts, setSelectedContacts] = useState<Contact[]>([])
@@ -110,7 +112,7 @@ export function SelectContactsTab({ selectedIds, onSelectionChange }: SelectCont
             </Badge>
           ))}
           <span className="text-xs text-muted-foreground self-center ml-1">
-            {selectedContacts.length} selecionado{selectedContacts.length !== 1 ? 's' : ''}
+            {selectedContacts.length === 1 ? t('selected', { count: selectedContacts.length }) : t('selectedPlural', { count: selectedContacts.length })}
           </span>
         </div>
       )}
@@ -119,7 +121,7 @@ export function SelectContactsTab({ selectedIds, onSelectionChange }: SelectCont
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome ou telefone..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           className="pl-9"
@@ -139,7 +141,7 @@ export function SelectContactsTab({ selectedIds, onSelectionChange }: SelectCont
           </div>
         ) : contacts.length === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
-            {search ? 'Nenhum contato encontrado' : 'Nenhum contato cadastrado'}
+            {search ? t('noContactFound') : t('noContactRegistered')}
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -158,7 +160,7 @@ export function SelectContactsTab({ selectedIds, onSelectionChange }: SelectCont
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">
-                      {contact.name || 'Sem nome'}
+                      {contact.name || t('noName')}
                     </p>
                     <p className="text-xs text-muted-foreground font-mono">
                       {contact.phone}

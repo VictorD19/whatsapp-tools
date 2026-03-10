@@ -19,17 +19,22 @@ import {
 import { CreateListSheet } from '@/components/contact-lists/create-list-sheet'
 import { useContactLists, type ContactList } from '@/hooks/use-contact-lists'
 import { useDebounce } from '@/hooks/use-debounce'
+import { useTranslations } from 'next-intl'
 import { cn, formatDate } from '@/lib/utils'
 import { toast } from '@/components/ui/toaster'
 
-const SOURCE_LABELS: Record<ContactList['source'], { label: string; variant: 'default' | 'info' | 'secondary' | 'success' }> = {
-  GROUP_EXTRACT: { label: 'Grupo', variant: 'info' },
-  CSV_IMPORT: { label: 'CSV', variant: 'secondary' },
-  MANUAL: { label: 'Manual', variant: 'default' },
-  CRM_FILTER: { label: 'CRM', variant: 'success' },
+const SOURCE_VARIANTS: Record<ContactList['source'], 'default' | 'info' | 'secondary' | 'success'> = {
+  GROUP_EXTRACT: 'info',
+  CSV_IMPORT: 'secondary',
+  MANUAL: 'default',
+  CRM_FILTER: 'success',
 }
 
 export default function ContactListsPage() {
+  const t = useTranslations('contactLists')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
+
   React.useEffect(() => { document.title = 'Listas de Contatos | SistemaZapChat' }, [])
 
   const [search, setSearch] = useState('')
@@ -73,7 +78,7 @@ export default function ContactListsPage() {
       setDeleteOpen(false)
       setDeletingList(null)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao remover lista'
+      const message = err instanceof Error ? err.message : t('error.deleting')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setDeleting(false)
@@ -81,18 +86,18 @@ export default function ContactListsPage() {
   }, [deletingList, deleteList])
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Marketing' }, { label: 'Listas de Contatos' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.marketing') }, { label: tn('items.contactLists') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Listas de Contatos</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {meta.total} lista{meta.total !== 1 ? 's' : ''} cadastrada{meta.total !== 1 ? 's' : ''}
+            {meta.total === 1 ? t('subtitle', { count: meta.total }) : t('subtitlePlural', { count: meta.total })}
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Nova Lista
+          {t('new')}
         </Button>
       </div>
 
@@ -100,7 +105,7 @@ export default function ContactListsPage() {
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           className="pl-9"
@@ -122,11 +127,11 @@ export default function ContactListsPage() {
       ) : lists.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title={search ? 'Nenhuma lista encontrada' : 'Nenhuma lista ainda'}
+          title={search ? t('emptySearch') : t('empty')}
           description={
             search
-              ? 'Tente buscar com outros termos'
-              : 'Listas sao criadas ao extrair contatos de grupos ou importar CSV'
+              ? t('tryOtherTerms')
+              : t('emptyDescription')
           }
         />
       ) : (
@@ -136,19 +141,19 @@ export default function ContactListsPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/50">
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Nome
+                    {t('table.name')}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Contatos
+                    {t('table.contacts')}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Origem
+                    {t('table.source')}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Criado em
+                    {t('table.createdAt')}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Acoes
+                    {t('table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -157,7 +162,7 @@ export default function ContactListsPage() {
                 className="divide-y divide-border animate-fade-slide-in"
               >
                 {lists.map((list) => {
-                  const source = SOURCE_LABELS[list.source]
+                  const variant = SOURCE_VARIANTS[list.source]
                   return (
                     <tr key={list.id} data-testid={`list-row-${list.id}`} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
@@ -177,8 +182,8 @@ export default function ContactListsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={source.variant} className="text-xs">
-                          {source.label}
+                        <Badge variant={variant} className="text-xs">
+                          {t(`source.${list.source}`)}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">
@@ -202,7 +207,7 @@ export default function ContactListsPage() {
           {meta.totalPages > 1 && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Pagina {meta.page} de {meta.totalPages}
+                {t('pageOf', { page: meta.page, totalPages: meta.totalPages })}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -212,7 +217,7 @@ export default function ContactListsPage() {
                   onClick={() => handlePageChange(meta.page - 1)}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Anterior
+                  {t('previous')}
                 </Button>
                 <Button
                   variant="outline"
@@ -220,7 +225,7 @@ export default function ContactListsPage() {
                   disabled={meta.page >= meta.totalPages}
                   onClick={() => handlePageChange(meta.page + 1)}
                 >
-                  Proximo
+                  {t('nextPage')}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -242,22 +247,21 @@ export default function ContactListsPage() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remover lista</DialogTitle>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja remover a lista{' '}
-              <strong>{deletingList?.name}</strong>? Os contatos nao serao excluidos.
+              {t('deleteDesc', { name: deletingList?.name || '' })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
             >
-              {deleting ? 'Removendo...' : 'Remover'}
+              {deleting ? t('removing') : t('remove')}
             </Button>
           </DialogFooter>
         </DialogContent>

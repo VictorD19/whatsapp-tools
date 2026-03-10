@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useTranslations } from 'next-intl'
 import { Check, Radio, Users } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import type { ContactList } from '@/hooks/use-contact-lists'
@@ -23,16 +24,17 @@ export function StepSelectSources({
   onInstanceToggle,
   onContactListToggle,
 }: StepSelectSourcesProps) {
+  const t = useTranslations('broadcasts.sources')
   const connectedInstances = instances.filter((i) => i.status === 'CONNECTED')
 
   return (
     <div className="space-y-6">
       {/* Instances */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Instancias WhatsApp (apenas conectadas)</Label>
+        <Label className="text-sm font-medium">{t('instancesLabel')}</Label>
         {connectedInstances.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            Nenhuma instancia conectada. Conecte pelo menos uma instancia antes de criar a campanha.
+            {t('noConnectedInstances')}
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-2">
@@ -74,10 +76,10 @@ export function StepSelectSources({
 
       {/* Contact Lists */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Listas de contatos</Label>
+        <Label className="text-sm font-medium">{t('contactListsLabel')}</Label>
         {contactLists.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            Nenhuma lista criada. Crie uma lista de contatos primeiro.
+            {t('noListsCreated')}
           </p>
         ) : (
           <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
@@ -111,7 +113,7 @@ export function StepSelectSources({
                     )}
                   </div>
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {list.contactCount} contatos
+                    {list.contactCount} {t('contacts')}
                   </span>
                 </button>
               )
@@ -123,8 +125,7 @@ export function StepSelectSources({
       {/* Summary */}
       {(selectedInstanceIds.length > 0 || selectedContactListIds.length > 0) && (
         <div className="rounded-lg bg-muted/50 px-3 py-2 text-sm">
-          <span className="font-medium">{selectedInstanceIds.length}</span> instancia(s) e{' '}
-          <span className="font-medium">{selectedContactListIds.length}</span> lista(s) selecionada(s)
+          {t('summary', { instances: selectedInstanceIds.length, lists: selectedContactListIds.length })}
         </div>
       )}
     </div>

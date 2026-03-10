@@ -33,12 +33,17 @@ import {
   type GroupMemberExtracted,
 } from '@/hooks/use-groups'
 import { useContactLists } from '@/hooks/use-contact-lists'
+import { useTranslations } from 'next-intl'
 import { getSocket } from '@/lib/socket'
 import { toast } from '@/components/ui/toaster'
 
 type Step = 'select-instance' | 'select-groups' | 'extracting' | 'results'
 
 export default function GroupsPage() {
+  const t = useTranslations('groups')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
+
   React.useEffect(() => { document.title = 'Grupos | SistemaZapChat' }, [])
 
   const { fetchInstances } = useInstances()
@@ -197,18 +202,18 @@ export default function GroupsPage() {
   }, [])
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Marketing' }, { label: 'Grupos' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.marketing') }, { label: tn('items.groups') }]}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Extração de Contatos</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Extraia contatos de grupos WhatsApp para criar listas de disparo
+            {t('subtitle')}
           </p>
         </div>
         {step !== 'select-instance' && (
           <Button variant="outline" onClick={resetFlow}>
             <RefreshCw className="h-4 w-4 mr-2" />
-            Recomeçar
+            {t('restart')}
           </Button>
         )}
       </div>
@@ -217,42 +222,42 @@ export default function GroupsPage() {
       <div className="flex items-center gap-2 text-sm">
         <StepIndicator
           number={1}
-          label="Instância"
+          label={t('steps.instance')}
           active={step === 'select-instance'}
           done={step !== 'select-instance'}
         />
         <div className="h-px w-8 bg-border" />
         <StepIndicator
           number={2}
-          label="Grupos"
+          label={t('steps.groups')}
           active={step === 'select-groups'}
           done={step === 'extracting' || step === 'results'}
         />
         <div className="h-px w-8 bg-border" />
         <StepIndicator
           number={3}
-          label="Extração"
+          label={t('steps.extraction')}
           active={step === 'extracting'}
           done={step === 'results'}
         />
         <div className="h-px w-8 bg-border" />
-        <StepIndicator number={4} label="Resultados" active={step === 'results'} done={false} />
+        <StepIndicator number={4} label={t('steps.results')} active={step === 'results'} done={false} />
       </div>
 
       {/* Step 1: Select Instance */}
       {step === 'select-instance' && (
         <div className="max-w-md space-y-4">
-          <Label>Selecione a instância WhatsApp</Label>
+          <Label>{t('selectInstanceLabel')}</Label>
           {connectedInstances.length === 0 ? (
             <EmptyState
               icon={Users}
-              title="Nenhuma instância conectada"
-              description="Conecte uma instância WhatsApp antes de extrair contatos"
+              title={t('noConnectedInstance')}
+              description={t('noConnectedInstanceDesc')}
             />
           ) : (
             <Select onValueChange={handleSelectInstance}>
               <SelectTrigger>
-                <SelectValue placeholder="Escolha uma instância..." />
+                <SelectValue placeholder={t('chooseInstance')} />
               </SelectTrigger>
               <SelectContent>
                 {connectedInstances.map((inst) => (
@@ -272,22 +277,22 @@ export default function GroupsPage() {
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Carregando grupos...</span>
+              <span className="ml-2 text-sm text-muted-foreground">{t('loadingGroups')}</span>
             </div>
           ) : groups.length === 0 ? (
             <EmptyState
               icon={Users}
-              title="Nenhum grupo encontrado"
-              description="Esta instância não possui grupos"
+              title={t('noGroupsFound')}
+              description={t('noGroupsDesc')}
             />
           ) : (
             <>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  {groups.length} grupos encontrados — {selectedGroupIds.size} selecionados
+                  {t('groupsFound', { count: groups.length, selected: selectedGroupIds.size })}
                 </p>
                 <Button variant="outline" size="sm" onClick={toggleAll}>
-                  {selectedGroupIds.size === groups.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                  {selectedGroupIds.size === groups.length ? t('deselectAll') : t('selectAll')}
                 </Button>
               </div>
 
@@ -297,10 +302,10 @@ export default function GroupsPage() {
                     <tr className="border-b border-border bg-muted/50">
                       <th className="w-12 px-4 py-3" />
                       <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Grupo
+                        {t('groupHeader')}
                       </th>
                       <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Membros
+                        {t('membersHeader')}
                       </th>
                     </tr>
                   </thead>
@@ -326,7 +331,7 @@ export default function GroupsPage() {
                           </td>
                           <td className="px-4 py-3 font-medium">{group.name}</td>
                           <td className="px-4 py-3">
-                            <Badge variant="secondary">{group.size} membros</Badge>
+                            <Badge variant="secondary">{t('membersCount', { count: group.size })}</Badge>
                           </td>
                         </tr>
                       )
@@ -352,18 +357,18 @@ export default function GroupsPage() {
                     className="cursor-pointer"
                     onClick={() => setCreateListOnExtract(!createListOnExtract)}
                   >
-                    Criar lista de contatos automaticamente
+                    {t('createListAuto')}
                   </Label>
                 </div>
                 {createListOnExtract && (
                   <div className="pl-8 space-y-2">
                     <Input
-                      placeholder="Nome da lista (ex: Contatos VIP)"
+                      placeholder={t('listNamePlaceholder')}
                       value={listName}
                       onChange={(e) => setListName(e.target.value)}
                     />
                     <Input
-                      placeholder="Descrição (opcional)"
+                      placeholder={t('descriptionPlaceholder')}
                       value={listDescription}
                       onChange={(e) => setListDescription(e.target.value)}
                     />
@@ -380,8 +385,7 @@ export default function GroupsPage() {
                   }
                 >
                   <Users className="h-4 w-4 mr-2" />
-                  Extrair contatos ({selectedGroupIds.size}{' '}
-                  {selectedGroupIds.size === 1 ? 'grupo' : 'grupos'})
+                  {t('extractContacts', { count: selectedGroupIds.size, countLabel: selectedGroupIds.size === 1 ? t('groupSingular') : t('groupPlural') })}
                 </Button>
               </div>
             </>
@@ -393,13 +397,12 @@ export default function GroupsPage() {
       {step === 'extracting' && (
         <div className="max-w-md mx-auto space-y-4 text-center py-12">
           <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-          <h3 className="text-lg font-medium">Extraindo contatos...</h3>
+          <h3 className="text-lg font-medium">{t('extracting')}</h3>
           {progress && (
             <div className="space-y-2">
               <Progress value={progress.processed} max={progress.total} />
               <p className="text-sm text-muted-foreground">
-                {progress.processed}/{progress.total} grupos processados
-                — {progress.contactsSoFar} contatos encontrados
+                {t('groupsProcessed', { processed: progress.processed, total: progress.total, contacts: progress.contactsSoFar })}
               </p>
             </div>
           )}
@@ -412,22 +415,22 @@ export default function GroupsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-medium">
-                {extractedContacts.length} contatos extraídos
+                {t('contactsExtracted', { count: extractedContacts.length })}
               </h3>
               {extractedListId && (
                 <p className="text-sm text-emerald-600">
-                  Lista de contatos criada com sucesso
+                  {t('listCreatedSuccess')}
                 </p>
               )}
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => handleExport('csv')}>
                 <Download className="h-4 w-4 mr-2" />
-                Exportar CSV
+                {t('exportCsv')}
               </Button>
               <Button variant="outline" size="sm" onClick={() => handleExport('excel')}>
                 <Download className="h-4 w-4 mr-2" />
-                Exportar Excel
+                {t('exportExcel')}
               </Button>
               {!extractedListId && (
                 <Button
@@ -436,7 +439,7 @@ export default function GroupsPage() {
                   disabled={extractedContacts.length === 0}
                 >
                   <ListPlus className="h-4 w-4 mr-2" />
-                  Criar lista
+                  {t('createList')}
                 </Button>
               )}
             </div>
@@ -447,13 +450,13 @@ export default function GroupsPage() {
               <thead className="sticky top-0">
                 <tr className="border-b border-border bg-muted/50">
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Telefone
+                    {t('phoneHeader')}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Nome
+                    {t('nameHeader')}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Grupo de origem
+                    {t('sourceGroupHeader')}
                   </th>
                 </tr>
               </thead>
@@ -475,24 +478,24 @@ export default function GroupsPage() {
       <Dialog open={showCreateList} onOpenChange={setShowCreateList}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Criar lista de contatos</DialogTitle>
+            <DialogTitle>{t('createListTitle')}</DialogTitle>
             <DialogDescription>
-              Salve os {extractedContacts.length} contatos extraídos em uma lista reutilizável
+              {t('createListDesc', { count: extractedContacts.length })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Nome da lista</Label>
+              <Label>{t('listNameLabel')}</Label>
               <Input
-                placeholder="Ex: Contatos de grupos VIP"
+                placeholder={t('listNameExample')}
                 value={listName}
                 onChange={(e) => setListName(e.target.value)}
               />
             </div>
             <div>
-              <Label>Descrição (opcional)</Label>
+              <Label>{t('descriptionLabel')}</Label>
               <Input
-                placeholder="Descrição da lista"
+                placeholder={t('descriptionListPlaceholder')}
                 value={listDescription}
                 onChange={(e) => setListDescription(e.target.value)}
               />
@@ -500,7 +503,7 @@ export default function GroupsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateList(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button
               disabled={!listName.trim() || creatingList}
@@ -525,7 +528,7 @@ export default function GroupsPage() {
                 }
               }}
             >
-              {creatingList ? 'Criando...' : 'Criar lista'}
+              {creatingList ? t('creatingList') : t('createList')}
             </Button>
           </DialogFooter>
         </DialogContent>

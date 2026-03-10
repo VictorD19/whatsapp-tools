@@ -12,3 +12,4 @@
 @rules/whatsapp-provider-abstraction.md
 @rules/ui-form-patterns.md
 @rules/locale-formatting.md
+@rules/i18n-translations.md

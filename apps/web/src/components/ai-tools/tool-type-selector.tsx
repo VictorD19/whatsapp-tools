@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Search, UserPlus, Tag, Briefcase, Handshake, Webhook } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 export type AiToolType =
@@ -15,20 +16,18 @@ export type AiToolType =
 interface ToolTypeOption {
   type: AiToolType
   icon: React.ElementType
-  label: string
-  description: string
 }
 
-const TOOL_TYPES: ToolTypeOption[] = [
-  { type: 'BUSCAR_CONTATO', icon: Search, label: 'Buscar Contato', description: 'Busca dados do contato no CRM' },
-  { type: 'CRIAR_CONTATO', icon: UserPlus, label: 'Criar Contato', description: 'Registra o contato no CRM' },
-  { type: 'ADICIONAR_TAG', icon: Tag, label: 'Adicionar Tag', description: 'Aplica tags ao contato' },
-  { type: 'CRIAR_DEAL', icon: Briefcase, label: 'Criar Deal', description: 'Abre um deal no CRM' },
-  { type: 'TRANSFERIR_HUMANO', icon: Handshake, label: 'Transferir p/ Humano', description: 'Pausa IA, passa para atendente' },
-  { type: 'WEBHOOK_EXTERNO', icon: Webhook, label: 'Webhook Externo', description: 'Chama URL externa com dados' },
+const TOOL_TYPE_ICONS: ToolTypeOption[] = [
+  { type: 'BUSCAR_CONTATO', icon: Search },
+  { type: 'CRIAR_CONTATO', icon: UserPlus },
+  { type: 'ADICIONAR_TAG', icon: Tag },
+  { type: 'CRIAR_DEAL', icon: Briefcase },
+  { type: 'TRANSFERIR_HUMANO', icon: Handshake },
+  { type: 'WEBHOOK_EXTERNO', icon: Webhook },
 ]
 
-export { TOOL_TYPES }
+export { TOOL_TYPE_ICONS as TOOL_TYPES }
 
 interface ToolTypeSelectorProps {
   value: AiToolType | ''
@@ -37,9 +36,10 @@ interface ToolTypeSelectorProps {
 }
 
 export function ToolTypeSelector({ value, onChange, disabled }: ToolTypeSelectorProps) {
+  const t = useTranslations('aiTools.types')
   return (
     <div className="grid grid-cols-2 gap-2">
-      {TOOL_TYPES.map(({ type, icon: Icon, label, description }) => (
+      {TOOL_TYPE_ICONS.map(({ type, icon: Icon }) => (
         <button
           key={type}
           type="button"
@@ -60,8 +60,8 @@ export function ToolTypeSelector({ value, onChange, disabled }: ToolTypeSelector
             <Icon className="h-4 w-4" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium leading-tight">{label}</p>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-tight">{description}</p>
+            <p className="text-sm font-medium leading-tight">{t(`${type}.label`)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-tight">{t(`${type}.description`)}</p>
           </div>
         </button>
       ))}

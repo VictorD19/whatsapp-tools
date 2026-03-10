@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { apiGet, apiPost, api } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 
@@ -40,6 +41,7 @@ export interface ExtractCompleted {
 }
 
 export function useGroups() {
+  const t = useTranslations('groups')
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(false)
   const [extracting, setExtracting] = useState(false)
@@ -50,7 +52,7 @@ export function useGroups() {
       const res = await apiGet<GroupsResponse>(`groups/instances/${instanceId}`)
       setGroups(res.data)
     } catch {
-      toast({ title: 'Erro ao carregar grupos', variant: 'destructive' })
+      toast({ title: t('error.loading'), variant: 'destructive' })
       setGroups([])
     } finally {
       setLoading(false)
@@ -70,10 +72,10 @@ export function useGroups() {
           groupIds,
           createList,
         })
-        toast({ title: 'Extração iniciada', variant: 'success' })
+        toast({ title: t('success.extracted'), variant: 'success' })
         return res.data
       } catch {
-        toast({ title: 'Erro ao iniciar extração', variant: 'destructive' })
+        toast({ title: t('error.extracting'), variant: 'destructive' })
         setExtracting(false)
         return null
       }
@@ -100,9 +102,9 @@ export function useGroups() {
         a.click()
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
-        toast({ title: 'Exportação concluída', variant: 'success' })
+        toast({ title: t('success.exported'), variant: 'success' })
       } catch {
-        toast({ title: 'Erro ao exportar contatos', variant: 'destructive' })
+        toast({ title: t('error.exporting'), variant: 'destructive' })
       }
     },
     [],

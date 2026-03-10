@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { CsvUploadTab } from './csv-upload-tab'
 import { SelectContactsTab } from './select-contacts-tab'
+import { useTranslations } from 'next-intl'
 import { useContactLists } from '@/hooks/use-contact-lists'
 import { toast } from '@/components/ui/toaster'
 
@@ -26,6 +27,8 @@ interface CreateListSheetProps {
 }
 
 export function CreateListSheet({ open, onClose, onCreated }: CreateListSheetProps) {
+  const t = useTranslations('contactLists')
+  const tc = useTranslations('common')
   const { createList, importCsv } = useContactLists()
   const [tab, setTab] = useState<'csv' | 'contacts'>('csv')
   const [name, setName] = useState('')
@@ -64,11 +67,11 @@ export function CreateListSheet({ open, onClose, onCreated }: CreateListSheetPro
         await createList(name.trim(), selectedIds, description.trim() || undefined)
       }
 
-      toast({ title: 'Lista criada com sucesso', variant: 'success' })
+      toast({ title: t('success.created'), variant: 'success' })
       onCreated()
       handleReset()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao criar lista'
+      const message = err instanceof Error ? err.message : t('error.creating')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -89,19 +92,19 @@ export function CreateListSheet({ open, onClose, onCreated }: CreateListSheetPro
     <Sheet open={open} onOpenChange={(v) => !v && handleReset()}>
       <SheetContent className="sm:max-w-lg overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Nova Lista de Contatos</SheetTitle>
+          <SheetTitle>{t('newListTitle')}</SheetTitle>
           <SheetDescription>
-            Crie uma lista a partir de CSV ou selecione contatos existentes
+            {t('newListDescription')}
           </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 py-4">
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="list-name">Nome da lista</Label>
+            <Label htmlFor="list-name">{t('listName')}</Label>
             <Input
               id="list-name"
-              placeholder="Ex: Leads Quentes"
+              placeholder={t('listNamePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -109,10 +112,10 @@ export function CreateListSheet({ open, onClose, onCreated }: CreateListSheetPro
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="list-desc">Descricao (opcional)</Label>
+            <Label htmlFor="list-desc">{t('descriptionLabel')}</Label>
             <Textarea
               id="list-desc"
-              placeholder="Breve descricao da lista..."
+              placeholder={t('descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
@@ -123,10 +126,10 @@ export function CreateListSheet({ open, onClose, onCreated }: CreateListSheetPro
           <Tabs value={tab} onValueChange={(v) => setTab(v as 'csv' | 'contacts')}>
             <TabsList className="w-full">
               <TabsTrigger value="csv" className="flex-1">
-                CSV
+                {t('csvTab')}
               </TabsTrigger>
               <TabsTrigger value="contacts" className="flex-1">
-                Contatos Existentes
+                {t('contactsTab')}
               </TabsTrigger>
             </TabsList>
 
@@ -145,10 +148,10 @@ export function CreateListSheet({ open, onClose, onCreated }: CreateListSheetPro
 
         <SheetFooter>
           <Button variant="outline" onClick={handleReset}>
-            Cancelar
+            {tc('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit || saving}>
-            {saving ? 'Criando...' : 'Criar Lista'}
+            {saving ? t('creating') : t('createList')}
           </Button>
         </SheetFooter>
       </SheetContent>

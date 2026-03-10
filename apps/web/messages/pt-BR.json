@@ -166,7 +166,105 @@
     "dateSeparator": {
       "today": "Hoje",
       "yesterday": "Ontem"
-    }
+    },
+    "tabs": {
+      "all": "Todas",
+      "mine": "Minhas",
+      "unassigned": "Sem atendente",
+      "unassignedShort": "Livres"
+    },
+    "searchContact": "Buscar contato...",
+    "newConversation": "Nova conversa",
+    "conversationCount": "{count} de {total} conversas",
+    "conversationCountSingle": "{count} de {total} conversa",
+    "conversationCountSearch": "{count} conversas",
+    "conversationCountSearchSingle": "{count} conversa",
+    "noConversationsHere": "Nenhuma conversa aqui",
+    "conversationsWillAppear": "As conversas aparecerão aqui quando chegarem",
+    "noResultsSearch": "Nenhum resultado",
+    "newConversationTitle": "Nova conversa",
+    "newConversationDescription": "Busque um contato ou digite o número para iniciar",
+    "contactOrNumber": "Contato ou número",
+    "nameOrNumber": "Nome ou número (ex: 5511999999999)",
+    "searchContactOrNumber": "Buscar contato ou digitar número...",
+    "typeToSearch": "Digite para buscar contatos",
+    "useThisNumber": "Usar este número",
+    "contactNameOptional": "Nome do contato (opcional)",
+    "numberNotFound": "Número {phone} não encontrado nos contatos.",
+    "whatsappInstance": "Instância WhatsApp",
+    "noConnectedInstance": "Nenhuma instância conectada. Conecte uma antes de iniciar.",
+    "selectInstance": "Selecione a instância",
+    "message": "Mensagem",
+    "typeFirstMessage": "Digite a primeira mensagem...",
+    "ctrlEnterToSend": "Ctrl+Enter para enviar",
+    "sending": "Enviando...",
+    "startConversation": "Iniciar conversa",
+    "selectConnectedInstance": "Selecione uma instância conectada",
+    "typeAMessage": "Digite uma mensagem",
+    "selectOrTypeContact": "Selecione ou digite um contato",
+    "conversationStarted": "Conversa iniciada com sucesso",
+    "errorStartingConversation": "Erro ao iniciar conversa",
+    "loadingMembers": "Carregando membros...",
+    "noMemberFound": "Nenhum membro encontrado",
+    "addCaption": "Adicionar legenda... (opcional)",
+    "cancelRecording": "Cancelar gravação",
+    "confirmRecording": "Confirmar gravação",
+    "recordAudio": "Gravar áudio",
+    "attachImage": "Imagem",
+    "attachVideo": "Vídeo",
+    "attachAudio": "Áudio gravado",
+    "attachDocument": "Documento",
+    "videoLabel": "Vídeo",
+    "ai": {
+      "label": "IA",
+      "active": "IA Ativa",
+      "paused": "IA Pausada",
+      "noAssistants": "Nenhum assistente disponível",
+      "createAssistant": "Crie um assistente em Assistentes Virtuais",
+      "selectAssistant": "Selecionar assistente",
+      "pauseAi": "Pausar IA",
+      "resumeAi": "Retomar IA",
+      "resumeDescription": "Reativar o assistente anterior",
+      "disableAi": "Desativar IA",
+      "switchAssistant": "Trocar assistente",
+      "activated": "IA ativada na conversa",
+      "removed": "IA removida da conversa",
+      "errorLoadingAssistants": "Erro ao carregar assistentes",
+      "errorUpdating": "Erro ao atualizar assistente"
+    },
+    "contactPanel": {
+      "selectConversationDetails": "Selecione uma conversa para ver os detalhes do contato",
+      "stage": "Etapa",
+      "activeStages": "Ativas",
+      "closedStages": "Encerramento",
+      "lostReasonLabel": "Motivo da perda (opcional):",
+      "lostReasonPlaceholder": "Ex: Escolheu concorrente...",
+      "value": "Valor",
+      "noValue": "Sem valor",
+      "lastContact": "Ultimo contato",
+      "notes": "Notas",
+      "noNotes": "Nenhuma nota",
+      "addNotePlaceholder": "Adicionar nota...",
+      "noDealAssociated": "Nenhum deal associado",
+      "service": "Atendimento",
+      "instanceLabel": "Instancia",
+      "attendant": "Atendente",
+      "none": "Nenhum",
+      "nameUpdated": "Nome atualizado",
+      "errorUpdatingName": "Erro ao atualizar nome",
+      "joinConversation": "Entrar na conversa",
+      "endConversation": "Encerrar",
+      "statusOpen": "Aberta",
+      "statusPending": "Pendente",
+      "statusClosed": "Encerrada",
+      "group": "Grupo",
+      "todayLabel": "Hoje",
+      "daysLabel": "{count} dias",
+      "oneDayLabel": "1 dia",
+      "twoDaysLabel": "2 dias"
+    },
+    "errorLoadingConversations": "Erro ao carregar conversas",
+    "errorLoadingMore": "Erro ao carregar mais conversas"
   },
   "crm": {
     "title": "CRM",
@@ -189,7 +287,53 @@
     "markAsWon": "Marcar como ganho",
     "markAsLost": "Marcar como perdido",
     "lostReason": "Motivo da perda",
-    "noDeals": "Nenhum negócio nesta etapa"
+    "noDeals": "Nenhum negócio nesta etapa",
+    "pageTitle": "CRM — Pipeline de Vendas",
+    "pageSubtitle": "Gerencie seus leads e oportunidades",
+    "searchPlaceholder": "Buscar por nome, título ou telefone...",
+    "noPipelineConfigured": "Nenhum pipeline configurado. Crie um pipeline em Configurações.",
+    "selectContact": "Selecionar contato...",
+    "searchContactPlaceholder": "Buscar por nome ou telefone...",
+    "noContactFound": "Nenhum contato encontrado",
+    "dealTitlePlaceholder": "Ex: Venda de plano anual",
+    "valueCurrency": "Valor (R$)",
+    "selectPipeline": "Selecionar pipeline",
+    "defaultStage": "Etapa padrão",
+    "createDeal": "Criar negócio",
+    "creating": "Criando...",
+    "newDealDescription": "Crie um novo negócio no pipeline",
+    "activeStages": "Ativas",
+    "closedStages": "Encerramento",
+    "lostReasonLabel": "Motivo da perda (opcional):",
+    "lostReasonPlaceholder": "Ex: Escolheu concorrente...",
+    "noValue": "Sem valor",
+    "attendant": "Atendente",
+    "noneAssigned": "Nenhum",
+    "wonAt": "Ganho em",
+    "lostAt": "Perdido em",
+    "noNotes": "Nenhuma nota",
+    "addNotePlaceholder": "Adicionar nota...",
+    "saveNote": "Salvar nota",
+    "deleteDeal": "Excluir negócio",
+    "deleteDealDesc": "Tem certeza que deseja excluir este negócio? Esta ação não pode ser desfeita.",
+    "confirmDeletion": "Confirmar exclusão",
+    "deleting": "Excluindo...",
+    "pipelineTotal": "Pipeline total:",
+    "noDealsInStage": "Sem negócios",
+    "markAsLostTitle": "Marcar como perdido",
+    "markAsLostDesc": "Informe o motivo da perda (opcional).",
+    "lostReasonExample": "Ex: Escolheu concorrente, sem orçamento...",
+    "confirmLoss": "Confirmar perda",
+    "assigneeFilter": "Atendente",
+    "allAssignees": "Todos",
+    "saving": "Salvando...",
+    "success": {
+      "deleted": "Negócio excluído",
+      "noteAdded": "Nota adicionada"
+    },
+    "error": {
+      "deleting": "Erro ao excluir negócio"
+    }
   },
   "instances": {
     "title": "Instâncias WhatsApp",
@@ -209,7 +353,62 @@
     "createdAt": "Criado em",
     "noInstances": "Nenhuma instância configurada",
     "createFirst": "Crie sua primeira instância para começar",
-    "maxReached": "Limite de instâncias atingido"
+    "maxReached": "Limite de instâncias atingido",
+    "noNumber": "Sem número",
+    "connectQR": "Conectar QR",
+    "viewQR": "Ver QR Code",
+    "importConversations": "Importar conversas",
+    "connectWhatsApp": "Conectar WhatsApp",
+    "scanQRDescription": "Escaneie o QR Code com seu WhatsApp",
+    "qrExpiresIn": "QR expira em",
+    "refreshQR": "Atualizar QR Code",
+    "qrInstructions": {
+      "step1": "Abra o WhatsApp no celular",
+      "step2": "Toque em Mais opções ou Configurações",
+      "step3": "Toque em Aparelhos conectados",
+      "step4": "Toque em Conectar um aparelho",
+      "step5": "Aponte o celular para este QR Code"
+    },
+    "createModal": {
+      "title": "Nova instância WhatsApp",
+      "description": "Escolha um nome para identificar esta conexão.",
+      "nameLabel": "Nome",
+      "namePlaceholder": "ex: vendas-principal",
+      "creating": "Criando...",
+      "createButton": "Criar instância",
+      "minChars": "Nome deve ter pelo menos 2 caracteres",
+      "maxChars": "Nome deve ter no máximo 50 caracteres",
+      "onlyAlphanumeric": "Apenas letras, números, _ ou -"
+    },
+    "stats": {
+      "total": "Total",
+      "connected": "Conectadas",
+      "connecting": "Conectando",
+      "disconnected": "Desconectadas"
+    },
+    "empty": {
+      "title": "Nenhuma instância criada",
+      "description": "Conecte seu WhatsApp para começar a enviar e receber mensagens",
+      "action": "Criar primeira instância"
+    },
+    "import": {
+      "searching": "Buscando conversas...",
+      "importing": "Importando conversas...",
+      "of": "de"
+    },
+    "success": {
+      "created": "Instância criada",
+      "disconnected": "Instância desconectada",
+      "deleted": "Instância excluída",
+      "importStarted": "Importação iniciada"
+    },
+    "error": {
+      "loading": "Erro ao carregar instâncias",
+      "creating": "Erro ao criar instância",
+      "importTimeout": "Importação sem resposta",
+      "importTimeoutDesc": "Verifique os logs do servidor e tente novamente.",
+      "importFailed": "Erro ao iniciar importação"
+    }
   },
   "contacts": {
     "title": "Contatos",
@@ -220,7 +419,552 @@
     "tags": "Tags",
     "createdAt": "Criado em",
     "noContacts": "Nenhum contato encontrado",
-    "totalContacts": "{count} contatos"
+    "totalContacts": "{count} contatos",
+    "new": "Novo contato",
+    "editContact": "Editar contato",
+    "newContact": "Novo contato",
+    "searchByNameOrPhone": "Buscar por nome ou telefone...",
+    "contactCount": "{count} contato cadastrado",
+    "contactCountPlural": "{count} contatos cadastrados",
+    "noContactYet": "Nenhum contato ainda",
+    "noContactFound": "Nenhum contato encontrado",
+    "tryOtherTerms": "Tente buscar com outros termos",
+    "contactsAutoCreated": "Contatos são criados automaticamente ao receber mensagens ou adicione manualmente",
+    "contactHeader": "Contato",
+    "tagsHeader": "Tags",
+    "createdAtHeader": "Criado em",
+    "actionsHeader": "Ações",
+    "phoneHeader": "Telefone",
+    "noName": "Sem nome",
+    "phoneLabel": "Telefone",
+    "nameOptional": "Nome (opcional)",
+    "namePlaceholder": "Nome do contato",
+    "editDescription": "Atualize as informações do contato",
+    "newDescription": "Adicione um novo contato manualmente",
+    "saving": "Salvando...",
+    "removeContact": "Remover contato",
+    "removeConfirmation": "Tem certeza que deseja remover {name}? Esta ação pode ser revertida.",
+    "removing": "Removendo...",
+    "remove": "Remover",
+    "errorSaving": "Erro ao salvar contato",
+    "errorRemoving": "Erro ao remover contato",
+    "pageOf": "Página {page} de {totalPages}",
+    "previous": "Anterior",
+    "nextPage": "Próximo",
+    "success": {
+      "created": "Contato criado com sucesso",
+      "updated": "Contato atualizado com sucesso",
+      "deleted": "Contato removido com sucesso"
+    }
+  },
+  "broadcasts": {
+    "title": "Disparos em Massa",
+    "subtitle": "Crie e gerencie campanhas de mensagens",
+    "new": "Nova campanha",
+    "edit": "Editar campanha",
+    "editDescription": "Edite as configurações da campanha",
+    "newDescription": "Configure e inicie um disparo em massa",
+    "searchPlaceholder": "Buscar campanhas...",
+    "empty": "Nenhuma campanha criada",
+    "emptyDescription": "Crie sua primeira campanha para começar a disparar mensagens em massa",
+    "createCampaign": "Criar campanha",
+    "steps": {
+      "recipients": "Destinatários",
+      "message": "Mensagem",
+      "settings": "Configurações"
+    },
+    "back": "Voltar",
+    "nextStep": "Próximo",
+    "saveCampaign": "Salvar campanha",
+    "scheduleCampaign": "Agendar campanha",
+    "startCampaign": "Iniciar campanha",
+    "saving": "Salvando...",
+    "creating": "Criando...",
+    "variation": {
+      "new": "Nova variação",
+      "edit": "Editar variação",
+      "add": "Variação",
+      "description": "Configure o tipo, conteúdo e mídia desta variação de mensagem.",
+      "label": "Variações de mensagem",
+      "hint": "Cada variação pode ter seu próprio tipo (texto, imagem, vídeo, etc.). Uma será escolhida aleatoriamente para cada destinatário.",
+      "empty": "Nenhuma variação adicionada. Clique em \"Variação\" para criar a primeira.",
+      "preview": "Preview (variação 1)",
+      "moreVariations": "+{count} variação(ões) — cada destinatário receberá uma aleatoriamente",
+      "noText": "Sem texto",
+      "noFile": "Sem arquivo",
+      "existingFile": "Arquivo existente"
+    },
+    "messageType": {
+      "text": "Texto",
+      "image": "Imagem",
+      "video": "Vídeo",
+      "audio": "Áudio",
+      "document": "Documento"
+    },
+    "typeLabel": "Tipo",
+    "contentLabel": "Conteúdo",
+    "fileLabel": "Arquivo",
+    "actionsLabel": "Ações",
+    "captionLabel": "Legenda",
+    "messageLabel": "Mensagem",
+    "captionPlaceholder": "Legenda do arquivo (opcional para áudio)...",
+    "messagePlaceholder": "Escreva a mensagem...",
+    "fileDragDrop": "Arraste o arquivo aqui ou clique para selecionar",
+    "fileMaxSize": "Máximo {size}",
+    "fileSizeExceeded": "Arquivo excede o limite de {limit}",
+    "status": {
+      "DRAFT": "Rascunho",
+      "SCHEDULED": "Agendada",
+      "RUNNING": "Em andamento",
+      "PAUSED": "Pausada",
+      "COMPLETED": "Concluída",
+      "FAILED": "Falhou",
+      "CANCELLED": "Cancelada"
+    },
+    "stats": {
+      "totalCampaigns": "Total de campanhas",
+      "messagesSent": "Mensagens enviadas",
+      "deliveryRate": "Taxa de entrega",
+      "running": "Em andamento"
+    },
+    "table": {
+      "campaign": "Campanha",
+      "status": "Status",
+      "progress": "Progresso",
+      "rate": "Taxa",
+      "instances": "Instâncias",
+      "actions": "Ações",
+      "scheduled": "Agendada: {date}"
+    },
+    "actions": {
+      "edit": "Editar",
+      "pause": "Pausar",
+      "resume": "Retomar",
+      "cancel": "Cancelar",
+      "delete": "Excluir"
+    },
+    "deleteConfirmTitle": "Confirmar exclusão",
+    "deleteConfirmDesc": "Esta ação não pode ser desfeita. A campanha e todos os seus dados serão removidos.",
+    "deleting": "Excluindo...",
+    "success": {
+      "created": "Campanha criada com sucesso",
+      "updated": "Campanha atualizada com sucesso",
+      "paused": "Campanha pausada",
+      "resumed": "Campanha retomada",
+      "cancelled": "Campanha cancelada",
+      "deleted": "Campanha removida"
+    },
+    "error": {
+      "loading": "Erro ao carregar campanhas",
+      "creating": "Erro ao criar campanha",
+      "updating": "Erro ao atualizar campanha"
+    },
+    "sources": {
+      "instancesLabel": "Instâncias WhatsApp (apenas conectadas)",
+      "noConnectedInstances": "Nenhuma instância conectada. Conecte pelo menos uma instância antes de criar a campanha.",
+      "contactListsLabel": "Listas de contatos",
+      "noListsCreated": "Nenhuma lista criada. Crie uma lista de contatos primeiro.",
+      "contacts": "contatos",
+      "summary": "{instances} instância(s) e {lists} lista(s) selecionada(s)"
+    },
+    "config": {
+      "campaignName": "Nome da campanha *",
+      "campaignNamePlaceholder": "Ex: Promoção de março",
+      "delayLabel": "Intervalo entre mensagens",
+      "delayUnit": "segundos (1-120)",
+      "delayDescription": "Intervalo de espera entre cada mensagem enviada. Valores maiores reduzem o risco de bloqueio.",
+      "scheduleLabel": "Data/hora de início (opcional)",
+      "scheduleActiveDesc": "A campanha será iniciada automaticamente na data/hora configurada (no fuso horário do tenant).",
+      "scheduleEmptyDesc": "Deixe vazio para iniciar imediatamente após a criação.",
+      "summaryTitle": "Resumo da campanha",
+      "summaryInstances": "Instâncias:",
+      "summaryLists": "Listas:",
+      "summaryRecipients": "Destinatários:",
+      "summaryDelay": "Delay:",
+      "estimatedTime": "Tempo estimado: ~{minutes} minutos"
+    }
+  },
+  "contactLists": {
+    "title": "Listas de Contatos",
+    "subtitle": "{count} lista cadastrada",
+    "subtitlePlural": "{count} listas cadastradas",
+    "new": "Nova Lista",
+    "creating": "Criando...",
+    "createList": "Criar Lista",
+    "empty": "Nenhuma lista ainda",
+    "emptySearch": "Nenhuma lista encontrada",
+    "emptyDescription": "Listas são criadas ao extrair contatos de grupos ou importar CSV",
+    "tryOtherTerms": "Tente buscar com outros termos",
+    "searchPlaceholder": "Buscar por nome...",
+    "newListTitle": "Nova Lista de Contatos",
+    "newListDescription": "Crie uma lista a partir de CSV ou selecione contatos existentes",
+    "listName": "Nome da lista",
+    "listNamePlaceholder": "Ex: Leads Quentes",
+    "descriptionLabel": "Descrição (opcional)",
+    "descriptionPlaceholder": "Breve descrição da lista...",
+    "csvTab": "CSV",
+    "contactsTab": "Contatos Existentes",
+    "table": {
+      "name": "Nome",
+      "contacts": "Contatos",
+      "source": "Origem",
+      "createdAt": "Criado em",
+      "actions": "Ações"
+    },
+    "source": {
+      "GROUP_EXTRACT": "Grupo",
+      "CSV_IMPORT": "CSV",
+      "MANUAL": "Manual",
+      "CRM_FILTER": "CRM"
+    },
+    "deleteTitle": "Remover lista",
+    "deleteDesc": "Tem certeza que deseja remover a lista {name}? Os contatos não serão excluídos.",
+    "removing": "Removendo...",
+    "remove": "Remover",
+    "pageOf": "Página {page} de {totalPages}",
+    "previous": "Anterior",
+    "nextPage": "Próximo",
+    "csv": {
+      "dragDrop": "Arraste um arquivo CSV ou clique para selecionar",
+      "hint": "Aceita .csv e .txt com colunas: phone, name",
+      "emptyFile": "Arquivo vazio ou sem dados",
+      "noValidContacts": "Nenhum contato válido encontrado no arquivo",
+      "phoneColumnNotFound": "Coluna \"phone\" não encontrada. Aceitos: {columns}",
+      "phoneHeader": "Telefone",
+      "nameHeader": "Nome",
+      "contactCount": "{count} contato",
+      "contactCountPlural": "{count} contatos",
+      "andMore": "... e mais {count} contato",
+      "andMorePlural": "... e mais {count} contatos"
+    },
+    "selectContacts": {
+      "selected": "{count} selecionado",
+      "selectedPlural": "{count} selecionados",
+      "searchPlaceholder": "Buscar por nome ou telefone...",
+      "noContactFound": "Nenhum contato encontrado",
+      "noContactRegistered": "Nenhum contato cadastrado",
+      "noName": "Sem nome"
+    },
+    "success": {
+      "created": "Lista criada com sucesso",
+      "deleted": "Lista removida com sucesso"
+    },
+    "error": {
+      "loading": "Erro ao carregar listas",
+      "creating": "Erro ao criar lista",
+      "deleting": "Erro ao remover lista"
+    }
+  },
+  "groups": {
+    "title": "Extração de Contatos",
+    "subtitle": "Extraia contatos de grupos WhatsApp para criar listas de disparo",
+    "restart": "Recomeçar",
+    "steps": {
+      "instance": "Instância",
+      "groups": "Grupos",
+      "extraction": "Extração",
+      "results": "Resultados"
+    },
+    "selectInstanceLabel": "Selecione a instância WhatsApp",
+    "noConnectedInstance": "Nenhuma instância conectada",
+    "noConnectedInstanceDesc": "Conecte uma instância WhatsApp antes de extrair contatos",
+    "chooseInstance": "Escolha uma instância...",
+    "loadingGroups": "Carregando grupos...",
+    "noGroupsFound": "Nenhum grupo encontrado",
+    "noGroupsDesc": "Esta instância não possui grupos",
+    "groupsFound": "{count} grupos encontrados — {selected} selecionados",
+    "deselectAll": "Desmarcar todos",
+    "selectAll": "Selecionar todos",
+    "groupHeader": "Grupo",
+    "membersHeader": "Membros",
+    "membersCount": "{count} membros",
+    "createListAuto": "Criar lista de contatos automaticamente",
+    "listNamePlaceholder": "Nome da lista (ex: Contatos VIP)",
+    "descriptionPlaceholder": "Descrição (opcional)",
+    "extractContacts": "Extrair contatos ({count} {countLabel})",
+    "groupSingular": "grupo",
+    "groupPlural": "grupos",
+    "extracting": "Extraindo contatos...",
+    "groupsProcessed": "{processed}/{total} grupos processados — {contacts} contatos encontrados",
+    "contactsExtracted": "{count} contatos extraídos",
+    "listCreatedSuccess": "Lista de contatos criada com sucesso",
+    "exportCsv": "Exportar CSV",
+    "exportExcel": "Exportar Excel",
+    "createList": "Criar lista",
+    "createListTitle": "Criar lista de contatos",
+    "createListDesc": "Salve os {count} contatos extraídos em uma lista reutilizável",
+    "listNameLabel": "Nome da lista",
+    "listNameExample": "Ex: Contatos de grupos VIP",
+    "descriptionLabel": "Descrição (opcional)",
+    "descriptionListPlaceholder": "Descrição da lista",
+    "creatingList": "Criando...",
+    "phoneHeader": "Telefone",
+    "nameHeader": "Nome",
+    "sourceGroupHeader": "Grupo de origem",
+    "success": {
+      "extracted": "Extração iniciada",
+      "exported": "Exportação concluída"
+    },
+    "error": {
+      "loading": "Erro ao carregar grupos",
+      "extracting": "Erro ao iniciar extração",
+      "exporting": "Erro ao exportar contatos"
+    }
+  },
+  "assistants": {
+    "title": "Assistentes",
+    "breadcrumb": "Assistentes",
+    "aiBreadcrumb": "Inteligência Artificial",
+    "searchPlaceholder": "Busque por assistentes...",
+    "addNew": "Adicionar novo",
+    "noResults": "Nenhum assistente encontrado para \"{search}\"",
+    "empty": {
+      "title": "Nenhum assistente configurado",
+      "description": "Crie um assistente de IA para automatizar o atendimento via WhatsApp",
+      "action": "Criar assistente"
+    },
+    "sheet": {
+      "editTitle": "Editar assistente",
+      "newTitle": "Novo assistente",
+      "editDescription": "Altere as configurações do assistente",
+      "newDescription": "Configure um novo assistente de IA"
+    },
+    "form": {
+      "newAssistant": "Novo assistente",
+      "cancelButton": "Cancelar",
+      "saving": "Salvando...",
+      "saveChanges": "Salvar alterações",
+      "createAssistant": "Criar assistente"
+    },
+    "tabs": {
+      "profile": "Perfil",
+      "instructions": "Instruções",
+      "advanced": "Avançado"
+    },
+    "fields": {
+      "avatarEmoji": "Emoji do avatar",
+      "name": "Nome *",
+      "namePlaceholder": "Ex: SDR de Vendas",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Ex: Ajuda clientes a solucionar dúvidas sobre o nosso sistema",
+      "status": "Status",
+      "active": "Ativo",
+      "inactive": "Inativo",
+      "knowledgeBases": "Bases de conhecimento",
+      "optional": "(opcional)",
+      "noKnowledgeBases": "Nenhuma base de conhecimento criada.",
+      "systemPrompt": "Instruções do sistema",
+      "systemPromptHint": "Descreva o comportamento, tom e objetivos do assistente",
+      "systemPromptPlaceholder": "Você é um assistente de vendas especializado em...\n\nSeu objetivo é...\n\nSempre responda em português e de forma...\n\nQuando o cliente perguntar sobre preço, você deve...",
+      "model": "Modelo de inteligência",
+      "waitTime": "Tempo para coletar mensagens",
+      "waitTimeHint": "(aguarda antes de responder)",
+      "waitTimeFormHint": "O bot aguarda este tempo antes de responder, para juntar mensagens em sequência",
+      "seconds": "segundos",
+      "handoffKeywords": "Palavras de transferência",
+      "handoffKeywordsHint": "Quando o cliente digitar estas palavras, o bot transfere para um atendente",
+      "handoffKeywordsPlaceholder": "Ex: humano, atendente — pressione Enter",
+      "tools": "Ferramentas"
+    },
+    "delete": {
+      "title": "Excluir assistente",
+      "description": "Tem certeza que deseja excluir o assistente <strong>{name}</strong>? Esta ação não pode ser desfeita.",
+      "deleting": "Excluindo..."
+    },
+    "notFound": "Assistente não encontrado.",
+    "success": {
+      "created": "Assistente criado",
+      "updated": "Assistente atualizado",
+      "deleted": "Assistente excluído"
+    },
+    "error": {
+      "creating": "Erro ao criar assistente",
+      "saving": "Erro ao salvar assistente",
+      "deleting": "Erro ao excluir assistente"
+    }
+  },
+  "knowledgeBases": {
+    "title": "Bases de Conhecimento",
+    "breadcrumb": "Bases de Conhecimento",
+    "count": "{count} base cadastrada",
+    "countPlural": "{count} bases cadastradas",
+    "newButton": "Nova base de conhecimento",
+    "empty": {
+      "title": "Nenhuma base de conhecimento",
+      "description": "Bases de conhecimento permitem que seus assistentes acessem informações específicas do seu negócio",
+      "action": "Criar base"
+    },
+    "sourceCount": "{count} fonte",
+    "sourceCountPlural": "{count} fontes",
+    "sourcesLabel": "Fontes ({count})",
+    "sheet": {
+      "editTitle": "Editar base de conhecimento",
+      "newTitle": "Nova base de conhecimento",
+      "editDescription": "Altere as informações da base de conhecimento",
+      "newDescription": "Preencha os dados para criar uma nova base de conhecimento"
+    },
+    "fields": {
+      "name": "Nome",
+      "namePlaceholder": "Ex: Manual do produto",
+      "description": "Descrição (opcional)",
+      "descriptionPlaceholder": "Descreva o conteúdo desta base de conhecimento"
+    },
+    "sources": {
+      "addTitle": "Adicionar fonte",
+      "fileTab": "Arquivo",
+      "urlTab": "URL",
+      "textTab": "Texto",
+      "uploading": "Enviando...",
+      "selectFile": "Selecionar arquivo",
+      "fileFormats": "PDF, DOCX, TXT ou MD",
+      "name": "Nome",
+      "namePlaceholderUrl": "Ex: Documentação do produto",
+      "urlPlaceholder": "https://exemplo.com/pagina",
+      "content": "Conteúdo",
+      "contentPlaceholder": "Cole o conteúdo textual aqui...",
+      "namePlaceholderText": "Ex: FAQ do produto",
+      "addingUrl": "Adicionando...",
+      "addUrl": "Adicionar URL",
+      "addingText": "Adicionando...",
+      "addText": "Adicionar texto",
+      "empty": "Nenhuma fonte adicionada. Adicione arquivos, URLs ou textos abaixo.",
+      "typeFile": "Arquivo",
+      "typeUrl": "URL",
+      "typeText": "Texto",
+      "statusPending": "Pendente",
+      "statusProcessing": "Processando",
+      "statusCompleted": "Concluído",
+      "statusFailed": "Falhou",
+      "reingest": "Re-ingerir",
+      "deleteTitle": "Excluir fonte",
+      "deleteDescription": "Tem certeza que deseja excluir a fonte <strong>{name}</strong>? Esta ação não pode ser desfeita."
+    },
+    "delete": {
+      "title": "Excluir base de conhecimento",
+      "description": "Tem certeza que deseja excluir a base <strong>{name}</strong>? Todas as fontes serão removidas."
+    },
+    "notFound": "Base de conhecimento não encontrada.",
+    "success": {
+      "created": "Base de conhecimento criada",
+      "updated": "Base de conhecimento atualizada",
+      "deleted": "Base de conhecimento excluída",
+      "fileUploaded": "Arquivo enviado",
+      "urlAdded": "URL adicionada",
+      "textAdded": "Texto adicionado",
+      "sourceDeleted": "Fonte excluída",
+      "reingestStarted": "Re-ingestão iniciada"
+    },
+    "error": {
+      "creating": "Erro ao criar base",
+      "deleting": "Erro ao excluir base",
+      "uploadingFile": "Erro ao enviar arquivo",
+      "addingUrl": "Erro ao adicionar URL",
+      "addingText": "Erro ao adicionar texto",
+      "deletingSource": "Erro ao excluir fonte",
+      "reingesting": "Erro ao re-ingerir"
+    }
+  },
+  "aiTools": {
+    "title": "Ferramentas de IA",
+    "count": "{count} ferramenta cadastrada",
+    "countPlural": "{count} ferramentas cadastradas",
+    "newButton": "Nova ferramenta",
+    "empty": {
+      "title": "Nenhuma ferramenta configurada",
+      "description": "Ferramentas permitem que seus assistentes realizem ações como buscar contatos, criar deals e mais",
+      "action": "Criar ferramenta"
+    },
+    "sheet": {
+      "editTitle": "Editar ferramenta",
+      "newTitle": "Nova ferramenta",
+      "editDescription": "Altere as configurações da ferramenta de IA",
+      "newDescription": "Configure uma ferramenta que o assistente poderá usar"
+    },
+    "fields": {
+      "type": "Tipo *",
+      "name": "Nome *",
+      "namePlaceholder": "Ex: Buscar dados do cliente",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Descreva o que esta ferramenta faz..."
+    },
+    "types": {
+      "BUSCAR_CONTATO": { "label": "Buscar Contato", "description": "Busca dados do contato no CRM" },
+      "CRIAR_CONTATO": { "label": "Criar Contato", "description": "Registra o contato no CRM" },
+      "ADICIONAR_TAG": { "label": "Adicionar Tag", "description": "Aplica tags ao contato" },
+      "CRIAR_DEAL": { "label": "Criar Deal", "description": "Abre um deal no CRM" },
+      "TRANSFERIR_HUMANO": { "label": "Transferir p/ Humano", "description": "Pausa IA, passa para atendente" },
+      "WEBHOOK_EXTERNO": { "label": "Webhook Externo", "description": "Chama URL externa com dados" }
+    },
+    "delete": {
+      "title": "Excluir ferramenta",
+      "description": "Tem certeza que deseja excluir a ferramenta <strong>{name}</strong>? Esta ação não pode ser desfeita."
+    },
+    "success": {
+      "created": "Ferramenta criada",
+      "updated": "Ferramenta atualizada",
+      "deleted": "Ferramenta excluída",
+      "toggled": "Ferramenta atualizada"
+    },
+    "error": {
+      "creating": "Erro ao criar ferramenta",
+      "updating": "Erro ao atualizar ferramenta",
+      "deleting": "Erro ao excluir ferramenta"
+    }
+  },
+  "notifications": {
+    "title": "Notificações",
+    "bell": {
+      "title": "Notificações",
+      "markAllRead": "Marcar todas",
+      "loading": "Carregando...",
+      "empty": "Nenhuma notificação",
+      "viewAll": "Ver todas as notificações"
+    },
+    "page": {
+      "unreadCount": "{count} não lida",
+      "unreadCountPlural": "{count} não lidas",
+      "markAllRead": "Marcar todas como lidas",
+      "marking": "Marcando...",
+      "loadMore": "Carregar mais",
+      "loading": "Carregando..."
+    },
+    "empty": {
+      "title": "Nenhuma notificação",
+      "description": "Você será notificado quando houver novidades"
+    },
+    "dateGroups": {
+      "today": "Hoje",
+      "yesterday": "Ontem",
+      "thisWeek": "Esta semana",
+      "older": "Mais antigas"
+    },
+    "preferences": {
+      "title": "Preferências de Notificação",
+      "description": "Escolha quais notificações deseja receber e como",
+      "typeColumn": "Tipo",
+      "inAppColumn": "No app",
+      "browserColumn": "Browser",
+      "browserPermission": "Permissões de notificação do browser não concedidas"
+    },
+    "types": {
+      "NEW_MESSAGE": "Nova mensagem",
+      "CONVERSATION_ASSIGNED": "Conversa atribuída",
+      "CONVERSATION_CLOSED": "Conversa encerrada",
+      "INSTANCE_CONNECTED": "Instância conectada",
+      "INSTANCE_DISCONNECTED": "Instância desconectada",
+      "BROADCAST_COMPLETED": "Disparo concluído",
+      "BROADCAST_FAILED": "Disparo falhou",
+      "DEAL_WON": "Deal ganho",
+      "DEAL_LOST": "Deal perdido",
+      "CONTACT_CREATED": "Contato criado",
+      "GROUP_EXTRACTION_DONE": "Extração concluída"
+    },
+    "groups": {
+      "inbox": "Inbox",
+      "instances": "Instâncias",
+      "deals": "Deals",
+      "groups": "Grupos"
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -229,7 +973,9 @@
       "title": "Perfil",
       "description": "Informações da sua conta",
       "name": "Nome",
-      "email": "Email"
+      "email": "Email",
+      "role": "Cargo/Função",
+      "changePhoto": "Alterar foto"
     },
     "locale": {
       "title": "Idioma e Região",
@@ -237,31 +983,339 @@
       "language": "Idioma",
       "timezone": "Fuso horário",
       "currency": "Moeda",
-      "saved": "Configurações regionais salvas"
+      "saving": "Salvando...",
+      "saved": "Salvo!",
+      "saveButton": "Salvar configurações",
+      "savedToast": "Configurações salvas",
+      "savedDescription": "Idioma e região atualizados.",
+      "errorSaving": "Erro ao salvar configurações"
     },
     "notifications": {
       "title": "Notificações",
       "description": "Controle como você é notificado",
-      "comingSoon": "Configurações de notificação em breve."
+      "comingSoon": "Configurações de notificação em breve.",
+      "newMessage": "Nova mensagem recebida",
+      "conversationAssigned": "Conversa atribuída a mim",
+      "instanceDisconnected": "Instância desconectada",
+      "broadcastCompleted": "Disparo em massa concluído",
+      "pushWarning": "Notificações push precisam de permissão do navegador"
     },
     "integrations": {
       "title": "Integrações",
-      "description": "Conecte ferramentas externas"
+      "description": "Conecte ferramentas externas",
+      "comingSoon": "Em breve",
+      "comingSoonDescription": "Integrações estarão disponíveis em uma versão futura.",
+      "connect": "Conectar",
+      "n8n": "Automações e fluxos de trabalho personalizados",
+      "googleCalendar": "Sincronize agendamentos com sua agenda",
+      "zapier": "Conecte com mais de 5.000 aplicativos",
+      "googleSheets": "Exporte contatos e conversas para planilhas",
+      "automation": "Automação",
+      "productivity": "Produtividade"
     },
     "danger": {
       "title": "Zona de perigo",
       "description": "Ações irreversíveis",
-      "deleteAccount": "Excluir conta"
-    }
+      "exportData": "Exportar dados",
+      "exportDescription": "Baixe todos os seus dados em formato CSV",
+      "deleteAccount": "Excluir conta",
+      "deleteDescription": "Exclua permanentemente sua conta e todos os dados"
+    },
+    "team": {
+      "title": "Equipe",
+      "memberCount": "{count} membro",
+      "memberCountPlural": "{count} membros",
+      "newMember": "Novo Membro",
+      "searchPlaceholder": "Buscar por nome ou email...",
+      "you": "Você",
+      "deactivated": "Desativado",
+      "activeStatus": "Ativo",
+      "accessDenied": "Acesso negado",
+      "accessDeniedDesc": "Apenas administradores podem gerenciar a equipe.",
+      "roles": {
+        "admin": "Admin",
+        "attendant": "Atendente",
+        "viewer": "Visualizador"
+      },
+      "create": {
+        "title": "Novo membro",
+        "description": "Adicione um novo membro à equipe",
+        "nameLabel": "Nome",
+        "emailLabel": "Email",
+        "passwordLabel": "Senha",
+        "roleLabel": "Função",
+        "creating": "Criando..."
+      },
+      "edit": {
+        "title": "Editar membro",
+        "description": "Altere as informações do membro"
+      },
+      "password": {
+        "title": "Alterar senha",
+        "description": "Defina uma nova senha para {name}",
+        "newPassword": "Nova senha",
+        "saving": "Salvando..."
+      },
+      "deactivate": {
+        "title": "Desativar membro",
+        "description": "Tem certeza que deseja desativar {name}? Ele não poderá mais acessar o sistema.",
+        "deactivating": "Desativando...",
+        "button": "Desativar"
+      },
+      "activate": {
+        "title": "Ativar membro",
+        "activating": "Ativando...",
+        "button": "Ativar"
+      },
+      "tooltips": {
+        "editMember": "Editar membro",
+        "changePassword": "Alterar senha",
+        "deactivateMember": "Desativar membro",
+        "activateMember": "Ativar membro"
+      },
+      "success": {
+        "created": "Membro criado",
+        "updated": "Membro atualizado",
+        "passwordChanged": "Senha alterada",
+        "deactivated": "Membro desativado",
+        "activated": "Membro ativado"
+      },
+      "error": {
+        "creating": "Erro ao criar membro",
+        "updating": "Erro ao atualizar membro",
+        "changingPassword": "Erro ao alterar senha",
+        "toggling": "Erro ao alterar status"
+      }
+    },
+    "pipeline": {
+      "title": "Pipeline",
+      "subtitle": "Gerencie as etapas do seu funil de vendas",
+      "newStage": "Novo estágio",
+      "default": "Padrão",
+      "stageTypes": {
+        "ACTIVE": "Ativo",
+        "WON": "Ganho",
+        "LOST": "Perdido"
+      },
+      "empty": {
+        "title": "Nenhuma etapa configurada",
+        "description": "Crie etapas para organizar seu funil de vendas",
+        "action": "Criar etapa"
+      },
+      "create": {
+        "title": "Nova etapa",
+        "description": "Adicione uma nova etapa ao pipeline",
+        "nameLabel": "Nome",
+        "colorLabel": "Cor",
+        "typeLabel": "Tipo",
+        "creating": "Criando..."
+      },
+      "edit": {
+        "title": "Editar etapa",
+        "description": "Altere as configurações da etapa"
+      },
+      "delete": {
+        "title": "Excluir etapa",
+        "description": "Tem certeza que deseja excluir a etapa <strong>{name}</strong>? Os deals serão movidos para a etapa padrão."
+      },
+      "success": {
+        "created": "Etapa criada",
+        "updated": "Etapa atualizada",
+        "deleted": "Etapa excluída",
+        "reordered": "Ordem atualizada"
+      },
+      "error": {
+        "creating": "Erro ao criar etapa",
+        "updating": "Erro ao atualizar etapa",
+        "deleting": "Erro ao excluir etapa"
+      }
+    },
+    "tags": {
+      "title": "Tags",
+      "count": "{count} tag cadastrada",
+      "countPlural": "{count} tags cadastradas",
+      "newTag": "Nova tag",
+      "empty": {
+        "title": "Nenhuma tag criada",
+        "description": "Tags ajudam a organizar contatos e conversas",
+        "action": "Criar tag"
+      },
+      "create": {
+        "title": "Nova tag",
+        "description": "Crie uma nova tag para organização",
+        "nameLabel": "Nome",
+        "colorLabel": "Cor",
+        "creating": "Criando..."
+      },
+      "edit": {
+        "title": "Editar tag",
+        "description": "Altere as configurações da tag"
+      },
+      "delete": {
+        "title": "Excluir tag",
+        "description": "Tem certeza que deseja excluir a tag <strong>{name}</strong>? Ela será removida de todos os contatos."
+      },
+      "success": {
+        "created": "Tag criada",
+        "updated": "Tag atualizada",
+        "deleted": "Tag excluída"
+      },
+      "error": {
+        "creating": "Erro ao criar tag",
+        "updating": "Erro ao atualizar tag",
+        "deleting": "Erro ao excluir tag"
+      }
+    },
+    "saving": "Salvando...",
+    "saved": "Salvo!",
+    "saveChanges": "Salvar alterações"
   },
   "admin": {
     "tenants": {
       "title": "Tenants",
-      "subtitle": "Gerencie os tenants da plataforma"
+      "subtitle": "Gerencie os tenants da plataforma",
+      "newTenant": "Novo Tenant",
+      "searchPlaceholder": "Buscar por nome ou slug...",
+      "table": {
+        "tenant": "Tenant",
+        "plan": "Plano",
+        "resources": "Recursos",
+        "createdAt": "Criado em",
+        "actions": "Ações"
+      },
+      "empty": "Nenhum tenant cadastrado",
+      "emptySearch": "Nenhum tenant encontrado",
+      "pagination": {
+        "pageOf": "Página {page} de {totalPages}",
+        "previous": "Anterior",
+        "next": "Próximo"
+      },
+      "create": {
+        "title": "Novo Tenant",
+        "description": "Configure uma nova empresa na plataforma",
+        "companyName": "Nome da empresa",
+        "slug": "Slug",
+        "plan": "Plano",
+        "adminSection": "Usuário administrador",
+        "adminName": "Nome do admin",
+        "adminEmail": "Email do admin",
+        "adminPassword": "Senha do admin",
+        "creating": "Criando...",
+        "slugHint": "Identificador único. Apenas letras minúsculas, números e hifens.",
+        "noPlan": "Nenhum plano cadastrado.",
+        "createPlan": "Criar plano",
+        "selectPlan": "Selecione um plano"
+      },
+      "edit": {
+        "title": "Editar Tenant",
+        "description": "Altere as configurações do tenant"
+      },
+      "delete": {
+        "title": "Excluir Tenant",
+        "description": "Tem certeza que deseja excluir o tenant <strong>{name}</strong>? Todos os dados serão perdidos."
+      },
+      "resources": {
+        "instances": "instâncias",
+        "users": "usuários",
+        "assistants": "assistentes"
+      },
+      "success": {
+        "created": "Tenant criado",
+        "updated": "Tenant atualizado",
+        "deleted": "Tenant excluído"
+      },
+      "default": "Padrão",
+      "validation": {
+        "minPassword": "A senha deve ter pelo menos 6 caracteres"
+      },
+      "error": {
+        "loading": "Erro ao carregar tenants",
+        "creating": "Erro ao criar tenant",
+        "updating": "Erro ao atualizar tenant",
+        "deleting": "Erro ao excluir tenant"
+      }
     },
     "plans": {
       "title": "Planos",
-      "subtitle": "Gerencie os planos disponíveis"
+      "subtitle": "Gerencie os planos disponíveis",
+      "newPlan": "Novo Plano",
+      "searchPlaceholder": "Buscar por nome ou slug...",
+      "table": {
+        "plan": "Plano",
+        "limits": "Limites",
+        "tenants": "Tenants",
+        "status": "Status",
+        "actions": "Ações"
+      },
+      "empty": "Nenhum plano cadastrado",
+      "emptySearch": "Nenhum plano encontrado",
+      "tryOtherTerms": "Tente buscar com outros termos",
+      "createFirst": "Crie o primeiro plano para começar",
+      "createPlan": "Criar plano",
+      "defaultBadge": "Padrão",
+      "default": "Padrão",
+      "active": "Ativo",
+      "inactive": "Inativo",
+      "instances": "inst.",
+      "users": "usuários",
+      "count": "{count} plano",
+      "countPlural": "{count} planos",
+      "subtitleFull": "Gerencie os planos disponíveis na plataforma",
+      "activated": "Plano ativado",
+      "deactivated": "Plano desativado",
+      "toggleError": "Erro ao alterar status",
+      "pagination": {
+        "pageOf": "Página {page} de {totalPages}",
+        "previous": "Anterior",
+        "next": "Próximo"
+      },
+      "create": {
+        "title": "Novo Plano",
+        "description": "Configure um novo plano de assinatura",
+        "nameLabel": "Nome",
+        "slugLabel": "Slug",
+        "slugHint": "Identificador único. Apenas letras minúsculas, números e hifens.",
+        "descriptionLabel": "Descrição",
+        "descriptionPlaceholder": "Descrição do plano...",
+        "benefitsLabel": "Benefícios",
+        "benefitPlaceholder": "Ex: 10 instâncias",
+        "limitsSection": "Limites",
+        "maxInstances": "Max instâncias",
+        "maxUsers": "Max usuários",
+        "maxAssistants": "Max assistentes",
+        "broadcastsPerDay": "Disparos/dia",
+        "contactsPerBroadcast": "Contatos/disparo",
+        "priceLabel": "Preço",
+        "isDefault": "Padrão",
+        "isActive": "Ativo",
+        "orderLabel": "Ordem",
+        "creating": "Criando...",
+        "yes": "Sim",
+        "no": "Não"
+      },
+      "edit": {
+        "title": "Editar Plano",
+        "description": "Altere as configurações do plano {name}"
+      },
+      "delete": {
+        "title": "Excluir Plano",
+        "description": "Tem certeza que deseja excluir o plano <strong>{name}</strong>?"
+      },
+      "success": {
+        "created": "Plano criado",
+        "updated": "Plano atualizado",
+        "deleted": "Plano excluído",
+        "activated": "Plano ativado",
+        "deactivated": "Plano desativado"
+      },
+      "error": {
+        "loading": "Erro ao carregar planos",
+        "creating": "Erro ao criar plano",
+        "saving": "Erro ao salvar plano",
+        "updating": "Erro ao atualizar plano",
+        "deleting": "Erro ao excluir plano",
+        "toggling": "Erro ao alterar status"
+      }
     }
   },
   "validation": {

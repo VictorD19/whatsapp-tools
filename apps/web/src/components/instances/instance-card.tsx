@@ -2,11 +2,13 @@
 
 import React from 'react'
 import { Trash2, RefreshCw } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { ImportProgressBar } from './import-progress'
 import { formatPhone } from '@/lib/utils'
+import { formatDate } from '@/lib/formatting'
 import type { Instance, ImportProgress } from '@/stores/instances.store'
 
 const statusMap = {
@@ -26,6 +28,7 @@ interface InstanceCardProps {
 }
 
 export function InstanceCard({ instance, importProgress, onConnect, onDisconnect, onDelete, onImportConversations }: InstanceCardProps) {
+  const t = useTranslations('instances')
   const badgeStatus = statusMap[instance.status]
   const isImporting = importProgress?.importing ?? false
 
@@ -36,7 +39,7 @@ export function InstanceCard({ instance, importProgress, onConnect, onDisconnect
           <div>
             <CardTitle className="text-base">{instance.name}</CardTitle>
             <CardDescription className="mt-0.5">
-              {instance.phone ? formatPhone(instance.phone) : 'Sem numero'}
+              {instance.phone ? formatPhone(instance.phone) : t('noNumber')}
             </CardDescription>
           </div>
           <StatusBadge status={badgeStatus} />
@@ -44,9 +47,9 @@ export function InstanceCard({ instance, importProgress, onConnect, onDisconnect
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Criada em</span>
+          <span className="text-muted-foreground">{t('createdAt')}</span>
           <span className="font-medium">
-            {new Date(instance.createdAt).toLocaleDateString('pt-BR')}
+            {formatDate(instance.createdAt)}
           </span>
         </div>
         <div className="flex gap-2 mt-4">
@@ -58,29 +61,29 @@ export function InstanceCard({ instance, importProgress, onConnect, onDisconnect
                 className="flex-1"
                 onClick={() => onDisconnect(instance.id)}
               >
-                Desconectar
+                {t('disconnect')}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onImportConversations(instance.id)}
                 disabled={isImporting}
-                title="Importar conversas"
+                title={t('importConversations')}
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </>
           ) : instance.status === 'DISCONNECTED' ? (
             <Button size="sm" className="flex-1" onClick={() => onConnect(instance.id)}>
-              Conectar QR
+              {t('connectQR')}
             </Button>
           ) : instance.status === 'CONNECTING' ? (
             <Button variant="outline" size="sm" className="flex-1" onClick={() => onConnect(instance.id)}>
-              Ver QR Code
+              {t('viewQR')}
             </Button>
           ) : (
             <Button variant="outline" size="sm" className="flex-1" disabled>
-              Banido
+              {t('banned')}
             </Button>
           )}
           <Button

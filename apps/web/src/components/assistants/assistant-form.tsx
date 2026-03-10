@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
 import type { Assistant, KnowledgeBase, ApiResponse } from './types'
@@ -48,6 +49,8 @@ interface AssistantFormProps {
 }
 
 export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps) {
+  const t = useTranslations('assistants')
+  const tc = useTranslations('common')
   const router = useRouter()
 
   const [name, setName] = useState(assistant?.name ?? '')
@@ -113,19 +116,19 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
             className="gap-1.5 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            Assistentes
+            {t('breadcrumb')}
           </Button>
           <span className="text-muted-foreground text-sm">/</span>
           <span className="text-sm font-medium">
-            {assistant ? assistant.name : 'Novo assistente'}
+            {assistant ? assistant.name : t('form.newAssistant')}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => router.push('/assistants')}>
-            Cancelar
+            {t('form.cancelButton')}
           </Button>
           <Button onClick={handleSubmit} disabled={saving || !name.trim()}>
-            {saving ? 'Salvando...' : assistant ? 'Salvar alterações' : 'Criar assistente'}
+            {saving ? t('form.saving') : assistant ? t('form.saveChanges') : t('form.createAssistant')}
           </Button>
         </div>
       </div>
@@ -135,8 +138,8 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
         <div className="px-6 pt-1 border-b bg-background">
           <TabsList className="bg-transparent p-0 h-auto gap-0 rounded-none">
             {[
-              { value: 'profile', label: 'Perfil', icon: User },
-              { value: 'instructions', label: 'Instruções', icon: FileText },
+              { value: 'profile', label: t('tabs.profile'), icon: User },
+              { value: 'instructions', label: t('tabs.instructions'), icon: FileText },
             ].map(({ value, label, icon: Icon }) => (
               <TabsTrigger
                 key={value}
@@ -161,7 +164,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="emoji" className="text-xs text-muted-foreground">
-                    Emoji do avatar
+                    {t('fields.avatarEmoji')}
                   </Label>
                   <Input
                     id="emoji"
@@ -175,10 +178,10 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
 
               {/* Nome */}
               <div className="space-y-2">
-                <Label htmlFor="name">Nome *</Label>
+                <Label htmlFor="name">{t('fields.name')}</Label>
                 <Input
                   id="name"
-                  placeholder="Ex: SDR de Vendas"
+                  placeholder={t('fields.namePlaceholder')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -186,10 +189,10 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
 
               {/* Descrição */}
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="description">{t('fields.description')}</Label>
                 <Textarea
                   id="description"
-                  placeholder="Ex: Ajuda clientes a solucionar dúvidas sobre o nosso sistema"
+                  placeholder={t('fields.descriptionPlaceholder')}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
@@ -198,7 +201,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
 
               {/* Modelo */}
               <div className="space-y-2">
-                <Label>Modelo de inteligência</Label>
+                <Label>{t('fields.model')}</Label>
                 <Select value={model} onValueChange={setModel}>
                   <SelectTrigger>
                     <SelectValue />
@@ -215,9 +218,9 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
 
               {/* Tempo */}
               <div className="space-y-2">
-                <Label htmlFor="wait-time">Tempo para coletar mensagens</Label>
+                <Label htmlFor="wait-time">{t('fields.waitTime')}</Label>
                 <p className="text-xs text-muted-foreground">
-                  O bot aguarda este tempo antes de responder, para juntar mensagens em sequência
+                  {t('fields.waitTimeFormHint')}
                 </p>
                 <div className="flex items-center gap-2">
                   <Input
@@ -229,13 +232,13 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                     onChange={(e) => setWaitTimeSeconds(Number(e.target.value))}
                     className="w-24"
                   />
-                  <span className="text-sm text-muted-foreground">segundos</span>
+                  <span className="text-sm text-muted-foreground">{t('fields.seconds')}</span>
                 </div>
               </div>
 
               {/* Status */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Status</Label>
+                <Label className="text-sm font-medium">{t('fields.status')}</Label>
                 <RadioGroup
                   value={isActive ? 'active' : 'inactive'}
                   onValueChange={(v) => setIsActive(v === 'active')}
@@ -243,13 +246,13 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                   <div className="flex items-center gap-2">
                     <RadioGroupItem value="active" id="status-active" />
                     <Label htmlFor="status-active" className="font-normal cursor-pointer">
-                      Ativo
+                      {t('fields.active')}
                     </Label>
                   </div>
                   <div className="flex items-center gap-2">
                     <RadioGroupItem value="inactive" id="status-inactive" />
                     <Label htmlFor="status-inactive" className="font-normal cursor-pointer">
-                      Inativo
+                      {t('fields.inactive')}
                     </Label>
                   </div>
                 </RadioGroup>
@@ -258,11 +261,11 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
               {/* Knowledge Bases */}
               <div className="space-y-2">
                 <Label>
-                  Bases de conhecimento{' '}
-                  <span className="text-muted-foreground font-normal">(opcional)</span>
+                  {t('fields.knowledgeBases')}{' '}
+                  <span className="text-muted-foreground font-normal">{t('fields.optional')}</span>
                 </Label>
                 {knowledgeBases.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhuma base de conhecimento criada.</p>
+                  <p className="text-sm text-muted-foreground">{t('fields.noKnowledgeBases')}</p>
                 ) : (
                   <div className="rounded-lg border divide-y">
                     {knowledgeBases.map((kb) => (
@@ -296,9 +299,9 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
           <div className="max-w-3xl">
             <div className="rounded-xl border bg-card p-6 space-y-3">
               <div>
-                <Label htmlFor="prompt">Instruções do sistema</Label>
+                <Label htmlFor="prompt">{t('fields.systemPrompt')}</Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Descreva o comportamento, tom e objetivos do assistente. Quanto mais detalhado, melhor.
+                  {t('fields.systemPromptHint')}
                 </p>
               </div>
               <Textarea

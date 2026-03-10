@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Phone, Radio, User, ChevronDown, Pencil,
   X, StickyNote, Check, Loader2,
@@ -56,6 +57,8 @@ function DealStageSection({
   deal: ConversationDeal
   onStageChanged: (stageId: string) => void
 }) {
+  const t = useTranslations('inbox.contactPanel')
+  const tc = useTranslations('common')
   const { activeStages, closedStages } = usePipelineStages()
   const { moveDeal } = useDeal()
   const [lostReasonOpen, setLostReasonOpen] = useState(false)
@@ -86,7 +89,7 @@ function DealStageSection({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground">Etapa</span>
+        <span className="text-[11px] text-muted-foreground">{t('stage')}</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs hover:bg-muted transition-colors">
@@ -102,7 +105,7 @@ function DealStageSection({
             {activeStages.length > 0 && (
               <>
                 <DropdownMenuLabel className="text-[10px] text-muted-foreground">
-                  Ativas
+                  {t('activeStages')}
                 </DropdownMenuLabel>
                 {activeStages.map((stage) => (
                   <DropdownMenuItem
@@ -126,7 +129,7 @@ function DealStageSection({
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-[10px] text-muted-foreground">
-                  Encerramento
+                  {t('closedStages')}
                 </DropdownMenuLabel>
                 {closedStages.map((stage) => (
                   <DropdownMenuItem
@@ -153,11 +156,11 @@ function DealStageSection({
       {/* Lost reason dialog (inline) */}
       {lostReasonOpen && (
         <div className="rounded-md border p-2 space-y-2 bg-muted/30">
-          <p className="text-[11px] text-muted-foreground">Motivo da perda (opcional):</p>
+          <p className="text-[11px] text-muted-foreground">{t('lostReasonLabel')}</p>
           <Input
             value={lostReason}
             onChange={(e) => setLostReason(e.target.value)}
-            placeholder="Ex: Escolheu concorrente..."
+            placeholder={t('lostReasonPlaceholder')}
             className="h-7 text-xs"
           />
           <div className="flex gap-1.5 justify-end">
@@ -171,14 +174,14 @@ function DealStageSection({
                 setLostReason('')
               }}
             >
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button
               size="sm"
               className="h-6 text-xs"
               onClick={handleConfirmLost}
             >
-              Confirmar
+              {tc('confirm')}
             </Button>
           </div>
         </div>
@@ -194,6 +197,7 @@ function DealValueSection({
   deal: ConversationDeal
   onValueChanged: (value: number | null) => void
 }) {
+  const t = useTranslations('inbox.contactPanel')
   const { updateDeal } = useDeal()
   const [editing, setEditing] = useState(false)
   const [inputValue, setInputValue] = useState('')
@@ -216,7 +220,7 @@ function DealValueSection({
   if (editing) {
     return (
       <div className="flex items-center gap-1.5">
-        <span className="text-[11px] text-muted-foreground shrink-0">Valor</span>
+        <span className="text-[11px] text-muted-foreground shrink-0">{t('value')}</span>
         <div className="flex items-center gap-1 flex-1">
           <span className="text-xs text-muted-foreground">{getCurrencySymbol()}</span>
           <Input
@@ -243,13 +247,13 @@ function DealValueSection({
 
   return (
     <div className="flex items-center justify-between">
-      <span className="text-[11px] text-muted-foreground">Valor</span>
+      <span className="text-[11px] text-muted-foreground">{t('value')}</span>
       <button
         onClick={startEditing}
         className="flex items-center gap-1 text-xs hover:text-foreground transition-colors"
       >
         <span className="font-medium">
-          {deal.value != null ? formatCurrency(deal.value) : 'Sem valor'}
+          {deal.value != null ? formatCurrency(deal.value) : t('noValue')}
         </span>
         <Pencil className="h-3 w-3 text-muted-foreground" />
       </button>
@@ -258,6 +262,7 @@ function DealValueSection({
 }
 
 function LastContactIndicator({ dateStr }: { dateStr: string | null }) {
+  const t = useTranslations('inbox.contactPanel')
   const days = daysSinceLastContact(dateStr)
 
   let colorClass: string
@@ -265,18 +270,18 @@ function LastContactIndicator({ dateStr }: { dateStr: string | null }) {
 
   if (days <= 2) {
     colorClass = 'text-green-600 dark:text-green-400'
-    label = days === 0 ? 'Hoje' : days === 1 ? '1 dia' : '2 dias'
+    label = days === 0 ? t('todayLabel') : days === 1 ? t('oneDayLabel') : t('twoDaysLabel')
   } else if (days <= 5) {
     colorClass = 'text-amber-600 dark:text-amber-400'
-    label = `${days} dias`
+    label = t('daysLabel', { count: days })
   } else {
     colorClass = 'text-red-600 dark:text-red-400'
-    label = `${days} dias`
+    label = t('daysLabel', { count: days })
   }
 
   return (
     <div className="flex items-center justify-between">
-      <span className="text-[11px] text-muted-foreground">Ultimo contato</span>
+      <span className="text-[11px] text-muted-foreground">{t('lastContact')}</span>
       <span className={cn('text-xs font-medium', colorClass)}>
         {label}
         {days >= 3 && days <= 5 && ' \u26A0\uFE0F'}
@@ -287,6 +292,8 @@ function LastContactIndicator({ dateStr }: { dateStr: string | null }) {
 }
 
 function DealNotesSection({ dealId }: { dealId: string }) {
+  const t = useTranslations('inbox.contactPanel')
+  const tc = useTranslations('common')
   const { notes, isLoadingNotes, fetchNotes, addNote } = useDeal()
   const [newNote, setNewNote] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -307,7 +314,7 @@ function DealNotesSection({ dealId }: { dealId: string }) {
     <div className="space-y-2">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <StickyNote className="h-3.5 w-3.5" />
-        <span>Notas</span>
+        <span>{t('notes')}</span>
       </div>
 
       {/* Notes list */}
@@ -329,7 +336,7 @@ function DealNotesSection({ dealId }: { dealId: string }) {
           ))}
         </div>
       ) : (
-        <p className="text-[11px] text-muted-foreground/60">Nenhuma nota</p>
+        <p className="text-[11px] text-muted-foreground/60">{t('noNotes')}</p>
       )}
 
       {/* New note input */}
@@ -337,7 +344,7 @@ function DealNotesSection({ dealId }: { dealId: string }) {
         <Textarea
           value={newNote}
           onChange={(e) => setNewNote(e.target.value)}
-          placeholder="Adicionar nota..."
+          placeholder={t('addNotePlaceholder')}
           className="min-h-[60px] text-xs resize-none"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -355,7 +362,7 @@ function DealNotesSection({ dealId }: { dealId: string }) {
             {isSaving ? (
               <Loader2 className="h-3 w-3 animate-spin mr-1" />
             ) : null}
-            Salvar
+            {tc('save')}
           </Button>
         </div>
       </div>
@@ -366,6 +373,7 @@ function DealNotesSection({ dealId }: { dealId: string }) {
 // ---- Main Component ----
 
 export function ContactPanel({ conversation }: ContactPanelProps) {
+  const t = useTranslations('inbox.contactPanel')
   const { assignConversation, closeConversation } = useConversation()
   const userId = useAuthStore((s) => s.user?.id)
   const upsertConversation = useInboxStore((s) => s.upsertConversation)
@@ -376,13 +384,13 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
   if (!conversation) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground p-4">
-        Selecione uma conversa para ver os detalhes do contato
+        {t('selectConversationDetails')}
       </div>
     )
   }
 
   const contact = conversation.contact
-  const contactName = contact.name ?? (contact.phone.includes('@g.us') ? 'Grupo' : contact.phone)
+  const contactName = contact.name ?? (contact.phone.includes('@g.us') ? t('group') : contact.phone)
   const isAssignedToMe = conversation.assignedToId === userId
   const isPending = conversation.status === 'PENDING'
   const activeDeal = conversation.deals?.[0] ?? null
@@ -405,10 +413,10 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
         ...conversation!,
         contact: { ...contact, name: trimmed },
       })
-      toast({ title: 'Nome atualizado', variant: 'success' })
+      toast({ title: t('nameUpdated'), variant: 'success' })
       setEditingName(false)
     } catch {
-      toast({ title: 'Erro ao atualizar nome', variant: 'destructive' })
+      toast({ title: t('errorUpdatingName'), variant: 'destructive' })
     } finally {
       setSavingName(false)
     }
@@ -524,7 +532,7 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
         <>
           <div className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Deal</span>
-            <p className="text-[11px] text-muted-foreground/60">Nenhum deal associado</p>
+            <p className="text-[11px] text-muted-foreground/60">{t('noDealAssociated')}</p>
           </div>
           <Separator />
         </>
@@ -532,13 +540,13 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
 
       {/* Atendimento */}
       <div className="space-y-3">
-        <span className="text-xs font-medium text-muted-foreground">Atendimento</span>
+        <span className="text-xs font-medium text-muted-foreground">{t('service')}</span>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <Radio className="h-3 w-3" />
-              <span>Instancia</span>
+              <span>{t('instanceLabel')}</span>
             </div>
             <span className="text-xs text-foreground">{conversation.instance.name}</span>
           </div>
@@ -546,10 +554,10 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <User className="h-3 w-3" />
-              <span>Atendente</span>
+              <span>{t('attendant')}</span>
             </div>
             <span className="text-xs text-foreground">
-              {conversation.assignedTo?.name ?? 'Nenhum'}
+              {conversation.assignedTo?.name ?? t('none')}
             </span>
           </div>
 
@@ -568,10 +576,10 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
               )}
             >
               {conversation.status === 'OPEN'
-                ? 'Aberta'
+                ? t('statusOpen')
                 : conversation.status === 'PENDING'
-                  ? 'Pendente'
-                  : 'Encerrada'}
+                  ? t('statusPending')
+                  : t('statusClosed')}
             </Badge>
           </div>
         </div>
@@ -584,7 +592,7 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
           <div className="space-y-2">
             {isPending && (
               <Button className="w-full" onClick={() => assignConversation(conversation.id)}>
-                Entrar na conversa
+                {t('joinConversation')}
               </Button>
             )}
             {conversation.status === 'OPEN' && isAssignedToMe && (
@@ -593,7 +601,7 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
                 className="w-full"
                 onClick={() => closeConversation(conversation.id)}
               >
-                Encerrar
+                {t('endConversation')}
               </Button>
             )}
           </div>

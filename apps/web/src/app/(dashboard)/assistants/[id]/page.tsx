@@ -5,11 +5,13 @@ import { useRouter, useParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AssistantForm, type AssistantFormData } from '@/components/assistants/assistant-form'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTranslations } from 'next-intl'
 import { apiGet, apiPatch, apiPost, apiDelete } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 import type { Assistant, ApiResponse } from '@/components/assistants/types'
 
 export default function EditAssistantPage() {
+  const t = useTranslations('assistants')
   React.useEffect(() => { document.title = 'Editar Assistente | SistemaZapChat' }, [])
 
   const router = useRouter()
@@ -55,10 +57,10 @@ export default function EditAssistantPage() {
 
         queryClient.invalidateQueries({ queryKey: ['assistants'] })
         queryClient.invalidateQueries({ queryKey: ['assistants', id] })
-        toast({ title: 'Assistente atualizado', variant: 'success' })
+        toast({ title: t('success.updated'), variant: 'success' })
         router.push('/assistants')
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erro ao salvar assistente'
+        const message = err instanceof Error ? err.message : t('error.saving')
         toast({ title: message, variant: 'destructive' })
       } finally {
         setSaving(false)
@@ -78,7 +80,7 @@ export default function EditAssistantPage() {
 
   if (!assistant) {
     return (
-      <div className="p-6 text-sm text-muted-foreground">Assistente não encontrado.</div>
+      <div className="p-6 text-sm text-muted-foreground">{t('notFound')}</div>
     )
   }
 

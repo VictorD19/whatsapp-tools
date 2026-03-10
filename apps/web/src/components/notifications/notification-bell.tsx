@@ -14,6 +14,7 @@ import {
   Users,
   CheckCheck,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -104,6 +105,7 @@ function NotificationItem({
 }
 
 export function NotificationBell() {
+  const t = useTranslations('notifications.bell')
   const [open, setOpen] = useState(false)
   const { notifications, unreadCount, isLoading, setNotifications, markAsRead, markAllAsRead, setPreferences } =
     useNotificationsStore()
@@ -195,7 +197,7 @@ export function NotificationBell() {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold">Notificacoes</h3>
+            <h3 className="text-sm font-semibold">{t('title')}</h3>
             {unreadCount > 0 && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
                 {unreadCount}
@@ -210,7 +212,7 @@ export function NotificationBell() {
               onClick={handleMarkAllAsRead}
             >
               <CheckCheck className="h-3.5 w-3.5" />
-              Marcar todas
+              {t('markAllRead')}
             </Button>
           )}
         </div>
@@ -218,12 +220,12 @@ export function NotificationBell() {
         {/* List */}
         {isLoading ? (
           <div className="flex items-center justify-center py-10 text-xs text-muted-foreground">
-            Carregando...
+            {t('loading')}
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
             <Bell className="h-8 w-8 text-muted-foreground/30" />
-            <p className="text-xs text-muted-foreground">Nenhuma notificacao</p>
+            <p className="text-xs text-muted-foreground">{t('empty')}</p>
           </div>
         ) : (
           <ScrollArea className="max-h-[360px]">
@@ -242,7 +244,7 @@ export function NotificationBell() {
             className="block text-center text-xs text-primary hover:text-primary/80 font-medium transition-colors"
             onClick={() => setOpen(false)}
           >
-            Ver todas as notificacoes
+            {t('viewAll')}
           </Link>
         </div>
       </PopoverContent>

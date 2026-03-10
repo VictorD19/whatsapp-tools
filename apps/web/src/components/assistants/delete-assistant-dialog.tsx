@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -20,21 +21,23 @@ interface DeleteAssistantDialogProps {
 }
 
 export function DeleteAssistantDialog({ open, name, loading, onClose, onConfirm }: DeleteAssistantDialogProps) {
+  const t = useTranslations('assistants')
+  const tc = useTranslations('common')
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Excluir assistente</DialogTitle>
+          <DialogTitle>{t('delete.title')}</DialogTitle>
           <DialogDescription>
-            Tem certeza que deseja excluir o assistente <strong>{name}</strong>? Esta acao nao pode ser desfeita.
+            {t.rich('delete.description', { name, strong: (chunks) => <strong>{chunks}</strong> })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancelar
+            {tc('cancel')}
           </Button>
           <Button variant="destructive" onClick={onConfirm} disabled={loading}>
-            {loading ? 'Excluindo...' : 'Excluir'}
+            {loading ? t('delete.deleting') : tc('delete')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -36,6 +36,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 import { USAGE_QUERY_KEY } from '@/components/layout/plan-usage'
+import { useTranslations } from 'next-intl'
 import { getInitials } from '@/lib/utils'
 
 // ── Types ──
@@ -63,10 +64,10 @@ interface SingleResponse {
   data: TeamUser
 }
 
-const ROLE_CONFIG: Record<UserRole, { label: string; variant: 'default' | 'info' | 'secondary' }> = {
-  admin: { label: 'Admin', variant: 'default' },
-  agent: { label: 'Atendente', variant: 'info' },
-  viewer: { label: 'Visualizador', variant: 'secondary' },
+const ROLE_VARIANTS: Record<UserRole, 'default' | 'info' | 'secondary'> = {
+  admin: 'default',
+  agent: 'info',
+  viewer: 'secondary',
 }
 
 type DialogMode = 'create' | 'edit' | 'password' | 'deactivate' | null
@@ -74,18 +75,20 @@ type DialogMode = 'create' | 'edit' | 'password' | 'deactivate' | null
 // ── Component ──
 
 export default function TeamSettingsPage() {
-  React.useEffect(() => { document.title = 'Equipe | SistemaZapChat' }, [])
+  const t = useTranslations('settings.team')
+  const tn = useTranslations('nav')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
 
   const { user: currentUser } = useAuthStore()
 
   // If not admin, show access denied
   if (currentUser && currentUser.role !== 'admin' && !currentUser.isSuperAdmin) {
     return (
-      <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Equipe' }]}>
+      <PageLayout breadcrumb={[{ label: tn('groups.settings') }, { label: tn('items.team') }]}>
         <EmptyState
           icon={ShieldCheck}
-          title="Acesso negado"
-          description="Apenas administradores podem gerenciar a equipe."
+          title={t('accessDenied')}
+          description={t('accessDeniedDesc')}
         />
       </PageLayout>
     )
@@ -95,11 +98,20 @@ export default function TeamSettingsPage() {
 }
 
 function TeamContent({ currentUserId }: { currentUserId: string }) {
+  const t = useTranslations('settings.team')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
   const [users, setUsers] = useState<TeamUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
   const queryClient = useQueryClient()
+
+  const roleLabels: Record<UserRole, string> = {
+    admin: t('roles.admin'),
+    agent: t('roles.attendant'),
+    viewer: t('roles.viewer'),
+  }
 
   // Dialog state
   const [dialogMode, setDialogMode] = useState<DialogMode>(null)
@@ -121,11 +133,11 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       const res = await apiGet<PaginatedResponse>('users?limit=100')
       setUsers(res.data)
     } catch {
-      toast({ title: 'Erro ao carregar equipe', variant: 'destructive' })
+      toast({ title: t('error.loading'), variant: 'destructive' })
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     fetchUsers()
@@ -179,11 +191,11 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
   const handleCreate = async () => {
     if (!formName.trim() || !formEmail.trim() || !formPassword.trim()) return
     if (formName.trim().length < 2) {
-      toast({ title: 'Nome deve ter pelo menos 2 caracteres', variant: 'destructive' })
+      toast({ title: t('validation.minName'), variant: 'destructive' })
       return
     }
     if (formPassword.length < 6) {
-      toast({ title: 'Senha deve ter pelo menos 6 caracteres', variant: 'destructive' })
+      toast({ title: t('validation.minPassword'), variant: 'destructive' })
       return
     }
     setSaving(true)
@@ -196,10 +208,10 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       })
       setUsers((prev) => [...prev, res.data])
       queryClient.invalidateQueries({ queryKey: USAGE_QUERY_KEY })
-      toast({ title: 'Membro criado com sucesso', variant: 'success' })
+      toast({ title: t('success.created'), variant: 'success' })
       closeDialog()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao criar membro'
+      const message = err instanceof Error ? err.message : t('error.creating')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -209,7 +221,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
   const handleEdit = async () => {
     if (!selectedUser || !formName.trim()) return
     if (formName.trim().length < 2) {
-      toast({ title: 'Nome deve ter pelo menos 2 caracteres', variant: 'destructive' })
+      toast({ title: t('validation.minName'), variant: 'destructive' })
       return
     }
     setSaving(true)
@@ -219,10 +231,10 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
         role: formRole,
       })
       setUsers((prev) => prev.map((u) => (u.id === selectedUser.id ? res.data : u)))
-      toast({ title: 'Membro atualizado', variant: 'success' })
+      toast({ title: t('success.updated'), variant: 'success' })
       closeDialog()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao atualizar membro'
+      const message = err instanceof Error ? err.message : t('error.updating')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -232,11 +244,11 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
   const handleChangePassword = async () => {
     if (!selectedUser) return
     if (newPassword.length < 6) {
-      toast({ title: 'Senha deve ter pelo menos 6 caracteres', variant: 'destructive' })
+      toast({ title: t('validation.minPassword'), variant: 'destructive' })
       return
     }
     if (newPassword !== confirmPassword) {
-      toast({ title: 'As senhas nao coincidem', variant: 'destructive' })
+      toast({ title: t('validation.passwordMismatch'), variant: 'destructive' })
       return
     }
     setSaving(true)
@@ -244,10 +256,10 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       await apiPatch<SingleResponse>(`users/${selectedUser.id}/password`, {
         password: newPassword,
       })
-      toast({ title: 'Senha alterada com sucesso', variant: 'success' })
+      toast({ title: t('success.passwordChanged'), variant: 'success' })
       closeDialog()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao alterar senha'
+      const message = err instanceof Error ? err.message : t('error.changingPassword')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -262,10 +274,10 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       setUsers((prev) => prev.map((u) =>
         u.id === selectedUser.id ? { ...u, deletedAt: new Date().toISOString() } : u,
       ))
-      toast({ title: 'Membro desativado', variant: 'success' })
+      toast({ title: t('success.deactivated'), variant: 'success' })
       closeDialog()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao desativar membro'
+      const message = err instanceof Error ? err.message : t('error.toggling')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -276,7 +288,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
 
   if (loading) {
     return (
-      <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Equipe' }]}>
+      <PageLayout breadcrumb={[{ label: tn('groups.settings') }, { label: tn('items.team') }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-4 w-56" />
@@ -292,18 +304,18 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
   }
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Equipe' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.settings') }, { label: tn('items.team') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Equipe</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {users.length} {users.length === 1 ? 'membro' : 'membros'}
+            {users.length === 1 ? t('memberCount', { count: users.length }) : t('memberCountPlural', { count: users.length })}
           </p>
         </div>
         <Button size="sm" onClick={openCreateDialog}>
           <Plus className="h-4 w-4" />
-          Novo Membro
+          {t('newMember')}
         </Button>
       </div>
 
@@ -311,7 +323,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       <div className="relative max-w-xs">
         <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome ou email..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9"
@@ -322,16 +334,16 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       {filteredUsers.length === 0 ? (
         <EmptyState
           icon={Users}
-          title={search ? 'Nenhum membro encontrado' : 'Nenhum membro cadastrado'}
-          description={search ? 'Tente buscar com outros termos' : 'Adicione o primeiro membro da equipe'}
-          action={!search ? { label: 'Adicionar membro', onClick: openCreateDialog } : undefined}
+          title={search ? t('emptySearch') : t('emptyList')}
+          description={search ? t('emptySearchDesc') : t('emptyListDesc')}
+          action={!search ? { label: t('newMember'), onClick: openCreateDialog } : undefined}
         />
       ) : (
         <div className="rounded-md border border-border overflow-hidden">
           {filteredUsers.map((member) => {
             const isSelf = member.id === currentUserId
             const isDeactivated = !!member.deletedAt
-            const roleConfig = ROLE_CONFIG[member.role]
+            const roleVariant = ROLE_VARIANTS[member.role]
 
             return (
               <div
@@ -353,22 +365,22 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
                       {member.name}
                     </span>
                     {isSelf && (
-                      <Badge variant="secondary" className="text-[10px] shrink-0">Voce</Badge>
+                      <Badge variant="secondary" className="text-[10px] shrink-0">{t('you')}</Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                 </div>
 
                 {/* Role badge */}
-                <Badge variant={roleConfig.variant} className="text-[10px] shrink-0">
-                  {roleConfig.label}
+                <Badge variant={roleVariant} className="text-[10px] shrink-0">
+                  {roleLabels[member.role]}
                 </Badge>
 
                 {/* Status badge */}
                 {isDeactivated ? (
-                  <Badge variant="destructive" className="text-[10px] shrink-0">Desativado</Badge>
+                  <Badge variant="destructive" className="text-[10px] shrink-0">{t('deactivated')}</Badge>
                 ) : (
-                  <Badge variant="success" className="text-[10px] shrink-0">Ativo</Badge>
+                  <Badge variant="success" className="text-[10px] shrink-0">{t('activeStatus')}</Badge>
                 )}
 
                 {/* Actions */}
@@ -384,7 +396,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Editar</TooltipContent>
+                    <TooltipContent>{t('tooltips.editMember')}</TooltipContent>
                   </Tooltip>
 
                   <Tooltip>
@@ -398,7 +410,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
                         <KeyRound className="h-3.5 w-3.5" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Alterar senha</TooltipContent>
+                    <TooltipContent>{t('tooltips.changePassword')}</TooltipContent>
                   </Tooltip>
 
                   {isDeactivated ? (
@@ -413,7 +425,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
                           <UserCheck className="h-3.5 w-3.5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Reativar (em breve)</TooltipContent>
+                      <TooltipContent>{t('tooltips.activateMember')}</TooltipContent>
                     </Tooltip>
                   ) : (
                     <Tooltip>
@@ -431,7 +443,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {isSelf ? 'Voce nao pode desativar a si mesmo' : 'Desativar'}
+                        {isSelf ? t('tooltips.cannotDeactivateSelf') : t('tooltips.deactivateMember')}
                       </TooltipContent>
                     </Tooltip>
                   )}
@@ -446,26 +458,26 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       <Sheet open={dialogMode === 'create'} onOpenChange={(open) => !open && closeDialog()}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Novo Membro</SheetTitle>
+            <SheetTitle>{t('create.title')}</SheetTitle>
             <SheetDescription>
-              Adicione um novo membro a equipe
+              {t('create.description')}
             </SheetDescription>
           </SheetHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
-              <Label htmlFor="create-name">Nome</Label>
+              <Label htmlFor="create-name">{t('create.nameLabel')}</Label>
               <Input
                 id="create-name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="Nome completo"
+                placeholder={t('create.nameLabel')}
                 minLength={2}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="create-email">Email</Label>
+              <Label htmlFor="create-email">{t('create.emailLabel')}</Label>
               <Input
                 id="create-email"
                 type="email"
@@ -476,19 +488,19 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="create-password">Senha</Label>
+              <Label htmlFor="create-password">{t('create.passwordLabel')}</Label>
               <Input
                 id="create-password"
                 type="password"
                 value={formPassword}
                 onChange={(e) => setFormPassword(e.target.value)}
-                placeholder="Minimo 6 caracteres"
+                placeholder={t('validation.minPassword')}
                 minLength={6}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Perfil</Label>
+              <Label>{t('create.roleLabel')}</Label>
               <div className="flex gap-2">
                 {(['admin', 'agent', 'viewer'] as const).map((r) => (
                   <button
@@ -501,7 +513,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
                         : 'border-border hover:bg-accent'
                     }`}
                   >
-                    {ROLE_CONFIG[r].label}
+                    {roleLabels[r]}
                   </button>
                 ))}
               </div>
@@ -510,13 +522,13 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
 
           <SheetFooter>
             <Button variant="outline" onClick={closeDialog}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button
               onClick={handleCreate}
               disabled={saving || !formName.trim() || !formEmail.trim() || !formPassword.trim()}
             >
-              {saving ? 'Criando...' : 'Criar'}
+              {saving ? t('create.creating') : tc('create')}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -526,26 +538,26 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       <Sheet open={dialogMode === 'edit'} onOpenChange={(open) => !open && closeDialog()}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Editar Membro</SheetTitle>
+            <SheetTitle>{t('edit.title')}</SheetTitle>
             <SheetDescription>
-              Altere as informacoes de {selectedUser?.name}
+              {t('edit.description')}
             </SheetDescription>
           </SheetHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-name">Nome</Label>
+              <Label htmlFor="edit-name">{t('create.nameLabel')}</Label>
               <Input
                 id="edit-name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="Nome completo"
+                placeholder={t('create.nameLabel')}
                 minLength={2}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Perfil</Label>
+              <Label>{t('create.roleLabel')}</Label>
               <div className="flex gap-2">
                 {(['admin', 'agent', 'viewer'] as const).map((r) => (
                   <button
@@ -558,7 +570,7 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
                         : 'border-border hover:bg-accent'
                     }`}
                   >
-                    {ROLE_CONFIG[r].label}
+                    {roleLabels[r]}
                   </button>
                 ))}
               </div>
@@ -567,10 +579,10 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
 
           <SheetFooter>
             <Button variant="outline" onClick={closeDialog}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button onClick={handleEdit} disabled={saving || !formName.trim()}>
-              {saving ? 'Salvando...' : 'Salvar'}
+              {saving ? t('password.saving') : tc('save')}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -580,50 +592,50 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       <Sheet open={dialogMode === 'password'} onOpenChange={(open) => !open && closeDialog()}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Alterar Senha</SheetTitle>
+            <SheetTitle>{t('password.title')}</SheetTitle>
             <SheetDescription>
-              Defina uma nova senha para {selectedUser?.name}
+              {t('password.description', { name: selectedUser?.name ?? '' })}
             </SheetDescription>
           </SheetHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
-              <Label htmlFor="new-password">Nova senha</Label>
+              <Label htmlFor="new-password">{t('password.newPassword')}</Label>
               <Input
                 id="new-password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Minimo 6 caracteres"
+                placeholder={t('validation.minPassword')}
                 minLength={6}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="confirm-password">Confirmar senha</Label>
+              <Label htmlFor="confirm-password">{t('password.confirmPassword')}</Label>
               <Input
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repita a nova senha"
+                placeholder={t('password.confirmPassword')}
                 minLength={6}
               />
               {confirmPassword && newPassword !== confirmPassword && (
-                <p className="text-xs text-destructive">As senhas nao coincidem</p>
+                <p className="text-xs text-destructive">{t('validation.passwordMismatch')}</p>
               )}
             </div>
           </div>
 
           <SheetFooter>
             <Button variant="outline" onClick={closeDialog}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button
               onClick={handleChangePassword}
               disabled={saving || newPassword.length < 6 || newPassword !== confirmPassword}
             >
-              {saving ? 'Salvando...' : 'Alterar senha'}
+              {saving ? t('password.saving') : t('password.title')}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -633,18 +645,17 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       <Dialog open={dialogMode === 'deactivate'} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Desativar membro</DialogTitle>
+            <DialogTitle>{t('deactivate.title')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja desativar{' '}
-              <strong>{selectedUser?.name}</strong>? O membro perdera acesso ao sistema.
+              {t('deactivate.description', { name: selectedUser?.name ?? '' })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDeactivate} disabled={saving}>
-              {saving ? 'Desativando...' : 'Desativar'}
+              {saving ? t('deactivate.deactivating') : t('deactivate.button')}
             </Button>
           </DialogFooter>
         </DialogContent>

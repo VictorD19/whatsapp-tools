@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { FileText, Globe, Type, Trash2, RefreshCw, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -37,31 +38,28 @@ const typeIcons: Record<string, React.ElementType> = {
   TEXT: Type,
 }
 
-const typeLabels: Record<string, string> = {
-  FILE: 'Arquivo',
-  URL: 'URL',
-  TEXT: 'Texto',
-}
-
 function StatusBadge({ status }: { status: KnowledgeSource['status'] }) {
+  const t = useTranslations('knowledgeBases.sources')
   switch (status) {
     case 'PENDING':
-      return <Badge variant="secondary">Pendente</Badge>
+      return <Badge variant="secondary">{t('statusPending')}</Badge>
     case 'PROCESSING':
       return (
         <Badge variant="warning" className="gap-1">
           <Loader2 className="h-3 w-3 animate-spin" />
-          Processando
+          {t('statusProcessing')}
         </Badge>
       )
     case 'COMPLETED':
-      return <Badge variant="success">Concluido</Badge>
+      return <Badge variant="success">{t('statusCompleted')}</Badge>
     case 'FAILED':
-      return <Badge variant="destructive">Falhou</Badge>
+      return <Badge variant="destructive">{t('statusFailed')}</Badge>
   }
 }
 
 export function SourceList({ sources, onDelete, onReingest }: SourceListProps) {
+  const t = useTranslations('knowledgeBases.sources')
+  const tc = useTranslations('common')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingSource, setDeletingSource] = useState<KnowledgeSource | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -95,7 +93,7 @@ export function SourceList({ sources, onDelete, onReingest }: SourceListProps) {
   if (sources.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-4">
-        Nenhuma fonte adicionada. Adicione arquivos, URLs ou textos abaixo.
+        {t('empty')}
       </p>
     )
   }
@@ -113,7 +111,9 @@ export function SourceList({ sources, onDelete, onReingest }: SourceListProps) {
               <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{source.name}</p>
-                <p className="text-xs text-muted-foreground">{typeLabels[source.type]}</p>
+                <p className="text-xs text-muted-foreground">
+                  {source.type === 'FILE' ? t('typeFile') : source.type === 'URL' ? t('typeUrl') : t('typeText')}
+                </p>
               </div>
               <StatusBadge status={source.status} />
               <div className="flex items-center gap-0.5">
@@ -124,7 +124,7 @@ export function SourceList({ sources, onDelete, onReingest }: SourceListProps) {
                     className="h-7 w-7"
                     disabled={reingesting === source.id}
                     onClick={() => handleReingest(source.id)}
-                    title="Re-ingerir"
+                    title={t('reingest')}
                   >
                     {reingesting === source.id ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -150,18 +150,17 @@ export function SourceList({ sources, onDelete, onReingest }: SourceListProps) {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Excluir fonte</DialogTitle>
+            <DialogTitle>{t('deleteTitle')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir a fonte{' '}
-              <strong>{deletingSource?.name}</strong>? Esta acao nao pode ser desfeita.
+              {t.rich('deleteDescription', { name: deletingSource?.name ?? '', strong: (chunks) => <strong>{chunks}</strong> })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleting}>
-              {deleting ? 'Excluindo...' : 'Excluir'}
+              {deleting ? tc('loading') : tc('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

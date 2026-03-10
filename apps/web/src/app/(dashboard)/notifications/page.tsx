@@ -13,6 +13,7 @@ import {
   Users,
   CheckCheck,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -26,39 +27,29 @@ function getToken(): string | null {
   return localStorage.getItem('auth_token')
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'agora'
-  if (mins < 60) return `há ${mins}m`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `há ${hours}h`
-  return `há ${Math.floor(hours / 24)}d`
-}
-
-function groupByDate(notifications: Notification[]): { label: string; items: Notification[] }[] {
+function groupByDate(notifications: Notification[], labels: { today: string; yesterday: string; thisWeek: string; older: string }): { label: string; items: Notification[] }[] {
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const yesterday = today - 86400000
   const weekAgo = today - 7 * 86400000
 
   const groups: Record<string, Notification[]> = {
-    Hoje: [],
-    Ontem: [],
-    'Esta semana': [],
-    'Mais antigas': [],
+    [labels.today]: [],
+    [labels.yesterday]: [],
+    [labels.thisWeek]: [],
+    [labels.older]: [],
   }
 
   for (const n of notifications) {
     const ts = new Date(n.createdAt).getTime()
     if (ts >= today) {
-      groups['Hoje'].push(n)
+      groups[labels.today].push(n)
     } else if (ts >= yesterday) {
-      groups['Ontem'].push(n)
+      groups[labels.yesterday].push(n)
     } else if (ts >= weekAgo) {
-      groups['Esta semana'].push(n)
+      groups[labels.thisWeek].push(n)
     } else {
-      groups['Mais antigas'].push(n)
+      groups[labels.older].push(n)
     }
   }
 
@@ -95,7 +86,9 @@ function NotificationTypeIcon({ type }: { type: string }) {
 }
 
 export default function NotificationsPage() {
-  React.useEffect(() => { document.title = 'Notificações | SistemaZapChat' }, [])
+  const t = useTranslations('notifications')
+  const tc = useTranslations('common')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
 
   const { notifications, unreadCount, isLoading, hasMore, page, setNotifications, appendNotifications, markAsRead, markAllAsRead, setLoading } =
     useNotificationsStore()
@@ -168,16 +161,21 @@ export default function NotificationsPage() {
     }
   }, [markAllAsRead])
 
-  const groups = groupByDate(notifications)
+  const groups = groupByDate(notifications, {
+    today: t('dateGroups.today'),
+    yesterday: t('dateGroups.yesterday'),
+    thisWeek: t('dateGroups.thisWeek'),
+    older: t('dateGroups.older'),
+  })
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Notificações' }]}>
+    <PageLayout breadcrumb={[{ label: t('title') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Notificacoes</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {unreadCount > 0 ? `${unreadCount} nao lida${unreadCount !== 1 ? 's' : ''}` : 'Tudo em dia'}
+            {unreadCount > 0 ? (unreadCount === 1 ? t('page.unreadCount', { count: unreadCount }) : t('page.unreadCountPlural', { count: unreadCount })) : t('empty.title')}
           </p>
         </div>
         {unreadCount > 0 && (
@@ -189,7 +187,7 @@ export default function NotificationsPage() {
             disabled={markingAll}
           >
             <CheckCheck className="h-4 w-4" />
-            {markingAll ? 'Marcando...' : 'Marcar todas como lidas'}
+            {markingAll ? t('page.marking') : t('page.markAllRead')}
           </Button>
         )}
       </div>
@@ -213,8 +211,8 @@ export default function NotificationsPage() {
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
             <Bell className="h-6 w-6 text-muted-foreground" />
           </div>
-          <p className="text-sm font-medium text-foreground">Nenhuma notificacao</p>
-          <p className="text-xs text-muted-foreground">Voce sera notificado quando algo importante acontecer</p>
+          <p className="text-sm font-medium text-foreground">{t('empty.title')}</p>
+          <p className="text-xs text-muted-foreground">{t('empty.description')}</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -266,7 +264,7 @@ export default function NotificationsPage() {
                 disabled={loadingMore}
                 onClick={() => fetchPage(page + 1, true)}
               >
-                {loadingMore ? 'Carregando...' : 'Carregar mais'}
+                {loadingMore ? t('page.loading') : t('page.loadMore')}
               </Button>
             </div>
           )}

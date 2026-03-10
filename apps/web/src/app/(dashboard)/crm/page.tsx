@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Loader2 } from 'lucide-react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,8 @@ import { useDeal, type Deal } from '@/hooks/use-deal'
 
 export default function CRMPage() {
   React.useEffect(() => { document.title = 'CRM | SistemaZapChat' }, [])
+  const t = useTranslations('crm')
+  const tn = useTranslations('nav')
 
   const { pipelines, selectedPipelineId, selectPipeline, stages, isLoading: isLoadingStages } = usePipelineStages()
   const { deals, isLoadingDeals, setCachedDeals, moveDeal } = useDeal(
@@ -86,19 +89,19 @@ export default function CRMPage() {
 
   return (
     <PageLayout
-      breadcrumb={[{ label: 'Atendimento' }, { label: 'CRM' }]}
+      breadcrumb={[{ label: tn('groups.service') }, { label: tn('items.crm') }]}
       cardClassName="flex flex-col overflow-hidden"
     >
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
         <div>
-          <h1 className="text-xl font-semibold">CRM — Pipeline de Vendas</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gerencie seus leads e oportunidades</p>
+          <h1 className="text-xl font-semibold">{t('pageTitle')}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('pageSubtitle')}</p>
         </div>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
-          Novo negócio
+          {t('newDeal')}
         </Button>
       </div>
 
@@ -123,7 +126,7 @@ export default function CRMPage() {
         ) : stages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-muted-foreground">
-              Nenhum pipeline configurado. Crie um pipeline em Configurações.
+              {t('noPipelineConfigured')}
             </p>
           </div>
         ) : (

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Phone, User, Calendar, Check, ChevronDown, Pencil, X, Loader2, StickyNote, Trash2,
 } from 'lucide-react'
@@ -39,6 +40,8 @@ function formatNoteDate(dateStr: string): string {
 }
 
 export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDeleted }: DealDetailSheetProps) {
+  const t = useTranslations('crm')
+  const tc = useTranslations('common')
   const { updateDeal, deleteDeal, moveDeal, notes, isLoadingNotes, fetchNotes, addNote } = useDeal()
 
   const [editingTitle, setEditingTitle] = useState(false)
@@ -157,7 +160,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
           <div className="space-y-4 py-4">
             {/* Stage selector */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Etapa</span>
+              <span className="text-xs text-muted-foreground">{t('stage')}</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -172,7 +175,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                 <DropdownMenuContent align="end" className="w-48">
                   {activeStages.length > 0 && (
                     <>
-                      <DropdownMenuLabel className="text-[10px] text-muted-foreground">Ativas</DropdownMenuLabel>
+                      <DropdownMenuLabel className="text-[10px] text-muted-foreground">{t('activeStages')}</DropdownMenuLabel>
                       {activeStages.map((s) => (
                         <DropdownMenuItem key={s.id} onClick={() => handleSelectStage(s.id, s.type)} className="text-xs gap-2">
                           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
@@ -185,7 +188,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                   {closedStages.length > 0 && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="text-[10px] text-muted-foreground">Encerramento</DropdownMenuLabel>
+                      <DropdownMenuLabel className="text-[10px] text-muted-foreground">{t('closedStages')}</DropdownMenuLabel>
                       {closedStages.map((s) => (
                         <DropdownMenuItem key={s.id} onClick={() => handleSelectStage(s.id, s.type)} className="text-xs gap-2">
                           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
@@ -202,11 +205,11 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
             {/* Lost reason inline */}
             {lostReasonOpen && (
               <div className="rounded-md border p-2 space-y-2 bg-muted/30">
-                <p className="text-[11px] text-muted-foreground">Motivo da perda (opcional):</p>
+                <p className="text-[11px] text-muted-foreground">{t('lostReasonLabel')}</p>
                 <Input
                   value={lostReason}
                   onChange={(e) => setLostReason(e.target.value)}
-                  placeholder="Ex: Escolheu concorrente..."
+                  placeholder={t('lostReasonPlaceholder')}
                   className="h-7 text-xs"
                 />
                 <div className="flex gap-1.5 justify-end">
@@ -214,15 +217,15 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                     setLostReasonOpen(false)
                     setPendingStageId(null)
                     setLostReason('')
-                  }}>Cancelar</Button>
-                  <Button size="sm" className="h-6 text-xs" onClick={handleConfirmLost}>Confirmar</Button>
+                  }}>{tc('cancel')}</Button>
+                  <Button size="sm" className="h-6 text-xs" onClick={handleConfirmLost}>{tc('confirm')}</Button>
                 </div>
               </div>
             )}
 
             {/* Value */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Valor</span>
+              <span className="text-xs text-muted-foreground">{t('dealValue')}</span>
               {editingValue ? (
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-muted-foreground">{getCurrencySymbol()}</span>
@@ -250,7 +253,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                   className="flex items-center gap-1 text-xs hover:text-foreground transition-colors"
                 >
                   <span className="font-medium">
-                    {deal.value != null ? formatCurrency(Number(deal.value)) : 'Sem valor'}
+                    {deal.value != null ? formatCurrency(Number(deal.value)) : t('noValue')}
                   </span>
                   <Pencil className="h-3 w-3 text-muted-foreground" />
                 </button>
@@ -259,13 +262,13 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
 
             {/* Assigned to */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Atendente</span>
-              <span className="text-xs">{deal.assignedTo?.name ?? 'Nenhum'}</span>
+              <span className="text-xs text-muted-foreground">{t('attendant')}</span>
+              <span className="text-xs">{deal.assignedTo?.name ?? t('noneAssigned')}</span>
             </div>
 
             {/* Pipeline */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Pipeline</span>
+              <span className="text-xs text-muted-foreground">{t('pipeline')}</span>
               <span className="text-xs">{deal.pipeline.name}</span>
             </div>
 
@@ -273,7 +276,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
 
             {/* Contact info */}
             <div className="space-y-3">
-              <span className="text-xs font-medium text-muted-foreground">Contato</span>
+              <span className="text-xs font-medium text-muted-foreground">{t('contact')}</span>
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-primary-500/10 text-primary-500 text-sm">
@@ -295,12 +298,12 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
             {/* Timestamps */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Criado em</span>
+                <span className="text-muted-foreground">{t('createdAt')}</span>
                 <span>{formatDate(deal.createdAt)}</span>
               </div>
               {deal.wonAt && (
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Ganho em</span>
+                  <span className="text-muted-foreground">{t('wonAt')}</span>
                   <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-[10px]">
                     {formatDate(deal.wonAt)}
                   </Badge>
@@ -308,7 +311,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
               )}
               {deal.lostAt && (
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Perdido em</span>
+                  <span className="text-muted-foreground">{t('lostAt')}</span>
                   <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-[10px]">
                     {formatDate(deal.lostAt)}
                   </Badge>
@@ -316,7 +319,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
               )}
               {deal.lostReason && (
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Motivo da perda</span>
+                  <span className="text-muted-foreground">{t('lostReason')}</span>
                   <span className="text-right max-w-[180px] truncate">{deal.lostReason}</span>
                 </div>
               )}
@@ -328,7 +331,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <StickyNote className="h-3.5 w-3.5" />
-                <span>Notas</span>
+                <span>{t('notes')}</span>
               </div>
 
               {isLoadingNotes ? (
@@ -347,14 +350,14 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                   ))}
                 </div>
               ) : (
-                <p className="text-[11px] text-muted-foreground/60">Nenhuma nota</p>
+                <p className="text-[11px] text-muted-foreground/60">{t('noNotes')}</p>
               )}
 
               <div className="space-y-1.5">
                 <Textarea
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Adicionar nota..."
+                  placeholder={t('addNotePlaceholder')}
                   className="min-h-[60px] text-xs resize-none"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAddNote()
@@ -363,7 +366,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                 <div className="flex justify-end">
                   <Button size="sm" className="h-6 text-xs" onClick={handleAddNote} disabled={!newNote.trim() || isSavingNote}>
                     {isSavingNote ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                    Salvar nota
+                    {t('saveNote')}
                   </Button>
                 </div>
               </div>
@@ -373,7 +376,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
           <SheetFooter>
             <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
               <Trash2 className="h-4 w-4 mr-1" />
-              Excluir negócio
+              {t('deleteDeal')}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -383,15 +386,15 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
       <Dialog open={deleteDialogOpen} onOpenChange={(v) => !v && setDeleteDialogOpen(false)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogTitle>{t('confirmDeletion')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir este negócio? Esta ação não pode ser desfeita.
+              {t('deleteDealDesc')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>{tc('cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Excluindo...' : 'Excluir'}
+              {deleting ? t('deleting') : tc('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -27,6 +27,7 @@ import {
 import { EmptyState } from '@/components/shared/empty-state'
 import { ColorPicker } from '@/components/shared/color-picker'
 import { toast } from '@/components/ui/toaster'
+import { useTranslations } from 'next-intl'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 
 // ── Types ──
@@ -54,11 +55,7 @@ interface ApiResponse<T> {
 
 type StageType = 'ACTIVE' | 'WON' | 'LOST'
 
-const TYPE_LABELS: Record<StageType, string> = {
-  ACTIVE: 'Ativo',
-  WON: 'Ganho',
-  LOST: 'Perdido',
-}
+// TYPE_LABELS moved inside component to use translations
 
 const TYPE_VARIANTS: Record<StageType, 'info' | 'success' | 'destructive'> = {
   ACTIVE: 'info',
@@ -69,7 +66,16 @@ const TYPE_VARIANTS: Record<StageType, 'info' | 'success' | 'destructive'> = {
 // ── Component ──
 
 export default function PipelineSettingsPage() {
-  React.useEffect(() => { document.title = 'Pipeline | SistemaZapChat' }, [])
+  const t = useTranslations('settings.pipeline')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
+
+  const typeLabels: Record<StageType, string> = {
+    ACTIVE: t('stageTypes.ACTIVE'),
+    WON: t('stageTypes.WON'),
+    LOST: t('stageTypes.LOST'),
+  }
 
   const [pipeline, setPipeline] = useState<Pipeline | null>(null)
   const [stages, setStages] = useState<PipelineStage[]>([])
@@ -95,7 +101,7 @@ export default function PipelineSettingsPage() {
         setStages(defaultPipeline.stages.sort((a, b) => a.order - b.order))
       }
     } catch {
-      toast({ title: 'Erro ao carregar pipeline', variant: 'destructive' })
+      toast({ title: t('error.creating'), variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -138,19 +144,19 @@ export default function PipelineSettingsPage() {
         setStages((prev) =>
           prev.map((s) => (s.id === editingStage.id ? res.data : s)),
         )
-        toast({ title: 'Estagio atualizado', variant: 'success' })
+        toast({ title: t('success.updated'), variant: 'success' })
       } else {
         const res = await apiPost<ApiResponse<PipelineStage>>(
           `pipelines/${pipeline.id}/stages`,
           { name: formName.trim(), color: formColor, type: formType },
         )
         setStages((prev) => [...prev, res.data].sort((a, b) => a.order - b.order))
-        toast({ title: 'Estagio criado', variant: 'success' })
+        toast({ title: t('success.created'), variant: 'success' })
       }
       setDialogOpen(false)
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Erro ao salvar estagio'
+        err instanceof Error ? err.message : t('error.creating')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -163,11 +169,11 @@ export default function PipelineSettingsPage() {
     try {
       await apiDelete(`pipelines/${pipeline.id}/stages/${deletingStage.id}`)
       setStages((prev) => prev.filter((s) => s.id !== deletingStage.id))
-      toast({ title: 'Estagio excluido', variant: 'success' })
+      toast({ title: t('success.deleted'), variant: 'success' })
       setDeleteDialogOpen(false)
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Erro ao excluir estagio'
+        err instanceof Error ? err.message : t('error.deleting')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -194,7 +200,7 @@ export default function PipelineSettingsPage() {
       )
       setStages(res.data.sort((a, b) => a.order - b.order))
     } catch {
-      toast({ title: 'Erro ao reordenar', variant: 'destructive' })
+      toast({ title: t('error.updating'), variant: 'destructive' })
       fetchPipeline()
     }
   }
@@ -219,7 +225,7 @@ export default function PipelineSettingsPage() {
       )
       setStages(res.data.sort((a, b) => a.order - b.order))
     } catch {
-      toast({ title: 'Erro ao reordenar', variant: 'destructive' })
+      toast({ title: t('error.updating'), variant: 'destructive' })
       fetchPipeline()
     }
   }
@@ -228,7 +234,7 @@ export default function PipelineSettingsPage() {
 
   if (loading) {
     return (
-      <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Pipeline' }]}>
+      <PageLayout breadcrumb={[{ label: tn('groups.settings') }, { label: tn('items.pipeline') }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-4 w-72" />
@@ -243,18 +249,18 @@ export default function PipelineSettingsPage() {
   }
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Pipeline' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.settings') }, { label: tn('items.pipeline') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Pipeline</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie os estagios do seu funil de vendas
+            {t('subtitle')}
           </p>
         </div>
         <Button size="sm" onClick={openCreateDialog}>
           <Plus className="h-4 w-4" />
-          Novo estagio
+          {t('newStage')}
         </Button>
       </div>
 
@@ -264,7 +270,7 @@ export default function PipelineSettingsPage() {
           <GitBranch className="h-4 w-4" />
           <span>{pipeline.name}</span>
           {pipeline.isDefault && (
-            <Badge variant="secondary" className="text-[10px]">Padrao</Badge>
+            <Badge variant="secondary" className="text-[10px]">{t('default')}</Badge>
           )}
         </div>
       )}
@@ -273,9 +279,9 @@ export default function PipelineSettingsPage() {
       {stages.length === 0 ? (
         <EmptyState
           icon={GitBranch}
-          title="Nenhum estagio cadastrado"
-          description="Crie o primeiro estagio do seu pipeline"
-          action={{ label: 'Criar estagio', onClick: openCreateDialog }}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          action={{ label: t('empty.action'), onClick: openCreateDialog }}
         />
       ) : (
         <div className="rounded-md border border-border overflow-hidden">
@@ -299,12 +305,12 @@ export default function PipelineSettingsPage() {
 
               {/* Type badge */}
               <Badge variant={TYPE_VARIANTS[stage.type]} className="text-[10px]">
-                {TYPE_LABELS[stage.type]}
+                {typeLabels[stage.type]}
               </Badge>
 
               {/* Default badge */}
               {stage.isDefault && (
-                <Badge variant="secondary" className="text-[10px]">Padrao</Badge>
+                <Badge variant="secondary" className="text-[10px]">{t('default')}</Badge>
               )}
 
               {/* Move buttons */}
@@ -359,19 +365,17 @@ export default function PipelineSettingsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingStage ? 'Editar estagio' : 'Novo estagio'}
+              {editingStage ? t('edit.title') : t('create.title')}
             </DialogTitle>
             <DialogDescription>
-              {editingStage
-                ? 'Altere as informacoes do estagio'
-                : 'Preencha os dados para criar um novo estagio'}
+              {editingStage ? t('edit.description') : t('create.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Name */}
             <div className="space-y-1.5">
-              <Label htmlFor="stage-name">Nome</Label>
+              <Label htmlFor="stage-name">{t('create.nameLabel')}</Label>
               <Input
                 id="stage-name"
                 value={formName}
@@ -383,13 +387,13 @@ export default function PipelineSettingsPage() {
 
             {/* Color */}
             <div className="space-y-1.5">
-              <Label>Cor</Label>
+              <Label>{t('create.colorLabel')}</Label>
               <ColorPicker value={formColor} onChange={setFormColor} />
             </div>
 
             {/* Type */}
             <div className="space-y-1.5">
-              <Label>Tipo</Label>
+              <Label>{t('create.typeLabel')}</Label>
               <div className="flex gap-2">
                 {(['ACTIVE', 'WON', 'LOST'] as const).map((t) => (
                   <button
@@ -402,7 +406,7 @@ export default function PipelineSettingsPage() {
                         : 'border-border hover:bg-accent'
                     }`}
                   >
-                    {TYPE_LABELS[t]}
+                    {typeLabels[t]}
                   </button>
                 ))}
               </div>
@@ -411,10 +415,10 @@ export default function PipelineSettingsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={saving || !formName.trim()}>
-              {saving ? 'Salvando...' : editingStage ? 'Salvar' : 'Criar'}
+              {saving ? t('create.creating') : editingStage ? tc('save') : tc('create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -424,18 +428,17 @@ export default function PipelineSettingsPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Excluir estagio</DialogTitle>
+            <DialogTitle>{t('delete.title')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir o estagio{' '}
-              <strong>{deletingStage?.name}</strong>? Esta acao nao pode ser desfeita.
+              {t.rich('delete.description', { name: deletingStage?.name, strong: (chunks) => <strong>{chunks}</strong> })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              {saving ? 'Excluindo...' : 'Excluir'}
+              {saving ? tc('loading') : tc('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Trash2, Bot } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { Assistant } from './types'
 
 interface AssistantCardProps {
@@ -11,6 +12,7 @@ interface AssistantCardProps {
 }
 
 export function AssistantCard({ assistant, onEdit, onDelete }: AssistantCardProps) {
+  const t = useTranslations('assistants')
   return (
     <div
       className="group relative flex items-start gap-3 rounded-xl border bg-card p-4 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all"
@@ -39,7 +41,7 @@ export function AssistantCard({ assistant, onEdit, onDelete }: AssistantCardProp
           <span className="text-sm font-semibold truncate">{assistant.name}</span>
         </div>
         <span className={`text-xs font-medium ${assistant.isActive ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-          {assistant.isActive ? 'Ativo' : 'Inativo'}
+          {assistant.isActive ? t('fields.active') : t('fields.inactive')}
         </span>
         {assistant.description && (
           <p className="text-xs text-muted-foreground truncate mt-0.5">{assistant.description}</p>

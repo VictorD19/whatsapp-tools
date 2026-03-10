@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Plus, Wrench } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { PageLayout } from '@/components/layout/page-layout'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -18,7 +19,10 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 const AI_TOOLS_KEY = ['ai-tools']
 
 export default function AiToolsPage() {
-  React.useEffect(() => { document.title = 'Ferramentas de IA | SistemaZapChat' }, [])
+  const t = useTranslations('aiTools')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
 
   const queryClient = useQueryClient()
 
@@ -53,15 +57,15 @@ export default function AiToolsPage() {
     try {
       if (editingTool) {
         await apiPatch(`ai-tools/${editingTool.id}`, data)
-        toast({ title: 'Ferramenta atualizada', variant: 'success' })
+        toast({ title: t('success.updated'), variant: 'success' })
       } else {
         await apiPost('ai-tools', data)
-        toast({ title: 'Ferramenta criada', variant: 'success' })
+        toast({ title: t('success.created'), variant: 'success' })
       }
       queryClient.invalidateQueries({ queryKey: AI_TOOLS_KEY })
       setSheetOpen(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao salvar ferramenta'
+      const message = err instanceof Error ? err.message : t('error.creating')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -73,11 +77,11 @@ export default function AiToolsPage() {
       await apiPatch(`ai-tools/${tool.id}`, { isActive })
       queryClient.invalidateQueries({ queryKey: AI_TOOLS_KEY })
       toast({
-        title: isActive ? 'Ferramenta ativada' : 'Ferramenta desativada',
+        title: t('success.toggled'),
         variant: 'success',
       })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao alterar status'
+      const message = err instanceof Error ? err.message : t('error.updating')
       toast({ title: message, variant: 'destructive' })
     }
   }
@@ -88,10 +92,10 @@ export default function AiToolsPage() {
     try {
       await apiDelete(`ai-tools/${deletingTool.id}`)
       queryClient.invalidateQueries({ queryKey: AI_TOOLS_KEY })
-      toast({ title: 'Ferramenta excluida', variant: 'success' })
+      toast({ title: t('success.deleted'), variant: 'success' })
       setDeleteDialogOpen(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao excluir ferramenta'
+      const message = err instanceof Error ? err.message : t('error.deleting')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -100,7 +104,7 @@ export default function AiToolsPage() {
 
   if (isLoading) {
     return (
-      <PageLayout breadcrumb={[{ label: 'Inteligência Artificial' }, { label: 'Ferramentas de IA' }]}>
+      <PageLayout breadcrumb={[{ label: tn('groups.ai') }, { label: tn('items.aiTools') }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-4 w-64" />
@@ -115,18 +119,18 @@ export default function AiToolsPage() {
   }
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Inteligência Artificial' }, { label: 'Ferramentas de IA' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.ai') }, { label: tn('items.aiTools') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Ferramentas de IA</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {tools.length} {tools.length === 1 ? 'ferramenta configurada' : 'ferramentas configuradas'}
+            {tools.length === 1 ? t('count', { count: tools.length }) : t('countPlural', { count: tools.length })}
           </p>
         </div>
         <Button size="sm" onClick={openCreate}>
           <Plus className="h-4 w-4" />
-          Nova ferramenta
+          {t('newButton')}
         </Button>
       </div>
 
@@ -134,9 +138,9 @@ export default function AiToolsPage() {
       {tools.length === 0 ? (
         <EmptyState
           icon={Wrench}
-          title="Nenhuma ferramenta configurada"
-          description="Crie ferramentas para seus assistentes executarem acoes automaticamente"
-          action={{ label: 'Criar ferramenta', onClick: openCreate }}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          action={{ label: t('empty.action'), onClick: openCreate }}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -165,18 +169,17 @@ export default function AiToolsPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Excluir ferramenta</DialogTitle>
+            <DialogTitle>{t('delete.title')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir a ferramenta{' '}
-              <strong>{deletingTool?.name}</strong>? Esta acao nao pode ser desfeita.
+              {t.rich('delete.description', { name: deletingTool?.name, strong: (chunks) => <strong>{chunks}</strong> })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              {saving ? 'Excluindo...' : 'Excluir'}
+              {saving ? tc('loading') : tc('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useTranslations } from 'next-intl'
 import { apiGet, apiPost, apiDelete } from '@/lib/api'
 import { useInstancesStore, type Instance } from '@/stores/instances.store'
 import { USAGE_QUERY_KEY } from '@/components/layout/plan-usage'
@@ -19,6 +20,7 @@ interface ConnectResult {
 const IMPORT_START_TIMEOUT_MS = 90_000
 
 export function useInstances() {
+  const t = useTranslations('instances')
   const { setInstances, setLoading, addInstance, removeInstance, updateInstanceStatus, setImportProgress, clearImportProgress } =
     useInstancesStore()
   const queryClient = useQueryClient()
@@ -29,11 +31,11 @@ export function useInstances() {
       const res = await apiGet<ApiResponse<Instance[]>>('instances')
       setInstances(res.data)
     } catch {
-      toast({ title: 'Erro ao carregar instancias', variant: 'destructive' })
+      toast({ title: t('error.loading'), variant: 'destructive' })
     } finally {
       setLoading(false)
     }
-  }, [setInstances, setLoading])
+  }, [setInstances, setLoading, t])
 
   // Silent refresh: syncs with Evolution API without triggering loading state
   // Used for background polling while instances are connecting
@@ -51,10 +53,10 @@ export function useInstances() {
       const res = await apiPost<ApiResponse<Instance>>('instances', { name })
       addInstance(res.data)
       queryClient.invalidateQueries({ queryKey: USAGE_QUERY_KEY })
-      toast({ title: 'Instancia criada', variant: 'success' })
+      toast({ title: t('success.created'), variant: 'success' })
       return res.data
     },
-    [addInstance, queryClient],
+    [addInstance, queryClient, t],
   )
 
   const connectInstance = useCallback(
@@ -70,18 +72,18 @@ export function useInstances() {
     async (id: string) => {
       await apiPost<ApiResponse<void>>(`instances/${id}/disconnect`, {})
       updateInstanceStatus(id, 'DISCONNECTED')
-      toast({ title: 'Instancia desconectada', variant: 'success' })
+      toast({ title: t('success.disconnected'), variant: 'success' })
     },
-    [updateInstanceStatus],
+    [updateInstanceStatus, t],
   )
 
   const deleteInstance = useCallback(
     async (id: string) => {
       await apiDelete<void>(`instances/${id}`)
       removeInstance(id)
-      toast({ title: 'Instancia excluida', variant: 'success' })
+      toast({ title: t('success.deleted'), variant: 'success' })
     },
-    [removeInstance],
+    [removeInstance, t],
   )
 
   const importConversations = useCallback(
@@ -95,8 +97,8 @@ export function useInstances() {
         if (current?.importing && current.total === 0) {
           clearImportProgress(instanceId)
           toast({
-            title: 'Importação sem resposta',
-            description: 'Verifique os logs do servidor e tente novamente.',
+            title: t('error.importTimeout'),
+            description: t('error.importTimeoutDesc'),
             variant: 'destructive',
           })
         }
@@ -104,14 +106,14 @@ export function useInstances() {
 
       try {
         await apiPost<ApiResponse<{ message: string }>>(`inbox/instances/${instanceId}/import-conversations`, {})
-        toast({ title: 'Importacao iniciada', variant: 'success' })
+        toast({ title: t('success.importStarted'), variant: 'success' })
       } catch {
         clearTimeout(safetyTimer)
         clearImportProgress(instanceId)
-        toast({ title: 'Erro ao iniciar importacao', variant: 'destructive' })
+        toast({ title: t('error.importFailed'), variant: 'destructive' })
       }
     },
-    [setImportProgress, clearImportProgress],
+    [setImportProgress, clearImportProgress, t],
   )
 
   return { fetchInstances, refreshInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, importConversations }

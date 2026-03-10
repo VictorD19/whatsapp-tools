@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { Pencil, Trash2, Search, UserPlus, Tag, Briefcase, Handshake, Webhook } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,13 +10,13 @@ import { Switch } from '@/components/ui/switch'
 import type { AiTool } from './ai-tool-sheet'
 import type { AiToolType } from './tool-type-selector'
 
-const TYPE_META: Record<AiToolType, { icon: React.ElementType; label: string; variant: 'default' | 'secondary' | 'info' | 'success' | 'warning' }> = {
-  BUSCAR_CONTATO: { icon: Search, label: 'Buscar Contato', variant: 'info' },
-  CRIAR_CONTATO: { icon: UserPlus, label: 'Criar Contato', variant: 'success' },
-  ADICIONAR_TAG: { icon: Tag, label: 'Adicionar Tag', variant: 'warning' },
-  CRIAR_DEAL: { icon: Briefcase, label: 'Criar Deal', variant: 'default' },
-  TRANSFERIR_HUMANO: { icon: Handshake, label: 'Transferir Humano', variant: 'secondary' },
-  WEBHOOK_EXTERNO: { icon: Webhook, label: 'Webhook', variant: 'info' },
+const TYPE_META: Record<AiToolType, { icon: React.ElementType; variant: 'default' | 'secondary' | 'info' | 'success' | 'warning' }> = {
+  BUSCAR_CONTATO: { icon: Search, variant: 'info' },
+  CRIAR_CONTATO: { icon: UserPlus, variant: 'success' },
+  ADICIONAR_TAG: { icon: Tag, variant: 'warning' },
+  CRIAR_DEAL: { icon: Briefcase, variant: 'default' },
+  TRANSFERIR_HUMANO: { icon: Handshake, variant: 'secondary' },
+  WEBHOOK_EXTERNO: { icon: Webhook, variant: 'info' },
 }
 
 interface AiToolCardProps {
@@ -26,6 +27,7 @@ interface AiToolCardProps {
 }
 
 export function AiToolCard({ tool, onEdit, onDelete, onToggle }: AiToolCardProps) {
+  const t = useTranslations('aiTools.types')
   const meta = TYPE_META[tool.type]
   const Icon = meta.icon
 
@@ -52,7 +54,7 @@ export function AiToolCard({ tool, onEdit, onDelete, onToggle }: AiToolCardProps
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex items-center justify-between">
-          <Badge variant={meta.variant}>{meta.label}</Badge>
+          <Badge variant={meta.variant}>{t(`${tool.type}.label`)}</Badge>
           <div className="flex items-center gap-0.5">
             <Button
               variant="ghost"

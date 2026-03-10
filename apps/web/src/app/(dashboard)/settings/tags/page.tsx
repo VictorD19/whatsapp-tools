@@ -20,6 +20,7 @@ import { ColorPicker } from '@/components/shared/color-picker'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/components/ui/toaster'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
+import { useTranslations } from 'next-intl'
 import { TAGS_QUERY_KEY } from '@/hooks/use-tags'
 
 // ── Types ──
@@ -40,7 +41,10 @@ interface ApiResponse<T> {
 // ── Component ──
 
 export default function TagsSettingsPage() {
-  React.useEffect(() => { document.title = 'Tags | SistemaZapChat' }, [])
+  const t = useTranslations('settings.tags')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
 
   const queryClient = useQueryClient()
   const { data: tags = [], isLoading: loading } = useQuery({
@@ -86,19 +90,19 @@ export default function TagsSettingsPage() {
           `tags/${editingTag.id}`,
           { name: formName.trim(), color: formColor },
         )
-        toast({ title: 'Tag atualizada', variant: 'success' })
+        toast({ title: t('success.updated'), variant: 'success' })
       } else {
         await apiPost<ApiResponse<TagItem>>('tags', {
           name: formName.trim(),
           color: formColor,
         })
-        toast({ title: 'Tag criada', variant: 'success' })
+        toast({ title: t('success.created'), variant: 'success' })
       }
       queryClient.invalidateQueries({ queryKey: TAGS_QUERY_KEY })
       setDialogOpen(false)
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Erro ao salvar tag'
+        err instanceof Error ? err.message : t('error.creating')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -111,11 +115,11 @@ export default function TagsSettingsPage() {
     try {
       await apiDelete(`tags/${deletingTag.id}`)
       queryClient.invalidateQueries({ queryKey: TAGS_QUERY_KEY })
-      toast({ title: 'Tag excluida', variant: 'success' })
+      toast({ title: t('success.deleted'), variant: 'success' })
       setDeleteDialogOpen(false)
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Erro ao excluir tag'
+        err instanceof Error ? err.message : t('error.deleting')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -126,7 +130,7 @@ export default function TagsSettingsPage() {
 
   if (loading) {
     return (
-      <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Tags' }]}>
+      <PageLayout breadcrumb={[{ label: tn('groups.settings') }, { label: tn('items.tags') }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-4 w-56" />
@@ -141,18 +145,18 @@ export default function TagsSettingsPage() {
   }
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Tags' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.settings') }, { label: tn('items.tags') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Tags</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {tags.length} {tags.length === 1 ? 'tag cadastrada' : 'tags cadastradas'}
+            {tags.length === 1 ? t('count', { count: tags.length }) : t('countPlural', { count: tags.length })}
           </p>
         </div>
         <Button size="sm" onClick={openCreateDialog}>
           <Plus className="h-4 w-4" />
-          Nova tag
+          {t('newTag')}
         </Button>
       </div>
 
@@ -160,9 +164,9 @@ export default function TagsSettingsPage() {
       {tags.length === 0 ? (
         <EmptyState
           icon={Tag}
-          title="Nenhuma tag cadastrada"
-          description="Crie tags para organizar seus contatos"
-          action={{ label: 'Criar tag', onClick: openCreateDialog }}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          action={{ label: t('empty.action'), onClick: openCreateDialog }}
         />
       ) : (
         <div className="rounded-md border border-border overflow-hidden">
@@ -210,19 +214,17 @@ export default function TagsSettingsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingTag ? 'Editar tag' : 'Nova tag'}
+              {editingTag ? t('edit.title') : t('create.title')}
             </DialogTitle>
             <DialogDescription>
-              {editingTag
-                ? 'Altere as informacoes da tag'
-                : 'Preencha os dados para criar uma nova tag'}
+              {editingTag ? t('edit.description') : t('create.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Name */}
             <div className="space-y-1.5">
-              <Label htmlFor="tag-name">Nome</Label>
+              <Label htmlFor="tag-name">{t('create.nameLabel')}</Label>
               <Input
                 id="tag-name"
                 value={formName}
@@ -234,17 +236,17 @@ export default function TagsSettingsPage() {
 
             {/* Color */}
             <div className="space-y-1.5">
-              <Label>Cor</Label>
+              <Label>{t('create.colorLabel')}</Label>
               <ColorPicker value={formColor} onChange={setFormColor} />
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={saving || !formName.trim()}>
-              {saving ? 'Salvando...' : editingTag ? 'Salvar' : 'Criar'}
+              {saving ? tc('loading') : editingTag ? tc('save') : tc('create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -254,18 +256,17 @@ export default function TagsSettingsPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Excluir tag</DialogTitle>
+            <DialogTitle>{t('delete.title')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir a tag{' '}
-              <strong>{deletingTag?.name}</strong>? Esta acao nao pode ser desfeita.
+              {t.rich('delete.description', { name: deletingTag?.name, strong: (chunks) => <strong>{chunks}</strong> })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              {saving ? 'Excluindo...' : 'Excluir'}
+              {saving ? tc('loading') : tc('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

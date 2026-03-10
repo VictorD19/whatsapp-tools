@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Search, Plus, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -11,13 +12,14 @@ import { ConversationListItem } from './conversation-list-item'
 import { NewConversationDialog } from './new-conversation-dialog'
 import { cn } from '@/lib/utils'
 
-const tabs: { key: InboxTab; label: string; shortLabel: string }[] = [
-  { key: 'all', label: 'Todas', shortLabel: 'Todas' },
-  { key: 'mine', label: 'Minhas', shortLabel: 'Minhas' },
-  { key: 'unassigned', label: 'Sem atendente', shortLabel: 'Livres' },
+const tabKeys: { key: InboxTab; labelKey: string; shortLabelKey: string }[] = [
+  { key: 'all', labelKey: 'tabs.all', shortLabelKey: 'tabs.all' },
+  { key: 'mine', labelKey: 'tabs.mine', shortLabelKey: 'tabs.mine' },
+  { key: 'unassigned', labelKey: 'tabs.unassigned', shortLabelKey: 'tabs.unassignedShort' },
 ]
 
 export function ConversationList() {
+  const t = useTranslations('inbox')
   const [search, setSearch] = useState('')
   const [newConvOpen, setNewConvOpen] = useState(false)
   const activeTab = useInboxStore((s) => s.activeTab)
@@ -88,14 +90,14 @@ export function ConversationList() {
       />
       {/* Header */}
       <div className="flex h-12 items-center justify-between border-b border-border px-3 shrink-0">
-        <h2 className="text-[13px] font-semibold text-foreground">Conversas</h2>
+        <h2 className="text-[13px] font-semibold text-foreground">{t('conversations')}</h2>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             className="h-6 w-6 text-muted-foreground hover:text-foreground"
             onClick={() => setNewConvOpen(true)}
-            title="Nova conversa"
+            title={t('newConversation')}
           >
             <Plus className="h-3.5 w-3.5" />
           </Button>
@@ -105,7 +107,7 @@ export function ConversationList() {
       {/* Tab pills */}
       <div className="px-3 pt-2.5 pb-2 shrink-0">
         <div className="flex gap-1.5 rounded-lg bg-muted/60 p-1">
-          {tabs.map((tab) => {
+          {tabKeys.map((tab) => {
             const isActive = activeTab === tab.key
             const count = tabCounts[tab.key]
             return (
@@ -119,7 +121,7 @@ export function ConversationList() {
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                <span>{tab.shortLabel}</span>
+                <span>{t(tab.shortLabelKey)}</span>
                 {count > 0 && (
                   <span className={cn(
                     'text-[10px] tabular-nums',
@@ -143,7 +145,7 @@ export function ConversationList() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar contato..."
+            placeholder={t('searchContact')}
             className="pl-7 h-7 text-xs bg-muted/40 border-transparent focus-visible:border-border focus-visible:bg-background rounded-lg placeholder:text-muted-foreground/60"
           />
         </div>
@@ -154,8 +156,12 @@ export function ConversationList() {
         <div className="px-3 pb-1.5 shrink-0">
           <p className="text-[10px] text-muted-foreground/60">
             {search
-              ? `${filtered.length} ${filtered.length === 1 ? 'conversa' : 'conversas'}`
-              : `${conversations.length} de ${total} ${total === 1 ? 'conversa' : 'conversas'}`
+              ? (filtered.length === 1
+                  ? t('conversationCountSearchSingle', { count: filtered.length })
+                  : t('conversationCountSearch', { count: filtered.length }))
+              : (total === 1
+                  ? t('conversationCountSingle', { count: conversations.length, total })
+                  : t('conversationCount', { count: conversations.length, total }))
             }
           </p>
         </div>
@@ -185,11 +191,11 @@ export function ConversationList() {
               <Search className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-xs font-medium text-muted-foreground">
-              {search ? 'Nenhum resultado' : 'Nenhuma conversa aqui'}
+              {search ? t('noResultsSearch') : t('noConversationsHere')}
             </p>
             {!search && (
               <p className="text-[11px] text-muted-foreground/60">
-                As conversas aparecerão aqui quando chegarem
+                {t('conversationsWillAppear')}
               </p>
             )}
           </div>

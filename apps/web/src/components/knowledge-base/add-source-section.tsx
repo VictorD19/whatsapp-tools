@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react'
 import { Upload, Globe, Type } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,6 +22,7 @@ export function AddSourceSection({
   onAddUrl,
   onAddText,
 }: AddSourceSectionProps) {
+  const t = useTranslations('knowledgeBases.sources')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [addingUrl, setAddingUrl] = useState(false)
@@ -74,20 +76,20 @@ export function AddSourceSection({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold">Adicionar fonte</h3>
+      <h3 className="text-sm font-semibold">{t('addTitle')}</h3>
       <Tabs defaultValue="file">
         <TabsList>
           <TabsTrigger value="file" className="gap-1.5">
             <Upload className="h-3.5 w-3.5" />
-            Arquivo
+            {t('fileTab')}
           </TabsTrigger>
           <TabsTrigger value="url" className="gap-1.5">
             <Globe className="h-3.5 w-3.5" />
-            URL
+            {t('urlTab')}
           </TabsTrigger>
           <TabsTrigger value="text" className="gap-1.5">
             <Type className="h-3.5 w-3.5" />
-            Texto
+            {t('textTab')}
           </TabsTrigger>
         </TabsList>
 
@@ -107,31 +109,31 @@ export function AddSourceSection({
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
             >
-              {uploading ? 'Enviando...' : 'Selecionar arquivo'}
+              {uploading ? t('uploading') : t('selectFile')}
             </Button>
-            <span className="text-xs text-muted-foreground">PDF, DOCX, TXT ou MD</span>
+            <span className="text-xs text-muted-foreground">{t('fileFormats')}</span>
           </div>
         </TabsContent>
 
         <TabsContent value="url">
           <div className="space-y-3 pt-2">
             <div className="space-y-1.5">
-              <Label htmlFor="source-url-name">Nome</Label>
+              <Label htmlFor="source-url-name">{t('name')}</Label>
               <Input
                 id="source-url-name"
                 value={urlName}
                 onChange={(e) => setUrlName(e.target.value)}
-                placeholder="Ex: Documentacao do produto"
+                placeholder={t('namePlaceholderUrl')}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="source-url">URL</Label>
+              <Label htmlFor="source-url">{t('urlTab')}</Label>
               <Input
                 id="source-url"
                 type="url"
                 value={urlValue}
                 onChange={(e) => setUrlValue(e.target.value)}
-                placeholder="https://exemplo.com/pagina"
+                placeholder={t('urlPlaceholder')}
               />
             </div>
             <Button
@@ -139,7 +141,7 @@ export function AddSourceSection({
               onClick={handleAddUrl}
               disabled={addingUrl || !urlName.trim() || !urlValue.trim()}
             >
-              {addingUrl ? 'Adicionando...' : 'Adicionar URL'}
+              {addingUrl ? t('addingUrl') : t('addUrl')}
             </Button>
           </div>
         </TabsContent>
@@ -147,21 +149,21 @@ export function AddSourceSection({
         <TabsContent value="text">
           <div className="space-y-3 pt-2">
             <div className="space-y-1.5">
-              <Label htmlFor="source-text-name">Nome</Label>
+              <Label htmlFor="source-text-name">{t('name')}</Label>
               <Input
                 id="source-text-name"
                 value={textName}
                 onChange={(e) => setTextName(e.target.value)}
-                placeholder="Ex: FAQ do produto"
+                placeholder={t('namePlaceholderText')}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="source-text-content">Conteudo</Label>
+              <Label htmlFor="source-text-content">{t('content')}</Label>
               <Textarea
                 id="source-text-content"
                 value={textContent}
                 onChange={(e) => setTextContent(e.target.value)}
-                placeholder="Cole o conteudo textual aqui..."
+                placeholder={t('contentPlaceholder')}
                 rows={5}
               />
             </div>
@@ -170,7 +172,7 @@ export function AddSourceSection({
               onClick={handleAddText}
               disabled={addingText || !textName.trim() || !textContent.trim()}
             >
-              {addingText ? 'Adicionando...' : 'Adicionar texto'}
+              {addingText ? t('addingText') : t('addText')}
             </Button>
           </div>
         </TabsContent>

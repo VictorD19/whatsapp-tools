@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
 import { cn } from '@/lib/utils'
 import { DealCard } from './deal-card'
@@ -21,6 +22,8 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanBoardProps) {
+  const t = useTranslations('crm')
+  const tc = useTranslations('common')
   const [lostDialogOpen, setLostDialogOpen] = useState(false)
   const [lostReason, setLostReason] = useState('')
   const [pendingMove, setPendingMove] = useState<{ dealId: string; stageId: string } | null>(null)
@@ -81,7 +84,7 @@ export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanB
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Pipeline total:{' '}
+        {t('pipelineTotal')}{' '}
         <span className="font-semibold text-foreground">
           {formatCurrency(totalValue)}
         </span>
@@ -153,7 +156,7 @@ export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanB
                       {provided.placeholder}
                       {columnDeals.length === 0 && (
                         <div className="flex flex-1 items-center justify-center py-8">
-                          <p className="text-xs text-muted-foreground/60">Sem negócios</p>
+                          <p className="text-xs text-muted-foreground/60">{t('noDealsInStage')}</p>
                         </div>
                       )}
                     </div>
@@ -175,13 +178,13 @@ export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanB
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Marcar como perdido</DialogTitle>
-            <DialogDescription>Informe o motivo da perda (opcional).</DialogDescription>
+            <DialogTitle>{t('markAsLostTitle')}</DialogTitle>
+            <DialogDescription>{t('markAsLostDesc')}</DialogDescription>
           </DialogHeader>
           <Input
             value={lostReason}
             onChange={(e) => setLostReason(e.target.value)}
-            placeholder="Ex: Escolheu concorrente, sem orçamento..."
+            placeholder={t('lostReasonExample')}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleConfirmLost()
             }}
@@ -192,10 +195,10 @@ export function KanbanBoard({ deals, stages, onMoveDeal, onDealSelect }: KanbanB
               setPendingMove(null)
               setLostReason('')
             }}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleConfirmLost}>
-              Confirmar perda
+              {t('confirmLoss')}
             </Button>
           </DialogFooter>
         </DialogContent>

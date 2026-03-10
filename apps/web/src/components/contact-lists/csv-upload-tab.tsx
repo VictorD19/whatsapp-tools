@@ -2,6 +2,7 @@
 
 import React, { useCallback, useRef, useState } from 'react'
 import { Upload, FileText, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -17,9 +18,9 @@ interface CsvUploadTabProps {
 const PHONE_HEADERS = ['phone', 'telefone', 'numero', 'número', 'celular']
 const NAME_HEADERS = ['name', 'nome', 'nombre']
 
-function parseCsvContent(content: string): { rows: CsvRow[]; error?: string } {
+function parseCsvContent(content: string): { rows: CsvRow[]; errorCode?: 'emptyFile' | 'phoneColumnNotFound' } {
   const lines = content.trim().split(/\r?\n/).filter((l) => l.trim())
-  if (lines.length < 2) return { rows: [], error: 'Arquivo vazio ou sem dados' }
+  if (lines.length < 2) return { rows: [], errorCode: 'emptyFile' }
 
   const headerLine = lines[0].toLowerCase().trim()
   const separator = headerLine.includes(';') ? ';' : ','
@@ -27,7 +28,7 @@ function parseCsvContent(content: string): { rows: CsvRow[]; error?: string } {
 
   const phoneIdx = headers.findIndex((h) => PHONE_HEADERS.includes(h))
   if (phoneIdx === -1) {
-    return { rows: [], error: `Coluna "phone" nao encontrada. Aceitos: ${PHONE_HEADERS.join(', ')}` }
+    return { rows: [], errorCode: 'phoneColumnNotFound' }
   }
 
   const nameIdx = headers.findIndex((h) => NAME_HEADERS.includes(h))
@@ -64,6 +65,7 @@ function parseCsvLine(line: string, separator: string): string[] {
 }
 
 export function CsvUploadTab({ onDataChange }: CsvUploadTabProps) {
+  const t = useTranslations('contactLists.csv')
   const [file, setFile] = useState<File | null>(null)
   const [rows, setRows] = useState<CsvRow[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -74,10 +76,13 @@ export function CsvUploadTab({ onDataChange }: CsvUploadTabProps) {
     async (f: File) => {
       setError(null)
       const text = await f.text()
-      const { rows: parsed, error: parseError } = parseCsvContent(text)
+      const { rows: parsed, errorCode } = parseCsvContent(text)
 
-      if (parseError) {
-        setError(parseError)
+      if (errorCode) {
+        const errorMsg = errorCode === 'phoneColumnNotFound'
+          ? t('phoneColumnNotFound', { columns: PHONE_HEADERS.join(', ') })
+          : t(errorCode)
+        setError(errorMsg)
         setFile(null)
         setRows([])
         onDataChange(null, [])
@@ -85,7 +90,7 @@ export function CsvUploadTab({ onDataChange }: CsvUploadTabProps) {
       }
 
       if (parsed.length === 0) {
-        setError('Nenhum contato valido encontrado no arquivo')
+        setError(t('noValidContacts'))
         setFile(null)
         setRows([])
         onDataChange(null, [])
@@ -144,9 +149,9 @@ export function CsvUploadTab({ onDataChange }: CsvUploadTabProps) {
           onDrop={handleDrop}
         >
           <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-          <p className="text-sm font-medium">Arraste um arquivo CSV ou clique para selecionar</p>
+          <p className="text-sm font-medium">{t('dragDrop')}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Aceita .csv e .txt com colunas: phone, name
+            {t('hint')}
           </p>
           <input
             ref={inputRef}
@@ -164,7 +169,7 @@ export function CsvUploadTab({ onDataChange }: CsvUploadTabProps) {
               <FileText className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">{file.name}</span>
               <span className="text-xs text-muted-foreground">
-                ({rows.length} contato{rows.length !== 1 ? 's' : ''})
+                ({rows.length === 1 ? t('contactCount', { count: rows.length }) : t('contactCountPlural', { count: rows.length })})
               </span>
             </div>
             <Button variant="ghost" size="sm" onClick={handleRemove}>
@@ -178,10 +183,10 @@ export function CsvUploadTab({ onDataChange }: CsvUploadTabProps) {
               <thead>
                 <tr className="border-b border-border bg-muted/50">
                   <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground">
-                    Telefone
+                    {t('phoneHeader')}
                   </th>
                   <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground">
-                    Nome
+                    {t('nameHeader')}
                   </th>
                 </tr>
               </thead>
@@ -196,7 +201,7 @@ export function CsvUploadTab({ onDataChange }: CsvUploadTabProps) {
             </table>
             {rows.length > 5 && (
               <div className="px-3 py-2 text-xs text-muted-foreground bg-muted/30 border-t border-border">
-                ... e mais {rows.length - 5} contato{rows.length - 5 !== 1 ? 's' : ''}
+                {rows.length - 5 === 1 ? t('andMore', { count: rows.length - 5 }) : t('andMorePlural', { count: rows.length - 5 })}
               </div>
             )}
           </div>

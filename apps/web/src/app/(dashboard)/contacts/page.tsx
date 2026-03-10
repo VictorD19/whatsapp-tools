@@ -28,10 +28,15 @@ import {
 } from '@/components/ui/dialog'
 import { useContacts, type Contact } from '@/hooks/use-contacts'
 import { useDebounce } from '@/hooks/use-debounce'
+import { useTranslations } from 'next-intl'
 import { cn, getInitials, formatPhone, formatDate } from '@/lib/utils'
 import { toast } from '@/components/ui/toaster'
 
 export default function ContactsPage() {
+  const t = useTranslations('contacts')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
+
   React.useEffect(() => { document.title = 'Contatos | SistemaZapChat' }, [])
 
   const [search, setSearch] = useState('')
@@ -104,7 +109,7 @@ export default function ContactsPage() {
       const message =
         err && typeof err === 'object' && 'message' in err
           ? String((err as { message: string }).message)
-          : 'Erro ao salvar contato'
+          : t('errorSaving')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSubmitting(false)
@@ -120,25 +125,25 @@ export default function ContactsPage() {
       setDeleteOpen(false)
       setDeletingContact(null)
     } catch {
-      toast({ title: 'Erro ao remover contato', variant: 'destructive' })
+      toast({ title: t('errorRemoving'), variant: 'destructive' })
     } finally {
       setSubmitting(false)
     }
   }, [deletingContact, deleteContact])
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Marketing' }, { label: 'Contatos' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.marketing') }, { label: tn('items.contacts') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Contatos</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {meta.total} contato{meta.total !== 1 ? 's' : ''} cadastrado{meta.total !== 1 ? 's' : ''}
+            {meta.total === 1 ? t('contactCount', { count: meta.total }) : t('contactCountPlural', { count: meta.total })}
           </p>
         </div>
         <Button onClick={openCreate}>
           <Plus className="h-4 w-4" />
-          Novo contato
+          {t('new')}
         </Button>
       </div>
 
@@ -146,7 +151,7 @@ export default function ContactsPage() {
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome ou telefone..."
+          placeholder={t('searchByNameOrPhone')}
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           className="pl-9"
@@ -168,13 +173,13 @@ export default function ContactsPage() {
       ) : contacts.length === 0 ? (
         <EmptyState
           icon={UserCircle}
-          title={search ? 'Nenhum contato encontrado' : 'Nenhum contato ainda'}
+          title={search ? t('noContactFound') : t('noContactYet')}
           description={
             search
-              ? 'Tente buscar com outros termos'
-              : 'Contatos são criados automaticamente ao receber mensagens ou adicione manualmente'
+              ? t('tryOtherTerms')
+              : t('contactsAutoCreated')
           }
-          {...(!search && { action: { label: 'Novo contato', onClick: openCreate } })}
+          {...(!search && { action: { label: t('new'), onClick: openCreate } })}
         />
       ) : (
         <>
@@ -183,19 +188,19 @@ export default function ContactsPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/50">
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Contato
+                    {t('contactHeader')}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Telefone
+                    {t('phoneHeader')}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Tags
+                    {t('tagsHeader')}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Criado em
+                    {t('createdAtHeader')}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Acoes
+                    {t('actionsHeader')}
                   </th>
                 </tr>
               </thead>
@@ -212,7 +217,7 @@ export default function ContactsPage() {
                             {c.name ? getInitials(c.name) : '#'}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{c.name || 'Sem nome'}</span>
+                        <span className="font-medium">{c.name || t('noName')}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{formatPhone(c.phone)}</td>
@@ -251,7 +256,7 @@ export default function ContactsPage() {
           {meta.totalPages > 1 && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Pagina {meta.page} de {meta.totalPages}
+                {t('pageOf', { page: meta.page, totalPages: meta.totalPages })}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -261,7 +266,7 @@ export default function ContactsPage() {
                   onClick={() => handlePageChange(meta.page - 1)}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Anterior
+                  {t('previous')}
                 </Button>
                 <Button
                   variant="outline"
@@ -269,7 +274,7 @@ export default function ContactsPage() {
                   disabled={meta.page >= meta.totalPages}
                   onClick={() => handlePageChange(meta.page + 1)}
                 >
-                  Proximo
+                  {t('nextPage')}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -282,16 +287,16 @@ export default function ContactsPage() {
       <Sheet open={formOpen} onOpenChange={setFormOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>{editingContact ? 'Editar contato' : 'Novo contato'}</SheetTitle>
+            <SheetTitle>{editingContact ? t('editContact') : t('newContact')}</SheetTitle>
             <SheetDescription>
               {editingContact
-                ? 'Atualize as informacoes do contato'
-                : 'Adicione um novo contato manualmente'}
+                ? t('editDescription')
+                : t('newDescription')}
             </SheetDescription>
           </SheetHeader>
           <div className="space-y-4 py-6">
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
+              <Label htmlFor="phone">{t('phoneLabel')}</Label>
               <Input
                 id="phone"
                 placeholder="5511999999999"
@@ -300,10 +305,10 @@ export default function ContactsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Nome (opcional)</Label>
+              <Label htmlFor="name">{t('nameOptional')}</Label>
               <Input
                 id="name"
-                placeholder="Nome do contato"
+                placeholder={t('namePlaceholder')}
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
               />
@@ -311,10 +316,10 @@ export default function ContactsPage() {
           </div>
           <SheetFooter>
             <Button variant="outline" onClick={() => setFormOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={!formPhone.trim() || submitting}>
-              {submitting ? 'Salvando...' : editingContact ? 'Salvar' : 'Criar'}
+              {submitting ? t('saving') : editingContact ? tc('save') : tc('create')}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -324,23 +329,21 @@ export default function ContactsPage() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remover contato</DialogTitle>
+            <DialogTitle>{t('removeContact')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja remover{' '}
-              <strong>{deletingContact?.name || deletingContact?.phone}</strong>? Esta acao pode ser
-              revertida.
+              {t('removeConfirmation', { name: deletingContact?.name || deletingContact?.phone || '' })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={submitting}
             >
-              {submitting ? 'Removendo...' : 'Remover'}
+              {submitting ? t('removing') : t('remove')}
             </Button>
           </DialogFooter>
         </DialogContent>

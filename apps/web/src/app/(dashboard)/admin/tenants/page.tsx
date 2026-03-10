@@ -38,7 +38,9 @@ import {
 import { EmptyState } from '@/components/shared/empty-state'
 import { toast } from '@/components/ui/toaster'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
+import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/auth.store'
+import { formatDate } from '@/lib/formatting'
 
 // ── Types ──
 
@@ -96,7 +98,10 @@ function toSlug(value: string): string {
 // ── Component ──
 
 export default function TenantsPage() {
-  React.useEffect(() => { document.title = 'Tenants | SistemaZapChat' }, [])
+  const t = useTranslations('admin.tenants')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
 
   const router = useRouter()
   const { user } = useAuthStore()
@@ -161,7 +166,7 @@ export default function TenantsPage() {
       const res = await apiGet<{ data: PlanOption[] }>('admin/plans/active')
       setActivePlans(res.data)
     } catch {
-      toast({ title: 'Erro ao carregar planos', variant: 'destructive' })
+      toast({ title: t('error.loading'), variant: 'destructive' })
     } finally {
       setLoadingPlans(false)
     }
@@ -182,7 +187,7 @@ export default function TenantsPage() {
       setTenants(res.data)
       setMeta(res.meta)
     } catch {
-      toast({ title: 'Erro ao carregar tenants', variant: 'destructive' })
+      toast({ title: t('error.loading'), variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -228,7 +233,7 @@ export default function TenantsPage() {
   const handleCreate = async () => {
     if (!formName.trim() || !formSlug.trim() || !formPlanId || !formAdminName.trim() || !formAdminEmail.trim() || !formAdminPassword.trim()) return
     if (formAdminPassword.length < 6) {
-      toast({ title: 'Senha deve ter no minimo 6 caracteres', variant: 'destructive' })
+      toast({ title: t('validation.minPassword'), variant: 'destructive' })
       return
     }
     setSaving(true)
@@ -241,11 +246,11 @@ export default function TenantsPage() {
         adminEmail: formAdminEmail.trim(),
         adminPassword: formAdminPassword,
       })
-      toast({ title: 'Tenant criado com sucesso', variant: 'success' })
+      toast({ title: t('success.created'), variant: 'success' })
       setCreateOpen(false)
       fetchTenants(page, debouncedSearch)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao criar tenant'
+      const message = err instanceof Error ? err.message : t('error.creating')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -263,10 +268,10 @@ export default function TenantsPage() {
       setTenants((prev) =>
         prev.map((t) => (t.id === editingTenant.id ? { ...t, ...res.data } : t)),
       )
-      toast({ title: 'Tenant atualizado', variant: 'success' })
+      toast({ title: t('success.updated'), variant: 'success' })
       setEditOpen(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao atualizar tenant'
+      const message = err instanceof Error ? err.message : t('error.updating')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -278,11 +283,11 @@ export default function TenantsPage() {
     setSaving(true)
     try {
       await apiDelete(`admin/tenants/${deletingTenant.id}`)
-      toast({ title: 'Tenant excluido', variant: 'success' })
+      toast({ title: t('success.deleted'), variant: 'success' })
       setDeleteOpen(false)
       fetchTenants(page, debouncedSearch)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao excluir tenant'
+      const message = err instanceof Error ? err.message : t('error.deleting')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -309,7 +314,7 @@ export default function TenantsPage() {
 
   if (loading && tenants.length === 0) {
     return (
-      <PageLayout breadcrumb={[{ label: 'Administração' }, { label: 'Tenants' }]}>
+      <PageLayout breadcrumb={[{ label: tn('groups.admin') }, { label: tn('items.tenants') }]}>
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton className="h-7 w-32" />
@@ -338,18 +343,18 @@ export default function TenantsPage() {
     formAdminPassword.length >= 6
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Administração' }, { label: 'Tenants' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.admin') }, { label: tn('items.tenants') }]}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Tenants</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie as empresas cadastradas na plataforma
+            {t('subtitle')}
           </p>
         </div>
         <Button size="sm" onClick={openCreateDialog}>
           <Plus className="h-4 w-4" />
-          Novo Tenant
+          {t('newTenant')}
         </Button>
       </div>
 
@@ -357,7 +362,7 @@ export default function TenantsPage() {
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome ou slug..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9"
@@ -368,16 +373,16 @@ export default function TenantsPage() {
       {tenants.length === 0 && !loading ? (
         <EmptyState
           icon={Building}
-          title={debouncedSearch ? 'Nenhum tenant encontrado' : 'Nenhum tenant cadastrado'}
+          title={debouncedSearch ? t('emptySearch') : t('empty')}
           description={
             debouncedSearch
-              ? 'Tente buscar com outros termos'
-              : 'Crie o primeiro tenant para comecar'
+              ? tc('noResults')
+              : t('subtitle')
           }
           action={
             debouncedSearch
               ? undefined
-              : { label: 'Criar tenant', onClick: openCreateDialog }
+              : { label: t('newTenant'), onClick: openCreateDialog }
           }
         />
       ) : (
@@ -385,11 +390,11 @@ export default function TenantsPage() {
           <div className="rounded-md border border-border overflow-hidden">
             {/* Table header */}
             <div className="hidden sm:grid sm:grid-cols-[1fr_100px_140px_100px_80px] gap-4 px-4 py-2.5 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              <span>Tenant</span>
-              <span>Plano</span>
-              <span>Recursos</span>
-              <span>Criado em</span>
-              <span className="text-right">Acoes</span>
+              <span>{t('table.tenant')}</span>
+              <span>{t('table.plan')}</span>
+              <span>{t('table.resources')}</span>
+              <span>{t('table.createdAt')}</span>
+              <span className="text-right">{t('table.actions')}</span>
             </div>
 
             {/* Rows */}
@@ -426,7 +431,7 @@ export default function TenantsPage() {
 
                 {/* Created at */}
                 <span className="text-xs text-muted-foreground">
-                  {new Date(tenant.createdAt).toLocaleDateString('pt-BR')}
+                  {formatDate(tenant.createdAt)}
                 </span>
 
                 {/* Actions */}
@@ -456,7 +461,7 @@ export default function TenantsPage() {
           {meta.totalPages > 1 && (
             <div className="flex items-center justify-between pt-2">
               <p className="text-xs text-muted-foreground">
-                {meta.total} {meta.total === 1 ? 'tenant' : 'tenants'}
+                {meta.total} {t('title').toLowerCase()}
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -466,7 +471,7 @@ export default function TenantsPage() {
                   onClick={() => setPage((p) => p - 1)}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Anterior
+                  {t('pagination.previous')}
                 </Button>
                 <span className="text-sm text-muted-foreground">
                   {page} / {meta.totalPages}
@@ -477,7 +482,7 @@ export default function TenantsPage() {
                   disabled={page >= meta.totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
-                  Proximo
+                  {t('pagination.next')}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -490,16 +495,16 @@ export default function TenantsPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Novo Tenant</DialogTitle>
+            <DialogTitle>{t('create.title')}</DialogTitle>
             <DialogDescription>
-              Crie uma nova empresa e seu usuario administrador
+              {t('create.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Company name */}
             <div className="space-y-1.5">
-              <Label htmlFor="create-name">Nome da empresa</Label>
+              <Label htmlFor="create-name">{t('create.companyName')}</Label>
               <Input
                 id="create-name"
                 value={formName}
@@ -511,7 +516,7 @@ export default function TenantsPage() {
 
             {/* Slug */}
             <div className="space-y-1.5">
-              <Label htmlFor="create-slug">Slug</Label>
+              <Label htmlFor="create-slug">{t('create.slug')}</Label>
               <Input
                 id="create-slug"
                 value={formSlug}
@@ -520,32 +525,32 @@ export default function TenantsPage() {
                 maxLength={60}
               />
               <p className="text-[11px] text-muted-foreground">
-                Identificador unico. Apenas letras minusculas, numeros e hifens.
+                {t('create.slugHint')}
               </p>
             </div>
 
             {/* Plan select */}
             <div className="space-y-1.5">
-              <Label>Plano</Label>
+              <Label>{t('create.plan')}</Label>
               {loadingPlans ? (
                 <Skeleton className="h-9 w-full" />
               ) : activePlans.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nenhum plano cadastrado.{' '}
+                  {t('create.noPlan')}{' '}
                   <a href="/admin/plans" className="underline hover:text-foreground">
-                    Criar plano
+                    {t('create.createPlan')}
                   </a>
                 </p>
               ) : (
                 <Select value={formPlanId} onValueChange={setFormPlanId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um plano" />
+                    <SelectValue placeholder={t('create.selectPlan')} />
                   </SelectTrigger>
                   <SelectContent>
                     {activePlans.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
-                        {p.isDefault ? ' (Padrao)' : ''}
+                        {p.isDefault ? ` (${t('default')})` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -556,10 +561,10 @@ export default function TenantsPage() {
             <Separator />
 
             {/* Admin section */}
-            <p className="text-sm font-medium text-muted-foreground">Usuario administrador</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('create.adminSection')}</p>
 
             <div className="space-y-1.5">
-              <Label htmlFor="create-admin-name">Nome do admin</Label>
+              <Label htmlFor="create-admin-name">{t('create.adminName')}</Label>
               <Input
                 id="create-admin-name"
                 value={formAdminName}
@@ -570,7 +575,7 @@ export default function TenantsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="create-admin-email">Email do admin</Label>
+              <Label htmlFor="create-admin-email">{t('create.adminEmail')}</Label>
               <Input
                 id="create-admin-email"
                 type="email"
@@ -581,7 +586,7 @@ export default function TenantsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="create-admin-password">Senha do admin</Label>
+              <Label htmlFor="create-admin-password">{t('create.adminPassword')}</Label>
               <Input
                 id="create-admin-password"
                 type="password"
@@ -595,10 +600,10 @@ export default function TenantsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button onClick={handleCreate} disabled={saving || !createFormValid}>
-              {saving ? 'Criando...' : 'Criar Tenant'}
+              {saving ? t('create.creating') : t('newTenant')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -608,16 +613,15 @@ export default function TenantsPage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Editar Tenant</DialogTitle>
+            <DialogTitle>{t('edit.title')}</DialogTitle>
             <DialogDescription>
-              Altere as informacoes do tenant{' '}
-              <strong>{editingTenant?.name}</strong>
+              {t('edit.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-name">Nome</Label>
+              <Label htmlFor="edit-name">{t('create.companyName')}</Label>
               <Input
                 id="edit-name"
                 value={editName}
@@ -627,26 +631,26 @@ export default function TenantsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Plano</Label>
+              <Label>{t('create.plan')}</Label>
               {loadingPlans ? (
                 <Skeleton className="h-9 w-full" />
               ) : activePlans.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nenhum plano cadastrado.{' '}
+                  {t('create.noPlan')}{' '}
                   <a href="/admin/plans" className="underline hover:text-foreground">
-                    Criar plano
+                    {t('create.createPlan')}
                   </a>
                 </p>
               ) : (
                 <Select value={editPlanId} onValueChange={setEditPlanId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um plano" />
+                    <SelectValue placeholder={t('create.selectPlan')} />
                   </SelectTrigger>
                   <SelectContent>
                     {activePlans.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
-                        {p.isDefault ? ' (Padrao)' : ''}
+                        {p.isDefault ? ` (${t('default')})` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -657,10 +661,10 @@ export default function TenantsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button onClick={handleEdit} disabled={saving || !editName.trim() || !editPlanId}>
-              {saving ? 'Salvando...' : 'Salvar'}
+              {saving ? tc('loading') : tc('save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -670,19 +674,17 @@ export default function TenantsPage() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Excluir tenant</DialogTitle>
+            <DialogTitle>{t('delete.title')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir o tenant{' '}
-              <strong>{deletingTenant?.name}</strong>? Isso desativara o tenant e
-              todos seus dados.
+              {t.rich('delete.description', { name: deletingTenant?.name, strong: (chunks) => <strong>{chunks}</strong> })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              {saving ? 'Excluindo...' : 'Excluir'}
+              {saving ? tc('loading') : tc('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

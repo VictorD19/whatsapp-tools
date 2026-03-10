@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useTranslations } from 'next-intl'
 import { Calendar, Clock, Timer, Users, Radio } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -28,21 +29,22 @@ export function StepConfig({
   onDelayChange,
   onScheduledAtChange,
 }: StepConfigProps) {
+  const t = useTranslations('broadcasts.config')
   return (
     <div className="space-y-5">
       {/* Campaign name */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Nome da campanha *</Label>
+        <Label className="text-sm font-medium">{t('campaignName')}</Label>
         <Input
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
-          placeholder="Ex: Promocao de marco"
+          placeholder={t('campaignNamePlaceholder')}
         />
       </div>
 
       {/* Delay */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Intervalo entre mensagens</Label>
+        <Label className="text-sm font-medium">{t('delayLabel')}</Label>
         <div className="flex items-center gap-2">
           <Timer className="h-4 w-4 text-muted-foreground" />
           <Input
@@ -53,16 +55,16 @@ export function StepConfig({
             onChange={(e) => onDelayChange(Math.max(1, Math.min(120, Number(e.target.value))))}
             className="w-24"
           />
-          <span className="text-sm text-muted-foreground">segundos (1-120)</span>
+          <span className="text-sm text-muted-foreground">{t('delayUnit')}</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Intervalo de espera entre cada mensagem enviada. Valores maiores reduzem o risco de bloqueio.
+          {t('delayDescription')}
         </p>
       </div>
 
       {/* Schedule */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Data/hora de inicio (opcional)</Label>
+        <Label className="text-sm font-medium">{t('scheduleLabel')}</Label>
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <Input
@@ -74,39 +76,39 @@ export function StepConfig({
         </div>
         <p className="text-xs text-muted-foreground">
           {scheduledAt
-            ? 'A campanha sera iniciada automaticamente na data/hora configurada (no fuso horario do tenant).'
-            : 'Deixe vazio para iniciar imediatamente apos a criacao.'}
+            ? t('scheduleActiveDesc')
+            : t('scheduleEmptyDesc')}
         </p>
       </div>
 
       {/* Summary */}
       <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
-        <p className="text-sm font-medium mb-3">Resumo da campanha</p>
+        <p className="text-sm font-medium mb-3">{t('summaryTitle')}</p>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2">
             <Radio className="h-4 w-4 text-green-500" />
-            <span className="text-muted-foreground">Instancias:</span>
+            <span className="text-muted-foreground">{t('summaryInstances')}</span>
             <span className="font-medium">{selectedInstanceCount}</span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-blue-500" />
-            <span className="text-muted-foreground">Listas:</span>
+            <span className="text-muted-foreground">{t('summaryLists')}</span>
             <span className="font-medium">{selectedContactListCount}</span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Destinatarios:</span>
+            <span className="text-muted-foreground">{t('summaryRecipients')}</span>
             <span className="font-medium">~{totalEstimatedRecipients}</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Delay:</span>
+            <span className="text-muted-foreground">{t('summaryDelay')}</span>
             <span className="font-medium">{delay}s</span>
           </div>
         </div>
         {totalEstimatedRecipients > 0 && (
           <p className="text-xs text-muted-foreground pt-2 border-t border-border mt-3">
-            Tempo estimado: ~{Math.ceil((totalEstimatedRecipients * delay) / 60)} minutos
+            {t('estimatedTime', { minutes: Math.ceil((totalEstimatedRecipients * delay) / 60) })}
           </p>
         )}
       </div>

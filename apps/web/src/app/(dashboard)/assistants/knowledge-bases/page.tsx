@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, BookOpen, Pencil, Trash2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -37,7 +38,10 @@ interface ApiResponse<T> {
 const KB_QUERY_KEY = ['knowledge-bases']
 
 export default function KnowledgeBasesPage() {
-  React.useEffect(() => { document.title = 'Bases de Conhecimento | SistemaZapChat' }, [])
+  const t = useTranslations('knowledgeBases')
+  const tc = useTranslations('common')
+  const tn = useTranslations('nav')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
 
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -72,14 +76,14 @@ export default function KnowledgeBasesPage() {
     try {
       if (editingKb) {
         await apiPatch(`knowledge-bases/${editingKb.id}`, data)
-        toast({ title: 'Base de conhecimento atualizada', variant: 'success' })
+        toast({ title: t('success.updated'), variant: 'success' })
       } else {
         await apiPost('knowledge-bases', data)
-        toast({ title: 'Base de conhecimento criada', variant: 'success' })
+        toast({ title: t('success.created'), variant: 'success' })
       }
       queryClient.invalidateQueries({ queryKey: KB_QUERY_KEY })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao salvar'
+      const message = err instanceof Error ? err.message : t('error.creating')
       toast({ title: message, variant: 'destructive' })
       throw err
     }
@@ -91,10 +95,10 @@ export default function KnowledgeBasesPage() {
     try {
       await apiDelete(`knowledge-bases/${deletingKb.id}`)
       queryClient.invalidateQueries({ queryKey: KB_QUERY_KEY })
-      toast({ title: 'Base de conhecimento excluida', variant: 'success' })
+      toast({ title: t('success.deleted'), variant: 'success' })
       setDeleteDialogOpen(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao excluir'
+      const message = err instanceof Error ? err.message : t('error.deleting')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setDeleting(false)
@@ -103,7 +107,7 @@ export default function KnowledgeBasesPage() {
 
   if (isLoading) {
     return (
-      <PageLayout breadcrumb={[{ label: 'Inteligência Artificial' }, { label: 'Bases de Conhecimento' }]}>
+      <PageLayout breadcrumb={[{ label: tn('groups.ai') }, { label: t('breadcrumb') }]}>
         <div className="space-y-2">
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-4 w-64" />
@@ -118,27 +122,26 @@ export default function KnowledgeBasesPage() {
   }
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Inteligência Artificial' }, { label: 'Bases de Conhecimento' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.ai') }, { label: t('breadcrumb') }]}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Bases de Conhecimento</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {knowledgeBases.length}{' '}
-            {knowledgeBases.length === 1 ? 'base cadastrada' : 'bases cadastradas'}
+            {knowledgeBases.length === 1 ? t('count', { count: knowledgeBases.length }) : t('countPlural', { count: knowledgeBases.length })}
           </p>
         </div>
         <Button size="sm" onClick={openCreate}>
           <Plus className="h-4 w-4" />
-          Nova base de conhecimento
+          {t('newButton')}
         </Button>
       </div>
 
       {knowledgeBases.length === 0 ? (
         <EmptyState
           icon={BookOpen}
-          title="Nenhuma base de conhecimento"
-          description="Crie uma base de conhecimento para alimentar seus assistentes com informacoes do seu negocio"
-          action={{ label: 'Criar base', onClick: openCreate }}
+          title={t('empty.title')}
+          description={t('empty.description')}
+          action={{ label: t('empty.action'), onClick: openCreate }}
         />
       ) : (
         <div className="rounded-md border border-border overflow-hidden">
@@ -154,7 +157,7 @@ export default function KnowledgeBasesPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{kb.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {kb._count?.sources ?? 0} {(kb._count?.sources ?? 0) === 1 ? 'fonte' : 'fontes'}
+                  {(kb._count?.sources ?? 0) === 1 ? t('sourceCount', { count: kb._count?.sources ?? 0 }) : t('sourceCountPlural', { count: kb._count?.sources ?? 0 })}
                   {' · '}
                   {formatDate(kb.createdAt)}
                 </p>
@@ -192,19 +195,17 @@ export default function KnowledgeBasesPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Excluir base de conhecimento</DialogTitle>
+            <DialogTitle>{t('delete.title')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir a base{' '}
-              <strong>{deletingKb?.name}</strong>? Todas as fontes serao removidas. Esta acao nao
-              pode ser desfeita.
+              {t.rich('delete.description', { name: deletingKb?.name, strong: (chunks) => <strong>{chunks}</strong> })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Excluindo...' : 'Excluir'}
+              {deleting ? tc('loading') : tc('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
@@ -35,6 +36,7 @@ const defaultMeta: PaginationMeta = { page: 1, limit: 10, total: 0, totalPages: 
 export const CONTACTS_QUERY_KEY = ['contacts']
 
 export function useContacts({ search, page = 1 }: { search?: string; page?: number } = {}) {
+  const t = useTranslations('contacts')
   const queryClient = useQueryClient()
 
   const { data, isLoading, isFetching } = useQuery({
@@ -53,7 +55,7 @@ export function useContacts({ search, page = 1 }: { search?: string; page?: numb
     async (dto: ContactPayload) => {
       const res = await apiPost<{ data: Contact }>('contacts', dto)
       queryClient.invalidateQueries({ queryKey: CONTACTS_QUERY_KEY })
-      toast({ title: 'Contato criado com sucesso', variant: 'success' })
+      toast({ title: t('success.created'), variant: 'success' })
       return res.data
     },
     [queryClient],
@@ -63,7 +65,7 @@ export function useContacts({ search, page = 1 }: { search?: string; page?: numb
     async (id: string, dto: Partial<ContactPayload>) => {
       const res = await apiPatch<{ data: Contact }>(`contacts/${id}`, dto)
       queryClient.invalidateQueries({ queryKey: CONTACTS_QUERY_KEY })
-      toast({ title: 'Contato atualizado com sucesso', variant: 'success' })
+      toast({ title: t('success.updated'), variant: 'success' })
       return res.data
     },
     [queryClient],
@@ -73,7 +75,7 @@ export function useContacts({ search, page = 1 }: { search?: string; page?: numb
     async (id: string) => {
       await apiDelete<{ data: { deleted: boolean } }>(`contacts/${id}`)
       queryClient.invalidateQueries({ queryKey: CONTACTS_QUERY_KEY })
-      toast({ title: 'Contato removido com sucesso', variant: 'success' })
+      toast({ title: t('success.deleted'), variant: 'success' })
     },
     [queryClient],
   )

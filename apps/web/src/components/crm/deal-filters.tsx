@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
@@ -30,6 +31,7 @@ export function DealFilters({
   onSearchChange,
   deals,
 }: DealFiltersProps) {
+  const t = useTranslations('crm')
   const assignees = useMemo(() => {
     const map = new Map<string, string>()
     for (const deal of deals) {
@@ -46,7 +48,7 @@ export function DealFilters({
       {pipelines.length > 1 && (
         <Select value={selectedPipelineId} onValueChange={onPipelineChange}>
           <SelectTrigger className="w-[180px] h-8 text-xs">
-            <SelectValue placeholder="Pipeline" />
+            <SelectValue placeholder={t('pipeline')} />
           </SelectTrigger>
           <SelectContent>
             {pipelines.map((p) => (
@@ -59,10 +61,10 @@ export function DealFilters({
       {/* Assignee filter */}
       <Select value={assigneeId} onValueChange={onAssigneeChange}>
         <SelectTrigger className="w-[160px] h-8 text-xs">
-          <SelectValue placeholder="Atendente" />
+          <SelectValue placeholder={t('assigneeFilter')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos</SelectItem>
+          <SelectItem value="all">{t('allAssignees')}</SelectItem>
           {assignees.map((a) => (
             <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
           ))}
@@ -75,7 +77,7 @@ export function DealFilters({
         <Input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Buscar por nome, título ou telefone..."
+          placeholder={t('searchPlaceholder')}
           className="h-8 pl-8 text-xs"
         />
       </div>

@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete, apiUpload } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
@@ -33,6 +34,7 @@ export function useContactLists({
   search,
   page = 1,
 }: { search?: string; page?: number } = {}) {
+  const t = useTranslations('contactLists')
   const queryClient = useQueryClient()
 
   const { data, isLoading, isFetching } = useQuery({
@@ -60,7 +62,7 @@ export function useContactLists({
         ...(contactIds.length > 0 ? { contactIds } : { phones }),
       })
       queryClient.invalidateQueries({ queryKey: CONTACT_LISTS_QUERY_KEY })
-      toast({ title: 'Lista criada com sucesso', variant: 'success' })
+      toast({ title: t('success.created'), variant: 'success' })
       return res.data
     },
     [queryClient],
@@ -87,7 +89,7 @@ export function useContactLists({
     async (id: string) => {
       await apiDelete<{ data: { deleted: boolean } }>(`contact-lists/${id}`)
       queryClient.invalidateQueries({ queryKey: CONTACT_LISTS_QUERY_KEY })
-      toast({ title: 'Lista removida com sucesso', variant: 'success' })
+      toast({ title: t('success.deleted'), variant: 'success' })
     },
     [queryClient],
   )

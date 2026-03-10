@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTranslations } from 'next-intl'
 import { useInstanceSocket } from '@/hooks/use-instance-socket'
 import { useInstancesStore } from '@/stores/instances.store'
 
@@ -23,6 +24,7 @@ interface QrCodeModalProps {
 }
 
 export function QrCodeModal({ open, onOpenChange, instanceId, onRequestQr }: QrCodeModalProps) {
+  const t = useTranslations('instances')
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [countdown, setCountdown] = useState(QR_TIMEOUT_SECONDS)
   const [loading, setLoading] = useState(false)
@@ -102,9 +104,9 @@ export function QrCodeModal({ open, onOpenChange, instanceId, onRequestQr }: QrC
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Conectar WhatsApp</DialogTitle>
+          <DialogTitle>{t('connectWhatsApp')}</DialogTitle>
           <DialogDescription>
-            Escaneie o QR Code com seu WhatsApp
+            {t('scanQRDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -128,7 +130,7 @@ export function QrCodeModal({ open, onOpenChange, instanceId, onRequestQr }: QrC
           {qrCode && (
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                QR expira em{' '}
+                {t('qrExpiresIn')}{' '}
                 <span className="font-semibold text-foreground">{countdown}s</span>
               </p>
               <div className="mt-2 h-1 w-48 rounded-full bg-muted overflow-hidden">
@@ -142,11 +144,11 @@ export function QrCodeModal({ open, onOpenChange, instanceId, onRequestQr }: QrC
 
           {/* Instructions */}
           <div className="text-xs text-muted-foreground space-y-1 text-center">
-            <p>1. Abra o WhatsApp no celular</p>
-            <p>2. Toque em Mais opcoes ou Configuracoes</p>
-            <p>3. Toque em Aparelhos conectados</p>
-            <p>4. Toque em Conectar um aparelho</p>
-            <p>5. Aponte o celular para este QR Code</p>
+            <p>1. {t('qrInstructions.step1')}</p>
+            <p>2. {t('qrInstructions.step2')}</p>
+            <p>3. {t('qrInstructions.step3')}</p>
+            <p>4. {t('qrInstructions.step4')}</p>
+            <p>5. {t('qrInstructions.step5')}</p>
           </div>
 
           {/* Manual refresh */}
@@ -167,7 +169,7 @@ export function QrCodeModal({ open, onOpenChange, instanceId, onRequestQr }: QrC
                 }
               }}
             >
-              Atualizar QR Code
+              {t('refreshQR')}
             </Button>
           )}
         </div>

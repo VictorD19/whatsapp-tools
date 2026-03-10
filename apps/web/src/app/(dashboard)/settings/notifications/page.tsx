@@ -12,6 +12,7 @@ import {
 import { PageLayout } from '@/components/layout/page-layout'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTranslations } from 'next-intl'
 import { useNotificationsStore, type NotificationPreference } from '@/stores/notifications.store'
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
@@ -34,27 +35,15 @@ type NotificationType =
   | 'DEAL_ASSIGNED'
   | 'GROUP_EXTRACTION_COMPLETED'
 
-const TYPE_LABELS: Record<NotificationType, string> = {
-  NEW_MESSAGE: 'Nova mensagem',
-  CONVERSATION_ASSIGNED: 'Conversa assumida',
-  CONVERSATION_TRANSFERRED: 'Conversa transferida',
-  CONVERSATIONS_IMPORTED: 'Importacao concluida',
-  INSTANCE_CONNECTED: 'Instancia conectada',
-  INSTANCE_DISCONNECTED: 'Instancia desconectada',
-  INSTANCE_BANNED: 'Instancia banida',
-  DEAL_WON: 'Deal ganho',
-  DEAL_LOST: 'Deal perdido',
-  DEAL_ASSIGNED: 'Deal atribuido',
-  GROUP_EXTRACTION_COMPLETED: 'Extracao de grupo concluida',
-}
+// TYPE_LABELS moved inside component to use translations
 
 const PREFERENCE_GROUPS: {
-  label: string
+  labelKey: string
   icon: React.ElementType
   types: NotificationType[]
 }[] = [
   {
-    label: 'Inbox',
+    labelKey: 'groups.inbox',
     icon: MessageSquare,
     types: [
       'NEW_MESSAGE',
@@ -64,24 +53,40 @@ const PREFERENCE_GROUPS: {
     ],
   },
   {
-    label: 'Instancias',
+    labelKey: 'groups.instances',
     icon: Wifi,
     types: ['INSTANCE_CONNECTED', 'INSTANCE_DISCONNECTED', 'INSTANCE_BANNED'],
   },
   {
-    label: 'Deals',
+    labelKey: 'groups.deals',
     icon: Trophy,
     types: ['DEAL_WON', 'DEAL_LOST', 'DEAL_ASSIGNED'],
   },
   {
-    label: 'Grupos',
+    labelKey: 'groups.groups',
     icon: Users,
     types: ['GROUP_EXTRACTION_COMPLETED'],
   },
 ]
 
 export default function NotificationPreferencesPage() {
-  React.useEffect(() => { document.title = 'Preferências de Notificação | SistemaZapChat' }, [])
+  const t = useTranslations('notificationPreferences')
+  const tn = useTranslations('nav')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
+
+  const typeLabels: Record<NotificationType, string> = {
+    NEW_MESSAGE: t('types.NEW_MESSAGE'),
+    CONVERSATION_ASSIGNED: t('types.CONVERSATION_ASSIGNED'),
+    CONVERSATION_TRANSFERRED: t('types.CONVERSATION_TRANSFERRED'),
+    CONVERSATIONS_IMPORTED: t('types.CONVERSATIONS_IMPORTED'),
+    INSTANCE_CONNECTED: t('types.INSTANCE_CONNECTED'),
+    INSTANCE_DISCONNECTED: t('types.INSTANCE_DISCONNECTED'),
+    INSTANCE_BANNED: t('types.INSTANCE_BANNED'),
+    DEAL_WON: t('types.DEAL_WON'),
+    DEAL_LOST: t('types.DEAL_LOST'),
+    DEAL_ASSIGNED: t('types.DEAL_ASSIGNED'),
+    GROUP_EXTRACTION_COMPLETED: t('types.GROUP_EXTRACTION_COMPLETED'),
+  }
 
   const { preferences, setPreferences } = useNotificationsStore()
   const [loading, setLoading] = useState(true)
@@ -150,19 +155,19 @@ export default function NotificationPreferencesPage() {
   )
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Configurações' }, { label: 'Notificações' }]}>
+    <PageLayout breadcrumb={[{ label: tn('groups.settings') }, { label: tn('items.notifications') }]}>
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Preferencias de Notificacao</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Controle como e quando voce deseja ser notificado para cada evento.
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {t('subtitle')}
         </p>
       </div>
 
       {loading ? (
         <div className="space-y-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-6 space-y-4">
+            <div key={i} className="rounded-xl border border-border bg-card p-6 space-y-4">
               <Skeleton className="h-4 w-24" />
               {Array.from({ length: 3 }).map((_, j) => (
                 <div key={j} className="flex items-center justify-between">
@@ -181,26 +186,26 @@ export default function NotificationPreferencesPage() {
           {PREFERENCE_GROUPS.map((group, gi) => {
             const GroupIcon = group.icon
             return (
-              <div key={group.label} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+              <div key={group.label} className="rounded-xl border border-border bg-card overflow-hidden">
                 {/* Group header */}
-                <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                  <GroupIcon className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                    {group.label}
+                <div className="flex items-center gap-2 px-6 py-4 border-b border-border bg-muted/50">
+                  <GroupIcon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    {t(group.labelKey)}
                   </span>
                 </div>
 
                 {/* Column headers */}
-                <div className="flex items-center justify-between px-6 py-2 border-b border-gray-100">
-                  <span className="text-xs text-gray-400 font-medium">Tipo</span>
+                <div className="flex items-center justify-between px-6 py-2 border-b border-border">
+                  <span className="text-xs text-muted-foreground font-medium">{t('columns.type')}</span>
                   <div className="flex items-center gap-8 pr-1">
-                    <span className="text-xs text-gray-400 font-medium w-10 text-center">No app</span>
-                    <span className="text-xs text-gray-400 font-medium w-14 text-center">Browser</span>
+                    <span className="text-xs text-muted-foreground font-medium w-10 text-center">{t('columns.inApp')}</span>
+                    <span className="text-xs text-muted-foreground font-medium w-14 text-center">{t('columns.browser')}</span>
                   </div>
                 </div>
 
                 {/* Preference rows */}
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-border">
                   {group.types.map((type) => {
                     const pref = getPref(type)
                     const inAppKey = `${type}-inApp`
@@ -211,8 +216,8 @@ export default function NotificationPreferencesPage() {
                           {(saving === inAppKey || saving === browserKey) && (
                             <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                           )}
-                          <p className="text-sm font-medium text-gray-800">
-                            {TYPE_LABELS[type]}
+                          <p className="text-sm font-medium text-foreground">
+                            {typeLabels[type]}
                           </p>
                         </div>
                         <div className="flex items-center gap-8 pr-1">
@@ -243,7 +248,7 @@ export default function NotificationPreferencesPage() {
           <div className="flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3">
             <Bell className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700">
-              Para receber notificacoes no browser, seu navegador precisara conceder permissao quando solicitado.
+              {t('browserPermissionWarning')}
             </p>
           </div>
         </div>

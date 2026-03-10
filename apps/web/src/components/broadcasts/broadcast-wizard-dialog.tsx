@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Check } from 'lucide-react'
 import {
   Dialog,
@@ -46,11 +47,7 @@ export interface BroadcastWizardData {
   scheduledAt?: string
 }
 
-const steps = [
-  { number: 1, label: 'Destinatarios' },
-  { number: 2, label: 'Mensagem' },
-  { number: 3, label: 'Configuracoes' },
-]
+const stepKeys = ['steps.recipients', 'steps.message', 'steps.settings'] as const
 
 export function BroadcastWizardDialog({
   open,
@@ -60,6 +57,8 @@ export function BroadcastWizardDialog({
   onSubmit,
   editData,
 }: BroadcastWizardDialogProps) {
+  const t = useTranslations('broadcasts')
+  const tc = useTranslations('common')
   const [currentStep, setCurrentStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
 
@@ -156,45 +155,48 @@ export function BroadcastWizardDialog({
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editData ? 'Editar campanha' : 'Nova campanha'}</DialogTitle>
+          <DialogTitle>{editData ? t('edit') : t('new')}</DialogTitle>
           <DialogDescription>
-            {editData ? 'Edite as configurações da campanha' : 'Configure e inicie um disparo em massa'}
+            {editData ? t('editDescription') : t('newDescription')}
           </DialogDescription>
         </DialogHeader>
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 py-2">
-          {steps.map((step, idx) => (
-            <React.Fragment key={step.number}>
+          {stepKeys.map((key, idx) => {
+            const stepNumber = idx + 1
+            return (
+            <React.Fragment key={key}>
               {idx > 0 && (
                 <div
                   className={`h-px flex-1 ${
-                    currentStep > step.number - 1 ? 'bg-primary-500' : 'bg-border'
+                    currentStep > idx ? 'bg-primary-500' : 'bg-border'
                   }`}
                 />
               )}
               <button
                 type="button"
                 onClick={() => {
-                  if (step.number < currentStep) setCurrentStep(step.number)
+                  if (stepNumber < currentStep) setCurrentStep(stepNumber)
                 }}
                 className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  currentStep === step.number
+                  currentStep === stepNumber
                     ? 'bg-primary-500 text-white'
-                    : currentStep > step.number
+                    : currentStep > stepNumber
                       ? 'bg-primary-500/10 text-primary-600'
                       : 'bg-muted text-muted-foreground'
                 }`}
               >
-                {currentStep > step.number ? (
+                {currentStep > stepNumber ? (
                   <Check className="h-3 w-3" />
                 ) : (
-                  <span>{step.number}</span>
+                  <span>{stepNumber}</span>
                 )}
-                {step.label}
+                {t(key)}
               </button>
             </React.Fragment>
-          ))}
+            )
+          })}
         </div>
 
         {/* Step content */}
@@ -237,28 +239,28 @@ export function BroadcastWizardDialog({
               onClick={() => setCurrentStep((s) => s - 1)}
               disabled={submitting}
             >
-              Voltar
+              {tc('back')}
             </Button>
           )}
           <Button variant="outline" onClick={handleClose} disabled={submitting}>
-            Cancelar
+            {tc('cancel')}
           </Button>
           {currentStep < 3 ? (
             <Button
               onClick={() => setCurrentStep((s) => s + 1)}
               disabled={currentStep === 1 ? !canProceedStep1 : !canProceedStep2}
             >
-              Proximo
+              {t('nextStep')}
             </Button>
           ) : (
             <Button onClick={handleSubmit} disabled={!canProceedStep3 || submitting}>
               {submitting
-                ? (editData ? 'Salvando...' : 'Criando...')
+                ? (editData ? t('saving') : t('creating'))
                 : editData
-                  ? 'Salvar campanha'
+                  ? t('saveCampaign')
                   : scheduledAt
-                    ? 'Agendar campanha'
-                    : 'Iniciar campanha'}
+                    ? t('scheduleCampaign')
+                    : t('startCampaign')}
             </Button>
           )}
         </DialogFooter>

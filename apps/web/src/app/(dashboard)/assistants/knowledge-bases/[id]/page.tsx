@@ -3,6 +3,7 @@
 import React from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, BookOpen } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SourceList } from '@/components/knowledge-base/source-list'
@@ -36,7 +37,8 @@ interface ApiResponse<T> {
 }
 
 export default function KnowledgeBaseDetailPage() {
-  React.useEffect(() => { document.title = 'Base de Conhecimento | SistemaZapChat' }, [])
+  const t = useTranslations('knowledgeBases')
+  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
 
   const params = useParams<{ id: string }>()
   const router = useRouter()
@@ -66,10 +68,10 @@ export default function KnowledgeBaseDetailPage() {
   const handleUploadFile = async (formData: FormData) => {
     try {
       await apiUpload(`knowledge-bases/${kbId}/sources/file`, formData)
-      toast({ title: 'Arquivo enviado', variant: 'success' })
+      toast({ title: t('success.fileUploaded'), variant: 'success' })
       invalidate()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao enviar arquivo'
+      const message = err instanceof Error ? err.message : t('error.uploadingFile')
       toast({ title: message, variant: 'destructive' })
     }
   }
@@ -77,10 +79,10 @@ export default function KnowledgeBaseDetailPage() {
   const handleAddUrl = async (data: { name: string; originalUrl: string }) => {
     try {
       await apiPost(`knowledge-bases/${kbId}/sources/url`, data)
-      toast({ title: 'URL adicionada', variant: 'success' })
+      toast({ title: t('success.urlAdded'), variant: 'success' })
       invalidate()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao adicionar URL'
+      const message = err instanceof Error ? err.message : t('error.addingUrl')
       toast({ title: message, variant: 'destructive' })
     }
   }
@@ -88,10 +90,10 @@ export default function KnowledgeBaseDetailPage() {
   const handleAddText = async (data: { name: string; content: string }) => {
     try {
       await apiPost(`knowledge-bases/${kbId}/sources/text`, data)
-      toast({ title: 'Texto adicionado', variant: 'success' })
+      toast({ title: t('success.textAdded'), variant: 'success' })
       invalidate()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao adicionar texto'
+      const message = err instanceof Error ? err.message : t('error.addingText')
       toast({ title: message, variant: 'destructive' })
     }
   }
@@ -99,10 +101,10 @@ export default function KnowledgeBaseDetailPage() {
   const handleDeleteSource = async (sourceId: string) => {
     try {
       await apiDelete(`knowledge-bases/${kbId}/sources/${sourceId}`)
-      toast({ title: 'Fonte excluida', variant: 'success' })
+      toast({ title: t('success.sourceDeleted'), variant: 'success' })
       invalidate()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao excluir fonte'
+      const message = err instanceof Error ? err.message : t('error.deletingSource')
       toast({ title: message, variant: 'destructive' })
     }
   }
@@ -110,10 +112,10 @@ export default function KnowledgeBaseDetailPage() {
   const handleReingest = async (sourceId: string) => {
     try {
       await apiPost(`knowledge-bases/${kbId}/sources/${sourceId}/reingest`, {})
-      toast({ title: 'Re-ingestao iniciada', variant: 'success' })
+      toast({ title: t('success.reingestStarted'), variant: 'success' })
       invalidate()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao re-ingerir'
+      const message = err instanceof Error ? err.message : t('error.reingesting')
       toast({ title: message, variant: 'destructive' })
     }
   }
@@ -135,7 +137,7 @@ export default function KnowledgeBaseDetailPage() {
   if (!kb) {
     return (
       <div className="p-6">
-        <p className="text-sm text-muted-foreground">Base de conhecimento nao encontrada.</p>
+        <p className="text-sm text-muted-foreground">{t('notFound')}</p>
       </div>
     )
   }
@@ -156,7 +158,7 @@ export default function KnowledgeBaseDetailPage() {
           className="hover:text-foreground transition-colors"
           onClick={() => router.push('/assistants/knowledge-bases')}
         >
-          Bases de Conhecimento
+          {t('breadcrumb')}
         </button>
         <span>/</span>
         <span className="text-foreground font-medium">{kb.name}</span>
@@ -180,7 +182,7 @@ export default function KnowledgeBaseDetailPage() {
       {/* Sources */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">
-          Fontes ({kb.sources?.length ?? 0})
+          {t('sourcesLabel', { count: kb.sources?.length ?? 0 })}
         </h2>
         <SourceList
           sources={kb.sources ?? []}

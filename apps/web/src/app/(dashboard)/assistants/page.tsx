@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
 import { AssistantCard } from '@/components/assistants/assistant-card'
 import { DeleteAssistantDialog } from '@/components/assistants/delete-assistant-dialog'
+import { useTranslations } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiDelete } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
@@ -18,6 +19,7 @@ import type { Assistant, ApiResponse } from '@/components/assistants/types'
 const ASSISTANTS_QUERY_KEY = ['assistants']
 
 export default function AssistantsPage() {
+  const t = useTranslations('assistants')
   React.useEffect(() => { document.title = 'Assistentes | SistemaZapChat' }, [])
 
   const router = useRouter()
@@ -52,10 +54,10 @@ export default function AssistantsPage() {
     try {
       await apiDelete(`assistants/${deletingAssistant.id}`)
       queryClient.invalidateQueries({ queryKey: ASSISTANTS_QUERY_KEY })
-      toast({ title: 'Assistente excluído', variant: 'success' })
+      toast({ title: t('success.deleted'), variant: 'success' })
       setDeleteDialogOpen(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao excluir assistente'
+      const message = err instanceof Error ? err.message : t('error.deleting')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setDeleting(false)
@@ -63,14 +65,14 @@ export default function AssistantsPage() {
   }, [deletingAssistant, queryClient])
 
   return (
-    <PageLayout breadcrumb={[{ label: 'Inteligência Artificial' }, { label: 'Assistentes' }]}>
+    <PageLayout breadcrumb={[{ label: t('aiBreadcrumb') }, { label: t('breadcrumb') }]}>
         {/* Toolbar */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 flex-1 max-w-md">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
-                placeholder="Busque por assistentes..."
+                placeholder={t('searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -84,7 +86,7 @@ export default function AssistantsPage() {
           <div className="ml-auto">
             <Button onClick={() => router.push('/assistants/new')}>
               <Plus className="h-4 w-4" />
-              Adicionar novo
+              {t('addNew')}
             </Button>
           </div>
         </div>
@@ -99,14 +101,14 @@ export default function AssistantsPage() {
         ) : filtered.length === 0 ? (
           search ? (
             <div className="py-16 text-center text-sm text-muted-foreground">
-              Nenhum assistente encontrado para &quot;{search}&quot;
+              {t('noResults', { search })}
             </div>
           ) : (
             <EmptyState
               icon={Bot}
-              title="Nenhum assistente configurado"
-              description="Crie um assistente de IA para automatizar o atendimento via WhatsApp"
-              action={{ label: 'Criar assistente', onClick: () => router.push('/assistants/new') }}
+              title={t('empty.title')}
+              description={t('empty.description')}
+              action={{ label: t('empty.action'), onClick: () => router.push('/assistants/new') }}
             />
           )
         ) : (

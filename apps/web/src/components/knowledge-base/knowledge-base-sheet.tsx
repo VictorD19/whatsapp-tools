@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,6 +29,8 @@ interface KnowledgeBaseSheetProps {
 }
 
 export function KnowledgeBaseSheet({ open, onClose, onSave, editingKb }: KnowledgeBaseSheetProps) {
+  const t = useTranslations('knowledgeBases')
+  const tc = useTranslations('common')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
@@ -57,41 +60,39 @@ export function KnowledgeBaseSheet({ open, onClose, onSave, editingKb }: Knowled
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>{editingKb ? 'Editar base de conhecimento' : 'Nova base de conhecimento'}</SheetTitle>
+          <SheetTitle>{editingKb ? t('sheet.editTitle') : t('sheet.newTitle')}</SheetTitle>
           <SheetDescription>
-            {editingKb
-              ? 'Altere as informacoes da base de conhecimento'
-              : 'Preencha os dados para criar uma nova base de conhecimento'}
+            {editingKb ? t('sheet.editDescription') : t('sheet.newDescription')}
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-1.5">
-            <Label htmlFor="kb-name">Nome</Label>
+            <Label htmlFor="kb-name">{t('fields.name')}</Label>
             <Input
               id="kb-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Manual do produto"
+              placeholder={t('fields.namePlaceholder')}
               maxLength={100}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="kb-description">Descricao (opcional)</Label>
+            <Label htmlFor="kb-description">{t('fields.description')}</Label>
             <Textarea
               id="kb-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva o conteudo desta base de conhecimento"
+              placeholder={t('fields.descriptionPlaceholder')}
               rows={3}
             />
           </div>
         </div>
         <SheetFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancelar
+            {tc('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={saving || !name.trim()}>
-            {saving ? 'Salvando...' : editingKb ? 'Salvar' : 'Criar'}
+            {saving ? tc('loading') : editingKb ? tc('save') : tc('create')}
           </Button>
         </SheetFooter>
       </SheetContent>

@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { apiGet } from '@/lib/api'
 import { useInboxStore, type Conversation, type InboxTab } from '@/stores/inbox.store'
 import { toast } from '@/components/ui/toaster'
@@ -15,6 +16,7 @@ function tabToFilters(tab: InboxTab) {
 }
 
 export function useConversations() {
+  const t = useTranslations('inbox')
   const {
     setConversations,
     appendConversations,
@@ -41,7 +43,7 @@ export function useConversations() {
         setConversations(res.data, pagination)
         setTabCount(tab, res.meta.total)
       } catch {
-        toast({ title: 'Erro ao carregar conversas', variant: 'destructive' })
+        toast({ title: t('errorLoadingConversations'), variant: 'destructive' })
       } finally {
         setLoadingConversations(false)
       }
@@ -69,7 +71,7 @@ export function useConversations() {
         }
         appendConversations(res.data, pagination)
       } catch {
-        toast({ title: 'Erro ao carregar mais conversas', variant: 'destructive' })
+        toast({ title: t('errorLoadingMore'), variant: 'destructive' })
       } finally {
         setLoadingMoreConversations(false)
       }

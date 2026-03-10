@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -15,12 +16,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
 
-const nameSchema = z
-  .string()
-  .min(2, 'Nome deve ter pelo menos 2 caracteres')
-  .max(50, 'Nome deve ter no maximo 50 caracteres')
-  .regex(/^[a-zA-Z0-9_-]+$/, 'Apenas letras, numeros, _ ou -')
-
 interface CreateInstanceModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -28,6 +23,15 @@ interface CreateInstanceModalProps {
 }
 
 export function CreateInstanceModal({ open, onOpenChange, onCreate }: CreateInstanceModalProps) {
+  const t = useTranslations('instances')
+  const tc = useTranslations('common')
+
+  const nameSchema = z
+    .string()
+    .min(2, t('createModal.minChars'))
+    .max(50, t('createModal.maxChars'))
+    .regex(/^[a-zA-Z0-9_-]+$/, t('createModal.onlyAlphanumeric'))
+
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -53,7 +57,7 @@ export function CreateInstanceModal({ open, onOpenChange, onCreate }: CreateInst
       await onCreate(name)
       handleClose()
     } catch {
-      toast({ title: 'Erro ao criar instancia', variant: 'destructive' })
+      toast({ title: t('error.creating'), variant: 'destructive' })
     } finally {
       setSubmitting(false)
     }
@@ -63,14 +67,14 @@ export function CreateInstanceModal({ open, onOpenChange, onCreate }: CreateInst
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Nova instancia WhatsApp</DialogTitle>
+          <DialogTitle>{t('createModal.title')}</DialogTitle>
           <DialogDescription>
-            Escolha um nome para identificar esta conexao.
+            {t('createModal.description')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="instance-name">Nome</Label>
+            <Label htmlFor="instance-name">{t('createModal.nameLabel')}</Label>
             <Input
               id="instance-name"
               value={name}
@@ -78,17 +82,17 @@ export function CreateInstanceModal({ open, onOpenChange, onCreate }: CreateInst
                 setName(e.target.value)
                 setError('')
               }}
-              placeholder="ex: vendas-principal"
+              placeholder={t('createModal.namePlaceholder')}
               autoFocus
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
           <DialogFooter className="mt-4">
             <Button type="button" variant="outline" onClick={handleClose} disabled={submitting}>
-              Cancelar
+              {tc('cancel')}
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting ? 'Criando...' : 'Criar instancia'}
+              {submitting ? t('createModal.creating') : t('createModal.createButton')}
             </Button>
           </DialogFooter>
         </form>

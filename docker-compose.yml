@@ -43,6 +43,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
       MINIO_PUBLIC_URL: http://localhost:9000
       MINIO_FORCE_PATH_STYLE: "true"
+      CORS_ORIGINS: http://localhost:3000
     depends_on:
       postgres:
         condition: service_healthy

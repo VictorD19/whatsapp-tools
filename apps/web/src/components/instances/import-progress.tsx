@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslations } from 'next-intl'
 import type { ImportProgress } from '@/stores/instances.store'
 
 interface ImportProgressBarProps {
@@ -6,15 +7,15 @@ interface ImportProgressBarProps {
 }
 
 export function ImportProgressBar({ progress }: ImportProgressBarProps) {
+  const t = useTranslations('instances.import')
   if (!progress.importing) return null
 
-  // Ainda aguardando import:started — mostra estado de busca
   if (progress.total === 0) {
     return (
       <div className="mt-3 space-y-1.5">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <div className="h-3 w-3 rounded-full border-2 border-primary-500 border-t-transparent animate-spin" />
-          <span>Buscando conversas...</span>
+          <span>{t('searching')}</span>
         </div>
       </div>
     )
@@ -26,8 +27,8 @@ export function ImportProgressBar({ progress }: ImportProgressBarProps) {
   return (
     <div className="mt-3 space-y-1.5">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>Importando conversas...</span>
-        <span>{processed} de {progress.total}</span>
+        <span>{t('importing')}</span>
+        <span>{processed} {t('of')} {progress.total}</span>
       </div>
       <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
         <div

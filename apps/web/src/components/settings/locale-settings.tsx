@@ -16,6 +16,7 @@ import {
 import { toast } from '@/components/ui/toaster'
 import { useLocaleStore } from '@/stores/locale.store'
 import { apiPatch } from '@/lib/api'
+import { useTranslations } from 'next-intl'
 
 const LOCALES = [
   { value: 'pt-BR', label: 'Português (Brasil)' },
@@ -57,6 +58,7 @@ const TIMEZONES = [
 
 /** Content-only (no Card wrapper) — used in the redesigned settings page */
 export function LocaleSettingsContent() {
+  const t = useTranslations('settings.locale')
   const { locale, timezone, currency, setLocaleSettings } = useLocaleStore()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -69,9 +71,9 @@ export function LocaleSettingsContent() {
       setLocaleSettings(form)
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
-      toast({ title: 'Configurações salvas', description: 'Idioma e região atualizados.', variant: 'success' })
+      toast({ title: t('savedToast'), description: t('savedDescription'), variant: 'success' })
     } catch {
-      toast({ title: 'Erro', description: 'Não foi possível salvar as configurações.', variant: 'destructive' })
+      toast({ title: t('errorSaving'), variant: 'destructive' })
     } finally {
       setSaving(false)
     }
@@ -81,7 +83,7 @@ export function LocaleSettingsContent() {
     <div className="space-y-5">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Idioma</Label>
+          <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t('language')}</Label>
           <Select value={form.locale} onValueChange={(v) => setForm((f) => ({ ...f, locale: v }))}>
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -95,7 +97,7 @@ export function LocaleSettingsContent() {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Fuso horário</Label>
+          <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t('timezone')}</Label>
           <Select value={form.timezone} onValueChange={(v) => setForm((f) => ({ ...f, timezone: v }))}>
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -109,7 +111,7 @@ export function LocaleSettingsContent() {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Moeda</Label>
+          <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t('currency')}</Label>
           <Select value={form.currency} onValueChange={(v) => setForm((f) => ({ ...f, currency: v }))}>
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -126,11 +128,11 @@ export function LocaleSettingsContent() {
       <div className="flex justify-end pt-1">
         <Button size="sm" onClick={handleSave} disabled={saving || saved} className="min-w-[130px]">
           {saving ? (
-            <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Salvando…</>
+            <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{t('saving')}</>
           ) : saved ? (
-            <><Check className="h-3.5 w-3.5 mr-1.5" />Salvo!</>
+            <><Check className="h-3.5 w-3.5 mr-1.5" />{t('saved')}</>
           ) : (
-            'Salvar configurações'
+            t('saveButton')
           )}
         </Button>
       </div>
@@ -140,14 +142,15 @@ export function LocaleSettingsContent() {
 
 /** Legacy Card wrapper — kept for backwards compatibility */
 export function LocaleSettings() {
+  const t = useTranslations('settings.locale')
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
           <Globe className="h-5 w-5 text-primary-500" />
           <div>
-            <CardTitle className="text-base">Idioma e Região</CardTitle>
-            <CardDescription>Configure idioma, fuso horário e moeda</CardDescription>
+            <CardTitle className="text-base">{t('title')}</CardTitle>
+            <CardDescription>{t('description')}</CardDescription>
           </div>
         </div>
       </CardHeader>

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiDelete, apiUpload, apiUploadPut } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
@@ -65,6 +66,7 @@ interface CreateBroadcastPayload {
 }
 
 export function useBroadcasts() {
+  const t = useTranslations('broadcasts')
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([])
   const [initialLoading, setInitialLoading] = useState(true)
   const [fetching, setFetching] = useState(false)
@@ -91,7 +93,7 @@ export function useBroadcasts() {
         setBroadcasts(res.data)
         setMeta(res.meta)
       } catch {
-        toast({ title: 'Erro ao carregar campanhas', variant: 'destructive' })
+        toast({ title: t('error.loading'), variant: 'destructive' })
       } finally {
         setFetching(false)
         if (!hasFetched.current) {
@@ -143,10 +145,10 @@ export function useBroadcasts() {
 
       const res = await apiUpload<{ data: Broadcast }>('broadcasts', formData)
       queryClient.invalidateQueries({ queryKey: USAGE_QUERY_KEY })
-      toast({ title: 'Campanha criada com sucesso', variant: 'success' })
+      toast({ title: t('success.created'), variant: 'success' })
       return res.data
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao criar campanha'
+      const message = err instanceof Error ? err.message : t('error.creating')
       toast({ title: message, variant: 'destructive' })
       throw err
     }
@@ -187,10 +189,10 @@ export function useBroadcasts() {
       }
 
       const res = await apiUploadPut<{ data: Broadcast }>(`broadcasts/${id}`, formData)
-      toast({ title: 'Campanha atualizada com sucesso', variant: 'success' })
+      toast({ title: t('success.updated'), variant: 'success' })
       return res.data
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao atualizar campanha'
+      const message = err instanceof Error ? err.message : t('error.updating')
       toast({ title: message, variant: 'destructive' })
       throw err
     }
@@ -202,7 +204,7 @@ export function useBroadcasts() {
     setBroadcasts((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status: 'PAUSED' as const } : b)),
     )
-    toast({ title: 'Campanha pausada', variant: 'info' })
+    toast({ title: t('success.paused'), variant: 'info' })
   }, [])
 
   const resumeBroadcast = useCallback(async (id: string) => {
@@ -211,7 +213,7 @@ export function useBroadcasts() {
     setBroadcasts((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status: 'RUNNING' as const } : b)),
     )
-    toast({ title: 'Campanha retomada', variant: 'info' })
+    toast({ title: t('success.resumed'), variant: 'info' })
   }, [])
 
   const cancelBroadcast = useCallback(async (id: string) => {
@@ -220,13 +222,13 @@ export function useBroadcasts() {
     setBroadcasts((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status: 'CANCELLED' as const } : b)),
     )
-    toast({ title: 'Campanha cancelada', variant: 'warning' })
+    toast({ title: t('success.cancelled'), variant: 'warning' })
   }, [])
 
   const deleteBroadcast = useCallback(async (id: string) => {
     await apiDelete(`broadcasts/${id}`)
     setBroadcasts((prev) => prev.filter((b) => b.id !== id))
-    toast({ title: 'Campanha removida', variant: 'success' })
+    toast({ title: t('success.deleted'), variant: 'success' })
   }, [])
 
   const updateBroadcastProgress = useCallback(
