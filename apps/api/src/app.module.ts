@@ -19,6 +19,7 @@ import { BroadcastsModule } from './modules/broadcasts/broadcasts.module'
 import { AiToolsModule } from './modules/ai-tools/ai-tools.module'
 import { AssistantsModule } from './modules/assistants/assistants.module'
 import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.module'
+import { HealthModule } from './modules/health/health.module'
 // import { CrmModule } from './modules/crm/crm.module'
 
 @Module({
@@ -41,6 +42,7 @@ import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.mod
     AiToolsModule,
     AssistantsModule,
     KnowledgeBaseModule,
+    HealthModule,
     // CrmModule,
   ],
 })

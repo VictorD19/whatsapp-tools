@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { PrismaService } from './database/prisma.service'
 import { RedisService } from './redis/redis.service'
 import { LoggerService } from './logger/logger.service'
@@ -16,12 +17,16 @@ import { TenantGuard } from './guards/tenant.guard'
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     QueueModule,
+    ThrottlerModule.forRoot([
+      { ttl: 60_000, limit: 120 },  // 120 req/min global
+    ]),
   ],
   providers: [
     PrismaService,
     RedisService,
     LoggerService,
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },

@@ -46,15 +46,22 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy built output
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/package.json ./
-
-# Copy all node_modules (includes pnpm symlinks + Prisma generated client)
+# Copy pnpm store (packages live here, referenced by symlinks)
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copy Prisma schema (needed for runtime introspection)
-COPY --from=builder /app/packages/database/prisma ./prisma
+# Copy app-level node_modules (contains symlinks into the pnpm store above)
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+
+# Copy built dist and package.json
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+
+# Copy Prisma schema (needed for migrations)
+COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
+
+# Copy and configure entrypoint
+COPY --from=builder /app/apps/api/entrypoint.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
 
 EXPOSE 3001
-CMD ["node", "dist/main"]
+ENTRYPOINT ["sh", "entrypoint.sh"]
