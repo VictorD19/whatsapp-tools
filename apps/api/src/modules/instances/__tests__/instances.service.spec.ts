@@ -303,14 +303,13 @@ describe('InstancesService', () => {
       expect(repository.softDelete).toHaveBeenCalledWith(tenantId, 'inst-1')
     })
 
-    it('should soft-delete even if Evolution delete fails', async () => {
+    it('should throw AppException when Evolution delete fails', async () => {
       repository.findById.mockResolvedValue(mockInstance)
       whatsapp.deleteInstance.mockRejectedValue(new Error('Not found'))
-      repository.softDelete.mockResolvedValue({ count: 1 })
 
-      await service.remove(tenantId, 'inst-1')
+      await expect(service.remove(tenantId, 'inst-1')).rejects.toThrow('App Exception')
 
-      expect(repository.softDelete).toHaveBeenCalledWith(tenantId, 'inst-1')
+      expect(repository.softDelete).not.toHaveBeenCalled()
     })
   })
 })

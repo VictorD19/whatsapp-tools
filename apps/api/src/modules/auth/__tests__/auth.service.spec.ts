@@ -272,7 +272,7 @@ describe('AuthService', () => {
         expiresIn: '15m',
       })
       expect(jwt.sign).toHaveBeenNthCalledWith(2, expectedPayload, {
-        secret: undefined,
+        secret: process.env.JWT_REFRESH_SECRET,
         expiresIn: '7d',
       })
     })

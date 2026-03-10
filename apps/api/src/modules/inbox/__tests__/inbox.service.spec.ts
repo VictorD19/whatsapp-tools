@@ -9,6 +9,8 @@ import { StorageService } from '@modules/storage/storage.service'
 import { LoggerService } from '@core/logger/logger.service'
 import { DealService } from '@modules/deal/deal.service'
 import { NotificationsService } from '@modules/notifications/notifications.service'
+import { ContactsService } from '@modules/contacts/contacts.service'
+import { TenantsService } from '@modules/tenants/tenants.service'
 import { AppException } from '@core/errors/app.exception'
 
 describe('InboxService', () => {
@@ -117,6 +119,8 @@ describe('InboxService', () => {
         { provide: DealService, useValue: { findOrCreateForContact: jest.fn() } },
         { provide: LoggerService, useValue: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } },
         { provide: NotificationsService, useValue: { dispatch: jest.fn() } },
+        { provide: ContactsService, useValue: { findOrCreate: jest.fn(), findById: jest.fn() } },
+        { provide: TenantsService, useValue: { findById: jest.fn() } },
       ],
     }).compile()
 
