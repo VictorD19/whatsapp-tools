@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { useNotificationsStore } from '@/stores/notifications.store'
 import { useNotificationsSocket } from '@/hooks/use-notifications-socket'
@@ -26,6 +27,7 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick }: TopbarProps) {
   const { theme, setTheme } = useTheme()
+  const router = useRouter()
   const { user, clearAuth } = useAuthStore()
   const tNav = useTranslations('nav')
   const [mounted, setMounted] = React.useState(false)
@@ -139,7 +141,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="flex items-center gap-2 px-2.5 py-2 text-sm text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-600 cursor-pointer"
-                onClick={() => clearAuth()}
+                onClick={() => { clearAuth(); router.push('/login') }}
               >
                 <LogOut className="h-4 w-4" />
                 {tNav('user.logout')}
