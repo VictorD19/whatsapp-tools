@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Type, ImageIcon, VideoIcon, FileAudio, FileText, Plus, Trash2,
   Upload, X, File, Pencil,
@@ -32,16 +33,16 @@ interface StepMessageContentProps {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const messageTypes: Array<{
+const messageTypeDefs: Array<{
   type: VariationMessageType
-  label: string
+  labelKey: string
   icon: React.ElementType
 }> = [
-  { type: 'TEXT', label: 'Texto', icon: Type },
-  { type: 'IMAGE', label: 'Imagem', icon: ImageIcon },
-  { type: 'VIDEO', label: 'Video', icon: VideoIcon },
-  { type: 'AUDIO', label: 'Audio', icon: FileAudio },
-  { type: 'DOCUMENT', label: 'Documento', icon: FileText },
+  { type: 'TEXT', labelKey: 'messageType.text', icon: Type },
+  { type: 'IMAGE', labelKey: 'messageType.image', icon: ImageIcon },
+  { type: 'VIDEO', labelKey: 'messageType.video', icon: VideoIcon },
+  { type: 'AUDIO', labelKey: 'messageType.audio', icon: FileAudio },
+  { type: 'DOCUMENT', labelKey: 'messageType.document', icon: FileText },
 ]
 
 const acceptByType: Record<string, string> = {
@@ -77,8 +78,12 @@ function typeIcon(type: VariationMessageType) {
   }
 }
 
-function typeLabel(type: VariationMessageType) {
-  return messageTypes.find((t) => t.type === type)?.label ?? type
+function useTypeLabel() {
+  const t = useTranslations('broadcasts')
+  return (type: VariationMessageType) => {
+    const def = messageTypeDefs.find((d) => d.type === type)
+    return def ? t(def.labelKey) : type
+  }
 }
 
 // ─── Variation Modal ─────────────────────────────────────────────────────────
@@ -94,6 +99,8 @@ function VariationModal({
   onSave: (v: BroadcastVariation) => void
   onClose: () => void
 }) {
+  const t = useTranslations('broadcasts')
+  const tc = useTranslations('common')
   const isEditing = !!initial
   const [msgType, setMsgType] = useState<VariationMessageType>(initial?.messageType ?? 'TEXT')
   const [text, setText] = useState(initial?.text ?? '')
@@ -102,6 +109,17 @@ function VariationModal({
     initial?.existingMediaUrl ? { url: initial.existingMediaUrl, name: initial.existingFileName || 'arquivo' } : null,
   )
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!file || msgType !== 'IMAGE' || !file.type.startsWith('image/')) {
+      setPreviewUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file, msgType])
 
   const isMediaType = msgType !== 'TEXT'
 
@@ -112,7 +130,7 @@ function VariationModal({
       e.target.value = ''
       const limit = sizeLimitByType[msgType] ?? 16 * 1024 * 1024
       if (f.size > limit) {
-        alert(`Arquivo excede o limite de ${formatSizeLimit(limit)}`)
+        alert(t('fileSizeExceeded', { limit: formatSizeLimit(limit) }))
         return
       }
       setFile(f)
@@ -127,7 +145,7 @@ function VariationModal({
       if (!f) return
       const limit = sizeLimitByType[msgType] ?? 16 * 1024 * 1024
       if (f.size > limit) {
-        alert(`Arquivo excede o limite de ${formatSizeLimit(limit)}`)
+        alert(t('fileSizeExceeded', { limit: formatSizeLimit(limit) }))
         return
       }
       setFile(f)
@@ -164,18 +182,18 @@ function VariationModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar variacao' : 'Nova variacao'}</DialogTitle>
+          <DialogTitle>{isEditing ? t('variation.edit') : t('variation.new')}</DialogTitle>
           <DialogDescription>
-            Configure o tipo, conteudo e midia desta variacao de mensagem.
+            {t('variation.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Type selector */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Tipo</Label>
+            <Label className="text-sm font-medium">{t('typeLabel')}</Label>
             <div className="flex gap-1.5">
-              {messageTypes.map(({ type, label, icon: Icon }) => (
+              {messageTypeDefs.map(({ type, labelKey, icon: Icon }) => (
                 <button
                   key={type}
                   type="button"
@@ -187,7 +205,7 @@ function VariationModal({
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  {label}
+                  {t(labelKey)}
                 </button>
               ))}
             </div>
@@ -196,14 +214,14 @@ function VariationModal({
           {/* File upload (media types) */}
           {isMediaType && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Arquivo</Label>
+              <Label className="text-sm font-medium">{t('fileLabel')}</Label>
 
               {file ? (
                 <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                    {msgType === 'IMAGE' && file.type.startsWith('image/') ? (
+                    {msgType === 'IMAGE' && previewUrl ? (
                       <img
-                        src={URL.createObjectURL(file)}
+                        src={previewUrl}
                         alt="Preview"
                         className="h-10 w-10 rounded-lg object-cover"
                       />
@@ -232,7 +250,7 @@ function VariationModal({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{existingMedia.name}</p>
-                    <p className="text-xs text-muted-foreground">Arquivo existente</p>
+                    <p className="text-xs text-muted-foreground">{t('variation.existingFile')}</p>
                   </div>
                   <Button
                     type="button"
@@ -254,10 +272,10 @@ function VariationModal({
                   <Upload className="h-8 w-8 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">
-                      Arraste o arquivo aqui ou clique para selecionar
+                      {t('fileDragDrop')}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Maximo {formatSizeLimit(sizeLimitByType[msgType] ?? 16 * 1024 * 1024)}
+                      {t('fileMaxSize', { size: formatSizeLimit(sizeLimitByType[msgType] ?? 16 * 1024 * 1024) })}
                       {' — '}
                       {acceptByType[msgType]?.replace(/\./g, '').replace(/,/g, ', ')}
                     </p>
@@ -279,7 +297,7 @@ function VariationModal({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">
-                {isMediaType ? 'Legenda' : 'Mensagem'}
+                {isMediaType ? t('captionLabel') : t('messageLabel')}
               </Label>
               <div className="flex items-center gap-1">
                 <Button
@@ -305,7 +323,7 @@ function VariationModal({
             <Textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={isMediaType ? 'Legenda do arquivo (opcional para audio)...' : 'Escreva a mensagem...'}
+              placeholder={isMediaType ? t('captionPlaceholder') : t('messagePlaceholder')}
               rows={4}
               className="resize-none"
             />
@@ -317,10 +335,10 @@ function VariationModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancelar
+            {tc('cancel')}
           </Button>
           <Button onClick={handleSave} disabled={!canSave}>
-            {isEditing ? 'Salvar' : 'Adicionar'}
+            {isEditing ? tc('save') : tc('create')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -334,6 +352,8 @@ export function StepMessageContent({
   variations,
   onVariationsChange,
 }: StepMessageContentProps) {
+  const t = useTranslations('broadcasts')
+  const typeLabel = useTypeLabel()
   const [modalOpen, setModalOpen] = useState(false)
   const [editIndex, setEditIndex] = useState<number | null>(null)
 
@@ -365,14 +385,14 @@ export function StepMessageContent({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <Label className="text-sm font-medium">Variacoes de mensagem</Label>
+          <Label className="text-sm font-medium">{t('variation.label')}</Label>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Cada variacao pode ter seu proprio tipo (texto, imagem, video, etc.). Uma sera escolhida aleatoriamente para cada destinatario.
+            {t('variation.hint')}
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={handleAdd}>
           <Plus className="h-3.5 w-3.5 mr-1" />
-          Variacao
+          {t('variation.add')}
         </Button>
       </div>
 
@@ -380,7 +400,7 @@ export function StepMessageContent({
       {variations.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Nenhuma variacao adicionada. Clique em &quot;Variacao&quot; para criar a primeira.
+            {t('variation.empty')}
           </p>
         </div>
       ) : (
@@ -392,16 +412,16 @@ export function StepMessageContent({
                   #
                 </th>
                 <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide w-24">
-                  Tipo
+                  {t('typeLabel')}
                 </th>
                 <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Conteudo
+                  {t('contentLabel')}
                 </th>
                 <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide w-32">
-                  Arquivo
+                  {t('fileLabel')}
                 </th>
                 <th className="text-right px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide w-20">
-                  Acoes
+                  {t('actionsLabel')}
                 </th>
               </tr>
             </thead>
@@ -419,7 +439,7 @@ export function StepMessageContent({
                   </td>
                   <td className="px-3 py-2">
                     <p className="truncate max-w-[250px] text-sm">
-                      {v.text || <span className="text-muted-foreground italic">Sem texto</span>}
+                      {v.text || <span className="text-muted-foreground italic">{t('variation.noText')}</span>}
                     </p>
                   </td>
                   <td className="px-3 py-2">
@@ -432,7 +452,7 @@ export function StepMessageContent({
                         {v.existingFileName}
                       </span>
                     ) : v.messageType !== 'TEXT' ? (
-                      <span className="text-xs text-destructive">Sem arquivo</span>
+                      <span className="text-xs text-destructive">{t('variation.noFile')}</span>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
@@ -470,7 +490,7 @@ export function StepMessageContent({
       {variations.length > 0 && (
         <div className="space-y-2">
           <Label className="text-sm font-medium text-muted-foreground">
-            Preview (variacao 1)
+            {t('variation.preview')}
           </Label>
           <div className="rounded-lg bg-muted/50 p-4">
             <div className="max-w-[280px]">
@@ -482,7 +502,7 @@ export function StepMessageContent({
                   </div>
                 )}
                 <p className="whitespace-pre-wrap break-words">
-                  {(variations[0].text || 'Sem texto')
+                  {(variations[0].text || t('variation.noText'))
                     .replace(/\{\{nome\}\}/gi, 'Joao')
                     .replace(/\{\{telefone\}\}/gi, '5511999999999')}
                 </p>
@@ -490,7 +510,7 @@ export function StepMessageContent({
             </div>
             {variations.length > 1 && (
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                +{variations.length - 1} variacao(oes) — cada destinatario recebera uma aleatoriamente
+                {t('variation.moreVariations', { count: variations.length - 1 })}
               </p>
             )}
           </div>

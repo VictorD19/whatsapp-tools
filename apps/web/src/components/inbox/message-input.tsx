@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Send, Paperclip, Smile, Image, FileText, Video, AudioLines, X, Music, Mic, Check,
   Play, Pause, Loader2, AtSign,
@@ -13,11 +14,11 @@ import type { Message } from '@/stores/inbox.store'
 
 // ─── Attachment options ───────────────────────────────────────────────────────
 
-const attachmentOptions = [
-  { key: 'image',    icon: Image,      label: 'Imagem',    color: 'text-violet-400', accept: '.jpg,.jpeg,.png' },
-  { key: 'video',    icon: Video,      label: 'Vídeo',     color: 'text-blue-400',   accept: '.mp4,.avi,.mov,.3gp' },
-  { key: 'audio',    icon: AudioLines, label: 'Áudio gravado', color: 'text-pink-400',   accept: '.mp3,.wav,.ogg' },
-  { key: 'document', icon: FileText,   label: 'Documento', color: 'text-orange-400', accept: '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.zip,.rar' },
+const attachmentOptionsDefs = [
+  { key: 'image',    icon: Image,      labelKey: 'attachImage' as const,    color: 'text-violet-400', accept: '.jpg,.jpeg,.png' },
+  { key: 'video',    icon: Video,      labelKey: 'attachVideo' as const,     color: 'text-blue-400',   accept: '.mp4,.avi,.mov,.3gp' },
+  { key: 'audio',    icon: AudioLines, labelKey: 'attachAudio' as const, color: 'text-pink-400',   accept: '.mp3,.wav,.ogg' },
+  { key: 'document', icon: FileText,   labelKey: 'attachDocument' as const, color: 'text-orange-400', accept: '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.zip,.rar' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -79,12 +80,29 @@ function FilePreview({ file, onRemove }: FilePreviewProps) {
   const isVideo = !isImage && !isAudio && (file.type.startsWith('video/') || /\.(mp4|mov|avi|3gp|mkv|webm)$/i.test(file.name))
 
   useEffect(() => {
-    if (isImage || isAudio) {
-      const url = URL.createObjectURL(file)
-      setPreviewUrl(url)
-      return () => URL.revokeObjectURL(url)
+    console.log('[FilePreview] mount/update — file:', file.name, '| isImage:', isImage, '| isAudio:', isAudio)
+    if (!isImage) return
+    const url = URL.createObjectURL(file)
+    console.log('[FilePreview] createObjectURL:', url)
+    setPreviewUrl(url)
+    return () => {
+      console.log('[FilePreview] cleanup — revogando URL:', url)
+      URL.revokeObjectURL(url)
     }
-  }, [file, isImage, isAudio])
+  }, [file])
+
+  useEffect(() => {
+    if (!isAudio) return
+    let cancelled = false
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      console.log('[FilePreview] FileReader resultado (áudio) — tamanho:', result?.length)
+      if (!cancelled) setPreviewUrl(result)
+    }
+    reader.readAsDataURL(file)
+    return () => { cancelled = true }
+  }, [file])
 
   function togglePlay() {
     const audio = audioRef.current
@@ -102,11 +120,11 @@ function FilePreview({ file, onRemove }: FilePreviewProps) {
     <div className="animate-in slide-in-from-bottom-3 fade-in-0 duration-200">
       {/* ── Image ── */}
       {isImage && previewUrl && (
-        <div className="relative inline-flex rounded-xl overflow-hidden shadow-md max-w-[140px] group">
+        <div className="relative w-[140px] h-[100px] rounded-xl overflow-hidden shadow-md group">
           <img
             src={previewUrl}
             alt={file.name}
-            className="max-h-[100px] w-full object-cover"
+            className="h-full w-full object-cover"
           />
           <button
             onClick={onRemove}
@@ -125,7 +143,7 @@ function FilePreview({ file, onRemove }: FilePreviewProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{file.name}</p>
-            <p className="text-xs text-muted-foreground">{formatSize(file.size)} · Vídeo</p>
+            <p className="text-xs text-muted-foreground">{formatSize(file.size)} · Video</p>
           </div>
           <button onClick={onRemove} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-4 w-4" />
@@ -236,7 +254,7 @@ function RecordingBar({ seconds, analyser, onCancel, onConfirm }: RecordingBarPr
       <button
         onClick={onCancel}
         className="shrink-0 text-muted-foreground hover:text-destructive transition-colors mb-1"
-        title="Cancelar gravação"
+        title={t('cancelRecording')}
       >
         <X className="h-4 w-4" />
       </button>
@@ -270,7 +288,7 @@ function RecordingBar({ seconds, analyser, onCancel, onConfirm }: RecordingBarPr
       <button
         onClick={onConfirm}
         className="shrink-0 text-muted-foreground hover:text-emerald-400 transition-colors mb-1"
-        title="Confirmar gravação"
+        title={t('confirmRecording')}
       >
         <Check className="h-4 w-4" />
       </button>
@@ -297,7 +315,7 @@ export function MessageInput({
   onSend,
   onSendMedia,
   disabled = false,
-  placeholder = 'Digite uma mensagem... (Enter para enviar)',
+  placeholder,
   replyingTo,
   onCancelReply,
   contactName,
@@ -305,6 +323,8 @@ export function MessageInput({
   groupMembers = [],
   loadingMembers = false,
 }: MessageInputProps) {
+  const t = useTranslations('inbox')
+  const resolvedPlaceholder = placeholder ?? t('messagePlaceholder')
   const instanceId = useRef(`msg-input-${Math.random().toString(36).slice(2)}`)
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
@@ -437,8 +457,11 @@ export function MessageInput({
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
+    console.log('[handleFileChange] files:', files)
     if (!files || files.length === 0) return
-    setPendingFiles((prev) => [...prev, ...Array.from(files)])
+    const arr = Array.from(files)
+    console.log('[handleFileChange] arquivos selecionados:', arr.map(f => ({ name: f.name, type: f.type, size: f.size, lastModified: f.lastModified })))
+    setPendingFiles((prev) => [...prev, ...arr])
     e.target.value = ''
   }
 
@@ -556,7 +579,7 @@ export function MessageInput({
   return (
     <div className="border-t border-border p-3">
       {/* Hidden file inputs */}
-      {attachmentOptions.filter((o) => o.accept !== null).map((opt) => (
+      {attachmentOptionsDefs.filter((o) => o.accept !== null).map((opt) => (
         <input
           key={opt.key}
           id={`${instanceId.current}-${opt.key}`}
@@ -574,7 +597,7 @@ export function MessageInput({
         <div className="flex items-center gap-2 mb-2 rounded-lg bg-muted/50 px-3 py-2 border-l-2 border-primary">
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-semibold text-primary">
-              {replyingTo.fromMe ? 'Voce' : (contactName ?? 'Contato')}
+              {replyingTo.fromMe ? t('you') : (contactName ?? t('contact'))}
             </p>
             <p className="text-xs text-muted-foreground truncate">
               {replyingTo.body ?? `[${replyingTo.type}]`}
@@ -594,7 +617,7 @@ export function MessageInput({
         <div className="flex flex-wrap gap-2 mb-2">
           {pendingFiles.map((file, idx) => (
             <FilePreview
-              key={`${file.name}-${file.size}-${idx}`}
+              key={`${file.name}-${file.size}-${file.lastModified}-${idx}`}
               file={file}
               onRemove={() => setPendingFiles((prev) => prev.filter((_, i) => i !== idx))}
             />
@@ -651,7 +674,7 @@ export function MessageInput({
                 className="absolute bottom-9 left-0 z-50 rounded-lg border border-border bg-popover p-1 shadow-xl"
               >
                 <div className="flex flex-col">
-                  {attachmentOptions.map((opt) =>
+                  {attachmentOptionsDefs.map((opt) =>
                     opt.accept !== null ? (
                       <label
                         key={opt.key}
@@ -663,7 +686,7 @@ export function MessageInput({
                         )}
                       >
                         <opt.icon className={cn('h-4 w-4', opt.color)} />
-                        <span className="text-xs font-medium text-foreground">{opt.label}</span>
+                        <span className="text-xs font-medium text-foreground">{t(opt.labelKey)}</span>
                       </label>
                     ) : (
                       <button
@@ -673,7 +696,7 @@ export function MessageInput({
                         className="flex items-center gap-2.5 rounded-md px-3 py-2 whitespace-nowrap opacity-40 cursor-not-allowed"
                       >
                         <opt.icon className={cn('h-4 w-4', opt.color)} />
-                        <span className="text-xs font-medium text-foreground">{opt.label}</span>
+                        <span className="text-xs font-medium text-foreground">{t(opt.labelKey)}</span>
                       </button>
                     )
                   )}
@@ -717,7 +740,7 @@ export function MessageInput({
                 {loadingMembers ? (
                   <div className="flex items-center gap-2 px-3 py-2">
                     <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Carregando membros...</span>
+                    <span className="text-xs text-muted-foreground">{t('loadingMembers')}</span>
                   </div>
                 ) : (
                   <>
@@ -743,7 +766,7 @@ export function MessageInput({
 
                     {filteredMembers.length === 0 && mentionFilter && (
                       <div className="px-3 py-2 text-xs text-muted-foreground">
-                        Nenhum membro encontrado
+                        {t('noMemberFound')}
                       </div>
                     )}
                   </>
@@ -755,7 +778,7 @@ export function MessageInput({
               value={message}
               onChange={handleMessageChange}
               onKeyDown={handleKeyDown}
-              placeholder={pendingFiles.length > 0 ? 'Adicionar legenda... (opcional)' : placeholder}
+              placeholder={pendingFiles.length > 0 ? t('addCaption') : resolvedPlaceholder}
               rows={1}
               disabled={disabled}
               className={cn(
@@ -778,7 +801,7 @@ export function MessageInput({
             className="mb-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={startRecording}
             disabled={disabled}
-            title="Gravar áudio"
+            title={t('recordAudio')}
           >
             <Mic className="h-4 w-4" />
           </button>
