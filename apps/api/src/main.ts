@@ -1,3 +1,6 @@
+import { initSentry } from './instrument'
+initSentry()
+
 import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'

@@ -29,6 +29,8 @@
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^10.4.0",
     "@prisma/client": "^6.3.0",
+    "@sentry/node": "^10.43.0",
+    "@sentry/profiling-node": "^10.43.0",
     "@types/cheerio": "^1.0.0",
     "@types/pdf-parse": "^1.1.5",
     "axios": "^1.7.0",

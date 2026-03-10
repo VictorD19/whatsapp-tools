@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { randomUUID } from 'crypto'
+import * as Sentry from '@sentry/node'
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -19,6 +20,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR
+
+    // Reporta ao Sentry apenas erros inesperados (não erros de negócio HTTP 4xx)
+    if (status >= 500) {
+      Sentry.captureException(exception, {
+        extra: {
+          url: request.url,
+          method: request.method,
+          requestId: (request.headers['x-request-id'] as string) ?? randomUUID(),
+        },
+      })
+    }
 
     const isAppException = exception instanceof HttpException
     const body = isAppException
