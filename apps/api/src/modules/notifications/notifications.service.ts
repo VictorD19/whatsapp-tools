@@ -22,23 +22,22 @@ export class NotificationsService {
   }
 
   async createAndEmit(data: CreateNotificationData) {
-    // Check preference (default: inApp = true)
     const pref = await this.repository.findPreference(data.userId, data.type)
     const inApp = pref?.inApp ?? true
+    const browser = pref?.browser ?? false
 
-    if (!inApp) return null
+    // Só ignora se ambos estiverem desativados
+    if (!inApp && !browser) return null
 
-    const notification = await this.repository.create(data)
-    const unreadCount = await this.repository.countUnread(data.userId)
+    let notification = null
 
-    this.gateway.emitNotification(data.userId, {
-      notification,
-      unreadCount,
-    })
+    if (inApp) {
+      notification = await this.repository.create(data)
+      const unreadCount = await this.repository.countUnread(data.userId)
+      this.gateway.emitNotification(data.userId, { notification, unreadCount })
+    }
 
-    // Push notification se o usuário tiver subscriptions e preferência browser ativa
-    const pref2 = await this.repository.findPreference(data.userId, data.type)
-    if (pref2?.browser ?? false) {
+    if (browser) {
       await this.push.sendToUser(data.userId, {
         title: data.title,
         body: data.body,
