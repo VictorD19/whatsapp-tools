@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   Phone, Radio, User, ChevronDown, Pencil,
-  X, StickyNote, Check, Loader2, FolderOpen, FileText, Download, Play, Trash2,
+  X, StickyNote, Check, Loader2, Trash2,
 } from 'lucide-react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -36,12 +36,10 @@ import { usePipelineStages } from '@/hooks/use-pipeline-stages'
 import { useDeal, type DealNote } from '@/hooks/use-deal'
 import { useAuthStore } from '@/stores/auth.store'
 import { useInboxStore } from '@/stores/inbox.store'
-import type { Conversation, ConversationDeal, Message } from '@/stores/inbox.store'
+import type { Conversation, ConversationDeal } from '@/stores/inbox.store'
 import { TagsSection } from '@/components/shared/tags-section'
 import { FollowUpSection } from './follow-up-section'
-import { MediaLightbox, type MediaLightboxItem } from './media-lightbox'
 import { formatCurrency, getCurrencySymbol, formatDateShort, formatTime } from '@/lib/formatting'
-import { getMediaUrl, downloadMedia } from '@/lib/media'
 
 interface ContactPanelProps {
   conversation: Conversation | null
@@ -429,95 +427,6 @@ function DealNotesSection({ dealId }: { dealId: string }) {
   )
 }
 
-const EMPTY_MSGS: Message[] = []
-
-function MediaGallerySection({ conversationId }: { conversationId: string }) {
-  const t = useTranslations('inbox.contactPanel')
-  const messages = useInboxStore((s) => s.messages[conversationId] ?? EMPTY_MSGS)
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-
-  const mediaItems = useMemo<MediaLightboxItem[]>(
-    () =>
-      messages
-        .filter((m) => m.type === 'IMAGE' || m.type === 'VIDEO')
-        .map((m) => ({ messageId: m.id, type: m.type as 'IMAGE' | 'VIDEO', caption: m.body })),
-    [messages],
-  )
-
-  const docItems = useMemo(
-    () => messages.filter((m) => m.type === 'DOCUMENT'),
-    [messages],
-  )
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <FolderOpen className="h-3.5 w-3.5" />
-        <span>{t('files')}</span>
-      </div>
-
-      {mediaItems.length === 0 && docItems.length === 0 ? (
-        <p className="text-[11px] text-muted-foreground/60">{t('noFiles')}</p>
-      ) : (
-        <>
-          {/* Image / video grid — max 3 rows (9 items) visible, rest scrolls */}
-          {mediaItems.length > 0 && (
-            <div className="overflow-y-auto max-h-[252px]">
-              <div className="grid grid-cols-3 gap-1">
-                {mediaItems.map((item, i) => (
-                  <button
-                    key={item.messageId}
-                    onClick={() => setLightboxIndex(i)}
-                    className="aspect-square rounded overflow-hidden bg-muted hover:opacity-80 transition-opacity relative"
-                  >
-                    {item.type === 'IMAGE' ? (
-                      <img
-                        src={getMediaUrl(item.messageId)}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-black/50 flex items-center justify-center">
-                        <Play className="h-5 w-5 text-white fill-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Documents list — max-h with scroll like follow-ups */}
-          {docItems.length > 0 && (
-            <div className="space-y-1 max-h-[200px] overflow-y-auto">
-              {docItems.map((doc) => (
-                <button
-                  key={doc.id}
-                  onClick={() => downloadMedia(doc.id, doc.body ?? 'documento')}
-                  className="w-full flex items-center gap-2 p-2 rounded-md border hover:bg-muted transition-colors text-left"
-                >
-                  <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-xs truncate flex-1">{doc.body ?? 'Documento'}</span>
-                  <Download className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                </button>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {lightboxIndex !== null && mediaItems.length > 0 && (
-        <MediaLightbox
-          items={mediaItems}
-          initialIndex={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-        />
-      )}
-    </div>
-  )
-}
-
 // ---- Main Component ----
 
 export function ContactPanel({ conversation }: ContactPanelProps) {
@@ -741,11 +650,6 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
 
       {/* Follow-ups */}
       <FollowUpSection conversationId={conversation.id} />
-
-      <Separator />
-
-      {/* Arquivos da conversa */}
-      <MediaGallerySection conversationId={conversation.id} />
 
       {activeDeal && (
         <>

@@ -2,12 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { FollowUpService } from '../follow-up.service'
 import { FollowUpRepository } from '../follow-up.repository'
 import { FollowUpProducer } from '../queues/follow-up.producer'
+import { StorageService } from '@modules/storage/storage.service'
 import { AppException } from '@core/errors/app.exception'
 
 describe('FollowUpService', () => {
   let service: FollowUpService
   let repository: jest.Mocked<FollowUpRepository>
   let producer: jest.Mocked<FollowUpProducer>
+  let storage: jest.Mocked<StorageService>
 
   const tenantId = 'tenant-123'
   const userId = 'user-456'
@@ -23,6 +25,8 @@ describe('FollowUpService', () => {
     mode: 'REMINDER' as const,
     status: 'PENDING' as const,
     message: null,
+    mediaKey: null,
+    mediaFilename: null,
     scheduledAt: new Date('2026-12-01T10:00:00Z'),
     notifiedAt: null,
     sentAt: null,
@@ -46,17 +50,23 @@ describe('FollowUpService', () => {
       cancel: jest.fn().mockResolvedValue(undefined),
     }
 
+    const mockStorage = {
+      uploadMedia: jest.fn().mockResolvedValue('tenants/tenant-123/media/2026-12/uuid.jpg'),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FollowUpService,
         { provide: FollowUpRepository, useValue: mockRepository },
         { provide: FollowUpProducer, useValue: mockProducer },
+        { provide: StorageService, useValue: mockStorage },
       ],
     }).compile()
 
     service = module.get(FollowUpService)
     repository = module.get(FollowUpRepository)
     producer = module.get(FollowUpProducer)
+    storage = module.get(StorageService)
   })
 
   describe('create', () => {
@@ -80,6 +90,8 @@ describe('FollowUpService', () => {
         mode: 'REMINDER',
         scheduledAt: dto.scheduledAt,
         message: undefined,
+        mediaKey: undefined,
+        mediaFilename: undefined,
       })
     })
 
@@ -99,6 +111,45 @@ describe('FollowUpService', () => {
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({ message: 'Lembrete de pagamento' }),
       )
+    })
+
+    it('should upload media file and store mediaKey when file provided', async () => {
+      const mediaKey = 'tenants/tenant-123/media/2026-12/uuid.jpg'
+      storage.uploadMedia.mockResolvedValue(mediaKey)
+      repository.create.mockResolvedValue({ ...mockFollowUp, mediaKey, mediaFilename: 'foto.jpg' })
+
+      const dto = {
+        type: 'MESSAGE' as const,
+        mode: 'AUTOMATIC' as const,
+        scheduledAt: new Date('2026-12-01T10:00:00Z'),
+      }
+
+      const mediaFile = {
+        buffer: Buffer.from('fake-image'),
+        mimetype: 'image/jpeg',
+        filename: 'foto.jpg',
+      }
+
+      const result = await service.create(tenantId, conversationId, userId, dto, mediaFile)
+
+      expect(storage.uploadMedia).toHaveBeenCalledWith(tenantId, mediaFile.buffer, mediaFile.mimetype, mediaFile.filename)
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ mediaKey, mediaFilename: 'foto.jpg' }),
+      )
+      expect(result.data.mediaKey).toBe(mediaKey)
+    })
+
+    it('should throw FOLLOW_UP_MISSING_CONTENT when AUTOMATIC with no message and no media', async () => {
+      const dto = {
+        type: 'MESSAGE' as const,
+        mode: 'AUTOMATIC' as const,
+        scheduledAt: new Date('2026-12-01T10:00:00Z'),
+      }
+
+      await expect(service.create(tenantId, conversationId, userId, dto)).rejects.toThrow(AppException)
+      await expect(service.create(tenantId, conversationId, userId, dto)).rejects.toMatchObject({
+        code: 'FOLLOW_UP_MISSING_CONTENT',
+      })
     })
   })
 

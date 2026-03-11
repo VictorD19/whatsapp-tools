@@ -7,7 +7,28 @@ import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { NotificationsService } from '@modules/notifications/notifications.service'
 import { InboxRepository } from '@modules/inbox/inbox.repository'
 import { InboxGateway } from '@modules/inbox/inbox.gateway'
+import { StorageService } from '@modules/storage/storage.service'
 import { FollowUpJobData } from './follow-up.producer'
+
+/** Normaliza mimetype com base na extensão do arquivo */
+function normalizeMimetypeByExt(mimetype: string, filename: string): string {
+  if (mimetype.startsWith('audio/') || mimetype.startsWith('image/') || mimetype.startsWith('video/')) return mimetype
+  const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase()
+  const AUDIO_MAP: Record<string, string> = { '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.m4a': 'audio/mp4' }
+  const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp'])
+  const VIDEO_EXTS = new Set(['.mp4', '.avi', '.mov', '.3gp', '.webm'])
+  if (AUDIO_MAP[ext]) return AUDIO_MAP[ext]
+  if (IMAGE_EXTS.has(ext)) return ext === '.png' ? 'image/png' : 'image/jpeg'
+  if (VIDEO_EXTS.has(ext)) return ext === '.3gp' ? 'video/3gpp' : `video/${ext.slice(1)}`
+  return mimetype
+}
+
+function resolveMediaType(mimetype: string): 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' {
+  if (mimetype.startsWith('image/')) return 'IMAGE'
+  if (mimetype.startsWith('video/')) return 'VIDEO'
+  if (mimetype.startsWith('audio/')) return 'AUDIO'
+  return 'DOCUMENT'
+}
 
 @Processor(QUEUES.FOLLOW_UP_SCHEDULER)
 export class FollowUpProcessor {
@@ -17,6 +38,7 @@ export class FollowUpProcessor {
     private readonly notifications: NotificationsService,
     private readonly inboxRepository: InboxRepository,
     private readonly inboxGateway: InboxGateway,
+    private readonly storage: StorageService,
     private readonly logger: LoggerService,
   ) {}
 
@@ -43,7 +65,12 @@ export class FollowUpProcessor {
   }
 
   private async handleAutomatic(
-    followUp: { id: string; message: string | null },
+    followUp: {
+      id: string
+      message: string | null
+      mediaKey: string | null
+      mediaFilename: string | null
+    },
     conversation: {
       id: string
       tenantId: string
@@ -52,9 +79,9 @@ export class FollowUpProcessor {
       instance: { evolutionId: string }
     },
   ) {
-    if (!followUp.message) {
+    if (!followUp.message && !followUp.mediaKey) {
       this.logger.warn(
-        `AUTOMATIC follow-up ${followUp.id} has no message, falling back to REMINDER`,
+        `AUTOMATIC follow-up ${followUp.id} has no message or media, falling back to REMINDER`,
         'FollowUpProcessor',
       )
       await this.dispatchReminder(followUp.id, conversation)
@@ -62,21 +89,63 @@ export class FollowUpProcessor {
     }
 
     try {
-      const result = await this.whatsapp.sendText(
-        conversation.instance.evolutionId,
-        conversation.contact.phone,
-        followUp.message,
-      )
+      const contactPhone = conversation.contact.phone
+      const evolutionId = conversation.instance.evolutionId
+      let messageResult: { messageId: string; status: string }
+      let messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' = 'TEXT'
+
+      if (followUp.mediaKey) {
+        // Baixa arquivo do storage e envia como mídia
+        const { buffer, contentType } = await this.storage.download(followUp.mediaKey)
+        const filename = followUp.mediaFilename || 'arquivo'
+        const resolvedMimetype = normalizeMimetypeByExt(contentType, filename)
+        const mediaType = resolveMediaType(resolvedMimetype)
+        messageType = mediaType
+        const base64 = buffer.toString('base64')
+
+        switch (mediaType) {
+          case 'IMAGE':
+            messageResult = await this.whatsapp.sendImage(evolutionId, contactPhone, {
+              url: base64,
+              mimetype: resolvedMimetype,
+              caption: followUp.message ?? undefined,
+            })
+            break
+          case 'VIDEO':
+            messageResult = await this.whatsapp.sendVideo(evolutionId, contactPhone, {
+              url: base64,
+              mimetype: resolvedMimetype,
+              caption: followUp.message ?? undefined,
+            })
+            break
+          case 'AUDIO':
+            messageResult = await this.whatsapp.sendAudio(evolutionId, contactPhone, {
+              url: base64,
+              mimetype: resolvedMimetype,
+            })
+            break
+          default:
+            messageResult = await this.whatsapp.sendDocument(evolutionId, contactPhone, {
+              url: base64,
+              fileName: filename,
+              mimetype: resolvedMimetype,
+            })
+        }
+      } else {
+        // Apenas texto
+        messageResult = await this.whatsapp.sendText(evolutionId, contactPhone, followUp.message!)
+      }
 
       // Salva a mensagem na conversa para aparecer no inbox
       const message = await this.inboxRepository.createMessage({
         tenantId: conversation.tenantId,
         conversationId: conversation.id,
         fromMe: true,
-        body: followUp.message,
-        type: 'TEXT',
+        body: followUp.message || null,
+        type: messageType,
         status: 'SENT',
-        evolutionId: result.messageId,
+        evolutionId: messageResult.messageId,
+        mediaUrl: followUp.mediaKey ?? undefined,
       })
 
       // Atualiza lastMessageAt da conversa

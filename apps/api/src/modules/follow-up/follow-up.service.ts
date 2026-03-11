@@ -2,6 +2,7 @@ import { Injectable, HttpStatus } from '@nestjs/common'
 import { FollowUpRepository } from './follow-up.repository'
 import { FollowUpProducer } from './queues/follow-up.producer'
 import { AppException } from '@core/errors/app.exception'
+import { StorageService } from '@modules/storage/storage.service'
 import { CreateFollowUpDto } from './dto/create-follow-up.dto'
 import { FollowUpFiltersDto } from './dto/follow-up-filters.dto'
 
@@ -10,6 +11,7 @@ export class FollowUpService {
   constructor(
     private readonly repository: FollowUpRepository,
     private readonly producer: FollowUpProducer,
+    private readonly storage: StorageService,
   ) {}
 
   async create(
@@ -17,7 +19,30 @@ export class FollowUpService {
     conversationId: string,
     userId: string,
     dto: CreateFollowUpDto,
+    mediaFile?: { buffer: Buffer; mimetype: string; filename: string },
   ) {
+    if (dto.mode === 'AUTOMATIC' && !dto.message && !mediaFile) {
+      throw new AppException(
+        'FOLLOW_UP_MISSING_CONTENT',
+        'Message or media attachment is required for AUTOMATIC mode',
+        {},
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      )
+    }
+
+    let mediaKey: string | undefined
+    let mediaFilename: string | undefined
+
+    if (mediaFile) {
+      mediaKey = await this.storage.uploadMedia(
+        tenantId,
+        mediaFile.buffer,
+        mediaFile.mimetype,
+        mediaFile.filename,
+      )
+      mediaFilename = mediaFile.filename
+    }
+
     const followUp = await this.repository.create({
       tenantId,
       conversationId,
@@ -26,6 +51,8 @@ export class FollowUpService {
       mode: dto.mode,
       scheduledAt: dto.scheduledAt,
       message: dto.message,
+      mediaKey,
+      mediaFilename,
     })
 
     await this.producer.schedule(followUp.id, new Date(dto.scheduledAt))

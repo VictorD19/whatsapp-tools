@@ -4,6 +4,7 @@ import { QUEUES } from '@core/queue/queue.module'
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module'
 import { NotificationsModule } from '@modules/notifications/notifications.module'
 import { InboxModule } from '@modules/inbox/inbox.module'
+import { StorageModule } from '@modules/storage/storage.module'
 import { FollowUpController } from './follow-up.controller'
 import { FollowUpService } from './follow-up.service'
 import { FollowUpRepository } from './follow-up.repository'
@@ -15,6 +16,7 @@ import { FollowUpProcessor } from './queues/follow-up.processor'
     WhatsAppModule,
     NotificationsModule,
     InboxModule,
+    StorageModule,
     BullModule.registerQueue({ name: QUEUES.FOLLOW_UP_SCHEDULER }),
   ],
   controllers: [FollowUpController],

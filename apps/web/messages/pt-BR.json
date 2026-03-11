@@ -1426,7 +1426,10 @@
       "type": "Tipo",
       "mode": "Modo",
       "scheduledAt": "Data e hora",
-      "message": "Mensagem"
+      "message": "Mensagem",
+      "attachFile": "Anexar arquivo",
+      "attachedFile": "Arquivo anexado",
+      "removeAttachment": "Remover anexo"
     },
     "success": {
       "created": "Follow-up agendado com sucesso",

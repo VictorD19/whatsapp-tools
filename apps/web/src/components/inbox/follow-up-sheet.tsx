@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   MessageSquare,
@@ -9,6 +9,11 @@ import {
   FileText,
   DollarSign,
   Loader2,
+  Paperclip,
+  X,
+  Image,
+  Music,
+  Film,
 } from 'lucide-react'
 import {
   Sheet,
@@ -30,7 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { apiPost } from '@/lib/api'
+import { api } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 import type { FollowUpType, FollowUpMode } from '@/stores/inbox.store'
 
@@ -42,6 +47,31 @@ const FOLLOW_UP_TYPES: { value: FollowUpType; emoji: string }[] = [
   { value: 'PAYMENT', emoji: '\u{1F4B0}' },
 ]
 
+const ACCEPTED_TYPES = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+  'video/mp4', 'video/avi', 'video/quicktime', 'video/3gpp',
+  'audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/wav', 'audio/mp4',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/zip', 'text/plain',
+].join(',')
+
+function getFileIcon(file: File) {
+  if (file.type.startsWith('image/')) return Image
+  if (file.type.startsWith('video/')) return Film
+  if (file.type.startsWith('audio/')) return Music
+  return FileText
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
 interface FollowUpSheetProps {
   open: boolean
   onClose: () => void
@@ -52,6 +82,7 @@ interface FollowUpSheetProps {
 export function FollowUpSheet({ open, onClose, conversationId, onCreated }: FollowUpSheetProps) {
   const t = useTranslations('followUps')
   const tCommon = useTranslations('common')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [type, setType] = useState<FollowUpType>('MESSAGE')
   const [mode, setMode] = useState<FollowUpMode>('REMINDER')
@@ -61,6 +92,7 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
   })
   const [message, setMessage] = useState('')
+  const [mediaFile, setMediaFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
 
   function resetForm() {
@@ -70,6 +102,7 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
     setDateValue(now.toISOString().split('T')[0])
     setTimeValue(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`)
     setMessage('')
+    setMediaFile(null)
   }
 
   function handleClose() {
@@ -77,11 +110,21 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
     onClose()
   }
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) setMediaFile(file)
+    e.target.value = ''
+  }
+
+  function removeFile() {
+    setMediaFile(null)
+  }
+
   function isValid(): boolean {
     if (!dateValue || !timeValue) return false
     const scheduledAt = new Date(`${dateValue}T${timeValue}`)
     if (isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) return false
-    if (mode === 'AUTOMATIC' && !message.trim()) return false
+    if (mode === 'AUTOMATIC' && !message.trim() && !mediaFile) return false
     return true
   }
 
@@ -92,12 +135,15 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
 
     setSaving(true)
     try {
-      await apiPost(`conversations/${conversationId}/follow-ups`, {
-        type,
-        mode,
-        scheduledAt,
-        message: mode === 'AUTOMATIC' ? message.trim() : message.trim() || null,
-      })
+      const formData = new FormData()
+      formData.append('type', type)
+      formData.append('mode', mode)
+      formData.append('scheduledAt', scheduledAt)
+      if (message.trim()) formData.append('message', message.trim())
+      if (mediaFile) formData.append('file', mediaFile, mediaFile.name)
+
+      await api.post(`conversations/${conversationId}/follow-ups`, { body: formData }).json()
+
       toast({ title: t('success.created'), variant: 'success' })
       handleClose()
       onCreated()
@@ -108,11 +154,11 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
     }
   }
 
-  // Default date/time to tomorrow at 10:00
   function getMinDate(): string {
-    const now = new Date()
-    return now.toISOString().split('T')[0]
+    return new Date().toISOString().split('T')[0]
   }
+
+  const FileIcon = mediaFile ? getFileIcon(mediaFile) : FileText
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
@@ -192,21 +238,60 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
             </div>
           </div>
 
-          {/* Message (conditional for AUTOMATIC, optional for REMINDER) */}
+          {/* Message + attachment (shown always, required for AUTOMATIC if no media) */}
           <div className="space-y-2">
             <Label>
               {t('fields.message')}
-              {mode === 'AUTOMATIC' && <span className="text-destructive ml-1">*</span>}
+              {mode === 'AUTOMATIC' && !mediaFile && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </Label>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={
-                mode === 'AUTOMATIC'
-                  ? t('fields.message')
-                  : t('fields.message')
-              }
-              className="min-h-[80px] resize-none"
+
+            {/* File preview */}
+            {mediaFile && (
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                <FileIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{mediaFile.name}</p>
+                  <p className="text-xs text-muted-foreground">{formatBytes(mediaFile.size)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                  aria-label={t('fields.removeAttachment')}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="relative">
+              <Textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={mediaFile ? t('fields.attachedFile') : t('fields.message')}
+                className="min-h-[80px] resize-none pr-10"
+              />
+              {/* Attach button inside textarea corner */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-2 right-2 rounded p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                title={t('fields.attachFile')}
+                aria-label={t('fields.attachFile')}
+              >
+                <Paperclip className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={ACCEPTED_TYPES}
+              onChange={handleFileChange}
+              className="sr-only"
             />
           </div>
         </div>

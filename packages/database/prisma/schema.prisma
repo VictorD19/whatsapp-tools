@@ -652,6 +652,8 @@ model FollowUp {
   mode           FollowUpMode   @default(REMINDER)
   status         FollowUpStatus @default(PENDING)
   message        String?
+  mediaKey       String?
+  mediaFilename  String?
   scheduledAt    DateTime
   notifiedAt     DateTime?
   sentAt         DateTime?

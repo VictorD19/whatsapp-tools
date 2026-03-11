@@ -1426,7 +1426,10 @@
       "type": "Type",
       "mode": "Mode",
       "scheduledAt": "Date and time",
-      "message": "Message"
+      "message": "Message",
+      "attachFile": "Attach file",
+      "attachedFile": "File attached",
+      "removeAttachment": "Remove attachment"
     },
     "success": {
       "created": "Follow-up scheduled successfully",
