@@ -250,34 +250,97 @@ Estas variáveis são definidas diretamente no `docker-compose.yml` e **não pre
 
 ## 7. Deploy em Produção
 
-### Com Docker Compose (recomendado para VPS/servidor)
+### Fluxo recomendado: build local → registry → servidor
+
+O build **não roda no servidor**. Você builda localmente, sobe para um registry e o servidor apenas faz `pull` da imagem pronta. Isso descarrega o servidor de CPU/RAM durante o build.
+
+#### Passo 1 — Configure o registry (uma vez, na sua máquina local)
+
+Adicione ao `.env` local:
 
 ```bash
-# 1. Clone e configure
+# GitHub Container Registry (gratuito para repositórios públicos/privados)
+REGISTRY=ghcr.io/sua-org/whatsapp-tools
+
+# Ou Docker Hub
+# REGISTRY=docker.io/seu-usuario/whatsapp-tools
+
+# URLs de produção (baked no build do Next.js)
+NEXT_PUBLIC_API_URL=https://api.seu-dominio.com
+NEXT_PUBLIC_WS_URL=https://api.seu-dominio.com
+NEXT_PUBLIC_APP_URL=https://app.seu-dominio.com
+NEXT_PUBLIC_APP_NAME=SistemaZapChat
+```
+
+Faça login no registry:
+
+```bash
+# GitHub GHCR
+echo $GITHUB_TOKEN | docker login ghcr.io -u seu-usuario --password-stdin
+
+# Docker Hub
+docker login
+```
+
+#### Passo 2 — Build e push (na sua máquina local)
+
+```bash
+# Build + push com tag :latest
+make release
+
+# Ou com versão específica
+make release TAG=v1.2.3
+```
+
+#### Passo 3 — Primeira vez no servidor (infra + configuração)
+
+```bash
+# No servidor:
 git clone <repo-url> whatsapp-tools
 cd whatsapp-tools
 
-# 2. Crie o .env de produção
 cp .env.example .env
-# Edite com secrets fortes:
-#   JWT_SECRET=<gere com: openssl rand -hex 32>
-#   JWT_REFRESH_SECRET=<gere com: openssl rand -hex 32>
-#   EVOLUTION_API_KEY=<gere com: openssl rand -hex 32>
+# Edite o .env com:
+#   JWT_SECRET=<openssl rand -hex 32>
+#   JWT_REFRESH_SECRET=<openssl rand -hex 32>
+#   EVOLUTION_API_KEY=<openssl rand -hex 32>
+#   POSTGRES_PASSWORD=<senha forte>
 #   ANTHROPIC_API_KEY=sk-ant-...
-#   MINIO_ACCESS_KEY=<usuário forte para o MinIO>
-#   MINIO_SECRET_KEY=<senha forte para o MinIO>
-#   MINIO_BUCKET=whatsapp-media
+#   MINIO_ACCESS_KEY=<usuário forte>
+#   MINIO_SECRET_KEY=<senha forte>
+#   REGISTRY=ghcr.io/sua-org/whatsapp-tools
+#   IMAGE_TAG=latest
 
-# 3. Suba com o compose de produção
-docker compose -f docker-compose.prod.yml up -d --build
+# Login no registry (para poder fazer pull de imagens privadas)
+echo $GITHUB_TOKEN | docker login ghcr.io -u seu-usuario --password-stdin
 
-# 4. Migrations + seed
-docker exec wt-api pnpm --filter @repo/database db:migrate:deploy
-docker exec wt-api pnpm --filter @repo/database db:seed
+# Sobe infra (banco, redis, evolution, minio)
+make infra-up
 
-# 5. Verificar
-docker compose -f docker-compose.prod.yml ps
-docker compose -f docker-compose.prod.yml logs -f api
+# Pull + sobe api e web
+make deploy
+
+# Seed inicial (só na primeira vez)
+docker compose -f docker-compose.prod.yml exec api pnpm --filter @repo/database db:seed
+```
+
+#### Passo 4 — Deploys subsequentes (apenas pull + restart)
+
+```bash
+# Na máquina local: build e push
+make release TAG=v1.3.0
+
+# No servidor: apenas pull da nova imagem e restart
+make deploy
+```
+
+#### Pinning de versão no servidor
+
+Para controlar exatamente qual versão está rodando, defina `IMAGE_TAG` no `.env` do servidor:
+
+```bash
+IMAGE_TAG=v1.3.0  # trava nessa versão — só atualiza quando você mudar
+# IMAGE_TAG=latest  # sempre pega a última (menos seguro em prod)
 ```
 
 ### Portas em produção

@@ -4,7 +4,13 @@ on:
   push:
     branches: [master, main]
 
+# Necessário para push no GitHub Container Registry
+permissions:
+  contents: read
+  packages: write
+
 jobs:
+  # ── 1. Testes ──────────────────────────────────────────────────────────────
   test:
     name: Tests
     runs-on: ubuntu-latest
@@ -61,10 +67,60 @@ jobs:
           JWT_REFRESH_SECRET: ci-test-refresh-secret
         run: pnpm --filter @repo/api test
 
+  # ── 2. Build e Push das imagens para GHCR ─────────────────────────────────
+  build:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Docker Buildx (build multi-layer com cache)
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build e push — API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/api:latest
+            ghcr.io/${{ github.repository }}/api:${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build e push — Web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_WS_URL=${{ secrets.NEXT_PUBLIC_WS_URL }}
+            NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}
+            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          tags: |
+            ghcr.io/${{ github.repository }}/web:latest
+            ghcr.io/${{ github.repository }}/web:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  # ── 3. Deploy no servidor (só pull — sem build) ───────────────────────────
   deploy:
     name: Deploy to production
     runs-on: ubuntu-latest
-    needs: test
+    needs: build
 
     steps:
       - name: Deploy via SSH
@@ -76,13 +132,22 @@ jobs:
           script: |
             cd /opt/whatsapp-tools
 
-            echo "▶ Pulling latest code..."
+            echo "▶ Atualizando docker-compose e configs..."
             git pull origin master
 
-            echo "▶ Rebuilding and restarting containers..."
-            docker compose -f docker-compose.prod.yml up -d --build
+            echo "▶ Login no registry..."
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            echo "▶ Cleaning up old images..."
+            echo "▶ Pulling imagens atualizadas (sem build no servidor)..."
+            docker compose -f docker-compose.prod.yml pull api web
+
+            echo "▶ Reiniciando serviços de aplicação..."
+            docker compose -f docker-compose.prod.yml up -d --no-build api web
+
+            echo "▶ Rodando migrations..."
+            docker compose -f docker-compose.prod.yml exec -T api pnpm --filter @repo/database db:migrate:deploy
+
+            echo "▶ Limpando imagens antigas..."
             docker image prune -f
 
             echo "✓ Deploy concluído!"
