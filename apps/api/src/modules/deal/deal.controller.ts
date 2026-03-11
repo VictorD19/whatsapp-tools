@@ -92,4 +92,14 @@ export class DealController {
   ) {
     return this.dealService.createNote(tenantId, id, user.id, dto)
   }
+
+  @Delete(':id/notes/:noteId')
+  @HttpCode(HttpStatus.OK)
+  deleteNote(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @Param('noteId') noteId: string,
+  ) {
+    return this.dealService.deleteNote(tenantId, id, noteId)
+  }
 }

@@ -216,4 +216,16 @@ export class DealRepository {
       },
     })
   }
+
+  async findNoteById(noteId: string, tenantId: string) {
+    return this.prisma.dealNote.findFirst({
+      where: { id: noteId, tenantId },
+    })
+  }
+
+  async deleteNote(noteId: string) {
+    return this.prisma.dealNote.delete({
+      where: { id: noteId },
+    })
+  }
 }

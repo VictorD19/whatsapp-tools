@@ -268,6 +268,21 @@ export class DealService {
     return note
   }
 
+  async deleteNote(tenantId: string, dealId: string, noteId: string) {
+    await this.findDealById(tenantId, dealId)
+
+    const note = await this.repository.findNoteById(noteId, tenantId)
+    if (!note) {
+      throw AppException.notFound('DEAL_NOTE_NOT_FOUND', 'Nota nao encontrada', { noteId })
+    }
+
+    await this.repository.deleteNote(noteId)
+
+    this.logger.log(`Note ${noteId} deleted from deal ${dealId}`, 'DealService')
+
+    return { success: true }
+  }
+
   // ── Webhook integration ──
 
   async findOrCreateForContact(
