@@ -5,6 +5,8 @@ import { LoggerService } from '@core/logger/logger.service'
 import { FollowUpRepository } from '../follow-up.repository'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { NotificationsService } from '@modules/notifications/notifications.service'
+import { InboxRepository } from '@modules/inbox/inbox.repository'
+import { InboxGateway } from '@modules/inbox/inbox.gateway'
 import { FollowUpJobData } from './follow-up.producer'
 
 @Processor(QUEUES.FOLLOW_UP_SCHEDULER)
@@ -13,6 +15,8 @@ export class FollowUpProcessor {
     private readonly repository: FollowUpRepository,
     private readonly whatsapp: WhatsAppService,
     private readonly notifications: NotificationsService,
+    private readonly inboxRepository: InboxRepository,
+    private readonly inboxGateway: InboxGateway,
     private readonly logger: LoggerService,
   ) {}
 
@@ -58,16 +62,49 @@ export class FollowUpProcessor {
     }
 
     try {
-      await this.whatsapp.sendText(
+      const result = await this.whatsapp.sendText(
         conversation.instance.evolutionId,
         conversation.contact.phone,
         followUp.message,
       )
 
+      // Salva a mensagem na conversa para aparecer no inbox
+      const message = await this.inboxRepository.createMessage({
+        tenantId: conversation.tenantId,
+        conversationId: conversation.id,
+        fromMe: true,
+        body: followUp.message,
+        type: 'TEXT',
+        status: 'SENT',
+        evolutionId: result.messageId,
+      })
+
+      // Atualiza lastMessageAt da conversa
+      await this.inboxRepository.updateLastMessageAt(conversation.id)
+
+      // Emite WebSocket para o frontend atualizar em tempo real
+      this.inboxGateway.emitNewMessage(conversation.tenantId, {
+        conversationId: conversation.id,
+        message: {
+          id: message.id,
+          conversationId: conversation.id,
+          fromMe: true,
+          fromBot: false,
+          body: message.body,
+          type: message.type,
+          status: message.status,
+          mediaUrl: message.mediaUrl ?? null,
+          quotedMessageId: message.quotedMessageId ?? null,
+          quotedMessage: null,
+          sentAt: message.sentAt,
+          createdAt: message.createdAt,
+        },
+      })
+
       await this.repository.markSent(followUp.id)
 
       this.logger.log(
-        `AUTOMATIC follow-up ${followUp.id} sent to ${conversation.contact.phone}`,
+        `AUTOMATIC follow-up ${followUp.id} sent and saved to conversation ${conversation.id}`,
         'FollowUpProcessor',
       )
     } catch (error) {

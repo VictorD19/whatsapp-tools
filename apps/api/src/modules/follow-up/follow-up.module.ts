@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module'
 import { NotificationsModule } from '@modules/notifications/notifications.module'
+import { InboxModule } from '@modules/inbox/inbox.module'
 import { FollowUpController } from './follow-up.controller'
 import { FollowUpService } from './follow-up.service'
 import { FollowUpRepository } from './follow-up.repository'
@@ -13,6 +14,7 @@ import { FollowUpProcessor } from './queues/follow-up.processor'
   imports: [
     WhatsAppModule,
     NotificationsModule,
+    InboxModule,
     BullModule.registerQueue({ name: QUEUES.FOLLOW_UP_SCHEDULER }),
   ],
   controllers: [FollowUpController],
