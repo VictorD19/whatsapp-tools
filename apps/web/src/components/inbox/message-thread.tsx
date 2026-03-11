@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { MessageBubble } from './message-bubble'
 import { MessageInput } from './message-input'
 import { ConversationAiControl } from './conversation-ai-control'
+import { MediaLightbox, type MediaLightboxItem } from './media-lightbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInboxStore, type Conversation, type Message } from '@/stores/inbox.store'
 import { useConversation } from '@/hooks/use-conversation'
@@ -169,6 +170,25 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   const canSend = conversation.status === 'OPEN' && isAssignedToMe
   const isPending = conversation.status === 'PENDING'
 
+  // Media lightbox state
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  const mediaItems = useMemo<MediaLightboxItem[]>(
+    () =>
+      messages
+        .filter((m) => m.type === 'IMAGE' || m.type === 'VIDEO')
+        .map((m) => ({ messageId: m.id, type: m.type as 'IMAGE' | 'VIDEO', caption: m.body })),
+    [messages],
+  )
+
+  const handleMediaClick = useCallback(
+    (messageId: string) => {
+      const idx = mediaItems.findIndex((item) => item.messageId === messageId)
+      if (idx !== -1) setLightboxIndex(idx)
+    },
+    [mediaItems],
+  )
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -243,6 +263,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
                   contactName={conversation.contact.name ?? conversation.contact.phone}
                   contactPhone={conversation.contact.phone}
                   onReply={canSend ? handleReply : undefined}
+                  onMediaClick={handleMediaClick}
                 />
               </React.Fragment>
             ))}
@@ -250,6 +271,15 @@ export function MessageThread({ conversation }: MessageThreadProps) {
           </>
         )}
       </div>
+
+      {/* Media lightbox */}
+      {lightboxIndex !== null && mediaItems.length > 0 && (
+        <MediaLightbox
+          items={mediaItems}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
 
       {/* Input */}
       <MessageInput

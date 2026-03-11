@@ -185,14 +185,15 @@ export function useDeal(filters?: DealFilters) {
         const payload: Record<string, string> = { stageId }
         if (lostReason) payload.lostReason = lostReason
         const res = await apiPatch<ApiResponse<Deal>>(`deals/${dealId}/move`, payload)
-        queryClient.invalidateQueries({ queryKey: dealsKey(filters) })
+        // Invalida todos os caches de deals (inbox + kanban CRM)
+        queryClient.invalidateQueries({ queryKey: ['deals'] })
         return res.data
       } catch {
         toast({ title: 'Erro ao mover negócio', variant: 'destructive' })
         return null
       }
     },
-    [filters, queryClient],
+    [queryClient],
   )
 
   // Notes — kept as local state (on-demand, not cached globally)
@@ -222,6 +223,17 @@ export function useDeal(filters?: DealFilters) {
     }
   }, [])
 
+  const deleteNote = useCallback(async (dealId: string, noteId: string) => {
+    try {
+      await apiDelete(`deals/${dealId}/notes/${noteId}`)
+      setNotes((prev) => prev.filter((n) => n.id !== noteId))
+      return true
+    } catch {
+      toast({ title: 'Erro ao excluir nota', variant: 'destructive' })
+      return false
+    }
+  }, [])
+
   return {
     deals,
     isLoadingDeals,
@@ -235,5 +247,6 @@ export function useDeal(filters?: DealFilters) {
     isLoadingNotes,
     fetchNotes,
     addNote,
+    deleteNote,
   }
 }

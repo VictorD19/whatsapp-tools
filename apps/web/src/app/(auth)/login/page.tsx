@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl'
 interface LoginResponse {
   data: {
     accessToken: string
+    refreshToken: string
     user: {
       id: string
       name: string
@@ -60,7 +61,7 @@ export default function LoginPage() {
   async function onSubmit(data: LoginFormData) {
     try {
       const res = await apiPost<LoginResponse>('auth/login', data)
-      const { accessToken, user } = res.data
+      const { accessToken, refreshToken, user } = res.data
       setAuth(
         {
           id: user.id,
@@ -72,6 +73,7 @@ export default function LoginPage() {
           tenant: user.tenant,
         },
         accessToken,
+        refreshToken,
       )
       if (user.tenant.locale) {
         setLocaleSettings({

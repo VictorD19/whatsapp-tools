@@ -28,6 +28,24 @@ export class AuthService {
     private readonly planService: PlanService,
   ) {}
 
+  async refreshToken(token: string) {
+    try {
+      const payload = this.jwt.verify(token, {
+        secret: process.env.JWT_REFRESH_SECRET ?? process.env.JWT_SECRET ?? 'change-me-in-production',
+      }) as { sub: string }
+
+      const user = await this.repo.findUserById(payload.sub)
+      if (!user) {
+        throw AppException.unauthorized('AUTH_USER_NOT_FOUND', 'Usuário não encontrado')
+      }
+
+      return this.generateAuthResponse(user)
+    } catch (err) {
+      if (err instanceof AppException) throw err
+      throw AppException.unauthorized('AUTH_INVALID_REFRESH_TOKEN', 'Refresh token inválido ou expirado')
+    }
+  }
+
   async login(email: string, password: string) {
     const user = await this.repo.findUserByEmail(email)
 

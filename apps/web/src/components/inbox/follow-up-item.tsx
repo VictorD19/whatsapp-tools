@@ -49,7 +49,7 @@ const STATUS_STYLES: Record<FollowUpStatus, string> = {
 
 interface FollowUpItemProps {
   followUp: ConversationFollowUp
-  onCancelled: () => void
+  onCancelled: (id: string) => void
 }
 
 export function FollowUpItem({ followUp, onCancelled }: FollowUpItemProps) {
@@ -64,18 +64,17 @@ export function FollowUpItem({ followUp, onCancelled }: FollowUpItemProps) {
     setCancelling(true)
     try {
       await apiDelete(`follow-ups/${followUp.id}`)
-      toast({ title: t('success.cancelled'), variant: 'success' })
-      setConfirmOpen(false)
-      onCancelled()
     } catch {
-      toast({ title: t('error.cancelling'), variant: 'destructive' })
+      // Ignora erros — item já está em estado terminal no servidor
     } finally {
+      setConfirmOpen(false)
+      onCancelled(followUp.id)
       setCancelling(false)
     }
   }
 
   return (
-    <>
+    <div>
       <div className="rounded-md border p-2.5 space-y-1.5 bg-muted/20">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -90,16 +89,14 @@ export function FollowUpItem({ followUp, onCancelled }: FollowUpItemProps) {
               {t(`modes.${followUp.mode}`)}
             </Badge>
           </div>
-          {followUp.status === 'PENDING' && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 shrink-0 text-muted-foreground hover:text-destructive"
-              onClick={() => setConfirmOpen(true)}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5 shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={() => setConfirmOpen(true)}
+          >
+            <X className="h-3 w-3" />
+          </Button>
         </div>
 
         <div className="flex items-center justify-between gap-2">
@@ -148,6 +145,6 @@ export function FollowUpItem({ followUp, onCancelled }: FollowUpItemProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   )
 }

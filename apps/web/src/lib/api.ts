@@ -7,6 +7,65 @@ function getToken(): string | null {
   return localStorage.getItem('auth_token')
 }
 
+function getRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('refresh_token')
+}
+
+function clearSession() {
+  localStorage.removeItem('auth_token')
+  localStorage.removeItem('refresh_token')
+  window.location.href = '/login'
+}
+
+// Flag para evitar múltiplos refreshes simultâneos
+let isRefreshing = false
+let refreshQueue: ((token: string) => void)[] = []
+
+async function tryRefresh(): Promise<string | null> {
+  const refreshToken = getRefreshToken()
+  if (!refreshToken) return null
+
+  if (isRefreshing) {
+    // Esperar o refresh em andamento terminar
+    return new Promise((resolve) => {
+      refreshQueue.push(resolve)
+    })
+  }
+
+  isRefreshing = true
+  try {
+    const res = await fetch(`${API_URL}auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    })
+
+    if (!res.ok) {
+      clearSession()
+      return null
+    }
+
+    const body = await res.json() as { data: { accessToken: string; refreshToken: string } }
+    const newAccessToken = body.data.accessToken
+    const newRefreshToken = body.data.refreshToken
+
+    localStorage.setItem('auth_token', newAccessToken)
+    if (newRefreshToken) localStorage.setItem('refresh_token', newRefreshToken)
+
+    // Notificar requisições que estavam esperando
+    refreshQueue.forEach((cb) => cb(newAccessToken))
+    refreshQueue = []
+
+    return newAccessToken
+  } catch {
+    clearSession()
+    return null
+  } finally {
+    isRefreshing = false
+  }
+}
+
 export const api: KyInstance = ky.create({
   prefixUrl: API_URL,
   timeout: 30_000,
@@ -26,9 +85,12 @@ export const api: KyInstance = ky.create({
     beforeError: [
       async (error) => {
         try {
-          const body = await error.response.json() as { error?: { message?: string } }
+          const body = await error.response.json() as { error?: { message?: string; code?: string } }
           if (body?.error?.message) {
             error.message = body.error.message
+          }
+          if (body?.error?.code) {
+            (error as Error & { errorCode?: string }).errorCode = body.error.code
           }
         } catch {
           // response is not JSON or already consumed — keep original message
@@ -39,12 +101,15 @@ export const api: KyInstance = ky.create({
     afterResponse: [
       async (_request, _options, response) => {
         if (response.status === 401) {
-          // Skip the redirect for the login endpoint itself — a 401 there means
-          // "invalid credentials" (expected), not "session expired".
-          const isAuthLogin = _request.url.includes('auth/login')
-          if (!isAuthLogin && typeof window !== 'undefined') {
-            localStorage.removeItem('auth_token')
-            window.location.href = '/login'
+          const isAuthEndpoint = _request.url.includes('auth/login') || _request.url.includes('auth/refresh')
+          if (!isAuthEndpoint && typeof window !== 'undefined') {
+            const newToken = await tryRefresh()
+            if (!newToken) return response
+
+            // Repetir a requisição original com o novo token
+            const retryRequest = new Request(_request)
+            retryRequest.headers.set('Authorization', `Bearer ${newToken}`)
+            return fetch(retryRequest)
           }
         }
         return response
@@ -52,6 +117,10 @@ export const api: KyInstance = ky.create({
     ],
   },
 })
+
+export function getApiErrorCode(err: unknown): string | null {
+  return (err as Error & { errorCode?: string })?.errorCode ?? null
+}
 
 // Typed helpers
 export async function apiGet<T>(path: string): Promise<T> {

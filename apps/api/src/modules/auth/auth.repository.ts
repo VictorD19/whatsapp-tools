@@ -5,6 +5,25 @@ import { PrismaService } from '@core/database/prisma.service'
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findUserById(id: string) {
+    return this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            locale: true,
+            timezone: true,
+            currency: true,
+            plan: { select: { name: true, slug: true } },
+          },
+        },
+      },
+    })
+  }
+
   findUserByEmail(email: string) {
     return this.prisma.user.findFirst({
       where: { email, deletedAt: null },

@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   Phone, Radio, User, ChevronDown, Pencil,
-  X, StickyNote, Check, Loader2,
+  X, StickyNote, Check, Loader2, FolderOpen, FileText, Download, Play, Trash2,
 } from 'lucide-react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +12,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -28,10 +36,12 @@ import { usePipelineStages } from '@/hooks/use-pipeline-stages'
 import { useDeal, type DealNote } from '@/hooks/use-deal'
 import { useAuthStore } from '@/stores/auth.store'
 import { useInboxStore } from '@/stores/inbox.store'
-import type { Conversation, ConversationDeal } from '@/stores/inbox.store'
+import type { Conversation, ConversationDeal, Message } from '@/stores/inbox.store'
 import { TagsSection } from '@/components/shared/tags-section'
 import { FollowUpSection } from './follow-up-section'
+import { MediaLightbox, type MediaLightboxItem } from './media-lightbox'
 import { formatCurrency, getCurrencySymbol, formatDateShort, formatTime } from '@/lib/formatting'
+import { getMediaUrl, downloadMedia } from '@/lib/media'
 
 interface ContactPanelProps {
   conversation: Conversation | null
@@ -56,7 +66,7 @@ function DealStageSection({
   onStageChanged,
 }: {
   deal: ConversationDeal
-  onStageChanged: (stageId: string) => void
+  onStageChanged: (stageId: string, stage: { id: string; name: string; color: string; type: 'ACTIVE' | 'WON' | 'LOST' }) => void
 }) {
   const t = useTranslations('inbox.contactPanel')
   const tc = useTranslations('common')
@@ -66,6 +76,8 @@ function DealStageSection({
   const [lostReason, setLostReason] = useState('')
   const [pendingStageId, setPendingStageId] = useState<string | null>(null)
 
+  const allStages = [...activeStages, ...closedStages]
+
   async function handleSelectStage(stageId: string, stageType: string) {
     if (stageType === 'LOST') {
       setPendingStageId(stageId)
@@ -73,14 +85,18 @@ function DealStageSection({
       return
     }
     const ok = await moveDeal(deal.id, stageId)
-    if (ok) onStageChanged(stageId)
+    if (ok) {
+      const stage = allStages.find((s) => s.id === stageId)
+      if (stage) onStageChanged(stageId, stage)
+    }
   }
 
   async function handleConfirmLost() {
     if (!pendingStageId) return
     const ok = await moveDeal(deal.id, pendingStageId, lostReason || undefined)
     if (ok) {
-      onStageChanged(pendingStageId)
+      const stage = allStages.find((s) => s.id === pendingStageId)
+      if (stage) onStageChanged(pendingStageId, stage)
       setLostReasonOpen(false)
       setLostReason('')
       setPendingStageId(null)
@@ -295,9 +311,11 @@ function LastContactIndicator({ dateStr }: { dateStr: string | null }) {
 function DealNotesSection({ dealId }: { dealId: string }) {
   const t = useTranslations('inbox.contactPanel')
   const tc = useTranslations('common')
-  const { notes, isLoadingNotes, fetchNotes, addNote } = useDeal()
+  const { notes, isLoadingNotes, fetchNotes, addNote, deleteNote } = useDeal()
   const [newNote, setNewNote] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
+  const [confirmNoteId, setConfirmNoteId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchNotes(dealId)
@@ -309,6 +327,13 @@ function DealNotesSection({ dealId }: { dealId: string }) {
     const ok = await addNote(dealId, newNote.trim())
     if (ok) setNewNote('')
     setIsSaving(false)
+  }
+
+  async function handleDeleteNote(noteId: string) {
+    setDeletingNoteId(noteId)
+    await deleteNote(dealId, noteId)
+    setDeletingNoteId(null)
+    setConfirmNoteId(null)
   }
 
   return (
@@ -326,10 +351,18 @@ function DealNotesSection({ dealId }: { dealId: string }) {
       ) : notes.length > 0 ? (
         <div className="space-y-1.5 max-h-[180px] overflow-y-auto">
           {notes.map((note: DealNote) => (
-            <div key={note.id} className="rounded-md border p-2 space-y-1 bg-muted/20">
-              <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
-                {note.content}
-              </p>
+            <div key={note.id} className="group/note rounded-md border p-2 space-y-1 bg-muted/20">
+              <div className="flex items-start justify-between gap-1">
+                <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap flex-1">
+                  {note.content}
+                </p>
+                <button
+                  onClick={() => setConfirmNoteId(note.id)}
+                  className="shrink-0 text-muted-foreground opacity-0 group-hover/note:opacity-100 hover:text-destructive transition-all mt-0.5"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
               <p className="text-[10px] text-muted-foreground">
                 {note.author.name} &middot; {formatNoteDate(note.createdAt)}
               </p>
@@ -367,6 +400,120 @@ function DealNotesSection({ dealId }: { dealId: string }) {
           </Button>
         </div>
       </div>
+
+      {/* Delete note confirmation dialog */}
+      <Dialog open={confirmNoteId !== null} onOpenChange={(v) => !v && setConfirmNoteId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('confirmDeleteNote')}</DialogTitle>
+            <DialogDescription>{t('confirmDeleteNoteDescription')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmNoteId(null)}>
+              {tc('cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => confirmNoteId && handleDeleteNote(confirmNoteId)}
+              disabled={deletingNoteId !== null}
+            >
+              {deletingNoteId ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : null}
+              {deletingNoteId ? t('deletingNote') : tc('delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+const EMPTY_MSGS: Message[] = []
+
+function MediaGallerySection({ conversationId }: { conversationId: string }) {
+  const t = useTranslations('inbox.contactPanel')
+  const messages = useInboxStore((s) => s.messages[conversationId] ?? EMPTY_MSGS)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  const mediaItems = useMemo<MediaLightboxItem[]>(
+    () =>
+      messages
+        .filter((m) => m.type === 'IMAGE' || m.type === 'VIDEO')
+        .map((m) => ({ messageId: m.id, type: m.type as 'IMAGE' | 'VIDEO', caption: m.body })),
+    [messages],
+  )
+
+  const docItems = useMemo(
+    () => messages.filter((m) => m.type === 'DOCUMENT'),
+    [messages],
+  )
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <FolderOpen className="h-3.5 w-3.5" />
+        <span>{t('files')}</span>
+      </div>
+
+      {mediaItems.length === 0 && docItems.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground/60">{t('noFiles')}</p>
+      ) : (
+        <>
+          {/* Image / video grid — max 3 rows (9 items) visible, rest scrolls */}
+          {mediaItems.length > 0 && (
+            <div className="overflow-y-auto max-h-[252px]">
+              <div className="grid grid-cols-3 gap-1">
+                {mediaItems.map((item, i) => (
+                  <button
+                    key={item.messageId}
+                    onClick={() => setLightboxIndex(i)}
+                    className="aspect-square rounded overflow-hidden bg-muted hover:opacity-80 transition-opacity relative"
+                  >
+                    {item.type === 'IMAGE' ? (
+                      <img
+                        src={getMediaUrl(item.messageId)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-black/50 flex items-center justify-center">
+                        <Play className="h-5 w-5 text-white fill-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Documents list — max-h with scroll like follow-ups */}
+          {docItems.length > 0 && (
+            <div className="space-y-1 max-h-[200px] overflow-y-auto">
+              {docItems.map((doc) => (
+                <button
+                  key={doc.id}
+                  onClick={() => downloadMedia(doc.id, doc.body ?? 'documento')}
+                  className="w-full flex items-center gap-2 p-2 rounded-md border hover:bg-muted transition-colors text-left"
+                >
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs truncate flex-1">{doc.body ?? 'Documento'}</span>
+                  <Download className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {lightboxIndex !== null && mediaItems.length > 0 && (
+        <MediaLightbox
+          items={mediaItems}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </div>
   )
 }
@@ -423,9 +570,16 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
     }
   }
 
-  function handleStageChanged(stageId: string) {
+  function handleStageChanged(
+    stageId: string,
+    stage: { id: string; name: string; color: string; type: 'ACTIVE' | 'WON' | 'LOST' },
+  ) {
     if (!activeDeal || !conversation) return
-    const updatedDeal = { ...activeDeal, stageId }
+    const updatedDeal = {
+      ...activeDeal,
+      stageId,
+      stage: { ...activeDeal.stage, ...stage },
+    }
     upsertConversation({
       ...conversation,
       deals: [updatedDeal, ...(conversation.deals?.slice(1) ?? [])],
@@ -587,6 +741,11 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
 
       {/* Follow-ups */}
       <FollowUpSection conversationId={conversation.id} />
+
+      <Separator />
+
+      {/* Arquivos da conversa */}
+      <MediaGallerySection conversationId={conversation.id} />
 
       {activeDeal && (
         <>

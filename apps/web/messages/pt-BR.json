@@ -262,10 +262,25 @@
       "todayLabel": "Hoje",
       "daysLabel": "{count} dias",
       "oneDayLabel": "1 dia",
-      "twoDaysLabel": "2 dias"
+      "twoDaysLabel": "2 dias",
+      "files": "Arquivos",
+      "noFiles": "Nenhum arquivo compartilhado",
+      "deleteNote": "Excluir nota",
+      "confirmDeleteNote": "Excluir nota",
+      "confirmDeleteNoteDescription": "Tem certeza que deseja excluir esta nota? Esta ação não pode ser desfeita.",
+      "deletingNote": "Excluindo...",
+      "noteDeleted": "Nota excluída",
+      "errorDeletingNote": "Erro ao excluir nota"
     },
     "errorLoadingConversations": "Erro ao carregar conversas",
-    "errorLoadingMore": "Erro ao carregar mais conversas"
+    "errorLoadingMore": "Erro ao carregar mais conversas",
+    "lightbox": {
+      "close": "Fechar",
+      "previous": "Anterior",
+      "next": "Próximo",
+      "counter": "{current} de {total}",
+      "download": "Baixar"
+    }
   },
   "crm": {
     "title": "CRM",
@@ -889,12 +904,30 @@
       "descriptionPlaceholder": "Descreva o que esta ferramenta faz..."
     },
     "types": {
-      "BUSCAR_CONTATO": { "label": "Buscar Contato", "description": "Busca dados do contato no CRM" },
-      "CRIAR_CONTATO": { "label": "Criar Contato", "description": "Registra o contato no CRM" },
-      "ADICIONAR_TAG": { "label": "Adicionar Tag", "description": "Aplica tags ao contato" },
-      "CRIAR_DEAL": { "label": "Criar Deal", "description": "Abre um deal no CRM" },
-      "TRANSFERIR_HUMANO": { "label": "Transferir p/ Humano", "description": "Pausa IA, passa para atendente" },
-      "WEBHOOK_EXTERNO": { "label": "Webhook Externo", "description": "Chama URL externa com dados" }
+      "BUSCAR_CONTATO": {
+        "label": "Buscar Contato",
+        "description": "Busca dados do contato no CRM"
+      },
+      "CRIAR_CONTATO": {
+        "label": "Criar Contato",
+        "description": "Registra o contato no CRM"
+      },
+      "ADICIONAR_TAG": {
+        "label": "Adicionar Tag",
+        "description": "Aplica tags ao contato"
+      },
+      "CRIAR_DEAL": {
+        "label": "Criar Deal",
+        "description": "Abre um deal no CRM"
+      },
+      "TRANSFERIR_HUMANO": {
+        "label": "Transferir p/ Humano",
+        "description": "Pausa IA, passa para atendente"
+      },
+      "WEBHOOK_EXTERNO": {
+        "label": "Webhook Externo",
+        "description": "Chama URL externa com dados"
+      }
     },
     "delete": {
       "title": "Excluir ferramenta",

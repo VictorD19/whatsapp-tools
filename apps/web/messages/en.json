@@ -262,10 +262,25 @@
       "todayLabel": "Today",
       "daysLabel": "{count} days",
       "oneDayLabel": "1 day",
-      "twoDaysLabel": "2 days"
+      "twoDaysLabel": "2 days",
+      "files": "Files",
+      "noFiles": "No shared files",
+      "deleteNote": "Delete note",
+      "confirmDeleteNote": "Delete note",
+      "confirmDeleteNoteDescription": "Are you sure you want to delete this note? This action cannot be undone.",
+      "deletingNote": "Deleting...",
+      "noteDeleted": "Note deleted",
+      "errorDeletingNote": "Error deleting note"
     },
     "errorLoadingConversations": "Error loading conversations",
-    "errorLoadingMore": "Error loading more conversations"
+    "errorLoadingMore": "Error loading more conversations",
+    "lightbox": {
+      "close": "Close",
+      "previous": "Previous",
+      "next": "Next",
+      "counter": "{current} of {total}",
+      "download": "Download"
+    }
   },
   "crm": {
     "title": "CRM",
@@ -889,12 +904,30 @@
       "descriptionPlaceholder": "Describe what this tool does..."
     },
     "types": {
-      "BUSCAR_CONTATO": { "label": "Search Contact", "description": "Searches contact data in CRM" },
-      "CRIAR_CONTATO": { "label": "Create Contact", "description": "Registers contact in CRM" },
-      "ADICIONAR_TAG": { "label": "Add Tag", "description": "Applies tags to contact" },
-      "CRIAR_DEAL": { "label": "Create Deal", "description": "Opens a deal in CRM" },
-      "TRANSFERIR_HUMANO": { "label": "Transfer to Human", "description": "Pauses AI, transfers to agent" },
-      "WEBHOOK_EXTERNO": { "label": "External Webhook", "description": "Calls external URL with data" }
+      "BUSCAR_CONTATO": {
+        "label": "Search Contact",
+        "description": "Searches contact data in CRM"
+      },
+      "CRIAR_CONTATO": {
+        "label": "Create Contact",
+        "description": "Registers contact in CRM"
+      },
+      "ADICIONAR_TAG": {
+        "label": "Add Tag",
+        "description": "Applies tags to contact"
+      },
+      "CRIAR_DEAL": {
+        "label": "Create Deal",
+        "description": "Opens a deal in CRM"
+      },
+      "TRANSFERIR_HUMANO": {
+        "label": "Transfer to Human",
+        "description": "Pauses AI, transfers to agent"
+      },
+      "WEBHOOK_EXTERNO": {
+        "label": "External Webhook",
+        "description": "Calls external URL with data"
+      }
     },
     "delete": {
       "title": "Delete tool",

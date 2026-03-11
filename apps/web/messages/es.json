@@ -262,10 +262,25 @@
       "todayLabel": "Hoy",
       "daysLabel": "{count} días",
       "oneDayLabel": "1 día",
-      "twoDaysLabel": "2 días"
+      "twoDaysLabel": "2 días",
+      "files": "Archivos",
+      "noFiles": "Sin archivos compartidos",
+      "deleteNote": "Eliminar nota",
+      "confirmDeleteNote": "Eliminar nota",
+      "confirmDeleteNoteDescription": "¿Estás seguro de que deseas eliminar esta nota? Esta acción no se puede deshacer.",
+      "deletingNote": "Eliminando...",
+      "noteDeleted": "Nota eliminada",
+      "errorDeletingNote": "Error al eliminar nota"
     },
     "errorLoadingConversations": "Error al cargar conversaciones",
-    "errorLoadingMore": "Error al cargar más conversaciones"
+    "errorLoadingMore": "Error al cargar más conversaciones",
+    "lightbox": {
+      "close": "Cerrar",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "counter": "{current} de {total}",
+      "download": "Descargar"
+    }
   },
   "crm": {
     "title": "CRM",
@@ -889,12 +904,30 @@
       "descriptionPlaceholder": "Describe qué hace esta herramienta..."
     },
     "types": {
-      "BUSCAR_CONTATO": { "label": "Buscar Contacto", "description": "Busca datos del contacto en CRM" },
-      "CRIAR_CONTATO": { "label": "Crear Contacto", "description": "Registra el contacto en CRM" },
-      "ADICIONAR_TAG": { "label": "Agregar Etiqueta", "description": "Aplica etiquetas al contacto" },
-      "CRIAR_DEAL": { "label": "Crear Negocio", "description": "Abre un negocio en CRM" },
-      "TRANSFERIR_HUMANO": { "label": "Transferir a Humano", "description": "Pausa IA, transfiere a agente" },
-      "WEBHOOK_EXTERNO": { "label": "Webhook Externo", "description": "Llama URL externa con datos" }
+      "BUSCAR_CONTATO": {
+        "label": "Buscar Contacto",
+        "description": "Busca datos del contacto en CRM"
+      },
+      "CRIAR_CONTATO": {
+        "label": "Crear Contacto",
+        "description": "Registra el contacto en CRM"
+      },
+      "ADICIONAR_TAG": {
+        "label": "Agregar Etiqueta",
+        "description": "Aplica etiquetas al contacto"
+      },
+      "CRIAR_DEAL": {
+        "label": "Crear Negocio",
+        "description": "Abre un negocio en CRM"
+      },
+      "TRANSFERIR_HUMANO": {
+        "label": "Transferir a Humano",
+        "description": "Pausa IA, transfiere a agente"
+      },
+      "WEBHOOK_EXTERNO": {
+        "label": "Webhook Externo",
+        "description": "Llama URL externa con datos"
+      }
     },
     "delete": {
       "title": "Eliminar herramienta",

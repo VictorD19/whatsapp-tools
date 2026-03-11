@@ -22,6 +22,14 @@ export class AuthController {
   }
 
   @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body() body: unknown) {
+    const { refreshToken } = z.object({ refreshToken: z.string() }).parse(body)
+    return this.authService.refreshToken(refreshToken)
+  }
+
+  @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() body: unknown) {

@@ -22,7 +22,7 @@ export class FollowUpRepository {
     const where: Prisma.FollowUpWhereInput = {
       tenantId,
       conversationId,
-      ...(filters.status && { status: filters.status }),
+      status: filters.status ?? { in: ['PENDING', 'NOTIFIED'] },
     }
 
     const [followUps, total] = await Promise.all([

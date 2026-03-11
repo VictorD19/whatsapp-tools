@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, CheckCheck, Bot, Reply, FileText, Download, Pause, Play } from 'lucide-react'
+import { Check, CheckCheck, Bot, Reply, FileText, Download, Pause, Play, Maximize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getMediaUrl, downloadMedia } from '@/lib/media'
 import type { Message } from '@/stores/inbox.store'
 
 interface MessageBubbleProps {
@@ -8,13 +9,7 @@ interface MessageBubbleProps {
   contactName?: string
   contactPhone?: string
   onReply?: (message: Message) => void
-}
-
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/api/v1`
-
-function getMediaUrl(messageId: string) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
-  return `${API_URL}/inbox/messages/${messageId}/media?token=${token ?? ''}`
+  onMediaClick?: (messageId: string) => void
 }
 
 function AudioPlayer({ src, fromMe }: { src: string; fromMe: boolean }) {
@@ -123,7 +118,7 @@ function AudioPlayer({ src, fromMe }: { src: string; fromMe: boolean }) {
   )
 }
 
-function MediaContent({ message }: { message: Message }) {
+function MediaContent({ message, onMediaClick }: { message: Message; onMediaClick?: (id: string) => void }) {
   const mediaUrl = getMediaUrl(message.id)
 
   switch (message.type) {
@@ -135,7 +130,7 @@ function MediaContent({ message }: { message: Message }) {
             alt={message.body ?? 'Imagem'}
             className="rounded-lg max-w-full max-h-64 object-cover cursor-pointer"
             loading="lazy"
-            onClick={() => window.open(mediaUrl, '_blank')}
+            onClick={() => onMediaClick ? onMediaClick(message.id) : window.open(mediaUrl, '_blank')}
           />
           {message.body && (
             <p className="leading-relaxed whitespace-pre-wrap break-words mt-1">{message.body}</p>
@@ -145,13 +140,22 @@ function MediaContent({ message }: { message: Message }) {
 
     case 'VIDEO':
       return (
-        <div className="mb-1">
+        <div className="mb-1 relative group/video">
           <video
             src={mediaUrl}
             controls
             preload="metadata"
             className="rounded-lg max-w-full max-h-64"
           />
+          {onMediaClick && (
+            <button
+              onClick={() => onMediaClick(message.id)}
+              className="absolute top-1.5 right-1.5 p-1 rounded bg-black/50 text-white opacity-0 group-hover/video:opacity-100 transition-opacity"
+              title="Abrir em tela cheia"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          )}
           {message.body && (
             <p className="leading-relaxed whitespace-pre-wrap break-words mt-1">{message.body}</p>
           )}
@@ -180,21 +184,7 @@ function MediaContent({ message }: { message: Message }) {
     case 'DOCUMENT':
       return (
         <button
-          onClick={async () => {
-            try {
-              const res = await fetch(mediaUrl)
-              const blob = await res.blob()
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = message.body ?? 'documento'
-              a.click()
-              URL.revokeObjectURL(url)
-            } catch {
-              // Fallback: open in new tab
-              window.open(mediaUrl, '_blank')
-            }
-          }}
+          onClick={() => downloadMedia(message.id, message.body ?? 'documento')}
           className={cn(
             'flex items-center gap-2 mb-1 p-2 rounded-lg w-full text-left',
             'bg-black/10 hover:bg-black/20 transition-colors cursor-pointer'
@@ -239,7 +229,7 @@ function ReactionBubbles({ reactions, fromMe }: { reactions: { senderJid: string
   )
 }
 
-export function MessageBubble({ message, contactName, contactPhone, onReply }: MessageBubbleProps) {
+export function MessageBubble({ message, contactName, contactPhone, onReply, onMediaClick }: MessageBubbleProps) {
   const time = new Date(message.sentAt).toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -332,7 +322,7 @@ export function MessageBubble({ message, contactName, contactPhone, onReply }: M
 
           {/* Media or text content */}
           {isMediaType ? (
-            <MediaContent message={message} />
+            <MediaContent message={message} onMediaClick={onMediaClick} />
           ) : (
             message.body && <p className="leading-relaxed whitespace-pre-wrap break-words">{message.body}</p>
           )}

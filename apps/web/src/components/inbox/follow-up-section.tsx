@@ -38,8 +38,12 @@ export function FollowUpSection({ conversationId }: FollowUpSectionProps) {
     fetchFollowUps()
   }, [fetchFollowUps])
 
-  function handleCreatedOrCancelled() {
+  function handleCreated() {
     fetchFollowUps()
+  }
+
+  function handleCancelled(id: string) {
+    setFollowUps((prev) => prev.filter((fu) => fu.id !== id))
   }
 
   return (
@@ -71,7 +75,7 @@ export function FollowUpSection({ conversationId }: FollowUpSectionProps) {
             <FollowUpItem
               key={fu.id}
               followUp={fu}
-              onCancelled={handleCreatedOrCancelled}
+              onCancelled={handleCancelled}
             />
           ))}
         </div>
@@ -87,7 +91,7 @@ export function FollowUpSection({ conversationId }: FollowUpSectionProps) {
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         conversationId={conversationId}
-        onCreated={handleCreatedOrCancelled}
+        onCreated={handleCreated}
       />
     </div>
   )
