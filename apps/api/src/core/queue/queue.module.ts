@@ -11,6 +11,7 @@ export const QUEUES = {
   CONVERSATION_IMPORT: 'conversation-import',
   GROUP_CONTACT_EXTRACT: 'group-contact-extract',
   KB_INGESTION: 'kb-ingestion',
+  FOLLOW_UP_SCHEDULER: 'follow-up-scheduler',
 } as const
 
 function parseRedisConfig() {
