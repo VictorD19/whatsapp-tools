@@ -3,6 +3,7 @@ import { NotificationsService } from '../notifications.service'
 import { NotificationsRepository } from '../notifications.repository'
 import { NotificationsGateway } from '../notifications.gateway'
 import { NotificationProducer } from '../queues/notification.producer'
+import { PushService } from '../push.service'
 import { NotificationType } from '@prisma/client'
 import { AppException } from '@core/errors/app.exception'
 
@@ -11,6 +12,7 @@ describe('NotificationsService', () => {
   let repository: jest.Mocked<NotificationsRepository>
   let gateway: jest.Mocked<NotificationsGateway>
   let producer: jest.Mocked<NotificationProducer>
+  let push: jest.Mocked<PushService>
 
   const userId = 'user-123'
   const tenantId = 'tenant-456'
@@ -58,12 +60,19 @@ describe('NotificationsService', () => {
       enqueue: jest.fn(),
     }
 
+    const mockPush = {
+      saveSubscription: jest.fn(),
+      removeSubscription: jest.fn(),
+      sendToUser: jest.fn().mockResolvedValue(undefined),
+    }
+
     const module = await Test.createTestingModule({
       providers: [
         NotificationsService,
         { provide: NotificationsRepository, useValue: mockRepository },
         { provide: NotificationsGateway, useValue: mockGateway },
         { provide: NotificationProducer, useValue: mockProducer },
+        { provide: PushService, useValue: mockPush },
       ],
     }).compile()
 
@@ -71,6 +80,7 @@ describe('NotificationsService', () => {
     repository = module.get(NotificationsRepository)
     gateway = module.get(NotificationsGateway)
     producer = module.get(NotificationProducer)
+    push = module.get(PushService)
   })
 
   describe('dispatch', () => {
@@ -113,14 +123,47 @@ describe('NotificationsService', () => {
       expect(result).toEqual(mockNotification)
     })
 
-    it('should return null and not create when inApp preference is false', async () => {
+    it('should return null and skip everything when both inApp and browser are false', async () => {
       repository.findPreference.mockResolvedValue({ inApp: false, browser: false } as never)
 
       const result = await service.createAndEmit(mockCreateData)
 
       expect(repository.create).not.toHaveBeenCalled()
       expect(gateway.emitNotification).not.toHaveBeenCalled()
+      expect(push.sendToUser).not.toHaveBeenCalled()
       expect(result).toBeNull()
+    })
+
+    it('should skip in-app but send push when inApp=false and browser=true', async () => {
+      repository.findPreference.mockResolvedValue({ inApp: false, browser: true } as never)
+
+      const result = await service.createAndEmit(mockCreateData)
+
+      expect(repository.create).not.toHaveBeenCalled()
+      expect(gateway.emitNotification).not.toHaveBeenCalled()
+      expect(push.sendToUser).toHaveBeenCalledWith(userId, {
+        title: mockCreateData.title,
+        body: mockCreateData.body,
+        data: undefined,
+      })
+      expect(result).toBeNull()
+    })
+
+    it('should send both in-app and push when both are true', async () => {
+      repository.findPreference.mockResolvedValue({ inApp: true, browser: true } as never)
+      repository.create.mockResolvedValue(mockNotification)
+      repository.countUnread.mockResolvedValue(1)
+
+      const result = await service.createAndEmit(mockCreateData)
+
+      expect(repository.create).toHaveBeenCalled()
+      expect(gateway.emitNotification).toHaveBeenCalled()
+      expect(push.sendToUser).toHaveBeenCalledWith(userId, {
+        title: mockCreateData.title,
+        body: mockCreateData.body,
+        data: undefined,
+      })
+      expect(result).toEqual(mockNotification)
     })
   })
 
