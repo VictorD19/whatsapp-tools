@@ -18,7 +18,7 @@ const DEFAULT_AI_WAIT_MS = 5000
  * Extrai o número de telefone de um JID do WhatsApp.
  * - "5511999999999@s.whatsapp.net" → "5511999999999"
  * - "554999475887-1453161997@g.us"  → "554999475887"  (grupo antigo)
- * - "xxxxx@lid"                      → null (não resolvível)
+ * - "xxxxx@lid"                      → null (JID salvo bruto, sem extração)
  */
 function extractPhoneFromJid(jid: string): string | null {
   if (!jid || jid.includes('@lid')) return null
@@ -231,11 +231,13 @@ export class InboxWebhookProcessor {
       }
 
       // Extract sender info for group messages
-      // senderJid is normalized to phone number only (null when @lid or unresolvable)
+      // senderJid: phone number when resolvable, raw JID (incl. @lid) otherwise — never null for groups
       const rawParticipant = isGroup && !fromMe
         ? (key.participant as string | undefined)
         : undefined
-      const senderJid = rawParticipant ? extractPhoneFromJid(rawParticipant) ?? undefined : undefined
+      const senderJid = rawParticipant
+        ? (extractPhoneFromJid(rawParticipant) ?? rawParticipant)
+        : undefined
       const senderName = isGroup && !fromMe
         ? pushName ?? undefined
         : undefined

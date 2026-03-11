@@ -248,15 +248,16 @@ export function MessageBubble({ message, contactName, contactPhone, onReply }: M
   const isMediaType = ['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'STICKER'].includes(message.type)
   const hasReactions = message.reactions && message.reactions.length > 0
 
-  // Para grupos: usa senderName ou senderJid (já normalizado — só dígitos ou null)
-  // Para 1:1: usa contactName
+  // Para grupos: usa senderName ou senderJid; para 1:1: usa contactName
   const isGroupMessage = !message.fromMe && (message.senderJid != null || message.senderName != null)
+  // senderJid pode ser número limpo ou JID bruto (@lid, @g.us) — exibir só se for dígitos puros
+  const senderPhoneClean = message.senderJid && /^\d+$/.test(message.senderJid)
+    ? message.senderJid
+    : null
   const senderLabel = isGroupMessage
-    ? (message.senderName ?? message.senderJid ?? contactName)
+    ? (message.senderName ?? senderPhoneClean ?? contactName)
     : contactName
-  const senderPhone = isGroupMessage
-    ? (message.senderJid ?? undefined)
-    : contactPhone
+  const senderPhone = isGroupMessage ? (senderPhoneClean ?? undefined) : contactPhone
 
   return (
     <div className={cn('group flex items-end gap-1', message.fromMe ? 'justify-end' : 'justify-start')}>
