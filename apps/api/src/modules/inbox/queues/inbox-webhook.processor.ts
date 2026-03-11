@@ -14,6 +14,19 @@ import { parseWhatsAppMessage, extractQuotedStanzaId } from '../utils/message-pa
 
 const DEFAULT_AI_WAIT_MS = 5000
 
+/**
+ * Extrai o número de telefone de um JID do WhatsApp.
+ * - "5511999999999@s.whatsapp.net" → "5511999999999"
+ * - "554999475887-1453161997@g.us"  → "554999475887"  (grupo antigo)
+ * - "xxxxx@lid"                      → null (não resolvível)
+ */
+function extractPhoneFromJid(jid: string): string | null {
+  if (!jid || jid.includes('@lid')) return null
+  const withoutSuffix = jid.split('@')[0]       // remove @s.whatsapp.net / @g.us
+  const phone = withoutSuffix.split('-')[0]      // remove sufixo de grupo antigo
+  return /^\d+$/.test(phone) ? phone : null
+}
+
 interface InboxWebhookJob {
   instanceName: string
   event: string
@@ -218,9 +231,11 @@ export class InboxWebhookProcessor {
       }
 
       // Extract sender info for group messages
-      const senderJid = isGroup && !fromMe
+      // senderJid is normalized to phone number only (null when @lid or unresolvable)
+      const rawParticipant = isGroup && !fromMe
         ? (key.participant as string | undefined)
         : undefined
+      const senderJid = rawParticipant ? extractPhoneFromJid(rawParticipant) ?? undefined : undefined
       const senderName = isGroup && !fromMe
         ? pushName ?? undefined
         : undefined

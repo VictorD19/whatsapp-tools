@@ -248,13 +248,14 @@ export function MessageBubble({ message, contactName, contactPhone, onReply }: M
   const isMediaType = ['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'STICKER'].includes(message.type)
   const hasReactions = message.reactions && message.reactions.length > 0
 
-  // Para grupos: usa senderName ou senderJid limpo; para 1:1: usa contactName
-  const isGroupMessage = !message.fromMe && (message.senderJid ?? message.senderName)
+  // Para grupos: usa senderName ou senderJid (já normalizado — só dígitos ou null)
+  // Para 1:1: usa contactName
+  const isGroupMessage = !message.fromMe && (message.senderJid != null || message.senderName != null)
   const senderLabel = isGroupMessage
-    ? (message.senderName ?? message.senderJid?.replace(/@s\.whatsapp\.net$/, '') ?? contactName)
+    ? (message.senderName ?? message.senderJid ?? contactName)
     : contactName
   const senderPhone = isGroupMessage
-    ? message.senderJid?.replace(/@s\.whatsapp\.net$/, '') ?? undefined
+    ? (message.senderJid ?? undefined)
     : contactPhone
 
   return (
