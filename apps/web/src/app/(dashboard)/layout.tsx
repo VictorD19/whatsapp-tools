@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
+import { PushPermissionBanner } from '@/components/notifications/push-permission-banner'
 import { cn } from '@/lib/utils'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar onMenuClick={() => setMobileSidebarOpen(true)} />
+        <PushPermissionBanner />
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>

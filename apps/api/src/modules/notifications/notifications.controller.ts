@@ -12,6 +12,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
+import { Public } from '@shared/decorators/current-user.decorator'
 import { NotificationsService } from './notifications.service'
 import { NotificationFiltersSchema } from './dto/notification-filters.dto'
 import { UpdatePreferenceSchema } from './dto/update-preference.dto'
@@ -50,6 +51,7 @@ export class NotificationsController {
     return this.service.markAllAsRead(req.user.id)
   }
 
+  @Public()
   @Get('vapid-public-key')
   getVapidPublicKey() {
     return this.service.getVapidPublicKey()

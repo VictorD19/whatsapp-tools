@@ -6,6 +6,8 @@ import { PushService, PushSubscriptionDto } from './push.service'
 import { NotificationFiltersDto } from './dto/notification-filters.dto'
 import { UpdatePreferenceDto } from './dto/update-preference.dto'
 import { NotificationType } from '@prisma/client'
+
+const ALL_NOTIFICATION_TYPES = Object.values(NotificationType)
 import { AppException } from '@core/errors/app.exception'
 
 @Injectable()
@@ -49,7 +51,17 @@ export class NotificationsService {
   }
 
   async savePushSubscription(userId: string, dto: PushSubscriptionDto) {
-    return this.push.saveSubscription(userId, dto)
+    await this.push.saveSubscription(userId, dto)
+
+    // Ativa browser: true em todos os tipos que ainda não têm preferência configurada
+    const existing = await this.repository.findPreferences(userId)
+    const existingTypes = new Set(existing.map((p) => p.type))
+
+    await Promise.all(
+      ALL_NOTIFICATION_TYPES
+        .filter((type) => !existingTypes.has(type))
+        .map((type) => this.repository.upsertPreference(userId, type, true, true)),
+    )
   }
 
   async removePushSubscription(userId: string, endpoint: string) {

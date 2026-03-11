@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
@@ -17,67 +17,84 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)))
 }
 
+async function runSubscribe(onDone?: () => void) {
+  try {
+    const res = await fetch(`${API_URL}/notifications/vapid-public-key`)
+    if (!res.ok) return
+    const { data } = await res.json()
+    const publicKey = data?.publicKey
+    if (!publicKey) return
+
+    const registration = await navigator.serviceWorker.register('/sw.js')
+    await navigator.serviceWorker.ready
+
+    const existing = await registration.pushManager.getSubscription()
+    if (existing) { onDone?.(); return }
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    })
+
+    const json = subscription.toJSON()
+    if (!json.endpoint || !json.keys) return
+
+    await fetch(`${API_URL}/notifications/push-subscription`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({
+        endpoint: json.endpoint,
+        keys: { p256dh: json.keys['p256dh'], auth: json.keys['auth'] },
+        userAgent: navigator.userAgent,
+      }),
+    })
+
+    onDone?.()
+  } catch {
+    // push não suportado ou bloqueado
+  }
+}
+
 export function usePushNotifications() {
   const { user } = useAuthStore()
   const subscribed = useRef(false)
+  // 'default' = ainda não perguntou, 'granted' = ok, 'denied' = bloqueado
+  const [permission, setPermission] = useState<NotificationPermission | null>(null)
 
   useEffect(() => {
-    if (!user?.id || subscribed.current) return
     if (typeof window === 'undefined') return
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
-    if (Notification.permission !== 'granted') return
+    if (!('Notification' in window)) return
+    setPermission(Notification.permission)
+  }, [])
 
+  // Se já tem permissão, subscreve automaticamente
+  useEffect(() => {
+    if (!user?.id || subscribed.current) return
+    if (permission !== 'granted') return
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
     const token = getToken()
     if (!token) return
 
-    async function subscribe() {
-      try {
-        // Busca chave pública VAPID do backend
-        const res = await fetch(`${API_URL}/notifications/vapid-public-key`)
-        if (!res.ok) return
-        const { publicKey } = await res.json()
-        if (!publicKey) return
+    runSubscribe(() => { subscribed.current = true })
+  }, [user?.id, permission])
 
-        // Registra o Service Worker
-        const registration = await navigator.serviceWorker.register('/sw.js')
-        await navigator.serviceWorker.ready
+  // Chamada pelo banner — disparada por clique do usuário
+  async function requestAndSubscribe() {
+    if (!('Notification' in window)) return
+    const result = await Notification.requestPermission()
+    setPermission(result)
+    if (result !== 'granted') return
+    await runSubscribe(() => { subscribed.current = true })
+  }
 
-        // Verifica se já tem subscription ativa
-        const existing = await registration.pushManager.getSubscription()
-        if (existing) {
-          subscribed.current = true
-          return
-        }
+  const showBanner =
+    permission === 'default' &&
+    typeof window !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window
 
-        // Cria nova subscription
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
-        })
-
-        const json = subscription.toJSON()
-        if (!json.endpoint || !json.keys) return
-
-        // Envia subscription para o backend
-        await fetch(`${API_URL}/notifications/push-subscription`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${getToken()}`,
-          },
-          body: JSON.stringify({
-            endpoint: json.endpoint,
-            keys: { p256dh: json.keys['p256dh'], auth: json.keys['auth'] },
-            userAgent: navigator.userAgent,
-          }),
-        })
-
-        subscribed.current = true
-      } catch {
-        // Push pode não ser suportado ou bloqueado — falha silenciosa
-      }
-    }
-
-    subscribe()
-  }, [user?.id])
+  return { showBanner, requestAndSubscribe }
 }
