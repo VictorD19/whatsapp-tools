@@ -112,9 +112,11 @@ export function ConversationListItem({
         {/* Row 3: meta (instance + assignee) */}
         <div className="flex items-center justify-between gap-1">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium truncate max-w-[90px]">
-              {conversation.instance.name}
-            </span>
+            {conversation.instance?.name && (
+              <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium truncate max-w-[90px]">
+                {conversation.instance.name}
+              </span>
+            )}
             {conversation.assignedTo && (
               <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium truncate max-w-[70px]">
                 {conversation.assignedTo.name}

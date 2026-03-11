@@ -138,7 +138,7 @@ function MediaContent({ message }: { message: Message }) {
             onClick={() => window.open(mediaUrl, '_blank')}
           />
           {message.body && (
-            <p className="leading-relaxed whitespace-pre-wrap mt-1">{message.body}</p>
+            <p className="leading-relaxed whitespace-pre-wrap break-words mt-1">{message.body}</p>
           )}
         </div>
       )
@@ -153,7 +153,7 @@ function MediaContent({ message }: { message: Message }) {
             className="rounded-lg max-w-full max-h-64"
           />
           {message.body && (
-            <p className="leading-relaxed whitespace-pre-wrap mt-1">{message.body}</p>
+            <p className="leading-relaxed whitespace-pre-wrap break-words mt-1">{message.body}</p>
           )}
         </div>
       )
@@ -210,7 +210,7 @@ function MediaContent({ message }: { message: Message }) {
 
     default:
       return message.body ? (
-        <p className="leading-relaxed whitespace-pre-wrap">{message.body}</p>
+        <p className="leading-relaxed whitespace-pre-wrap break-words">{message.body}</p>
       ) : null
   }
 }
@@ -272,7 +272,7 @@ export function MessageBubble({ message, contactName, contactPhone, onReply }: M
       )}
 
       {/* Bubble + reactions column */}
-      <div className="flex flex-col max-w-[336px]">
+      <div className="flex flex-col max-w-[336px] min-w-0">
         <div
           className={cn(
             'rounded-xl px-3 py-2 text-sm',
@@ -334,7 +334,7 @@ export function MessageBubble({ message, contactName, contactPhone, onReply }: M
           {isMediaType ? (
             <MediaContent message={message} />
           ) : (
-            message.body && <p className="leading-relaxed whitespace-pre-wrap">{message.body}</p>
+            message.body && <p className="leading-relaxed whitespace-pre-wrap break-words">{message.body}</p>
           )}
 
           <div className="flex items-center gap-1 mt-1 justify-end">
