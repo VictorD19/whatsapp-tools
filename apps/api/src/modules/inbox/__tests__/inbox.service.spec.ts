@@ -48,6 +48,7 @@ describe('InboxService', () => {
     assignedTo: null,
     messages: [],
     deals: [],
+    followUps: [],
   }
 
   beforeEach(async () => {

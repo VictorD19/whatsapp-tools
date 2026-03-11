@@ -60,6 +60,31 @@ export interface ConversationAssistant {
   avatarEmoji: string | null
 }
 
+export type FollowUpType = 'MESSAGE' | 'CALL' | 'MEETING' | 'PROPOSAL' | 'PAYMENT'
+export type FollowUpMode = 'REMINDER' | 'AUTOMATIC'
+export type FollowUpStatus = 'PENDING' | 'NOTIFIED' | 'SENT' | 'CANCELLED'
+
+export interface NextFollowUp {
+  id: string
+  type: FollowUpType
+  scheduledAt: string
+  mode: FollowUpMode
+}
+
+export interface ConversationFollowUp {
+  id: string
+  type: FollowUpType
+  mode: FollowUpMode
+  status: FollowUpStatus
+  message: string | null
+  scheduledAt: string
+  notifiedAt: string | null
+  sentAt: string | null
+  cancelledAt: string | null
+  createdAt: string
+  createdBy: { id: string; name: string }
+}
+
 export interface Conversation {
   id: string
   instanceId: string
@@ -80,6 +105,8 @@ export interface Conversation {
   assistant: ConversationAssistant | null
   messages?: LastMessage[]
   deals?: ConversationDeal[]
+  nextFollowUp?: NextFollowUp | null
+  followUps?: ConversationFollowUp[]
 }
 
 export interface QuotedMessage {

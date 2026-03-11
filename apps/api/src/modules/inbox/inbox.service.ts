@@ -129,8 +129,13 @@ export class InboxService {
       limit: filters.limit,
     })
 
+    const mapped = conversations.map((c) => {
+      const { followUps, ...rest } = c
+      return { ...rest, nextFollowUp: followUps[0] ?? null }
+    })
+
     return {
-      data: conversations,
+      data: mapped,
       meta: {
         page: filters.page,
         limit: filters.limit,
