@@ -106,6 +106,8 @@ export interface Message {
   quotedMessageId: string | null
   quotedMessage: QuotedMessage | null
   reactions: MessageReaction[]
+  senderJid: string | null
+  senderName: string | null
   sentAt: string
   createdAt: string
 }

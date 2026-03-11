@@ -217,6 +217,14 @@ export class InboxWebhookProcessor {
         }
       }
 
+      // Extract sender info for group messages
+      const senderJid = isGroup && !fromMe
+        ? (key.participant as string | undefined)
+        : undefined
+      const senderName = isGroup && !fromMe
+        ? pushName ?? undefined
+        : undefined
+
       // Create message
       const newMessage = await this.inboxRepository.createMessage({
         tenantId: instance.tenantId,
@@ -228,6 +236,8 @@ export class InboxWebhookProcessor {
         evolutionId: evolutionMsgId,
         mediaUrl,
         quotedMessageId,
+        senderJid,
+        senderName,
       })
 
       // Download e armazena mídia inbound no storage local (fire and forget)
@@ -272,6 +282,8 @@ export class InboxWebhookProcessor {
           mediaUrl: newMessage.mediaUrl,
           quotedMessageId: newMessage.quotedMessageId,
           quotedMessage: newMessage.quotedMessage,
+          senderJid: newMessage.senderJid,
+          senderName: newMessage.senderName,
           sentAt: newMessage.sentAt,
           createdAt: newMessage.createdAt,
         },

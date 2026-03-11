@@ -275,6 +275,8 @@ export class InboxRepository {
     evolutionId?: string
     mediaUrl?: string
     quotedMessageId?: string
+    senderJid?: string
+    senderName?: string
   }) {
     const quotedSelect = {
       id: true,
@@ -295,6 +297,8 @@ export class InboxRepository {
         evolutionId: data.evolutionId,
         mediaUrl: data.mediaUrl,
         quotedMessageId: data.quotedMessageId,
+        senderJid: data.senderJid,
+        senderName: data.senderName,
       },
       include: {
         quotedMessage: { select: quotedSelect },

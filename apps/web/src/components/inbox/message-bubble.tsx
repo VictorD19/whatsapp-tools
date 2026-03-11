@@ -248,6 +248,15 @@ export function MessageBubble({ message, contactName, contactPhone, onReply }: M
   const isMediaType = ['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'STICKER'].includes(message.type)
   const hasReactions = message.reactions && message.reactions.length > 0
 
+  // Para grupos: usa senderName ou senderJid limpo; para 1:1: usa contactName
+  const isGroupMessage = !message.fromMe && (message.senderJid ?? message.senderName)
+  const senderLabel = isGroupMessage
+    ? (message.senderName ?? message.senderJid?.replace(/@s\.whatsapp\.net$/, '') ?? contactName)
+    : contactName
+  const senderPhone = isGroupMessage
+    ? message.senderJid?.replace(/@s\.whatsapp\.net$/, '') ?? undefined
+    : contactPhone
+
   return (
     <div className={cn('group flex items-end gap-1', message.fromMe ? 'justify-end' : 'justify-start')}>
       {/* Reply button — left side for sent messages */}
@@ -271,14 +280,14 @@ export function MessageBubble({ message, contactName, contactPhone, onReply }: M
           )}
         >
           {/* Contact name + phone header (received messages only) */}
-          {!message.fromMe && contactName && (
+          {!message.fromMe && senderLabel && (
             <div className="mb-1">
               <span className="text-[11px] font-semibold text-primary leading-none">
-                {contactName}
+                {senderLabel}
               </span>
-              {contactPhone && contactPhone !== contactName && (
+              {senderPhone && senderPhone !== senderLabel && (
                 <span className="text-[10px] text-muted-foreground ml-1.5 leading-none">
-                  {contactPhone.replace(/@s\.whatsapp\.net$/, '').replace(/@g\.us$/, '')}
+                  {senderPhone}
                 </span>
               )}
             </div>
