@@ -2,8 +2,9 @@
 
 import React from 'react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Clock } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
-import { formatRelativeDate } from '@/lib/formatting'
+import { formatRelativeDate, formatDateTime } from '@/lib/formatting'
 import type { Conversation } from '@/stores/inbox.store'
 
 interface ConversationListItemProps {
@@ -43,6 +44,11 @@ export function ConversationListItem({
   const preview = conversation.summary
     ?? lastMsgPreview
     ?? (conversation.status === 'PENDING' ? 'Aguardando atendimento...' : 'Sem mensagens recentes')
+
+  const nextFollowUp = conversation.nextFollowUp
+  const hasFollowUpDue = nextFollowUp
+    ? new Date(nextFollowUp.scheduledAt) <= new Date()
+    : false
 
   return (
     <button
@@ -120,6 +126,11 @@ export function ConversationListItem({
             {conversation.assignedTo && (
               <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium truncate max-w-[70px]">
                 {conversation.assignedTo.name}
+              </span>
+            )}
+            {hasFollowUpDue && nextFollowUp && (
+              <span title={formatDateTime(nextFollowUp.scheduledAt)}>
+                <Clock className="h-3 w-3 text-amber-500 shrink-0" />
               </span>
             )}
           </div>

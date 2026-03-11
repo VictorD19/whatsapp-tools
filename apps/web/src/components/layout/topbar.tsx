@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { useNotificationsStore } from '@/stores/notifications.store'
 import { useNotificationsSocket } from '@/hooks/use-notifications-socket'
+import { usePushNotifications } from '@/hooks/use-push-notifications'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { getInitials } from '@/lib/utils'
 
@@ -35,6 +36,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
   const { setUnreadCount } = useNotificationsStore()
   useNotificationsSocket()
+  usePushNotifications()
 
   // Fetch initial unread count
   React.useEffect(() => {

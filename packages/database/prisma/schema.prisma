@@ -73,6 +73,7 @@ model Tenant {
   knowledgeBases   KnowledgeBase[]
   aiTools          AiTool[]
   messageReactions MessageReaction[]
+  followUps        FollowUp[]
 
   @@index([planId])
 }
@@ -97,7 +98,9 @@ model User {
   dealNotes     DealNote[]     @relation("DealNoteAuthor")
   notifications Notification[]
   notificationPreferences NotificationPreference[]
+  pushSubscriptions PushSubscription[]
   broadcastsCreated Broadcast[] @relation("BroadcastCreator")
+  followUpsCreated  FollowUp[]  @relation("FollowUpCreator")
 
   @@index([tenantId])
 }
@@ -189,6 +192,7 @@ model Conversation {
   assistant  Assistant? @relation(fields: [assistantId], references: [id])
   messages   Message[]
   deals      Deal[]
+  followUps  FollowUp[]
 
   @@unique([tenantId, protocol])
   @@index([tenantId])
@@ -332,6 +336,7 @@ model Deal {
   conversation Conversation? @relation(fields: [conversationId], references: [id])
   assignedTo   User?         @relation("DealAssignee", fields: [assignedToId], references: [id])
   notes        DealNote[]
+  followUps    FollowUp[]
 
   @@index([tenantId])
   @@index([tenantId, contactId])
@@ -564,6 +569,22 @@ enum NotificationType {
   GROUP_EXTRACTION_COMPLETED
   BROADCAST_COMPLETED
   BROADCAST_FAILED
+  FOLLOW_UP_DUE
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint])
+  @@index([userId])
 }
 
 model Notification {
@@ -597,6 +618,56 @@ model NotificationPreference {
 
   @@unique([userId, type])
   @@index([userId])
+}
+
+// ── Follow-ups ───────────────────────────────────
+
+enum FollowUpType {
+  MESSAGE
+  CALL
+  MEETING
+  PROPOSAL
+  PAYMENT
+}
+
+enum FollowUpMode {
+  REMINDER
+  AUTOMATIC
+}
+
+enum FollowUpStatus {
+  PENDING
+  NOTIFIED
+  SENT
+  CANCELLED
+}
+
+model FollowUp {
+  id             String         @id @default(cuid())
+  tenantId       String
+  conversationId String
+  dealId         String?
+  createdById    String
+  type           FollowUpType
+  mode           FollowUpMode   @default(REMINDER)
+  status         FollowUpStatus @default(PENDING)
+  message        String?
+  scheduledAt    DateTime
+  notifiedAt     DateTime?
+  sentAt         DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  deal         Deal?        @relation(fields: [dealId], references: [id])
+  createdBy    User         @relation("FollowUpCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId])
+  @@index([conversationId])
+  @@index([dealId])
+  @@index([status, scheduledAt])
 }
 
 // ── AI: Assistants ──────────────────────────────

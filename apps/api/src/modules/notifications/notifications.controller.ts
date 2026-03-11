@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Delete,
   Patch,
   Put,
   Query,
@@ -46,6 +48,31 @@ export class NotificationsController {
   @HttpCode(HttpStatus.OK)
   markAllAsRead(@Req() req: { user: { id: string } }) {
     return this.service.markAllAsRead(req.user.id)
+  }
+
+  @Get('vapid-public-key')
+  getVapidPublicKey() {
+    return this.service.getVapidPublicKey()
+  }
+
+  @Post('push-subscription')
+  @HttpCode(HttpStatus.OK)
+  savePushSubscription(
+    @Req() req: { user: { id: string } },
+    @Body() body: unknown,
+  ) {
+    const dto = body as { endpoint: string; keys: { p256dh: string; auth: string }; userAgent?: string }
+    return this.service.savePushSubscription(req.user.id, dto)
+  }
+
+  @Delete('push-subscription')
+  @HttpCode(HttpStatus.OK)
+  removePushSubscription(
+    @Req() req: { user: { id: string } },
+    @Body() body: unknown,
+  ) {
+    const { endpoint } = body as { endpoint: string }
+    return this.service.removePushSubscription(req.user.id, endpoint)
   }
 
   @Put('preferences/:type')

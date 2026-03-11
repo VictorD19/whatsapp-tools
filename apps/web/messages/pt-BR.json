@@ -1331,6 +1331,84 @@
     "maxLength": "Máximo {count} caracteres",
     "passwordMismatch": "As senhas não conferem"
   },
+  "notificationPreferences": {
+    "title": "Preferências de Notificação",
+    "subtitle": "Escolha quais notificações deseja receber e como",
+    "columns": {
+      "type": "Tipo",
+      "inApp": "No app",
+      "browser": "Browser"
+    },
+    "browserPermissionWarning": "Notificações do browser precisam de permissão do navegador",
+    "types": {
+      "NEW_MESSAGE": "Nova mensagem",
+      "CONVERSATION_ASSIGNED": "Conversa atribuída",
+      "CONVERSATION_TRANSFERRED": "Conversa transferida",
+      "CONVERSATIONS_IMPORTED": "Conversas importadas",
+      "INSTANCE_CONNECTED": "Instância conectada",
+      "INSTANCE_DISCONNECTED": "Instância desconectada",
+      "INSTANCE_BANNED": "Instância banida",
+      "DEAL_WON": "Deal ganho",
+      "DEAL_LOST": "Deal perdido",
+      "DEAL_ASSIGNED": "Deal atribuído",
+      "GROUP_EXTRACTION_COMPLETED": "Extração concluída",
+      "FOLLOW_UP_DUE": "Follow-up pendente"
+    },
+    "groups": {
+      "inbox": "Inbox",
+      "instances": "Instâncias",
+      "deals": "Deals",
+      "groups": "Grupos",
+      "followUps": "Follow-ups"
+    }
+  },
+  "followUps": {
+    "title": "Follow-ups",
+    "new": "Novo follow-up",
+    "empty": "Nenhum follow-up agendado",
+    "emptyHint": "Agende lembretes ou mensagens automáticas para esta conversa",
+    "scheduledFor": "Agendado para",
+    "saving": "Salvando...",
+    "deleting": "Cancelando...",
+    "types": {
+      "MESSAGE": "Mensagem",
+      "CALL": "Ligação",
+      "MEETING": "Reunião",
+      "PROPOSAL": "Proposta",
+      "PAYMENT": "Pagamento"
+    },
+    "modes": {
+      "REMINDER": "Lembrete",
+      "REMINDER_hint": "Apenas notifica o atendente no horário agendado",
+      "AUTOMATIC": "Automático",
+      "AUTOMATIC_hint": "Envia a mensagem automaticamente no horário agendado"
+    },
+    "status": {
+      "PENDING": "Pendente",
+      "NOTIFIED": "Notificado",
+      "SENT": "Enviado",
+      "CANCELLED": "Cancelado"
+    },
+    "fields": {
+      "type": "Tipo",
+      "mode": "Modo",
+      "scheduledAt": "Data e hora",
+      "message": "Mensagem"
+    },
+    "success": {
+      "created": "Follow-up agendado com sucesso",
+      "cancelled": "Follow-up cancelado"
+    },
+    "error": {
+      "loading": "Erro ao carregar follow-ups",
+      "creating": "Erro ao criar follow-up",
+      "cancelling": "Erro ao cancelar follow-up"
+    },
+    "confirm": {
+      "cancel": "Cancelar follow-up",
+      "cancelDescription": "Tem certeza que deseja cancelar este follow-up? Esta ação não pode ser desfeita."
+    }
+  },
   "status": {
     "connected": "Conectado",
     "connecting": "Conectando",

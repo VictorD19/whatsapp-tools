@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import {
   Bell,
+  Clock,
   MessageSquare,
   Wifi,
   Trophy,
@@ -34,6 +35,7 @@ type NotificationType =
   | 'DEAL_LOST'
   | 'DEAL_ASSIGNED'
   | 'GROUP_EXTRACTION_COMPLETED'
+  | 'FOLLOW_UP_DUE'
 
 // TYPE_LABELS moved inside component to use translations
 
@@ -67,6 +69,11 @@ const PREFERENCE_GROUPS: {
     icon: Users,
     types: ['GROUP_EXTRACTION_COMPLETED'],
   },
+  {
+    labelKey: 'groups.followUps',
+    icon: Clock,
+    types: ['FOLLOW_UP_DUE'],
+  },
 ]
 
 export default function NotificationPreferencesPage() {
@@ -86,6 +93,7 @@ export default function NotificationPreferencesPage() {
     DEAL_LOST: t('types.DEAL_LOST'),
     DEAL_ASSIGNED: t('types.DEAL_ASSIGNED'),
     GROUP_EXTRACTION_COMPLETED: t('types.GROUP_EXTRACTION_COMPLETED'),
+    FOLLOW_UP_DUE: t('types.FOLLOW_UP_DUE'),
   }
 
   const { preferences, setPreferences } = useNotificationsStore()
@@ -186,7 +194,7 @@ export default function NotificationPreferencesPage() {
           {PREFERENCE_GROUPS.map((group, gi) => {
             const GroupIcon = group.icon
             return (
-              <div key={group.label} className="rounded-xl border border-border bg-card overflow-hidden">
+              <div key={group.labelKey} className="rounded-xl border border-border bg-card overflow-hidden">
                 {/* Group header */}
                 <div className="flex items-center gap-2 px-6 py-4 border-b border-border bg-muted/50">
                   <GroupIcon className="h-4 w-4 text-muted-foreground" />

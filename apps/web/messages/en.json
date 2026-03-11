@@ -1331,6 +1331,84 @@
     "maxLength": "Maximum {count} characters",
     "passwordMismatch": "Passwords do not match"
   },
+  "notificationPreferences": {
+    "title": "Notification Preferences",
+    "subtitle": "Choose which notifications you want to receive and how",
+    "columns": {
+      "type": "Type",
+      "inApp": "In app",
+      "browser": "Browser"
+    },
+    "browserPermissionWarning": "Browser notifications require browser permission",
+    "types": {
+      "NEW_MESSAGE": "New message",
+      "CONVERSATION_ASSIGNED": "Conversation assigned",
+      "CONVERSATION_TRANSFERRED": "Conversation transferred",
+      "CONVERSATIONS_IMPORTED": "Conversations imported",
+      "INSTANCE_CONNECTED": "Instance connected",
+      "INSTANCE_DISCONNECTED": "Instance disconnected",
+      "INSTANCE_BANNED": "Instance banned",
+      "DEAL_WON": "Deal won",
+      "DEAL_LOST": "Deal lost",
+      "DEAL_ASSIGNED": "Deal assigned",
+      "GROUP_EXTRACTION_COMPLETED": "Extraction completed",
+      "FOLLOW_UP_DUE": "Follow-up due"
+    },
+    "groups": {
+      "inbox": "Inbox",
+      "instances": "Instances",
+      "deals": "Deals",
+      "groups": "Groups",
+      "followUps": "Follow-ups"
+    }
+  },
+  "followUps": {
+    "title": "Follow-ups",
+    "new": "New follow-up",
+    "empty": "No follow-ups scheduled",
+    "emptyHint": "Schedule reminders or automatic messages for this conversation",
+    "scheduledFor": "Scheduled for",
+    "saving": "Saving...",
+    "deleting": "Cancelling...",
+    "types": {
+      "MESSAGE": "Message",
+      "CALL": "Call",
+      "MEETING": "Meeting",
+      "PROPOSAL": "Proposal",
+      "PAYMENT": "Payment"
+    },
+    "modes": {
+      "REMINDER": "Reminder",
+      "REMINDER_hint": "Only notifies the attendant at the scheduled time",
+      "AUTOMATIC": "Automatic",
+      "AUTOMATIC_hint": "Sends the message automatically at the scheduled time"
+    },
+    "status": {
+      "PENDING": "Pending",
+      "NOTIFIED": "Notified",
+      "SENT": "Sent",
+      "CANCELLED": "Cancelled"
+    },
+    "fields": {
+      "type": "Type",
+      "mode": "Mode",
+      "scheduledAt": "Date and time",
+      "message": "Message"
+    },
+    "success": {
+      "created": "Follow-up scheduled successfully",
+      "cancelled": "Follow-up cancelled"
+    },
+    "error": {
+      "loading": "Error loading follow-ups",
+      "creating": "Error creating follow-up",
+      "cancelling": "Error cancelling follow-up"
+    },
+    "confirm": {
+      "cancel": "Cancel follow-up",
+      "cancelDescription": "Are you sure you want to cancel this follow-up? This action cannot be undone."
+    }
+  },
   "status": {
     "connected": "Connected",
     "connecting": "Connecting",

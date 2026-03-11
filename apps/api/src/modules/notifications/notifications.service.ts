@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { NotificationsRepository, CreateNotificationData } from './notifications.repository'
 import { NotificationsGateway } from './notifications.gateway'
 import { NotificationProducer } from './queues/notification.producer'
+import { PushService, PushSubscriptionDto } from './push.service'
 import { NotificationFiltersDto } from './dto/notification-filters.dto'
 import { UpdatePreferenceDto } from './dto/update-preference.dto'
 import { NotificationType } from '@prisma/client'
@@ -13,6 +14,7 @@ export class NotificationsService {
     private readonly repository: NotificationsRepository,
     private readonly gateway: NotificationsGateway,
     private readonly producer: NotificationProducer,
+    private readonly push: PushService,
   ) {}
 
   async dispatch(data: CreateNotificationData) {
@@ -34,7 +36,29 @@ export class NotificationsService {
       unreadCount,
     })
 
+    // Push notification se o usuário tiver subscriptions e preferência browser ativa
+    const pref2 = await this.repository.findPreference(data.userId, data.type)
+    if (pref2?.browser ?? false) {
+      await this.push.sendToUser(data.userId, {
+        title: data.title,
+        body: data.body,
+        data: data.data,
+      })
+    }
+
     return notification
+  }
+
+  async savePushSubscription(userId: string, dto: PushSubscriptionDto) {
+    return this.push.saveSubscription(userId, dto)
+  }
+
+  async removePushSubscription(userId: string, endpoint: string) {
+    return this.push.removeSubscription(userId, endpoint)
+  }
+
+  getVapidPublicKey() {
+    return { publicKey: process.env.VAPID_PUBLIC_KEY ?? null }
   }
 
   async findByUser(userId: string, filters: NotificationFiltersDto) {

@@ -7,6 +7,7 @@ import { NotificationsRepository } from './notifications.repository'
 import { NotificationsGateway } from './notifications.gateway'
 import { NotificationProducer } from './queues/notification.producer'
 import { NotificationProcessor } from './queues/notification.processor'
+import { PushService } from './push.service'
 
 @Module({
   imports: [BullModule.registerQueue({ name: QUEUES.NOTIFICATION })],
@@ -17,6 +18,7 @@ import { NotificationProcessor } from './queues/notification.processor'
     NotificationsGateway,
     NotificationProducer,
     NotificationProcessor,
+    PushService,
   ],
   exports: [NotificationsService],
 })

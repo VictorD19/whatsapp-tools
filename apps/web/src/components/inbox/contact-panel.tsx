@@ -30,6 +30,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useInboxStore } from '@/stores/inbox.store'
 import type { Conversation, ConversationDeal } from '@/stores/inbox.store'
 import { TagsSection } from '@/components/shared/tags-section'
+import { FollowUpSection } from './follow-up-section'
 import { formatCurrency, getCurrencySymbol, formatDateShort, formatTime } from '@/lib/formatting'
 
 interface ContactPanelProps {
@@ -505,39 +506,6 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
 
       <Separator />
 
-      {/* Deal section */}
-      {activeDeal ? (
-        <>
-          <div className="space-y-3">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <span className="font-semibold text-foreground text-xs">Deal</span>
-              <span className="text-[10px] text-muted-foreground">
-                ({activeDeal.pipeline.name})
-              </span>
-            </div>
-
-            <DealStageSection deal={activeDeal} onStageChanged={handleStageChanged} />
-            <DealValueSection deal={activeDeal} onValueChanged={handleValueChanged} />
-            <LastContactIndicator dateStr={conversation.lastMessageAt} />
-          </div>
-
-          <Separator />
-
-          {/* Notes */}
-          <DealNotesSection dealId={activeDeal.id} />
-
-          <Separator />
-        </>
-      ) : (
-        <>
-          <div className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">Deal</span>
-            <p className="text-[11px] text-muted-foreground/60">{t('noDealAssociated')}</p>
-          </div>
-          <Separator />
-        </>
-      )}
-
       {/* Atendimento */}
       <div className="space-y-3">
         <span className="text-xs font-medium text-muted-foreground">{t('service')}</span>
@@ -587,24 +555,58 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
 
       {/* Actions */}
       {(isPending || (conversation.status === 'OPEN' && isAssignedToMe)) && (
+        <div className="space-y-2">
+          {isPending && (
+            <Button className="w-full" onClick={() => assignConversation(conversation.id)}>
+              {t('joinConversation')}
+            </Button>
+          )}
+          {conversation.status === 'OPEN' && isAssignedToMe && (
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={() => closeConversation(conversation.id)}
+            >
+              {t('endConversation')}
+            </Button>
+          )}
+        </div>
+      )}
+
+      <Separator />
+
+      {/* Deal section */}
+      {activeDeal ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <span className="font-semibold text-foreground text-xs">Deal</span>
+            <span className="text-[10px] text-muted-foreground">
+              ({activeDeal.pipeline.name})
+            </span>
+          </div>
+
+          <DealStageSection deal={activeDeal} onStageChanged={handleStageChanged} />
+          <DealValueSection deal={activeDeal} onValueChanged={handleValueChanged} />
+          <LastContactIndicator dateStr={conversation.lastMessageAt} />
+        </div>
+      ) : (
+        <div className="space-y-1">
+          <span className="text-xs font-medium text-muted-foreground">Deal</span>
+          <p className="text-[11px] text-muted-foreground/60">{t('noDealAssociated')}</p>
+        </div>
+      )}
+
+      <Separator />
+
+      {/* Follow-ups */}
+      <FollowUpSection conversationId={conversation.id} />
+
+      {activeDeal && (
         <>
           <Separator />
-          <div className="space-y-2">
-            {isPending && (
-              <Button className="w-full" onClick={() => assignConversation(conversation.id)}>
-                {t('joinConversation')}
-              </Button>
-            )}
-            {conversation.status === 'OPEN' && isAssignedToMe && (
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={() => closeConversation(conversation.id)}
-              >
-                {t('endConversation')}
-              </Button>
-            )}
-          </div>
+
+          {/* Notes */}
+          <DealNotesSection dealId={activeDeal.id} />
         </>
       )}
     </div>
