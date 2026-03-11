@@ -501,11 +501,6 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
 
       <Separator />
 
-      {/* Tags */}
-      <TagsSection contactId={contact.id} />
-
-      <Separator />
-
       {/* Atendimento */}
       <div className="space-y-3">
         <span className="text-xs font-medium text-muted-foreground">{t('service')}</span>
@@ -553,23 +548,12 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
         </div>
       </div>
 
-      {/* Actions */}
-      {(isPending || (conversation.status === 'OPEN' && isAssignedToMe)) && (
+      {/* Actions — apenas entrar na conversa fica aqui */}
+      {isPending && (
         <div className="space-y-2">
-          {isPending && (
-            <Button className="w-full" onClick={() => assignConversation(conversation.id)}>
-              {t('joinConversation')}
-            </Button>
-          )}
-          {conversation.status === 'OPEN' && isAssignedToMe && (
-            <Button
-              variant="destructive"
-              className="w-full"
-              onClick={() => closeConversation(conversation.id)}
-            >
-              {t('endConversation')}
-            </Button>
-          )}
+          <Button className="w-full" onClick={() => assignConversation(conversation.id)}>
+            {t('joinConversation')}
+          </Button>
         </div>
       )}
 
@@ -596,6 +580,9 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
         </div>
       )}
 
+      {/* Tags */}
+      <TagsSection contactId={contact.id} />
+
       <Separator />
 
       {/* Follow-ups */}
@@ -607,6 +594,20 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
 
           {/* Notes */}
           <DealNotesSection dealId={activeDeal.id} />
+        </>
+      )}
+
+      {/* Encerrar conversa — sempre no final */}
+      {conversation.status === 'OPEN' && isAssignedToMe && (
+        <>
+          <Separator />
+          <Button
+            variant="destructive"
+            className="w-full"
+            onClick={() => closeConversation(conversation.id)}
+          >
+            {t('endConversation')}
+          </Button>
         </>
       )}
     </div>

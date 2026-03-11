@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNotificationsStore, type Notification } from '@/stores/notifications.store'
 import { cn } from '@/lib/utils'
+import { formatRelativeDate } from '@/lib/formatting'
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
 
@@ -244,7 +245,7 @@ export default function NotificationsPage() {
                         {n.title}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
-                      <p className="text-[11px] text-muted-foreground/60 mt-1">{timeAgo(n.createdAt)}</p>
+                      <p className="text-[11px] text-muted-foreground/60 mt-1">{formatRelativeDate(n.createdAt)}</p>
                     </div>
                     {!n.read && (
                       <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />

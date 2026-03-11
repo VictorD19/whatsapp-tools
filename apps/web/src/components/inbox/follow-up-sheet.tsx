@@ -55,16 +55,20 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
 
   const [type, setType] = useState<FollowUpType>('MESSAGE')
   const [mode, setMode] = useState<FollowUpMode>('REMINDER')
-  const [dateValue, setDateValue] = useState('')
-  const [timeValue, setTimeValue] = useState('')
+  const [dateValue, setDateValue] = useState(() => new Date().toISOString().split('T')[0])
+  const [timeValue, setTimeValue] = useState(() => {
+    const now = new Date()
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+  })
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
 
   function resetForm() {
+    const now = new Date()
     setType('MESSAGE')
     setMode('REMINDER')
-    setDateValue('')
-    setTimeValue('')
+    setDateValue(now.toISOString().split('T')[0])
+    setTimeValue(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`)
     setMessage('')
   }
 
