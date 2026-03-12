@@ -43,8 +43,6 @@ export default function NewAssistantPage() {
   )
 
   return (
-    <div className="h-full flex flex-col">
-      <AssistantForm assistant={null} saving={saving} onSave={handleSave} />
-    </div>
+    <AssistantForm assistant={null} saving={saving} onSave={handleSave} />
   )
 }

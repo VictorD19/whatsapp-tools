@@ -6,6 +6,7 @@ import { ArrowLeft, User, FileText } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -17,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { PageLayout } from '@/components/layout/page-layout'
 import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
@@ -105,9 +107,16 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
   }, [name, description, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, selectedKBs, onSave])
 
   return (
-    <div className="flex flex-col h-full">
+    <PageLayout
+      breadcrumb={[
+        { label: t('aiBreadcrumb') },
+        { label: t('breadcrumb') },
+        { label: assistant ? assistant.name : t('form.newAssistant') },
+      ]}
+      cardClassName="flex flex-col overflow-hidden p-0"
+    >
       {/* Topbar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-background">
+      <div className="flex items-center justify-between px-5 py-3 border-b">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -118,10 +127,6 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
             <ArrowLeft className="h-4 w-4" />
             {t('breadcrumb')}
           </Button>
-          <span className="text-muted-foreground text-sm">/</span>
-          <span className="text-sm font-medium">
-            {assistant ? assistant.name : t('form.newAssistant')}
-          </span>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => router.push('/assistants')}>
@@ -135,7 +140,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
 
       {/* Tabs */}
       <Tabs defaultValue="profile" className="flex-1 flex flex-col overflow-hidden">
-        <div className="px-6 pt-1 border-b bg-background">
+        <div className="px-5 pt-1 border-b">
           <TabsList className="bg-transparent p-0 h-auto gap-0 rounded-none">
             {[
               { value: 'profile', label: t('tabs.profile'), icon: User },
@@ -154,11 +159,11 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
         </div>
 
         {/* PERFIL */}
-        <TabsContent value="profile" className="flex-1 overflow-y-auto p-6 mt-0">
+        <TabsContent value="profile" className="flex-1 overflow-y-auto p-5 mt-0">
           <div className="max-w-xl">
-            <div className="rounded-xl border bg-card p-6 space-y-5">
+            <div className="space-y-5">
               {/* Avatar + emoji */}
-              <div className="flex items-center gap-5 pb-2 border-b">
+              <div className="flex items-center gap-5 pb-2">
                 <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/10 text-4xl border-2 border-dashed border-primary/30">
                   {avatarEmoji || '🤖'}
                 </div>
@@ -295,26 +300,24 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
         </TabsContent>
 
         {/* INSTRUÇÕES */}
-        <TabsContent value="instructions" className="flex-1 overflow-y-auto p-6 mt-0">
+        <TabsContent value="instructions" className="flex-1 overflow-y-auto p-5 mt-0">
           <div className="max-w-3xl">
-            <div className="rounded-xl border bg-card p-6 space-y-3">
+            <div className="space-y-3">
               <div>
-                <Label htmlFor="prompt">{t('fields.systemPrompt')}</Label>
+                <Label>{t('fields.systemPrompt')}</Label>
                 <p className="text-xs text-muted-foreground mt-1">
                   {t('fields.systemPromptHint')}
                 </p>
               </div>
-              <Textarea
-                id="prompt"
-                placeholder={`Você é um assistente de vendas especializado em...\n\nSeu objetivo é...\n\nSempre responda em português e de forma...\n\nQuando o cliente perguntar sobre preço, você deve...`}
+              <RichTextEditor
                 value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                className="min-h-[500px] resize-none font-mono text-sm leading-relaxed"
+                onChange={setSystemPrompt}
+                placeholder={t('fields.systemPromptPlaceholder')}
               />
             </div>
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageLayout>
   )
 }
