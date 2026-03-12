@@ -3,7 +3,7 @@ import { getSocket } from '@/lib/socket'
 import { apiGet } from '@/lib/api'
 import { useInboxStore, type Conversation, type InboxTab, type Message, type MessageReaction, type MessageStatus } from '@/stores/inbox.store'
 
-const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3'
+const NOTIFICATION_SOUND_URL = '/sounds/notification.wav'
 
 function playNotificationSound() {
   try {
