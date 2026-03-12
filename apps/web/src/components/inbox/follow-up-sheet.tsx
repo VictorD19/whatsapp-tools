@@ -35,6 +35,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { fromZonedTime } from 'date-fns-tz'
+import { useLocaleStore } from '@/stores/locale.store'
 import { api } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 import type { FollowUpType, FollowUpMode } from '@/stores/inbox.store'
@@ -122,7 +124,8 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
 
   function isValid(): boolean {
     if (!dateValue || !timeValue) return false
-    const scheduledAt = new Date(`${dateValue}T${timeValue}`)
+    const timezone = useLocaleStore.getState().timezone
+    const scheduledAt = fromZonedTime(`${dateValue}T${timeValue}:00`, timezone)
     if (isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) return false
     if (mode === 'AUTOMATIC' && !message.trim() && !mediaFile) return false
     return true
@@ -131,7 +134,9 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
   async function handleSubmit() {
     if (!isValid()) return
 
-    const scheduledAt = new Date(`${dateValue}T${timeValue}`).toISOString()
+    // Converte a data/hora do timezone configurado no tenant para UTC
+    const timezone = useLocaleStore.getState().timezone
+    const scheduledAt = fromZonedTime(`${dateValue}T${timeValue}:00`, timezone).toISOString()
 
     setSaving(true)
     try {
@@ -192,7 +197,7 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
           {/* Mode */}
           <div className="space-y-2">
             <Label>{t('fields.mode')}</Label>
-            <RadioGroup value={mode} onValueChange={(v) => setMode(v as FollowUpMode)} className="space-y-2">
+            <RadioGroup value={mode} onValueChange={(v) => { setMode(v as FollowUpMode); if (v === 'REMINDER') setMediaFile(null) }} className="space-y-2">
               <div className="flex items-start space-x-3 rounded-md border p-3">
                 <RadioGroupItem value="REMINDER" id="mode-reminder" className="mt-0.5" />
                 <div className="space-y-0.5">
@@ -247,8 +252,8 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
               )}
             </Label>
 
-            {/* File preview */}
-            {mediaFile && (
+            {/* File preview (only for AUTOMATIC mode) */}
+            {mode === 'AUTOMATIC' && mediaFile && (
               <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
                 <FileIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
@@ -270,29 +275,33 @@ export function FollowUpSheet({ open, onClose, conversationId, onCreated }: Foll
               <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder={mediaFile ? t('fields.attachedFile') : t('fields.message')}
-                className="min-h-[80px] resize-none pr-10"
+                placeholder={mode === 'AUTOMATIC' && mediaFile ? t('fields.attachedFile') : t('fields.message')}
+                className={`min-h-[80px] resize-none ${mode === 'AUTOMATIC' ? 'pr-10' : ''}`}
               />
-              {/* Attach button inside textarea corner */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-2 right-2 rounded p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                title={t('fields.attachFile')}
-                aria-label={t('fields.attachFile')}
-              >
-                <Paperclip className="h-4 w-4" />
-              </button>
+              {/* Attach button inside textarea corner (only for AUTOMATIC mode) */}
+              {mode === 'AUTOMATIC' && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-2 right-2 rounded p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  title={t('fields.attachFile')}
+                  aria-label={t('fields.attachFile')}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={ACCEPTED_TYPES}
-              onChange={handleFileChange}
-              className="sr-only"
-            />
+            {/* Hidden file input (only for AUTOMATIC mode) */}
+            {mode === 'AUTOMATIC' && (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_TYPES}
+                onChange={handleFileChange}
+                className="sr-only"
+              />
+            )}
           </div>
         </div>
 
