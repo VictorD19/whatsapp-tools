@@ -72,7 +72,7 @@ export default function ContactDetailPage() {
 
   return (
     <PageLayout
-      breadcrumb={[{ label: 'Marketing' }, { label: 'Contatos' }]}
+      breadcrumb={[{ label: 'Marketing' }, { label: 'Contatos', href: '/contacts' }]}
       cardClassName="flex flex-col overflow-hidden"
     >
       <div className="flex h-full flex-col overflow-hidden">

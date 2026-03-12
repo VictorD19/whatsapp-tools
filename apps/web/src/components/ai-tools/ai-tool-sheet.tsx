@@ -13,8 +13,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ToolTypeSelector, type AiToolType } from './tool-type-selector'
 import { TagConfig } from './config-forms/tag-config'
 import { DealConfig } from './config-forms/deal-config'
-import { HandoffConfig } from './config-forms/handoff-config'
-import { WebhookConfig } from './config-forms/webhook-config'
 
 export interface AiTool {
   id: string
@@ -142,18 +140,6 @@ export function AiToolSheet({ open, onClose, onSave, tool, saving }: AiToolSheet
               <DealConfig
                 value={config as { pipelineId?: string; stageId?: string }}
                 onChange={setConfig}
-              />
-            )}
-            {type === 'TRANSFERIR_HUMANO' && (
-              <HandoffConfig
-                value={config as { message?: string }}
-                onChange={setConfig}
-              />
-            )}
-            {type === 'WEBHOOK_EXTERNO' && (
-              <WebhookConfig
-                value={config as { url?: string; method?: string; headers?: Record<string, string>; bodyTemplate?: string }}
-                onChange={(c) => setConfig(c as Record<string, unknown>)}
               />
             )}
           </div>

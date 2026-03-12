@@ -804,7 +804,7 @@
     "breadcrumb": "Bases de Conocimiento",
     "count": "{count} base registrada",
     "countPlural": "{count} bases registradas",
-    "newButton": "Nueva base de conocimiento",
+    "newButton": "Agregar nueva",
     "empty": {
       "title": "Ninguna base de conocimiento",
       "description": "Las bases de conocimiento permiten que tus asistentes accedan a información específica de tu negocio",
@@ -813,11 +813,72 @@
     "sourceCount": "{count} fuente",
     "sourceCountPlural": "{count} fuentes",
     "sourcesLabel": "Fuentes ({count})",
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "tabs": {
+      "register": "Registro",
+      "contents": "Contenidos"
+    },
+    "registration": {
+      "title": "Información principal",
+      "description": "Gestiona la información funcional de identificación de esta base de conocimiento.",
+      "editButton": "Editar información",
+      "fieldName": "Nombre",
+      "fieldDescription": "Descripción",
+      "fieldStatus": "Estado"
+    },
+    "contents": {
+      "addNew": "Agregar nuevo",
+      "searchPlaceholder": "Buscar contenidos",
+      "colName": "Nombre",
+      "colType": "Tipo de contenido",
+      "typeFiles": "Grupo de archivos",
+      "typeQA": "Grupo de preguntas",
+      "empty": "Ningún contenido agregado",
+      "emptyHint": "Agrega contenidos para personalizar tu inteligencia artificial",
+      "endOfList": "Llegaste al final",
+      "showing": "Mostrando {start} - {end} de {total}",
+      "pageInfo": "Página {current} de {total}",
+      "delete": {
+        "title": "Eliminar contenido",
+        "description": "¿Estás seguro de que deseas eliminar el contenido <strong>{name}</strong>? Esta acción no se puede deshacer."
+      }
+    },
+    "modal": {
+      "title": "Agregar nuevo contenido",
+      "description": "Registra nuevos contenidos en tu base de conocimiento para personalizar tu inteligencia artificial.",
+      "stepIdentification": "Identificación",
+      "stepContent": "Contenido",
+      "identification": {
+        "title": "Identificación",
+        "namePlaceholder": "Nombre",
+        "typeQuestion": "¿Qué tipo de contenido deseas agregar?",
+        "typeFiles": "Archivos",
+        "typeQA": "Grupo de preguntas y respuestas"
+      },
+      "content": {
+        "title": "Contenido",
+        "dropzone": "Arrastra y suelta los archivos aquí, o haz clic para elegir",
+        "dropzoneHint": "Puedes enviar {max} archivo(s) de hasta {size} MB cada uno",
+        "questionLabel": "Pregunta {n}",
+        "questionPlaceholder": "Pregunta frecuente",
+        "answerPlaceholder": "Respuesta esperada",
+        "addQuestion": "Agregar nueva"
+      },
+      "continue": "Continuar",
+      "back": "Volver",
+      "submit": "Enviar",
+      "submitting": "Enviando..."
+    },
     "sheet": {
       "editTitle": "Editar base de conocimiento",
       "newTitle": "Nueva base de conocimiento",
       "editDescription": "Cambia la información de la base de conocimiento",
-      "newDescription": "Completa los datos para crear una nueva base de conocimiento"
+      "newDescription": "Completa los datos para crear una nueva base de conocimiento",
+      "addContentTitle": "Agregar contenido",
+      "addContentDescription": "Seleccione el tipo y complete los datos"
     },
     "fields": {
       "name": "Nombre",
@@ -904,14 +965,6 @@
       "descriptionPlaceholder": "Describe qué hace esta herramienta..."
     },
     "types": {
-      "BUSCAR_CONTATO": {
-        "label": "Buscar Contacto",
-        "description": "Busca datos del contacto en CRM"
-      },
-      "CRIAR_CONTATO": {
-        "label": "Crear Contacto",
-        "description": "Registra el contacto en CRM"
-      },
       "ADICIONAR_TAG": {
         "label": "Agregar Etiqueta",
         "description": "Aplica etiquetas al contacto"
@@ -919,14 +972,6 @@
       "CRIAR_DEAL": {
         "label": "Crear Negocio",
         "description": "Abre un negocio en CRM"
-      },
-      "TRANSFERIR_HUMANO": {
-        "label": "Transferir a Humano",
-        "description": "Pausa IA, transfiere a agente"
-      },
-      "WEBHOOK_EXTERNO": {
-        "label": "Webhook Externo",
-        "description": "Llama URL externa con datos"
       }
     },
     "delete": {
@@ -943,6 +988,19 @@
       "creating": "Error al crear herramienta",
       "updating": "Error al actualizar herramienta",
       "deleting": "Error al eliminar herramienta"
+    },
+    "breadcrumb": "Herramientas de IA",
+    "searchPlaceholder": "Buscar herramientas...",
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "table": {
+      "name": "Nombre",
+      "type": "Tipo",
+      "endOfList": "Has llegado al final",
+      "showing": "Mostrando {start} - {end} de {total}",
+      "pageInfo": "Página {current} de {total}"
     }
   },
   "notifications": {

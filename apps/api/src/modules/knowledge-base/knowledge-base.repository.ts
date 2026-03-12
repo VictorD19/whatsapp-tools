@@ -37,7 +37,7 @@ export class KnowledgeBaseRepository {
     })
   }
 
-  async update(tenantId: string, id: string, data: { name?: string; description?: string }) {
+  async update(tenantId: string, id: string, data: { name?: string; description?: string; isActive?: boolean }) {
     return this.prisma.knowledgeBase.update({
       where: { id },
       data,

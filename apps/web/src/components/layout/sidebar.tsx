@@ -33,6 +33,7 @@ interface NavItem {
   label: string
   href: string
   badge?: number
+  exactMatch?: boolean
 }
 
 interface NavGroup {
@@ -66,7 +67,7 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
     groups.push({
       label: tNav('groups.ai'),
       items: [
-        { icon: Bot, label: tNav('items.assistants'), href: '/assistants' },
+        { icon: Bot, label: tNav('items.assistants'), href: '/assistants', exactMatch: true },
         { icon: BookOpen, label: tNav('items.knowledgeBases'), href: '/assistants/knowledge-bases' },
         { icon: Wrench, label: tNav('items.aiTools'), href: '/assistants/tools' },
       ],
@@ -173,7 +174,9 @@ function NavLink({
   pathname: string
   collapsed: boolean
 }) {
-  const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+  const isActive = item.exactMatch
+    ? pathname === item.href
+    : pathname === item.href || pathname.startsWith(item.href + '/')
   const Icon = item.icon
 
   const linkContent = (

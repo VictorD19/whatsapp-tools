@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -32,14 +33,26 @@ export function PageLayout({ breadcrumb, children, cardClassName }: PageLayoutPr
     <div className="p-6 flex flex-col gap-3 min-h-[calc(100vh-3rem)]">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        {breadcrumb.map((item, i) => (
-          <React.Fragment key={i}>
-            {i > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
-            <span className={i === breadcrumb.length - 1 ? 'text-foreground font-medium' : ''}>
-              {item.label}
-            </span>
-          </React.Fragment>
-        ))}
+        {breadcrumb.map((item, i) => {
+          const isLast = i === breadcrumb.length - 1
+          return (
+            <React.Fragment key={i}>
+              {i > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+              {!isLast && item.href ? (
+                <Link
+                  href={item.href}
+                  className="hover:text-foreground transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <span className={isLast ? 'text-foreground font-medium' : ''}>
+                  {item.label}
+                </span>
+              )}
+            </React.Fragment>
+          )
+        })}
       </nav>
 
       {/* Card principal */}

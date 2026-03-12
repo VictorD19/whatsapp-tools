@@ -804,7 +804,7 @@
     "breadcrumb": "Knowledge Bases",
     "count": "{count} knowledge base registered",
     "countPlural": "{count} knowledge bases registered",
-    "newButton": "New knowledge base",
+    "newButton": "Add new",
     "empty": {
       "title": "No knowledge bases",
       "description": "Knowledge bases allow your assistants to access specific information about your business",
@@ -813,11 +813,72 @@
     "sourceCount": "{count} source",
     "sourceCountPlural": "{count} sources",
     "sourcesLabel": "Sources ({count})",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "tabs": {
+      "register": "Register",
+      "contents": "Contents"
+    },
+    "registration": {
+      "title": "Main information",
+      "description": "Manage the functional identification information of this knowledge base.",
+      "editButton": "Edit information",
+      "fieldName": "Name",
+      "fieldDescription": "Description",
+      "fieldStatus": "Status"
+    },
+    "contents": {
+      "addNew": "Add new",
+      "searchPlaceholder": "Search contents",
+      "colName": "Name",
+      "colType": "Content type",
+      "typeFiles": "File group",
+      "typeQA": "Question group",
+      "empty": "No content added",
+      "emptyHint": "Add contents to customize your artificial intelligence",
+      "endOfList": "You've reached the end",
+      "showing": "Showing {start} - {end} of {total}",
+      "pageInfo": "Page {current} of {total}",
+      "delete": {
+        "title": "Delete content",
+        "description": "Are you sure you want to delete content <strong>{name}</strong>? This action cannot be undone."
+      }
+    },
+    "modal": {
+      "title": "Add new content",
+      "description": "Register new content in your knowledge base to customize your artificial intelligence.",
+      "stepIdentification": "Identification",
+      "stepContent": "Content",
+      "identification": {
+        "title": "Identification",
+        "namePlaceholder": "Name",
+        "typeQuestion": "What type of content do you want to add?",
+        "typeFiles": "Files",
+        "typeQA": "Question and answer group"
+      },
+      "content": {
+        "title": "Content",
+        "dropzone": "Drag and drop files here, or click to choose",
+        "dropzoneHint": "You can upload {max} file(s) of up to {size} MB each",
+        "questionLabel": "Question {n}",
+        "questionPlaceholder": "Frequently asked question",
+        "answerPlaceholder": "Expected answer",
+        "addQuestion": "Add new"
+      },
+      "continue": "Continue",
+      "back": "Back",
+      "submit": "Submit",
+      "submitting": "Submitting..."
+    },
     "sheet": {
       "editTitle": "Edit knowledge base",
       "newTitle": "New knowledge base",
       "editDescription": "Change knowledge base information",
-      "newDescription": "Fill in the details to create a new knowledge base"
+      "newDescription": "Fill in the details to create a new knowledge base",
+      "addContentTitle": "Add content",
+      "addContentDescription": "Select the type and fill in the data"
     },
     "fields": {
       "name": "Name",
@@ -904,14 +965,6 @@
       "descriptionPlaceholder": "Describe what this tool does..."
     },
     "types": {
-      "BUSCAR_CONTATO": {
-        "label": "Search Contact",
-        "description": "Searches contact data in CRM"
-      },
-      "CRIAR_CONTATO": {
-        "label": "Create Contact",
-        "description": "Registers contact in CRM"
-      },
       "ADICIONAR_TAG": {
         "label": "Add Tag",
         "description": "Applies tags to contact"
@@ -919,14 +972,6 @@
       "CRIAR_DEAL": {
         "label": "Create Deal",
         "description": "Opens a deal in CRM"
-      },
-      "TRANSFERIR_HUMANO": {
-        "label": "Transfer to Human",
-        "description": "Pauses AI, transfers to agent"
-      },
-      "WEBHOOK_EXTERNO": {
-        "label": "External Webhook",
-        "description": "Calls external URL with data"
       }
     },
     "delete": {
@@ -943,6 +988,19 @@
       "creating": "Error creating tool",
       "updating": "Error updating tool",
       "deleting": "Error deleting tool"
+    },
+    "breadcrumb": "AI Tools",
+    "searchPlaceholder": "Search tools...",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "name": "Name",
+      "type": "Type",
+      "endOfList": "You've reached the end",
+      "showing": "Showing {start} - {end} of {total}",
+      "pageInfo": "Page {current} of {total}"
     }
   },
   "notifications": {

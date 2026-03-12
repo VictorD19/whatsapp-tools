@@ -1,17 +1,13 @@
 'use client'
 
 import React from 'react'
-import { Search, UserPlus, Tag, Briefcase, Handshake, Webhook } from 'lucide-react'
+import { Tag, Briefcase } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 export type AiToolType =
-  | 'BUSCAR_CONTATO'
-  | 'CRIAR_CONTATO'
   | 'ADICIONAR_TAG'
   | 'CRIAR_DEAL'
-  | 'TRANSFERIR_HUMANO'
-  | 'WEBHOOK_EXTERNO'
 
 interface ToolTypeOption {
   type: AiToolType
@@ -19,12 +15,8 @@ interface ToolTypeOption {
 }
 
 const TOOL_TYPE_ICONS: ToolTypeOption[] = [
-  { type: 'BUSCAR_CONTATO', icon: Search },
-  { type: 'CRIAR_CONTATO', icon: UserPlus },
   { type: 'ADICIONAR_TAG', icon: Tag },
   { type: 'CRIAR_DEAL', icon: Briefcase },
-  { type: 'TRANSFERIR_HUMANO', icon: Handshake },
-  { type: 'WEBHOOK_EXTERNO', icon: Webhook },
 ]
 
 export { TOOL_TYPE_ICONS as TOOL_TYPES }

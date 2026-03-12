@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import {
   Sheet,
   SheetContent,
@@ -19,12 +20,13 @@ interface KnowledgeBase {
   id: string
   name: string
   description?: string | null
+  isActive: boolean
 }
 
 interface KnowledgeBaseSheetProps {
   open: boolean
   onClose: () => void
-  onSave: (data: { name: string; description?: string }) => Promise<void>
+  onSave: (data: { name: string; description?: string; isActive?: boolean }) => Promise<void>
   editingKb?: KnowledgeBase | null
 }
 
@@ -33,12 +35,14 @@ export function KnowledgeBaseSheet({ open, onClose, onSave, editingKb }: Knowled
   const tc = useTranslations('common')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [isActive, setIsActive] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (open) {
       setName(editingKb?.name ?? '')
       setDescription(editingKb?.description ?? '')
+      setIsActive(editingKb?.isActive ?? true)
     }
   }, [open, editingKb])
 
@@ -49,6 +53,7 @@ export function KnowledgeBaseSheet({ open, onClose, onSave, editingKb }: Knowled
       await onSave({
         name: name.trim(),
         description: description.trim() || undefined,
+        ...(editingKb ? { isActive } : {}),
       })
       onClose()
     } finally {
@@ -86,6 +91,23 @@ export function KnowledgeBaseSheet({ open, onClose, onSave, editingKb }: Knowled
               rows={3}
             />
           </div>
+          {editingKb && (
+            <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="kb-active" className="cursor-pointer">
+                  {t('registration.fieldStatus')}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {isActive ? t('status.active') : t('status.inactive')}
+                </p>
+              </div>
+              <Switch
+                id="kb-active"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+            </div>
+          )}
         </div>
         <SheetFooter>
           <Button variant="outline" onClick={onClose}>

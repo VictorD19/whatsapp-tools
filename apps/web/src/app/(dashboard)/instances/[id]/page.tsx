@@ -18,7 +18,7 @@ export default async function InstanceDetailPage({ params }: Props) {
 
   return (
     <PageLayout
-      breadcrumb={[{ label: 'Configurações' }, { label: 'Instâncias' }]}
+      breadcrumb={[{ label: 'Configurações' }, { label: 'Instâncias', href: '/instances' }]}
       cardClassName="p-5 space-y-5 max-w-2xl"
     >
         <div className="flex items-center gap-3">

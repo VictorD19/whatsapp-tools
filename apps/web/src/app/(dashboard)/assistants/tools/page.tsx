@@ -1,28 +1,41 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Plus, Wrench } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, CheckCircle2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { PageLayout } from '@/components/layout/page-layout'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog'
-import { EmptyState } from '@/components/shared/empty-state'
-import { AiToolCard } from '@/components/ai-tools/ai-tool-card'
-import { AiToolSheet, type AiTool } from '@/components/ai-tools/ai-tool-sheet'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/components/ui/toaster'
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
+import { AiToolSheet, type AiTool } from '@/components/ai-tools/ai-tool-sheet'
 
 const AI_TOOLS_KEY = ['ai-tools']
+const PAGE_SIZE = 20
 
 export default function AiToolsPage() {
   const t = useTranslations('aiTools')
   const tc = useTranslations('common')
   const tn = useTranslations('nav')
-  React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
+  React.useEffect(() => {
+    document.title = `${t('title')} | SistemaZapChat`
+  }, [t])
 
   const queryClient = useQueryClient()
 
@@ -31,11 +44,22 @@ export default function AiToolsPage() {
     queryFn: () => apiGet<{ data: AiTool[] }>('ai-tools').then((r) => r.data),
   })
 
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingTool, setEditingTool] = useState<AiTool | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingTool, setDeletingTool] = useState<AiTool | null>(null)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const filtered = tools.filter((tool) =>
+    tool.name.toLowerCase().includes(search.toLowerCase()),
+  )
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const startIdx = filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const endIdx = Math.min(page * PAGE_SIZE, filtered.length)
 
   const openCreate = () => {
     setEditingTool(null)
@@ -67,28 +91,15 @@ export default function AiToolsPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t('error.creating')
       toast({ title: message, variant: 'destructive' })
+      throw err
     } finally {
       setSaving(false)
     }
   }
 
-  const handleToggle = async (tool: AiTool, isActive: boolean) => {
-    try {
-      await apiPatch(`ai-tools/${tool.id}`, { isActive })
-      queryClient.invalidateQueries({ queryKey: AI_TOOLS_KEY })
-      toast({
-        title: t('success.toggled'),
-        variant: 'success',
-      })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('error.updating')
-      toast({ title: message, variant: 'destructive' })
-    }
-  }
-
   const handleDelete = async () => {
     if (!deletingTool) return
-    setSaving(true)
+    setDeleting(true)
     try {
       await apiDelete(`ai-tools/${deletingTool.id}`)
       queryClient.invalidateQueries({ queryKey: AI_TOOLS_KEY })
@@ -98,65 +109,183 @@ export default function AiToolsPage() {
       const message = err instanceof Error ? err.message : t('error.deleting')
       toast({ title: message, variant: 'destructive' })
     } finally {
-      setSaving(false)
+      setDeleting(false)
     }
   }
 
-  if (isLoading) {
-    return (
-      <PageLayout breadcrumb={[{ label: tn('groups.ai') }, { label: tn('items.aiTools') }]}>
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-48" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-36 w-full rounded-xl" />
-          ))}
-        </div>
-      </PageLayout>
-    )
-  }
-
   return (
-    <PageLayout breadcrumb={[{ label: tn('groups.ai') }, { label: tn('items.aiTools') }]}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{t('title')}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {tools.length === 1 ? t('count', { count: tools.length }) : t('countPlural', { count: tools.length })}
-          </p>
-        </div>
+    <PageLayout
+      breadcrumb={[{ label: tn('groups.ai') }, { label: t('breadcrumb') }]}
+      cardClassName="flex flex-col overflow-hidden p-0"
+    >
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
+        <Input
+          className="max-w-xs h-9"
+          placeholder={t('searchPlaceholder')}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(1)
+          }}
+        />
+        <div className="flex-1" />
         <Button size="sm" onClick={openCreate}>
-          <Plus className="h-4 w-4" />
           {t('newButton')}
         </Button>
       </div>
 
-      {/* Grid */}
-      {tools.length === 0 ? (
-        <EmptyState
-          icon={Wrench}
-          title={t('empty.title')}
-          description={t('empty.description')}
-          action={{ label: t('empty.action'), onClick: openCreate }}
-        />
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tools.map((tool) => (
-            <AiToolCard
-              key={tool.id}
-              tool={tool}
-              onEdit={openEdit}
-              onDelete={openDelete}
-              onToggle={handleToggle}
-            />
-          ))}
-        </div>
-      )}
+      {/* Table */}
+      <div className="flex-1 overflow-auto min-h-0 px-5 py-4 flex flex-col">
+        {isLoading ? (
+          <div className="space-y-px">
+            <div className="flex items-center gap-4 px-4 py-3 border border-border rounded-t-md bg-muted/30">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-20 ml-auto" />
+            </div>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 px-4 py-3.5 border-x border-b border-border last:rounded-b-md"
+              >
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-4 w-24 ml-auto" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className="border border-border rounded-md overflow-hidden">
+              {/* Table header */}
+              <div className="grid grid-cols-[1fr_200px_180px_48px] items-center px-4 py-2.5 border-b border-border bg-muted/20">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {t('table.name')}
+                </span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {t('table.type')}
+                </span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Status
+                </span>
+                <span />
+              </div>
 
-      {/* Create/Edit Sheet */}
+              {/* Rows */}
+              {paginated.length === 0 ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  {tc('noResults')}
+                </div>
+              ) : (
+                paginated.map((tool) => (
+                  <div
+                    key={tool.id}
+                    className="grid grid-cols-[1fr_200px_180px_48px] items-center px-4 py-3.5 border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors cursor-pointer"
+                    onClick={() => openEdit(tool)}
+                  >
+                    <span className="text-sm font-medium truncate pr-4">{tool.name}</span>
+                    <span className="text-sm text-muted-foreground truncate pr-4">
+                      {t(`types.${tool.type}.label`)}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-sm">
+                      <span
+                        className={`h-2 w-2 rounded-full shrink-0 ${tool.isActive ? 'bg-green-500' : 'bg-muted-foreground/40'}`}
+                      />
+                      <span className={tool.isActive ? 'text-green-500' : 'text-muted-foreground'}>
+                        {tool.isActive ? t('status.active') : t('status.inactive')}
+                      </span>
+                    </span>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(tool)}>
+                            <Pencil className="h-3.5 w-3.5 mr-2" />
+                            {tc('edit')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => openDelete(tool)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-2" />
+                            {tc('delete')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {paginated.length > 0 && page === totalPages && (
+              <div className="flex items-center justify-center gap-2 mt-auto pt-6 pb-2 text-xs text-muted-foreground">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {t('table.endOfList')}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Pagination footer */}
+      <div className="flex items-center justify-between px-5 py-3 border-t border-border text-xs text-muted-foreground shrink-0 mt-auto">
+        {!isLoading && filtered.length > 0 ? (
+          <>
+            <span>
+              {t('table.showing', { start: startIdx, end: endIdx, total: filtered.length })}
+            </span>
+            <div className="flex items-center gap-1">
+              <span className="mr-2">
+                {t('table.pageInfo', { current: page, total: totalPages })}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                disabled={page === 1}
+                onClick={() => setPage(1)}
+              >
+                {'«'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                disabled={page === 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                {'‹'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                disabled={page === totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                {'›'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                disabled={page === totalPages}
+                onClick={() => setPage(totalPages)}
+              >
+                {'»'}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <span className="invisible">–</span>
+        )}
+      </div>
+
       <AiToolSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
@@ -165,21 +294,23 @@ export default function AiToolsPage() {
         saving={saving}
       />
 
-      {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('delete.title')}</DialogTitle>
             <DialogDescription>
-              {t.rich('delete.description', { name: deletingTool?.name, strong: (chunks) => <strong>{chunks}</strong> })}
+              {t.rich('delete.description', {
+                name: deletingTool?.name ?? '',
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               {tc('cancel')}
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              {saving ? tc('loading') : tc('delete')}
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? tc('loading') : tc('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
