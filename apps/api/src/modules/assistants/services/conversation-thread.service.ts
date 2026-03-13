@@ -54,6 +54,8 @@ export class ConversationThreadService {
         `Thread cache hit for conversation ${conversationId}`,
         'ConversationThreadService',
       )
+      // Renova TTL a cada acesso — qualquer interação mantém o thread vivo
+      await this.redis.getClient().expire(key, THREAD_REDIS_TTL)
       return JSON.parse(cached) as ConversationThread
     }
 
