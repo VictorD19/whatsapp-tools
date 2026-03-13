@@ -1,4 +1,4 @@
-import { Injectable, HttpStatus, Inject, forwardRef } from '@nestjs/common'
+import { Injectable, HttpStatus } from '@nestjs/common'
 import { InboxRepository } from './inbox.repository'
 import { InboxGateway } from './inbox.gateway'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
@@ -18,7 +18,6 @@ import { parseWhatsAppMessage } from './utils/message-parser'
 import { StorageService, isStorageKey, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
 import { DealService } from '@modules/deal/deal.service'
 import { NotificationsService } from '@modules/notifications/notifications.service'
-import { ConversationThreadService } from '@modules/assistants/services/conversation-thread.service'
 
 // ─── WhatsApp supported formats & limits ──────────────────────────────────────
 // Images: JPG, PNG — 16 MB
@@ -84,8 +83,6 @@ export class InboxService {
     private readonly dealService: DealService,
     private readonly logger: LoggerService,
     private readonly notifications: NotificationsService,
-    @Inject(forwardRef(() => ConversationThreadService))
-    private readonly threadService: ConversationThreadService,
   ) {}
 
   async findConversations(
@@ -445,9 +442,6 @@ export class InboxService {
     // Update lastMessageAt
     await this.repository.updateLastMessageAt(conversationId)
 
-    // Invalida thread do AI — humano interagiu, próxima resposta reconstrói do banco
-    void this.threadService.invalidateThread(tenantId, conversationId)
-
     // Emit WebSocket
     this.gateway.emitNewMessage(tenantId, {
       conversationId,
@@ -570,9 +564,6 @@ export class InboxService {
 
     await this.repository.updateLastMessageAt(conversationId)
 
-    // Invalida thread do AI — humano enviou mídia
-    void this.threadService.invalidateThread(tenantId, conversationId)
-
     this.gateway.emitNewMessage(tenantId, {
       conversationId,
       message: {
@@ -614,9 +605,6 @@ export class InboxService {
     }
 
     const updated = await this.repository.closeConversation(tenantId, conversationId)
-
-    // Invalida thread do AI — conversa encerrada
-    void this.threadService.invalidateThread(tenantId, conversationId)
 
     this.gateway.emitConversationClosed(tenantId, {
       conversationId,
@@ -684,9 +672,6 @@ export class InboxService {
     }
 
     const updated = await this.repository.reopenConversation(tenantId, conversationId)
-
-    // Invalida thread do AI — conversa reaberta, contexto anterior não é mais válido
-    void this.threadService.invalidateThread(tenantId, conversationId)
 
     const fullConversation = await this.repository.findConversationById(tenantId, conversationId)
     if (fullConversation) {

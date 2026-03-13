@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { BullModule } from '@nestjs/bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module'
@@ -8,7 +8,6 @@ import { TenantsModule } from '@modules/tenants/tenants.module'
 import { DealModule } from '@modules/deal/deal.module'
 import { StorageModule } from '@modules/storage/storage.module'
 import { NotificationsModule } from '@modules/notifications/notifications.module'
-import { AssistantsModule } from '@modules/assistants/assistants.module'
 import { InboxController } from './inbox.controller'
 import { InboxService } from './inbox.service'
 import { InboxRepository } from './inbox.repository'
@@ -27,7 +26,6 @@ import { ConversationImportProcessor } from './queues/import.processor'
     DealModule,
     StorageModule,
     NotificationsModule,
-    forwardRef(() => AssistantsModule),
     BullModule.registerQueue(
       { name: QUEUES.WEBHOOK_INBOUND },
       { name: QUEUES.CONVERSATION_IMPORT },
