@@ -200,6 +200,28 @@ export class ConversationThreadService {
     return messages
   }
 
+  // ── Invalida cache do thread (chama quando humano interage) ─────────────
+
+  /**
+   * Deleta o thread do Redis, forçando rebuild na próxima resposta da IA.
+   *
+   * Cenários onde deve ser chamado:
+   * - Humano envia mensagem no inbox (InboxService.sendMessage)
+   * - Assistente é pausado / trocado (AssistantsService.setConversationAssistant)
+   * - Conversa é fechada e reaberta (InboxService.closeConversation / reopenConversation)
+   *
+   * O rebuild recupera o sumário salvo + últimas 6 msgs do banco (incluindo
+   * as msgs do humano), então o contexto não é perdido.
+   */
+  async invalidateThread(tenantId: string, conversationId: string): Promise<void> {
+    const key = this.redisKey(tenantId, conversationId)
+    await this.redis.getClient().del(key)
+    this.logger.debug(
+      `Thread cache invalidated for conversation ${conversationId}`,
+      'ConversationThreadService',
+    )
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   private redisKey(tenantId: string, conversationId: string): string {

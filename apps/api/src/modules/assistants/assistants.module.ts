@@ -30,6 +30,6 @@ import { ConversationThreadService } from './services/conversation-thread.servic
     AiResponseProcessor,
     ConversationThreadService,
   ],
-  exports: [AssistantsService, AiResponseProducer],
+  exports: [AssistantsService, AiResponseProducer, ConversationThreadService],
 })
 export class AssistantsModule {}
