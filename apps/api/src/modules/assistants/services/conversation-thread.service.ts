@@ -9,7 +9,7 @@ import type { ILLMProvider, ChatMessage } from '@modules/ai/ports/llm-provider.i
 
 const THREAD_MAX_MESSAGES = 20  // Dispara compressão quando atingir
 const THREAD_KEEP_RECENT = 6    // Quantas manter intactas após compressão
-const THREAD_REDIS_TTL = 86_400 // 24h em segundos
+const THREAD_REDIS_TTL = 172_800 // 48h em segundos
 
 // ── Tipos internos ──────────────────────────────────────────────────────────
 
