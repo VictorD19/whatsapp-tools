@@ -11,6 +11,7 @@ import { AssistantsService } from './assistants.service'
 import { AssistantsRepository } from './assistants.repository'
 import { AiResponseProducer } from './queues/ai-response.producer'
 import { AiResponseProcessor } from './queues/ai-response.processor'
+import { ConversationThreadService } from './services/conversation-thread.service'
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AiResponseProcessor } from './queues/ai-response.processor'
     AssistantsRepository,
     AiResponseProducer,
     AiResponseProcessor,
+    ConversationThreadService,
   ],
   exports: [AssistantsService, AiResponseProducer],
 })

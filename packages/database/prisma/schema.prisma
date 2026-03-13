@@ -181,6 +181,7 @@ model Conversation {
   closedAt          DateTime?
   assistantId       String?
   assistantPausedAt DateTime?
+  aiThreadSummary   String?            @db.Text
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   deletedAt         DateTime?

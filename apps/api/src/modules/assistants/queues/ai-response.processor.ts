@@ -11,11 +11,10 @@ import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { InboxRepository } from '@modules/inbox/inbox.repository'
 import { InboxGateway } from '@modules/inbox/inbox.gateway'
 import { AssistantsRepository } from '../assistants.repository'
-import type { ILLMProvider, ChatMessage } from '@modules/ai/ports/llm-provider.interface'
+import { ConversationThreadService } from '../services/conversation-thread.service'
+import type { ILLMProvider } from '@modules/ai/ports/llm-provider.interface'
 import type { AiResponseJobData } from './ai-response.producer'
 import { AiToolType } from '@prisma/client'
-
-const MAX_HISTORY_MESSAGES = 20
 
 @Injectable()
 export class AiResponseProcessor implements OnModuleInit {
@@ -31,6 +30,7 @@ export class AiResponseProcessor implements OnModuleInit {
     private readonly gateway: InboxGateway,
     @Inject(LLM_PROVIDER)
     private readonly llm: ILLMProvider,
+    private readonly threadService: ConversationThreadService,
     private readonly logger: LoggerService,
   ) {}
 
@@ -76,20 +76,28 @@ export class AiResponseProcessor implements OnModuleInit {
     }
 
     try {
-      // Busca histórico da conversa
-      const { messages: history } = await this.inboxRepository.findMessages(
-        tenantId,
-        conversationId,
-        1,
-        MAX_HISTORY_MESSAGES,
-      )
+      // Carrega/reconstrói thread (Redis hit ou rebuild do banco)
+      const thread = await this.threadService.getOrBuild(tenantId, conversationId, {
+        systemPrompt: assistant.systemPrompt,
+        aiThreadSummary: (conversation as any).aiThreadSummary ?? null,
+      })
 
-      // Reverte para ordem cronológica (findMessages retorna desc)
-      const orderedHistory = [...history].reverse()
+      // Última mensagem do usuário (da conversa já carregada)
+      const lastUserMessage =
+        [...thread.messages].reverse().find((m) => m.role === 'user')?.content ??
+        conversation.messages.find((m) => !m.fromMe)?.body ??
+        ''
+
+      // Adiciona última mensagem do usuário ao thread
+      this.threadService.appendMessage(thread, 'user', lastUserMessage)
+
+      // Verifica se vai precisar comprimir antes de comprimir
+      const willCompress = thread.messages.length > 20
+
+      // Comprime se necessário (sumariza via LLM)
+      await this.threadService.maybeCompress(thread)
 
       // Busca contexto das KBs vinculadas
-      const lastUserMessage =
-        [...orderedHistory].reverse().find((m) => !m.fromMe)?.body ?? ''
       let kbContext = ''
       if (assistant.knowledgeBases.length > 0) {
         const kbIds = assistant.knowledgeBases.map((k) => k.knowledgeBaseId)
@@ -100,8 +108,13 @@ export class AiResponseProcessor implements OnModuleInit {
       const toolIds = assistant.tools.map((t) => t.aiToolId)
       const tools = toolIds.length > 0 ? await this.aiToolsService.findByIds(tenantId, toolIds) : []
 
-      // Monta mensagens para o LLM
-      const messages = this.buildMessages(assistant, kbContext, tools, orderedHistory)
+      // Monta mensagens com thread (inclui sumário + msgs recentes)
+      const messages = this.threadService.buildLLMMessages(
+        thread,
+        kbContext,
+        tools,
+        assistant.handoffKeywords,
+      )
 
       // Chama o LLM
       const response = await this.llm.chat(messages, {
@@ -159,6 +172,10 @@ export class AiResponseProcessor implements OnModuleInit {
           )
         }
       }
+
+      // Adiciona resposta ao thread e salva (Redis + banco se houve compressão)
+      this.threadService.appendMessage(thread, 'assistant', responseText)
+      await this.threadService.save(thread, willCompress)
 
       // Salva mensagem da IA no banco
       const savedMessage = await this.inboxRepository.createMessage({
@@ -223,49 +240,6 @@ export class AiResponseProcessor implements OnModuleInit {
       )
       throw error
     }
-  }
-
-  private buildMessages(
-    assistant: {
-      systemPrompt: string
-      handoffKeywords: string[]
-    },
-    kbContext: string,
-    tools: Array<{ name: string; description: string | null; type: string }>,
-    history: Array<{ fromMe: boolean; fromBot?: boolean; body: string | null; type: string }>,
-  ): ChatMessage[] {
-    const parts: string[] = [assistant.systemPrompt]
-
-    if (kbContext) {
-      parts.push(`\n\n## Contexto relevante da base de conhecimento:\n${kbContext}`)
-    }
-
-    if (tools.length > 0) {
-      const toolDesc = tools.map((t) => `- ${t.name}: ${t.description ?? ''}`).join('\n')
-      parts.push(
-        `\n\n## Ferramentas disponíveis:\n${toolDesc}\n\nPara executar uma ferramenta, inclua [TOOL:TIPO] na sua resposta (ex: [TOOL:CRIAR_DEAL]).`,
-      )
-    }
-
-    if (assistant.handoffKeywords.length > 0) {
-      parts.push(
-        `\n\nSe o usuário pedir para falar com um humano (palavras como: ${assistant.handoffKeywords.join(', ')}), transfira o atendimento.`,
-      )
-    }
-
-    const messages: ChatMessage[] = [
-      { role: 'system', content: parts.join('') },
-    ]
-
-    for (const msg of history) {
-      if (!msg.body) continue
-      messages.push({
-        role: msg.fromMe ? 'assistant' : 'user',
-        content: msg.body,
-      })
-    }
-
-    return messages
   }
 
   private checkHandoffKeywords(text: string, keywords: string[]): boolean {

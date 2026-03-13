@@ -443,6 +443,13 @@ export class InboxRepository {
     })
   }
 
+  async updateConversationThreadSummary(tenantId: string, conversationId: string, summary: string) {
+    return this.prisma.conversation.update({
+      where: { id: conversationId, tenantId },
+      data: { aiThreadSummary: summary },
+    })
+  }
+
   async deleteReaction(messageId: string, senderJid: string) {
     await this.prisma.messageReaction.deleteMany({
       where: { messageId, senderJid },
