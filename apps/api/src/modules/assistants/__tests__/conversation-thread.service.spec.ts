@@ -27,6 +27,7 @@ function makeThread(overrides: Partial<ConversationThread> = {}): ConversationTh
 const mockRedisClient = {
   get: jest.fn(),
   setex: jest.fn(),
+  expire: jest.fn(),
 }
 
 const mockRedisService = {
@@ -260,7 +261,7 @@ describe('ConversationThreadService', () => {
 
       expect(mockRedisClient.setex).toHaveBeenCalledWith(
         'thread:tenant-1:conv-1',
-        86_400,
+        172_800,
         JSON.stringify(thread),
       )
     })
