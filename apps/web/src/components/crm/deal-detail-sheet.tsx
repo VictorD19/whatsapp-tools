@@ -42,7 +42,7 @@ function formatNoteDate(dateStr: string): string {
 export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDeleted }: DealDetailSheetProps) {
   const t = useTranslations('crm')
   const tc = useTranslations('common')
-  const { updateDeal, deleteDeal, moveDeal, notes, isLoadingNotes, fetchNotes, addNote } = useDeal()
+  const { updateDeal, deleteDeal, moveDeal, notes, isLoadingNotes, fetchNotes, addNote, deleteNote } = useDeal()
 
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleInput, setTitleInput] = useState('')
@@ -50,6 +50,7 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
   const [valueInput, setValueInput] = useState('')
   const [newNote, setNewNote] = useState('')
   const [isSavingNote, setIsSavingNote] = useState(false)
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [lostReasonOpen, setLostReasonOpen] = useState(false)
@@ -107,6 +108,12 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
     const ok = await addNote(deal.id, newNote.trim())
     if (ok) setNewNote('')
     setIsSavingNote(false)
+  }
+
+  async function handleDeleteNote(noteId: string) {
+    setDeletingNoteId(noteId)
+    await deleteNote(deal.id, noteId)
+    setDeletingNoteId(null)
   }
 
   async function handleDelete() {
@@ -341,8 +348,20 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
               ) : notes.length > 0 ? (
                 <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
                   {notes.map((note: DealNote) => (
-                    <div key={note.id} className="rounded-md border p-2 space-y-1 bg-muted/20">
-                      <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{note.content}</p>
+                    <div key={note.id} className="group relative rounded-md border p-2 space-y-1 bg-muted/20">
+                      <button
+                        onClick={() => handleDeleteNote(note.id)}
+                        disabled={deletingNoteId === note.id}
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                        title={tc('delete')}
+                      >
+                        {deletingNoteId === note.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <X className="h-3 w-3" />
+                        )}
+                      </button>
+                      <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap pr-4">{note.content}</p>
                       <p className="text-[10px] text-muted-foreground">
                         {note.author.name} &middot; {formatNoteDate(note.createdAt)}
                       </p>
