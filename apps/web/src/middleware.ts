@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
  * https://nextjs.org/blog/cve-2025-29927
  *
  * O Next.js 15.2.3+ já faz o patch internamente, mas essa camada extra
- * bloqueia tentativas que passem por proxies/CDN antes de chegar ao Next.js.
+ * bloqcommita oueia tentativas que passem por proxies/CDN antes de chegar ao Next.js.
  */
 
 const BLOCKED_INTERNAL_HEADERS = [
@@ -42,3 +42,4 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
+c
