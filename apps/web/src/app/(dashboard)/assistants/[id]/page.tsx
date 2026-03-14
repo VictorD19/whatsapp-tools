@@ -85,8 +85,6 @@ export default function EditAssistantPage() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <AssistantForm assistant={assistant} saving={saving} onSave={handleSave} />
-    </div>
+    <AssistantForm assistant={assistant} saving={saving} onSave={handleSave} />
   )
 }
