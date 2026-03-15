@@ -49,10 +49,8 @@ COPY apps/web/ ./apps/web/
 COPY packages/ ./packages/
 
 # Build Next.js (standalone output)
+# With outputFileTracingRoot=../../ the standalone includes the full monorepo structure
 RUN pnpm --filter @repo/web build
-
-# Resolve pnpm symlinks in standalone output so COPY works correctly
-RUN cp -rL /app/apps/web/.next/standalone /app/standalone-resolved
 
 # ── 3. Production runner ───────────────────────────────────
 FROM node:20-alpine AS runner
@@ -62,9 +60,13 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy static + standalone (symlinks already resolved)
-COPY --from=builder /app/apps/web/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/standalone-resolved ./
+# Copy public assets
+COPY --from=builder /app/apps/web/public ./apps/web/public
+
+# Copy standalone output (with outputFileTracingRoot, server.js is at apps/web/server.js)
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+
+# Copy static files
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
 USER nextjs
@@ -72,4 +74,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/web/server.js"]
