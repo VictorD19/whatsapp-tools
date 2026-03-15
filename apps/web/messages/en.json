@@ -121,7 +121,8 @@
       "tenants": "Tenants",
       "plans": "Plans",
       "knowledgeBases": "Knowledge Bases",
-      "aiTools": "AI Tools"
+      "aiTools": "AI Tools",
+      "notifications": "Notifications"
     },
     "user": {
       "myProfile": "My profile",
@@ -1067,6 +1068,8 @@
       "name": "Name",
       "email": "Email",
       "role": "Role",
+      "rolePlaceholder": "E.g. Sales Manager",
+      "roleHint": "Your role or position in the company",
       "changePhoto": "Change photo"
     },
     "locale": {

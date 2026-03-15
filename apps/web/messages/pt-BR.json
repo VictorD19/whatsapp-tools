@@ -121,7 +121,8 @@
       "tenants": "Tenants",
       "plans": "Planos",
       "knowledgeBases": "Bases de Conhecimento",
-      "aiTools": "Ferramentas de IA"
+      "aiTools": "Ferramentas de IA",
+      "notifications": "Notificações"
     },
     "user": {
       "myProfile": "Meu perfil",
@@ -1067,6 +1068,8 @@
       "name": "Nome",
       "email": "Email",
       "role": "Cargo/Função",
+      "rolePlaceholder": "Ex: Gerente de Vendas",
+      "roleHint": "Seu cargo ou função na empresa",
       "changePhoto": "Alterar foto"
     },
     "locale": {
