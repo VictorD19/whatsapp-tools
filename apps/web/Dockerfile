@@ -51,6 +51,9 @@ COPY packages/ ./packages/
 # Build Next.js (standalone output)
 RUN pnpm --filter @repo/web build
 
+# Resolve pnpm symlinks in standalone output so COPY works correctly
+RUN cp -rL /app/apps/web/.next/standalone /app/standalone-resolved
+
 # ── 3. Production runner ───────────────────────────────────
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -59,9 +62,9 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy static + standalone
+# Copy static + standalone (symlinks already resolved)
 COPY --from=builder /app/apps/web/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/standalone-resolved ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
 USER nextjs
