@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
+    security_opt:
+      - no-new-privileges:true
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -48,6 +50,12 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
     environment:
       NODE_ENV: production
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-localhost:3000}
@@ -104,7 +112,7 @@ services:
     container_name: wt-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -126,7 +134,7 @@ services:
     container_name: wt-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -144,8 +152,8 @@ services:
     container_name: wt-minio
     restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
