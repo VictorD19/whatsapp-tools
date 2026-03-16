@@ -1,9 +1,18 @@
 'use client'
 
 import React from 'react'
-import { Trash2, Bot } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { Assistant } from './types'
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('')
+}
 
 interface AssistantCardProps {
   assistant: Assistant
@@ -31,8 +40,18 @@ export function AssistantCard({ assistant, onEdit, onDelete }: AssistantCardProp
       </button>
 
       {/* Avatar */}
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-2xl">
-        {assistant.avatarEmoji || <Bot className="h-6 w-6 text-primary" />}
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 overflow-hidden">
+        {assistant.avatarUrl ? (
+          <img
+            src={assistant.avatarUrl}
+            alt={assistant.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="text-sm font-semibold text-primary select-none">
+            {getInitials(assistant.name)}
+          </span>
+        )}
       </div>
 
       {/* Conteúdo */}

@@ -10,9 +10,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
 import { AssistantCard } from '@/components/assistants/assistant-card'
 import { DeleteAssistantDialog } from '@/components/assistants/delete-assistant-dialog'
+import { CreateAssistantSheet } from '@/components/assistants/create-assistant-sheet'
 import { useTranslations } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiDelete } from '@/lib/api'
+import { apiGet, apiPost, apiDelete } from '@/lib/api'
 import { toast } from '@/components/ui/toaster'
 import type { Assistant, ApiResponse } from '@/components/assistants/types'
 
@@ -34,6 +35,8 @@ export default function AssistantsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingAssistant, setDeletingAssistant] = useState<Assistant | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [createSheetOpen, setCreateSheetOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
 
   const filtered = useMemo(() => {
     if (!search.trim()) return assistants
@@ -64,6 +67,25 @@ export default function AssistantsPage() {
     }
   }, [deletingAssistant, queryClient])
 
+  const handleCreate = useCallback(async (data: { name: string; description: string }) => {
+    setCreating(true)
+    try {
+      const result = await apiPost<ApiResponse<Assistant>>('assistants', {
+        name: data.name,
+        description: data.description,
+      })
+      queryClient.invalidateQueries({ queryKey: ASSISTANTS_QUERY_KEY })
+      toast({ title: t('success.created'), variant: 'success' })
+      setCreateSheetOpen(false)
+      router.push(`/assistants/${result.data.id}`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('error.creating')
+      toast({ title: message, variant: 'destructive' })
+    } finally {
+      setCreating(false)
+    }
+  }, [queryClient, router])
+
   return (
     <PageLayout breadcrumb={[{ label: t('aiBreadcrumb') }, { label: t('breadcrumb') }]}>
         {/* Toolbar */}
@@ -84,7 +106,7 @@ export default function AssistantsPage() {
           </div>
 
           <div className="ml-auto">
-            <Button onClick={() => router.push('/assistants/new')}>
+            <Button onClick={() => setCreateSheetOpen(true)}>
               <Plus className="h-4 w-4" />
               {t('addNew')}
             </Button>
@@ -108,7 +130,7 @@ export default function AssistantsPage() {
               icon={Bot}
               title={t('empty.title')}
               description={t('empty.description')}
-              action={{ label: t('empty.action'), onClick: () => router.push('/assistants/new') }}
+              action={{ label: t('empty.action'), onClick: () => setCreateSheetOpen(true) }}
             />
           )
         ) : (
@@ -129,6 +151,12 @@ export default function AssistantsPage() {
         loading={deleting}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDelete}
+      />
+      <CreateAssistantSheet
+        open={createSheetOpen}
+        saving={creating}
+        onClose={() => setCreateSheetOpen(false)}
+        onSave={handleCreate}
       />
     </PageLayout>
   )

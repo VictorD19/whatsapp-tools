@@ -6,7 +6,7 @@ export const CreateAssistantSchema = z.object({
   avatarUrl: z.string().url().optional(),
   avatarEmoji: z.string().max(10).optional(),
   model: z.string().default('gpt-4o-mini'),
-  systemPrompt: z.string().min(1),
+  systemPrompt: z.string().default(''),
   waitTimeSeconds: z.number().int().min(1).max(60).default(5),
   isActive: z.boolean().default(true),
   handoffKeywords: z.array(z.string()).default([]),
