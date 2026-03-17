@@ -760,6 +760,9 @@
     },
     "fields": {
       "avatarEmoji": "Avatar emoji",
+      "avatar": "Avatar",
+      "avatarHint": "Click to choose another avatar",
+      "chooseAvatar": "Choose an avatar",
       "name": "Name *",
       "namePlaceholder": "E.g. Sales SDR",
       "description": "Description",
@@ -782,6 +785,12 @@
       "handoffKeywordsHint": "When the customer types these words, the bot transfers to an agent",
       "handoffKeywordsPlaceholder": "E.g. human, agent — press Enter",
       "tools": "Tools"
+    },
+    "slashCommand": {
+      "tools": "Tools",
+      "toolsHint": "Insert a tool reference",
+      "noTools": "No tools registered",
+      "hint": "Type / to insert commands"
     },
     "delete": {
       "title": "Delete assistant",

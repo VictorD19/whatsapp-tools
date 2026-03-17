@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const CreateAssistantSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
-  avatarUrl: z.string().url().optional(),
+  avatarUrl: z.string().min(1).optional(),
   avatarEmoji: z.string().max(10).optional(),
   model: z.string().default('gpt-4o-mini'),
   systemPrompt: z.string().default(''),

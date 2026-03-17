@@ -760,6 +760,9 @@
     },
     "fields": {
       "avatarEmoji": "Emoji del avatar",
+      "avatar": "Avatar",
+      "avatarHint": "Haz clic para elegir otro avatar",
+      "chooseAvatar": "Elige un avatar",
       "name": "Nombre *",
       "namePlaceholder": "Ej: SDR de Ventas",
       "description": "Descripción",
@@ -782,6 +785,12 @@
       "handoffKeywordsHint": "Cuando el cliente escriba estas palabras, el bot transfiere a un agente",
       "handoffKeywordsPlaceholder": "Ej: humano, agente — presiona Enter",
       "tools": "Herramientas"
+    },
+    "slashCommand": {
+      "tools": "Herramientas",
+      "toolsHint": "Insertar referencia a una herramienta",
+      "noTools": "Ninguna herramienta registrada",
+      "hint": "Escribe / para insertar comandos"
     },
     "delete": {
       "title": "Eliminar asistente",

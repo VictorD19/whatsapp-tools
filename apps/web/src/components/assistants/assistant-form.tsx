@@ -2,15 +2,21 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, FileText } from 'lucide-react'
+import { ArrowLeft, User, FileText, Check, Wrench } from 'lucide-react'
+import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { RichTextEditor } from '@/components/ui/rich-text-editor'
+import { RichTextEditor, type SlashCommandItem } from '@/components/ui/rich-text-editor'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -22,18 +28,27 @@ import { PageLayout } from '@/components/layout/page-layout'
 import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
-import type { Assistant, KnowledgeBase, ApiResponse } from './types'
+import type { Assistant, KnowledgeBase, AiTool, ApiResponse } from './types'
+
+const AI_AVATARS = [
+  '/ai-avatars/1.png',
+  '/ai-avatars/2.png',
+  '/ai-avatars/3.png',
+  '/ai-avatars/4.png',
+]
+
+const DEFAULT_AVATAR = AI_AVATARS[0]
 
 const MODEL_OPTIONS = [
-  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
-  { value: 'gpt-4o', label: 'GPT-4o' },
   { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+  { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
+  { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano' },
 ]
 
 export interface AssistantFormData {
   name: string
   description: string
+  avatarUrl: string
   avatarEmoji: string
   model: string
   systemPrompt: string
@@ -57,8 +72,10 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
 
   const [name, setName] = useState(assistant?.name ?? '')
   const [description, setDescription] = useState(assistant?.description ?? '')
+  const [avatarUrl, setAvatarUrl] = useState(assistant?.avatarUrl ?? DEFAULT_AVATAR)
   const [avatarEmoji, setAvatarEmoji] = useState(assistant?.avatarEmoji ?? '')
-  const [model, setModel] = useState(assistant?.model ?? 'claude-sonnet-4-6')
+  const [avatarPopoverOpen, setAvatarPopoverOpen] = useState(false)
+  const [model, setModel] = useState(assistant?.model ?? 'gpt-4o-mini')
   const [systemPrompt, setSystemPrompt] = useState(assistant?.systemPrompt ?? '')
   const [waitTimeSeconds, setWaitTimeSeconds] = useState(assistant?.waitTimeSeconds ?? 5)
   const [isActive, setIsActive] = useState(assistant?.isActive ?? true)
@@ -70,6 +87,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
     if (assistant) {
       setName(assistant.name)
       setDescription(assistant.description ?? '')
+      setAvatarUrl(assistant.avatarUrl ?? DEFAULT_AVATAR)
       setAvatarEmoji(assistant.avatarEmoji ?? '')
       setModel(assistant.model)
       setSystemPrompt(assistant.systemPrompt)
@@ -84,6 +102,29 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
     queryFn: () => apiGet<ApiResponse<KnowledgeBase[]>>('knowledge-bases').then((r) => r.data),
   })
 
+  const { data: aiTools = [] } = useQuery({
+    queryKey: ['ai-tools'],
+    queryFn: () => apiGet<ApiResponse<AiTool[]>>('ai-tools').then((r) => r.data),
+  })
+
+  const slashCommands: SlashCommandItem[] = React.useMemo(() => {
+    if (aiTools.length === 0) return []
+    return [
+      {
+        id: 'tools',
+        label: t('slashCommand.tools'),
+        description: t('slashCommand.noTools'),
+        icon: <Wrench className="h-4 w-4" />,
+        items: aiTools.map((tool) => ({
+          id: tool.id,
+          label: tool.name,
+          description: tool.type,
+        })),
+        onSelect: (item) => `**🔧 ${item.label}** `,
+      },
+    ]
+  }, [aiTools, t])
+
   const toggleKB = useCallback(
     (id: string) =>
       setSelectedKBs((prev) => (prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id])),
@@ -95,6 +136,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
     onSave({
       name: name.trim(),
       description: description.trim(),
+      avatarUrl,
       avatarEmoji: avatarEmoji.trim(),
       model,
       systemPrompt,
@@ -104,7 +146,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
       knowledgeBaseIds: selectedKBs,
       aiToolIds: [],
     })
-  }, [name, description, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, selectedKBs, onSave])
+  }, [name, description, avatarUrl, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, selectedKBs, onSave])
 
   return (
     <PageLayout
@@ -162,22 +204,62 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
         <TabsContent value="profile" className="flex-1 overflow-y-auto p-5 mt-0">
           <div className="max-w-xl">
             <div className="space-y-5">
-              {/* Avatar + emoji */}
+              {/* Avatar selector */}
               <div className="flex items-center gap-5 pb-2">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/10 text-4xl border-2 border-dashed border-primary/30">
-                  {avatarEmoji || '🤖'}
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="emoji" className="text-xs text-muted-foreground">
-                    {t('fields.avatarEmoji')}
-                  </Label>
-                  <Input
-                    id="emoji"
-                    placeholder="🤖"
-                    value={avatarEmoji}
-                    onChange={(e) => setAvatarEmoji(e.target.value)}
-                    className="w-20 text-center text-lg"
-                  />
+                <Popover open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="relative h-20 w-20 shrink-0 rounded-full overflow-hidden cursor-pointer group bg-[#DCDBE0]"
+                    >
+                      <Image
+                        src={avatarUrl}
+                        alt="Avatar"
+                        fill
+                        className="object-cover scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <span className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+                          {tc('edit')}
+                        </span>
+                      </div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3" align="start">
+                    <p className="text-xs text-muted-foreground mb-2 font-medium">
+                      {t('fields.chooseAvatar')}
+                    </p>
+                    <div className="flex gap-2">
+                      {AI_AVATARS.map((src) => (
+                        <button
+                          key={src}
+                          type="button"
+                          onClick={() => {
+                            setAvatarUrl(src)
+                            setAvatarPopoverOpen(false)
+                          }}
+                          className={`relative h-14 w-14 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${
+                            avatarUrl === src
+                              ? 'border-primary ring-2 ring-primary/20'
+                              : 'border-transparent hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <Image src={src} alt="Avatar option" fill className="object-cover scale-110" />
+                          {avatarUrl === src && (
+                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                              <Check className="h-4 w-4 text-primary" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{t('fields.avatar')}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('fields.avatarHint')}
+                  </p>
                 </div>
               </div>
 
@@ -313,6 +395,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                 value={systemPrompt}
                 onChange={setSystemPrompt}
                 placeholder={t('fields.systemPromptPlaceholder')}
+                slashCommands={slashCommands}
               />
             </div>
           </div>

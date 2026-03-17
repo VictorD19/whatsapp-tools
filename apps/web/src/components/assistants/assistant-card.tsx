@@ -45,7 +45,7 @@ export function AssistantCard({ assistant, onEdit, onDelete }: AssistantCardProp
           <img
             src={assistant.avatarUrl}
             alt={assistant.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover scale-110"
           />
         ) : (
           <span className="text-sm font-semibold text-primary select-none">
