@@ -52,6 +52,9 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy app-level node_modules (contains symlinks into the pnpm store above)
 COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 
+# Copy database node_modules (prisma CLI lives here — needed for migrations)
+COPY --from=builder /app/packages/database/node_modules ./packages/database/node_modules
+
 # Copy built dist and package.json
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
