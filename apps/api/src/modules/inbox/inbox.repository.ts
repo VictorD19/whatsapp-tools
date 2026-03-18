@@ -35,7 +35,16 @@ export class InboxRepository {
         where,
         include: {
           contact: { select: { id: true, phone: true, name: true, avatarUrl: true } },
-          instance: { select: { id: true, name: true } },
+          instance: {
+            select: {
+              id: true,
+              name: true,
+              defaultAssistantId: true,
+              defaultAssistant: {
+                select: { id: true, name: true, avatarEmoji: true },
+              },
+            },
+          },
           assignedTo: { select: { id: true, name: true } },
           // NOTE: messages intentionally omitted here — Prisma generates a query
           // without LIMIT when using include+take on relations, fetching ALL messages
@@ -97,7 +106,17 @@ export class InboxRepository {
       where: { id, tenantId, deletedAt: null },
       include: {
         contact: { select: { id: true, phone: true, name: true, avatarUrl: true } },
-        instance: { select: { id: true, name: true, evolutionId: true } },
+        instance: {
+          select: {
+            id: true,
+            name: true,
+            evolutionId: true,
+            defaultAssistantId: true,
+            defaultAssistant: {
+              select: { id: true, name: true, avatarEmoji: true },
+            },
+          },
+        },
         assignedTo: { select: { id: true, name: true } },
         messages: {
           select: { body: true, type: true, fromMe: true },
@@ -108,7 +127,9 @@ export class InboxRepository {
           where: { deletedAt: null },
           orderBy: { createdAt: 'desc' },
           take: 1,
-          include: {
+          select: {
+            id: true,
+            createdAt: true,
             stage: { select: { id: true, name: true, color: true, type: true } },
             pipeline: { select: { id: true, name: true } },
           },
@@ -278,10 +299,12 @@ export class InboxRepository {
     conversationId: string,
     page: number,
     limit: number,
+    since?: Date,
   ) {
     const where: Prisma.MessageWhereInput = {
       tenantId,
       conversationId,
+      ...(since && { sentAt: { gte: since } }),
     }
 
     const quotedSelect = {

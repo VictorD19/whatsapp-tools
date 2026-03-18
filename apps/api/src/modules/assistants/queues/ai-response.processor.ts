@@ -69,7 +69,7 @@ export class AiResponseProcessor implements OnModuleInit {
     const assistant = await this.assistantsRepository.findById(tenantId, effectiveAssistantId)
     if (!assistant || !assistant.isActive) {
       this.logger.warn(
-        `Assistant ${conversation.assistantId} not found or inactive`,
+        `Assistant ${effectiveAssistantId} not found or inactive`,
         'AiResponseProcessor',
       )
       return
@@ -199,7 +199,6 @@ export class AiResponseProcessor implements OnModuleInit {
           await this.assistantsRepository.setConversationAssistant(
             tenantId,
             conversationId,
-            effectiveAssistantId,
             true,
           )
           this.logger.log(
@@ -212,16 +211,6 @@ export class AiResponseProcessor implements OnModuleInit {
       // Adiciona resposta ao thread e salva (Redis + banco se houve compressão)
       this.threadService.appendMessage(thread, 'assistant', responseText)
       await this.threadService.save(thread, willCompress)
-
-      // Grava o assistente na conversa se ainda não estava definido (histórico de atendimento)
-      if (!conversation.assistantId) {
-        await this.assistantsRepository.setConversationAssistant(
-          tenantId,
-          conversationId,
-          effectiveAssistantId,
-          false,
-        )
-      }
 
       // Salva mensagem da IA no banco
       const savedMessage = await this.inboxRepository.createMessage({
