@@ -120,14 +120,16 @@ model Instance {
   name        String
   phone       String?
   status      InstanceStatus @default(DISCONNECTED)
-  evolutionId String         @unique
-  createdAt   DateTime       @default(now())
+  evolutionId        String         @unique
+  defaultAssistantId String?
+  createdAt          DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   deletedAt   DateTime?
 
   tenant             Tenant              @relation(fields: [tenantId], references: [id])
   conversations      Conversation[]
   broadcastInstances BroadcastInstance[]
+  defaultAssistant   Assistant?          @relation("InstanceDefaultAssistant", fields: [defaultAssistantId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -697,6 +699,7 @@ model Assistant {
   knowledgeBases     AssistantKnowledgeBase[]
   tools              AssistantTool[]
   conversations      Conversation[]
+  instanceDefaults   Instance[]          @relation("InstanceDefaultAssistant")
 
   @@index([tenantId])
 }
