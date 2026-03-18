@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { PrismaService } from '@core/database/prisma.service'
 import type { CreateAssistantDto } from './dto/create-assistant.dto'
 import type { UpdateAssistantDto } from './dto/update-assistant.dto'
+import type { UpdateAssistantSettingsDto } from './dto/update-assistant-settings.dto'
 
 @Injectable()
 export class AssistantsRepository {
@@ -102,6 +103,20 @@ export class AssistantsRepository {
     return this.prisma.conversation.findFirst({
       where: { id: conversationId, tenantId },
       select: { id: true, assistantPausedAt: true },
+    })
+  }
+
+  async findSettings(tenantId: string) {
+    return this.prisma.assistantSetting.findUnique({
+      where: { tenantId },
+    })
+  }
+
+  async upsertSettings(tenantId: string, data: UpdateAssistantSettingsDto) {
+    return this.prisma.assistantSetting.upsert({
+      where: { tenantId },
+      create: { tenantId, ...data },
+      update: data,
     })
   }
 }

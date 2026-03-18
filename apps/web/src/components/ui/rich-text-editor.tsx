@@ -211,9 +211,12 @@ function SlashCommandMenu({
   const [activeCategory, setActiveCategory] = useState<SlashCommandItem | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
+  const slashPosRef = useRef<number>(-1)
 
   useEffect(() => {
     const { from } = editor.state.selection
+    // Store the exact position of the "/" character (one before cursor)
+    slashPosRef.current = from - 1
     const coords = editor.view.coordsAtPos(from)
     const editorDom = editor.view.dom.closest('.rich-text-editor-wrapper')
     if (editorDom) {
@@ -280,12 +283,10 @@ function SlashCommandMenu({
     }
 
     const label = item.label
-
+    const slashPos = slashPosRef.current
     const { from } = editor.state.selection
-    const docText = editor.state.doc.textBetween(0, from)
-    const slashPos = docText.lastIndexOf('/')
 
-    if (slashPos >= 0) {
+    if (slashPos >= 0 && slashPos < editor.state.doc.content.size) {
       editor
         .chain()
         .focus()

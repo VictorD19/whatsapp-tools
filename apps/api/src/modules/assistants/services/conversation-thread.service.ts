@@ -120,7 +120,7 @@ export class ConversationThreadService {
 
   // ── Verifica e comprime se necessário ────────────────────────────────────
 
-  async maybeCompress(thread: ConversationThread): Promise<boolean> {
+  async maybeCompress(thread: ConversationThread, apiKey?: string): Promise<boolean> {
     if (thread.messages.length <= THREAD_MAX_MESSAGES) return false
 
     this.logger.log(
@@ -141,7 +141,7 @@ export class ConversationThreadService {
     ]
 
     try {
-      const response = await this.llm.chat(summaryMessages, { maxTokens: 500 })
+      const response = await this.llm.chat(summaryMessages, { maxTokens: 500, apiKey })
 
       thread.summary = thread.summary
         ? `${thread.summary}\n\n${response.content}`

@@ -819,6 +819,20 @@
       "creating": "Error creating assistant",
       "saving": "Error saving assistant",
       "deleting": "Error deleting assistant"
+    },
+    "settings": {
+      "title": "AI Settings",
+      "description": "Configure API keys for artificial intelligence models",
+      "openaiApiKeyLabel": "OpenAI API Key",
+      "openaiApiKeyPlaceholder": "sk-...",
+      "openaiApiKeyHint": "Required to use GPT models in assistants. Get it at platform.openai.com",
+      "saving": "Saving...",
+      "success": {
+        "saved": "Settings saved"
+      },
+      "error": {
+        "saving": "Error saving settings"
+      }
     }
   },
   "knowledgeBases": {
@@ -1091,7 +1105,8 @@
       "role": "Role",
       "rolePlaceholder": "E.g. Sales Manager",
       "roleHint": "Your role or position in the company",
-      "changePhoto": "Change photo"
+      "changePhoto": "Change photo",
+      "loggedAs": "Logged in as {email}"
     },
     "locale": {
       "title": "Language & Region",

@@ -13,12 +13,16 @@ const EMBEDDING_MODEL = 'text-embedding-3-small'
 @Injectable()
 export class OpenAIAdapter implements ILLMProvider {
   private readonly logger = new Logger(OpenAIAdapter.name)
-  private readonly client: OpenAI
+  private readonly clients = new Map<string, OpenAI>()
 
-  constructor() {
-    this.client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY ?? 'missing',
-    })
+  private getClient(apiKey?: string): OpenAI {
+    const key = apiKey || process.env.OPENAI_API_KEY || 'missing'
+    let client = this.clients.get(key)
+    if (!client) {
+      client = new OpenAI({ apiKey: key })
+      this.clients.set(key, client)
+    }
+    return client
   }
 
   async chat(
@@ -26,8 +30,9 @@ export class OpenAIAdapter implements ILLMProvider {
     options?: ChatOptions,
   ): Promise<ChatResponse> {
     const model = options?.model ?? DEFAULT_MODEL
+    const client = this.getClient(options?.apiKey)
 
-    const response = await this.client.chat.completions.create({
+    const response = await client.chat.completions.create({
       model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       max_tokens: options?.maxTokens,
@@ -49,8 +54,9 @@ export class OpenAIAdapter implements ILLMProvider {
     options?: ChatOptions,
   ): AsyncIterable<string> {
     const model = options?.model ?? DEFAULT_MODEL
+    const client = this.getClient(options?.apiKey)
 
-    const response = await this.client.chat.completions.create({
+    const response = await client.chat.completions.create({
       model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       max_tokens: options?.maxTokens,
@@ -66,8 +72,10 @@ export class OpenAIAdapter implements ILLMProvider {
     }
   }
 
-  async embed(text: string): Promise<number[]> {
-    const response = await this.client.embeddings.create({
+  async embed(text: string, apiKey?: string): Promise<number[]> {
+    const client = this.getClient(apiKey)
+
+    const response = await client.embeddings.create({
       model: EMBEDDING_MODEL,
       input: text,
     })

@@ -7,6 +7,7 @@ export interface ChatOptions {
   model?: string
   maxTokens?: number
   temperature?: number
+  apiKey?: string
 }
 
 export interface ChatResponse {
@@ -22,5 +23,5 @@ export interface ILLMProvider {
     messages: ChatMessage[],
     options?: ChatOptions,
   ): AsyncIterable<string>
-  embed(text: string): Promise<number[]>
+  embed(text: string, apiKey?: string): Promise<number[]>
 }

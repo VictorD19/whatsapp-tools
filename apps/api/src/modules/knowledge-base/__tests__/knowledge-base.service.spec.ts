@@ -302,7 +302,7 @@ describe('KnowledgeBaseService', () => {
 
       expect(context).toContain('Conteudo 1')
       expect(context).toContain('Conteudo 2')
-      expect(llm.embed).toHaveBeenCalledWith('pergunta do usuario')
+      expect(llm.embed).toHaveBeenCalledWith('pergunta do usuario', undefined)
       expect(repository.searchSimilarChunks).toHaveBeenCalledWith(tenantId, ['kb-1'], embedding, 5)
     })
 

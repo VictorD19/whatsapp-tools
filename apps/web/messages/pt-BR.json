@@ -819,6 +819,20 @@
       "creating": "Erro ao criar assistente",
       "saving": "Erro ao salvar assistente",
       "deleting": "Erro ao excluir assistente"
+    },
+    "settings": {
+      "title": "Configurações de IA",
+      "description": "Configure as chaves de API para os modelos de inteligência artificial",
+      "openaiApiKeyLabel": "Chave da API OpenAI",
+      "openaiApiKeyPlaceholder": "sk-...",
+      "openaiApiKeyHint": "Necessária para utilizar modelos GPT nos assistentes. Obtenha em platform.openai.com",
+      "saving": "Salvando...",
+      "success": {
+        "saved": "Configurações salvas"
+      },
+      "error": {
+        "saving": "Erro ao salvar configurações"
+      }
     }
   },
   "knowledgeBases": {
@@ -1091,7 +1105,8 @@
       "role": "Cargo/Função",
       "rolePlaceholder": "Ex: Gerente de Vendas",
       "roleHint": "Seu cargo ou função na empresa",
-      "changePhoto": "Alterar foto"
+      "changePhoto": "Alterar foto",
+      "loggedAs": "Conectado como {email}"
     },
     "locale": {
       "title": "Idioma e Região",
