@@ -16,6 +16,12 @@ export interface ConversationContact {
 export interface ConversationInstance {
   id: string
   name: string
+  defaultAssistantId: string | null
+  defaultAssistant: {
+    id: string
+    name: string
+    avatarEmoji: string | null
+  } | null
 }
 
 export interface ConversationAssignee {
@@ -54,12 +60,6 @@ export interface ConversationDeal {
   lostAt: string | null
 }
 
-export interface ConversationAssistant {
-  id: string
-  name: string
-  avatarEmoji: string | null
-}
-
 export type FollowUpType = 'MESSAGE' | 'CALL' | 'MEETING' | 'PROPOSAL' | 'PAYMENT'
 export type FollowUpMode = 'REMINDER' | 'AUTOMATIC'
 export type FollowUpStatus = 'PENDING' | 'NOTIFIED' | 'SENT' | 'CANCELLED'
@@ -96,13 +96,11 @@ export interface Conversation {
   unreadCount: number
   lastMessageAt: string | null
   closedAt: string | null
-  assistantId: string | null
   assistantPausedAt: string | null
   createdAt: string
   contact: ConversationContact
   instance: ConversationInstance
   assignedTo: ConversationAssignee | null
-  assistant: ConversationAssistant | null
   messages?: LastMessage[]
   deals?: ConversationDeal[]
   nextFollowUp?: NextFollowUp | null
@@ -214,7 +212,8 @@ export const useInboxStore = create<InboxState>()((set) => ({
 
   setLoadingMessages: (isLoadingMessages) => set({ isLoadingMessages }),
 
-  upsertConversation: (conversation) =>
+  upsertConversation: (conversation) => {
+    if (!conversation?.id) return
     set((state) => {
       const existing = state.conversations.findIndex((c) => c.id === conversation.id)
       if (existing >= 0) {
@@ -223,7 +222,8 @@ export const useInboxStore = create<InboxState>()((set) => ({
         return { conversations: updated }
       }
       return { conversations: [conversation, ...state.conversations] }
-    }),
+    })
+  },
 
   removeConversation: (id) =>
     set((state) => ({
