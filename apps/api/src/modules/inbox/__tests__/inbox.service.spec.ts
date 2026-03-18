@@ -849,6 +849,7 @@ describe('InboxService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
+        defaultAssistantId: null,
       } as never)
       importProducer.startImport.mockResolvedValue(undefined as never)
 
@@ -873,6 +874,7 @@ describe('InboxService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
+        defaultAssistantId: null,
       } as never)
 
       await expect(
@@ -890,6 +892,7 @@ describe('InboxService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
+        defaultAssistantId: null,
       } as never)
       importProducer.startImport.mockRejectedValue(new Error('Job is already waiting'))
 
