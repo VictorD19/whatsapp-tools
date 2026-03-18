@@ -75,21 +75,43 @@ export class AiResponseProcessor implements OnModuleInit {
       return
     }
 
+    const t0 = Date.now()
+    const step = (label: string) =>
+      this.logger.debug(`[AI][${conversationId}] +${Date.now() - t0}ms — ${label}`, 'AiResponseProcessor')
+
     try {
-      // Carrega/reconstrói thread (Redis hit ou rebuild do banco)
-      const thread = await this.threadService.getOrBuild(tenantId, conversationId, {
-        systemPrompt: assistant.systemPrompt,
-        aiThreadSummary: (conversation as any).aiThreadSummary ?? null,
-      })
+      step('start')
 
-      // Última mensagem do usuário (da conversa já carregada)
+      // Deal ativo mais recente vinculado à conversa (se houver)
+      const activeDeal = (conversation as any).deals?.[0] as { id: string; createdAt: Date } | undefined
+
+      step(`deal=${activeDeal?.id ?? 'none'} createdAt=${activeDeal?.createdAt?.toISOString() ?? '-'}`)
+
+      // Carrega/reconstrói thread filtrando mensagens a partir do deal ativo
+      // Sem deal: pega as últimas mensagens disponíveis
+      const thread = await this.threadService.getOrBuild(
+        tenantId,
+        conversationId,
+        {
+          systemPrompt: assistant.systemPrompt,
+          aiThreadSummary: (conversation as any).aiThreadSummary ?? null,
+        },
+        activeDeal ?? null,
+      )
+
+      step(`thread loaded — ${thread.messages.length} msgs (dealId=${thread.dealId ?? 'none'})`)
+
+      // Última mensagem do usuário: pega da conversa (source of truth — mensagem que trigou o job)
       const lastUserMessage =
-        [...thread.messages].reverse().find((m) => m.role === 'user')?.content ??
-        conversation.messages.find((m) => !m.fromMe)?.body ??
-        ''
+        conversation.messages.find((m) => !m.fromMe)?.body ?? ''
 
-      // Adiciona última mensagem do usuário ao thread
-      this.threadService.appendMessage(thread, 'user', lastUserMessage)
+      // Adiciona ao thread apenas se ainda não for a última mensagem
+      // (no cache miss, o rebuild do banco já inclui essa mensagem)
+      const lastThreadMsg = thread.messages.at(-1)
+      if (lastUserMessage && (!lastThreadMsg || lastThreadMsg.role !== 'user' || lastThreadMsg.content !== lastUserMessage)) {
+        this.threadService.appendMessage(thread, 'user', lastUserMessage)
+        step('user msg appended to thread')
+      }
 
       // Verifica se vai precisar comprimir antes de comprimir
       const willCompress = thread.messages.length > 20
@@ -102,18 +124,30 @@ export class AiResponseProcessor implements OnModuleInit {
       if (assistant.knowledgeBases.length > 0) {
         const kbIds = assistant.knowledgeBases.map((k) => k.knowledgeBaseId)
         kbContext = await this.knowledgeBaseService.searchContext(tenantId, kbIds, lastUserMessage)
+        step(`kb context fetched — ${kbContext.length} chars`)
       }
 
       // Busca tools vinculadas
       const toolIds = assistant.tools.map((t) => t.aiToolId)
       const tools = toolIds.length > 0 ? await this.aiToolsService.findByIds(tenantId, toolIds) : []
 
+      step(`tools loaded — ${tools.length} tools`)
+
       // Monta mensagens com thread (inclui sumário + msgs recentes)
       const messages = this.threadService.buildLLMMessages(
         thread,
+        { name: assistant.name, description: assistant.description ?? null },
         kbContext,
         tools,
         assistant.handoffKeywords,
+      )
+
+      step(`LLM payload built — ${messages.length} messages (system+history)`)
+
+      // Log do payload enviado ao LLM
+      this.logger.debug(
+        `[AI][${conversationId}] payload:\n${JSON.stringify(messages, null, 2)}`,
+        'AiResponseProcessor',
       )
 
       // Chama o LLM
@@ -121,6 +155,8 @@ export class AiResponseProcessor implements OnModuleInit {
         model: assistant.model,
         temperature: 0.7,
       })
+
+      step(`LLM responded — ${response.inputTokens} in / ${response.outputTokens} out tokens`)
 
       let responseText = response.content.trim()
 
@@ -176,6 +212,16 @@ export class AiResponseProcessor implements OnModuleInit {
       // Adiciona resposta ao thread e salva (Redis + banco se houve compressão)
       this.threadService.appendMessage(thread, 'assistant', responseText)
       await this.threadService.save(thread, willCompress)
+
+      // Grava o assistente na conversa se ainda não estava definido (histórico de atendimento)
+      if (!conversation.assistantId) {
+        await this.assistantsRepository.setConversationAssistant(
+          tenantId,
+          conversationId,
+          effectiveAssistantId,
+          false,
+        )
+      }
 
       // Salva mensagem da IA no banco
       const savedMessage = await this.inboxRepository.createMessage({

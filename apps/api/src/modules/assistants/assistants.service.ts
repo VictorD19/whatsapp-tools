@@ -96,28 +96,7 @@ export class AssistantsService {
     conversationId: string,
     dto: SetConversationAssistantDto,
   ) {
-    const conversation = await this.repository.findConversation(tenantId, conversationId)
-    if (!conversation) {
-      throw AppException.notFound('CONVERSATION_NOT_FOUND', 'Conversa nao encontrada')
-    }
-
-    if (dto.assistantId) {
-      const assistant = await this.repository.findById(tenantId, dto.assistantId)
-      if (!assistant) {
-        throw AppException.notFound('ASSISTANT_NOT_FOUND', 'Assistente nao encontrado')
-      }
-      if (!assistant.isActive) {
-        throw new AppException('ASSISTANT_INACTIVE', 'Assistente esta inativo')
-      }
-    }
-
-    await this.repository.setConversationAssistant(
-      tenantId,
-      conversationId,
-      dto.assistantId,
-      dto.assistantId === null,
-    )
-
-    return { data: { conversationId, assistantId: dto.assistantId } }
+    await this.repository.setConversationAssistant(tenantId, conversationId, dto.paused)
+    return { data: { conversationId, paused: dto.paused } }
   }
 }

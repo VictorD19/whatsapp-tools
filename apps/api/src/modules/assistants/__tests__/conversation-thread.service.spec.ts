@@ -18,6 +18,7 @@ function makeThread(overrides: Partial<ConversationThread> = {}): ConversationTh
     summary: null,
     messages: [],
     totalMessageCount: 0,
+    dealId: null,
     ...overrides,
   }
 }
@@ -310,7 +311,7 @@ describe('ConversationThreadService', () => {
         ],
       })
 
-      const result = service.buildLLMMessages(thread, '', [], [])
+      const result = service.buildLLMMessages(thread, { name: 'Bot', description: null }, '', [], [])
 
       expect(result[0].role).toBe('system')
       expect(result[0].content).toContain(thread.systemPrompt)
@@ -324,7 +325,7 @@ describe('ConversationThreadService', () => {
         messages: [{ role: 'user', content: 'E aí?' }],
       })
 
-      const result = service.buildLLMMessages(thread, '', [], [])
+      const result = service.buildLLMMessages(thread, { name: 'Bot', description: null }, '', [], [])
 
       const summaryMsg = result.find(
         (m) => m.role === 'system' && m.content.includes('Resumo da conversa'),
@@ -337,7 +338,7 @@ describe('ConversationThreadService', () => {
       const thread = makeThread()
       const kbContext = 'Produto X custa R$ 100'
 
-      const result = service.buildLLMMessages(thread, kbContext, [], [])
+      const result = service.buildLLMMessages(thread, { name: 'Bot', description: null }, kbContext, [], [])
 
       expect(result[0].content).toContain('base de conhecimento')
       expect(result[0].content).toContain(kbContext)
@@ -348,7 +349,7 @@ describe('ConversationThreadService', () => {
       const tools = [{ name: 'CRIAR_DEAL', description: 'Cria um deal no CRM' }]
       const keywords = ['humano', 'atendente']
 
-      const result = service.buildLLMMessages(thread, '', tools, keywords)
+      const result = service.buildLLMMessages(thread, { name: 'Bot', description: null }, '', tools, keywords)
 
       expect(result[0].content).toContain('CRIAR_DEAL')
       expect(result[0].content).toContain('humano')
@@ -362,7 +363,7 @@ describe('ConversationThreadService', () => {
         ],
       })
 
-      const result = service.buildLLMMessages(thread, '', [], [])
+      const result = service.buildLLMMessages(thread, { name: 'Bot', description: null }, '', [], [])
 
       // Só a msg de assistant deve aparecer (user estava vazio)
       const conversationMsgs = result.filter((m) => m.role !== 'system')

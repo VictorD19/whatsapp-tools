@@ -88,13 +88,11 @@ export class AssistantsRepository {
   async setConversationAssistant(
     tenantId: string,
     conversationId: string,
-    assistantId: string | null,
     paused: boolean,
   ) {
     return this.prisma.conversation.updateMany({
       where: { id: conversationId, tenantId },
       data: {
-        assistantId,
         assistantPausedAt: paused ? new Date() : null,
       },
     })
@@ -103,7 +101,7 @@ export class AssistantsRepository {
   async findConversation(tenantId: string, conversationId: string) {
     return this.prisma.conversation.findFirst({
       where: { id: conversationId, tenantId },
-      select: { id: true, assistantId: true, assistantPausedAt: true },
+      select: { id: true, assistantPausedAt: true },
     })
   }
 }

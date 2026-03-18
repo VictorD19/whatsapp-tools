@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
 export const SetConversationAssistantSchema = z.object({
-  assistantId: z.string().cuid().nullable(),
+  paused: z.boolean(),
 })
 export type SetConversationAssistantDto = z.infer<typeof SetConversationAssistantSchema>
