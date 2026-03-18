@@ -7,6 +7,7 @@ export interface AiResponseJobData {
   conversationId: string
   tenantId: string
   instanceEvolutionId: string
+  effectiveAssistantId: string
 }
 
 const JOB_NAME = 'process-ai-response'

@@ -330,6 +330,7 @@ export class InboxWebhookProcessor {
             conversationId: convId,
             tenantId: instance.tenantId,
             instanceEvolutionId: instance.evolutionId,
+            effectiveAssistantId,
           },
           {
             jobId,

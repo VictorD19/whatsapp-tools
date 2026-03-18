@@ -43,7 +43,7 @@ export class AiResponseProcessor implements OnModuleInit {
   }
 
   async handleAiResponse(job: Job<AiResponseJobData>) {
-    const { conversationId, tenantId, instanceEvolutionId } = job.data
+    const { conversationId, tenantId, instanceEvolutionId, effectiveAssistantId } = job.data
 
     this.logger.debug(
       `Processing AI response for conversation ${conversationId}`,
@@ -58,15 +58,15 @@ export class AiResponseProcessor implements OnModuleInit {
     }
 
     // Verifica se o assistente ainda está ativo (não foi pausado após o job ser enfileirado)
-    if (!conversation.assistantId || conversation.assistantPausedAt) {
+    if (!effectiveAssistantId || conversation.assistantPausedAt) {
       this.logger.debug(
-        `AI skipped: assistantId=${conversation.assistantId}, paused=${!!conversation.assistantPausedAt}`,
+        `AI skipped: effectiveAssistantId=${effectiveAssistantId}, paused=${!!conversation.assistantPausedAt}`,
         'AiResponseProcessor',
       )
       return
     }
 
-    const assistant = await this.assistantsRepository.findById(tenantId, conversation.assistantId)
+    const assistant = await this.assistantsRepository.findById(tenantId, effectiveAssistantId)
     if (!assistant || !assistant.isActive) {
       this.logger.warn(
         `Assistant ${conversation.assistantId} not found or inactive`,
@@ -163,7 +163,7 @@ export class AiResponseProcessor implements OnModuleInit {
           await this.assistantsRepository.setConversationAssistant(
             tenantId,
             conversationId,
-            conversation.assistantId,
+            effectiveAssistantId,
             true,
           )
           this.logger.log(
