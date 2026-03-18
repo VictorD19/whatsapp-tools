@@ -75,6 +75,10 @@ export class AiResponseProcessor implements OnModuleInit {
       return
     }
 
+    // Busca API key do tenant
+    const settings = await this.assistantsRepository.findSettings(tenantId)
+    const apiKey = settings?.openaiApiKey ?? undefined
+
     const t0 = Date.now()
     const step = (label: string) =>
       this.logger.debug(`[AI][${conversationId}] +${Date.now() - t0}ms — ${label}`, 'AiResponseProcessor')
@@ -117,14 +121,34 @@ export class AiResponseProcessor implements OnModuleInit {
       const willCompress = thread.messages.length > 20
 
       // Comprime se necessário (sumariza via LLM)
-      await this.threadService.maybeCompress(thread)
+      await this.threadService.maybeCompress(thread, apiKey)
 
       // Busca contexto das KBs vinculadas
       let kbContext = ''
       if (assistant.knowledgeBases.length > 0) {
         const kbIds = assistant.knowledgeBases.map((k) => k.knowledgeBaseId)
-        kbContext = await this.knowledgeBaseService.searchContext(tenantId, kbIds, lastUserMessage)
+        this.logger.log(
+          `[KB] Assistant "${assistant.name}" has ${kbIds.length} KB(s) linked: [${kbIds.join(', ')}]. Searching for: "${lastUserMessage.substring(0, 100)}"`,
+          'AiResponseProcessor',
+        )
+        kbContext = await this.knowledgeBaseService.searchContext(tenantId, kbIds, lastUserMessage, apiKey)
+        if (kbContext) {
+          this.logger.log(
+            `[KB] Context found — ${kbContext.length} chars injected into prompt`,
+            'AiResponseProcessor',
+          )
+        } else {
+          this.logger.warn(
+            `[KB] No relevant context found (all chunks below similarity threshold)`,
+            'AiResponseProcessor',
+          )
+        }
         step(`kb context fetched — ${kbContext.length} chars`)
+      } else {
+        this.logger.log(
+          `[KB] Assistant "${assistant.name}" has NO knowledge bases linked — skipping KB search`,
+          'AiResponseProcessor',
+        )
       }
 
       // Busca tools vinculadas
@@ -154,11 +178,13 @@ export class AiResponseProcessor implements OnModuleInit {
       const response = await this.llm.chat(messages, {
         model: assistant.model,
         temperature: 0.7,
+        maxTokens: 500,
+        apiKey,
       })
 
       step(`LLM responded — ${response.inputTokens} in / ${response.outputTokens} out tokens`)
 
-      let responseText = response.content.trim()
+      let responseText = this.markdownToWhatsApp(response.content.trim())
 
       if (!responseText) {
         this.logger.warn(
@@ -313,5 +339,17 @@ export class AiResponseProcessor implements OnModuleInit {
 
   private stripToolMarkers(text: string): string {
     return text.replace(/\[TOOL:[A-Z_]+\]/g, '').trim()
+  }
+
+  /** Converte Markdown → formatação WhatsApp */
+  private markdownToWhatsApp(text: string): string {
+    return text
+      // Headers → negrito
+      .replace(/^#{1,6}\s+(.+)$/gm, '*$1*')
+      // **bold** ou __bold__ → *bold*
+      .replace(/\*\*(.+?)\*\*/g, '*$1*')
+      .replace(/__(.+?)__/g, '*$1*')
+      // ~~strike~~ → ~strike~
+      .replace(/~~(.+?)~~/g, '~$1~')
   }
 }
