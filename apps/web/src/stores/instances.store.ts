@@ -7,6 +7,7 @@ export interface Instance {
   name: string
   phone: string | null
   status: InstanceStatus
+  defaultAssistantId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -27,6 +28,7 @@ interface InstancesState {
   addInstance: (instance: Instance) => void
   removeInstance: (id: string) => void
   updateInstanceStatus: (id: string, status: InstanceStatus, phone?: string | null) => void
+  updateInstance: (id: string, data: Partial<Pick<Instance, 'name' | 'defaultAssistantId'>>) => void
   setImportProgress: (instanceId: string, progress: ImportProgress) => void
   clearImportProgress: (instanceId: string) => void
 }
@@ -46,6 +48,10 @@ export const useInstancesStore = create<InstancesState>()((set) => ({
       instances: state.instances.map((i) =>
         i.id === id ? { ...i, status, ...(phone !== undefined ? { phone } : {}) } : i
       ),
+    })),
+  updateInstance: (id, data) =>
+    set((state) => ({
+      instances: state.instances.map((i) => (i.id === id ? { ...i, ...data } : i)),
     })),
   setImportProgress: (instanceId, progress) =>
     set((state) => ({
