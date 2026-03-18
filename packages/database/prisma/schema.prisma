@@ -249,6 +249,7 @@ model Message {
   reactions     MessageReaction[]
 
   @@index([conversationId])
+  @@index([conversationId, sentAt(sort: Desc)])
   @@index([tenantId])
   @@index([evolutionId])
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '@core/database/prisma.service'
-import { ConversationStatus, Prisma } from '@prisma/client'
+import { ConversationStatus, MessageType, Prisma } from '@prisma/client'
 
 @Injectable()
 export class InboxRepository {
@@ -37,11 +37,9 @@ export class InboxRepository {
           contact: { select: { id: true, phone: true, name: true, avatarUrl: true } },
           instance: { select: { id: true, name: true } },
           assignedTo: { select: { id: true, name: true } },
-          messages: {
-            select: { body: true, type: true, fromMe: true },
-            orderBy: { sentAt: 'desc' },
-            take: 1,
-          },
+          // NOTE: messages intentionally omitted here — Prisma generates a query
+          // without LIMIT when using include+take on relations, fetching ALL messages
+          // in memory. We use a separate DISTINCT ON query below instead.
           deals: {
             where: { deletedAt: null },
             orderBy: { createdAt: 'desc' },
@@ -65,7 +63,33 @@ export class InboxRepository {
       this.prisma.conversation.count({ where }),
     ])
 
-    return { conversations, total }
+    // Fetch the last message per conversation using DISTINCT ON (efficient — uses index)
+    type LastMsg = { conversationId: string; body: string | null; type: MessageType; fromMe: boolean }
+    const conversationIds = conversations.map((c) => c.id)
+    const lastMessages: LastMsg[] = conversationIds.length > 0
+      ? await this.prisma.$queryRaw<LastMsg[]>`
+          SELECT DISTINCT ON ("conversationId")
+            "conversationId",
+            body,
+            type::text as type,
+            "fromMe"
+          FROM "Message"
+          WHERE "conversationId" = ANY(${conversationIds}::text[])
+          ORDER BY "conversationId", "sentAt" DESC
+        `
+      : []
+
+    const lastMessageMap = new Map(lastMessages.map((m) => [m.conversationId, m]))
+
+    const conversationsWithMessages = conversations.map((c) => {
+      const lm = lastMessageMap.get(c.id)
+      return {
+        ...c,
+        messages: lm ? [{ body: lm.body, type: lm.type, fromMe: lm.fromMe }] : [],
+      }
+    })
+
+    return { conversations: conversationsWithMessages, total }
   }
 
   async findConversationById(tenantId: string, id: string) {
