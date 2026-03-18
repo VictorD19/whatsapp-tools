@@ -16,8 +16,6 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
-    security_opt:
-      - no-new-privileges:true
     volumes:
       - .:/app
       - api_root_modules:/app/node_modules
@@ -70,8 +68,6 @@ services:
     restart: unless-stopped
     ports:
       - "3000:8080"
-    security_opt:
-      - no-new-privileges:true
     volumes:
       - .:/app
       - web_root_modules:/app/node_modules

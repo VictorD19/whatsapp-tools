@@ -7,12 +7,9 @@ FROM node:20-alpine
 
 RUN npm install -g pnpm@10
 
-# Deps do entrypoint
-RUN apk add --no-cache tini
-
 WORKDIR /app
 
 COPY entrypoint.dev.sh /usr/local/bin/entrypoint.dev.sh
 RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.dev.sh && chmod +x /usr/local/bin/entrypoint.dev.sh
 
-ENTRYPOINT ["tini", "--", "entrypoint.dev.sh"]
+ENTRYPOINT ["sh", "/usr/local/bin/entrypoint.dev.sh"]
