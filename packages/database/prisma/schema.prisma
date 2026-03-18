@@ -181,7 +181,6 @@ model Conversation {
   unreadCount   Int                @default(0)
   lastMessageAt DateTime?
   closedAt          DateTime?
-  assistantId       String?
   assistantPausedAt DateTime?
   aiThreadSummary   String?            @db.Text
   createdAt         DateTime           @default(now())
@@ -192,7 +191,6 @@ model Conversation {
   instance   Instance   @relation(fields: [instanceId], references: [id])
   contact    Contact    @relation(fields: [contactId], references: [id])
   assignedTo User?      @relation("AssignedConversations", fields: [assignedToId], references: [id])
-  assistant  Assistant? @relation(fields: [assistantId], references: [id])
   messages   Message[]
   deals      Deal[]
   followUps  FollowUp[]
@@ -698,7 +696,6 @@ model Assistant {
   tenant             Tenant              @relation(fields: [tenantId], references: [id])
   knowledgeBases     AssistantKnowledgeBase[]
   tools              AssistantTool[]
-  conversations      Conversation[]
   instanceDefaults   Instance[]          @relation("InstanceDefaultAssistant")
 
   @@index([tenantId])
