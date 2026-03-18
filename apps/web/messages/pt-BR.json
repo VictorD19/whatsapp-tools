@@ -425,7 +425,19 @@
       "importTimeout": "Importação sem resposta",
       "importTimeoutDesc": "Verifique os logs do servidor e tente novamente.",
       "importFailed": "Erro ao iniciar importação"
-    }
+    },
+    "sheetTitle": "Configurações da instância",
+    "sheetNameLabel": "Nome",
+    "sheetNamePlaceholder": "ex: vendas-principal",
+    "sheetDefaultAssistant": "Assistente padrão",
+    "sheetDefaultAssistantPlaceholder": "Nenhum (sem IA automática)",
+    "sheetDefaultAssistantHint": "Novas mensagens recebidas serão respondidas por este assistente.",
+    "sheetActions": "Ações",
+    "sheetSync": "Sincronizar conversas",
+    "sheetRemove": "Remover instância",
+    "editSettings": "Configurações",
+    "successUpdated": "Instância atualizada",
+    "errorUpdating": "Erro ao atualizar instância"
   },
   "contacts": {
     "title": "Contatos",
