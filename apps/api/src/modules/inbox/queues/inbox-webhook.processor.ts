@@ -70,7 +70,7 @@ export class InboxWebhookProcessor {
     switch (event) {
       case 'messages.upsert': {
         await this.handleMessageReceived(
-          { id: instance.id, tenantId: instance.tenantId, evolutionId: instance.evolutionId },
+          { id: instance.id, tenantId: instance.tenantId, evolutionId: instance.evolutionId, defaultAssistantId: instance.defaultAssistantId ?? null },
           data,
         )
         break
@@ -89,7 +89,7 @@ export class InboxWebhookProcessor {
   }
 
   private async handleMessageReceived(
-    instance: { id: string; tenantId: string; evolutionId: string },
+    instance: { id: string; tenantId: string; evolutionId: string; defaultAssistantId: string | null },
     data: Record<string, unknown>,
   ) {
     // Evolution sends messages array
@@ -311,8 +311,9 @@ export class InboxWebhookProcessor {
         'InboxWebhookProcessor',
       )
 
-      // Enfileira resposta da IA se conversa tem assistente ativo e mensagem é inbound
-      if (!fromMe && conversation!.assistantId && !conversation!.assistantPausedAt) {
+      // Enfileira resposta da IA se conversa (ou instância) tem assistente ativo e mensagem é inbound
+      const effectiveAssistantId = conversation!.assistantId ?? instance.defaultAssistantId
+      if (!fromMe && effectiveAssistantId && !conversation!.assistantPausedAt) {
         const convId = conversation!.id
         const jobId = `ai-response:${convId}`
         const existingJob = await this.aiResponseQueue.getJob(jobId)
