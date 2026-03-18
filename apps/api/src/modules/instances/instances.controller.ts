@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Body,
@@ -13,6 +14,7 @@ import { InstancesService } from './instances.service'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
 import { ZodValidationPipe } from '@shared/pipes/zod-validation.pipe'
 import { createInstanceSchema, CreateInstanceDto } from './dto/create-instance.dto'
+import { updateInstanceSchema, UpdateInstanceDto } from './dto/update-instance.dto'
 
 @Controller('instances')
 export class InstancesController {
@@ -37,6 +39,16 @@ export class InstancesController {
     @Param('id') id: string,
   ) {
     return this.instancesService.findOne(tenantId, id)
+  }
+
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  update(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateInstanceSchema)) dto: UpdateInstanceDto,
+  ) {
+    return this.instancesService.update(tenantId, id, dto)
   }
 
   @Post(':id/connect')

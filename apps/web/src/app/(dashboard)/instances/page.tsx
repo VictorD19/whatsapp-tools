@@ -10,10 +10,13 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { InstanceGrid } from '@/components/instances/instance-grid'
 import { CreateInstanceModal } from '@/components/instances/create-instance-modal'
 import { QrCodeModal } from '@/components/instances/qr-code-modal'
+import { InstanceSettingsSheet } from '@/components/instances/instance-settings-sheet'
 import { useInstances } from '@/hooks/use-instances'
 import { useInstanceSocket } from '@/hooks/use-instance-socket'
 import { useImportSocket } from '@/hooks/use-import-socket'
 import { useInstancesStore } from '@/stores/instances.store'
+import { apiGet } from '@/lib/api'
+import type { Instance } from '@/stores/instances.store'
 
 export default function InstancesPage() {
   const t = useTranslations('instances')
@@ -23,12 +26,15 @@ export default function InstancesPage() {
   const instances = useInstancesStore((s) => s.instances)
   const isLoading = useInstancesStore((s) => s.isLoading)
   const importProgress = useInstancesStore((s) => s.importProgress)
-  const { fetchInstances, refreshInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, importConversations } =
+  const { fetchInstances, refreshInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, updateInstance, importConversations } =
     useInstances()
 
   const [createOpen, setCreateOpen] = useState(false)
   const [qrOpen, setQrOpen] = useState(false)
   const [qrInstanceId, setQrInstanceId] = useState<string | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [editingInstance, setEditingInstance] = useState<Instance | null>(null)
+  const [assistants, setAssistants] = useState<{ id: string; name: string; isActive: boolean }[]>([])
 
   // Socket for real-time updates
   useInstanceSocket()
@@ -38,6 +44,12 @@ export default function InstancesPage() {
   useEffect(() => {
     fetchInstances()
   }, [fetchInstances])
+
+  useEffect(() => {
+    apiGet<{ data: { id: string; name: string; isActive: boolean }[] }>('assistants')
+      .then((res) => setAssistants(res.data))
+      .catch(() => {})
+  }, [])
 
   // Fallback polling: when any instance is CONNECTING, poll every 3s
   // This handles WebSocket failures and ensures the page reflects the real status
@@ -50,6 +62,14 @@ export default function InstancesPage() {
     const interval = setInterval(refreshInstances, 3_000)
     return () => clearInterval(interval)
   }, [connectingCount, refreshInstances])
+
+  const handleEdit = useCallback(
+    (instance: Instance) => {
+      setEditingInstance(instance)
+      setSettingsOpen(true)
+    },
+    [],
+  )
 
   const handleConnect = useCallback(
     (id: string) => {
@@ -134,8 +154,7 @@ export default function InstancesPage() {
           importProgress={importProgress}
           onConnect={handleConnect}
           onDisconnect={disconnectInstance}
-          onDelete={deleteInstance}
-          onImportConversations={importConversations}
+          onEdit={handleEdit}
         />
       )}
 
@@ -150,6 +169,15 @@ export default function InstancesPage() {
         onOpenChange={handleQrOpenChange}
         instanceId={qrInstanceId}
         onRequestQr={handleRequestQr}
+      />
+      <InstanceSettingsSheet
+        instance={editingInstance}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        onUpdate={updateInstance}
+        onSync={importConversations}
+        onDelete={deleteInstance}
+        assistants={assistants}
       />
     </PageLayout>
   )

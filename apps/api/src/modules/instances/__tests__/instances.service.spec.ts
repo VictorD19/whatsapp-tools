@@ -25,6 +25,7 @@ describe('InstancesService', () => {
     phone: null,
     status: 'DISCONNECTED' as const,
     evolutionId: 'acme-vendas',
+    defaultAssistantId: null as string | null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -39,6 +40,7 @@ describe('InstancesService', () => {
       findByName: jest.fn(),
       countByTenant: jest.fn(),
       updateStatus: jest.fn(),
+      update: jest.fn(),
       softDelete: jest.fn(),
     }
 
@@ -310,6 +312,58 @@ describe('InstancesService', () => {
       await expect(service.remove(tenantId, 'inst-1')).rejects.toThrow('App Exception')
 
       expect(repository.softDelete).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('update', () => {
+    it('should update instance name successfully', async () => {
+      const updatedInstance = { ...mockInstance, name: 'novo-nome' }
+      repository.findById.mockResolvedValue(mockInstance)
+      repository.findByName.mockResolvedValue(null)
+      repository.update.mockResolvedValue(updatedInstance)
+
+      const result = await service.update(tenantId, 'inst-1', { name: 'novo-nome' })
+
+      expect(repository.update).toHaveBeenCalledWith(tenantId, 'inst-1', { name: 'novo-nome' })
+      expect(result.name).toBe('novo-nome')
+    })
+
+    it('should throw INSTANCE_NOT_FOUND when instance does not exist', async () => {
+      repository.findById.mockResolvedValue(null)
+
+      await expect(service.update(tenantId, 'inst-1', { name: 'x' }))
+        .rejects.toMatchObject({ code: 'INSTANCE_NOT_FOUND' })
+    })
+
+    it('should throw INSTANCE_NAME_ALREADY_EXISTS when new name is taken', async () => {
+      const otherInstance = { ...mockInstance, id: 'other-id', name: 'nome-existente' }
+      repository.findById.mockResolvedValue(mockInstance)
+      repository.findByName.mockResolvedValue(otherInstance)
+
+      await expect(service.update(tenantId, 'inst-1', { name: 'nome-existente' }))
+        .rejects.toMatchObject({ code: 'INSTANCE_NAME_ALREADY_EXISTS' })
+    })
+
+    it('should update defaultAssistantId to a valid value', async () => {
+      const updatedInstance = { ...mockInstance, defaultAssistantId: 'clxxxxxxxxxxxxxxxxxxxxx' }
+      repository.findById.mockResolvedValue(mockInstance)
+      repository.update.mockResolvedValue(updatedInstance)
+
+      const result = await service.update(tenantId, 'inst-1', { defaultAssistantId: 'clxxxxxxxxxxxxxxxxxxxxx' })
+
+      expect(repository.update).toHaveBeenCalledWith(tenantId, 'inst-1', { defaultAssistantId: 'clxxxxxxxxxxxxxxxxxxxxx' })
+      expect(result.defaultAssistantId).toBe('clxxxxxxxxxxxxxxxxxxxxx')
+    })
+
+    it('should clear defaultAssistantId when null is passed', async () => {
+      const updatedInstance = { ...mockInstance, defaultAssistantId: null }
+      repository.findById.mockResolvedValue({ ...mockInstance, defaultAssistantId: 'old-id' })
+      repository.update.mockResolvedValue(updatedInstance)
+
+      const result = await service.update(tenantId, 'inst-1', { defaultAssistantId: null })
+
+      expect(repository.update).toHaveBeenCalledWith(tenantId, 'inst-1', { defaultAssistantId: null })
+      expect(result.defaultAssistantId).toBeNull()
     })
   })
 })

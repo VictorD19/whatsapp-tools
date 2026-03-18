@@ -55,7 +55,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-      - /app/.next/cache
+      - /app/apps/web/.next/cache
     environment:
       NODE_ENV: production
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-localhost:3000}

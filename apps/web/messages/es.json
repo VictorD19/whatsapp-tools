@@ -425,7 +425,19 @@
       "importTimeout": "Importación sin respuesta",
       "importTimeoutDesc": "Verifica los logs del servidor e intenta de nuevo.",
       "importFailed": "Error al iniciar importación"
-    }
+    },
+    "sheetTitle": "Configuración de instancia",
+    "sheetNameLabel": "Nombre",
+    "sheetNamePlaceholder": "ej: ventas-principal",
+    "sheetDefaultAssistant": "Asistente predeterminado",
+    "sheetDefaultAssistantPlaceholder": "Ninguno (sin IA automática)",
+    "sheetDefaultAssistantHint": "Los nuevos mensajes recibidos serán respondidos por este asistente.",
+    "sheetActions": "Acciones",
+    "sheetSync": "Sincronizar conversaciones",
+    "sheetRemove": "Eliminar instancia",
+    "editSettings": "Configuración",
+    "successUpdated": "Instancia actualizada",
+    "errorUpdating": "Error al actualizar instancia"
   },
   "contacts": {
     "title": "Contactos",
@@ -807,6 +819,20 @@
       "creating": "Error al crear asistente",
       "saving": "Error al guardar asistente",
       "deleting": "Error al eliminar asistente"
+    },
+    "settings": {
+      "title": "Configuración de IA",
+      "description": "Configure las claves de API para los modelos de inteligencia artificial",
+      "openaiApiKeyLabel": "Clave de API de OpenAI",
+      "openaiApiKeyPlaceholder": "sk-...",
+      "openaiApiKeyHint": "Necesaria para usar modelos GPT en los asistentes. Obténgala en platform.openai.com",
+      "saving": "Guardando...",
+      "success": {
+        "saved": "Configuración guardada"
+      },
+      "error": {
+        "saving": "Error al guardar configuración"
+      }
     }
   },
   "knowledgeBases": {
@@ -1079,7 +1105,8 @@
       "role": "Cargo/Función",
       "rolePlaceholder": "Ej: Gerente de Ventas",
       "roleHint": "Tu cargo o función en la empresa",
-      "changePhoto": "Cambiar foto"
+      "changePhoto": "Cambiar foto",
+      "loggedAs": "Conectado como {email}"
     },
     "locale": {
       "title": "Idioma y Región",

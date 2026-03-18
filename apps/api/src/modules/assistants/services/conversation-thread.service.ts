@@ -4,6 +4,7 @@ import { LLM_PROVIDER } from '@modules/ai/ai.tokens'
 import { InboxRepository } from '@modules/inbox/inbox.repository'
 import { LoggerService } from '@core/logger/logger.service'
 import type { ILLMProvider, ChatMessage } from '@modules/ai/ports/llm-provider.interface'
+import { AssistantPromptBuilder } from './assistant-prompt.builder'
 
 // ── Constantes ──────────────────────────────────────────────────────────────
 
@@ -25,6 +26,8 @@ export interface ConversationThread {
   summary: string | null
   messages: ThreadMessage[]
   totalMessageCount: number
+  /** ID do deal ativo quando o thread foi construído (null = sem deal) */
+  dealId: string | null
 }
 
 // ── Service ─────────────────────────────────────────────────────────────────
@@ -45,31 +48,47 @@ export class ConversationThreadService {
     tenantId: string,
     conversationId: string,
     assistant: { systemPrompt: string; aiThreadSummary?: string | null },
+    deal?: { id: string; createdAt: Date } | null,
   ): Promise<ConversationThread> {
+    const dealId = deal?.id ?? null
     const key = this.redisKey(tenantId, conversationId)
     const cached = await this.redis.getClient().get(key)
 
     if (cached) {
-      this.logger.debug(
-        `Thread cache hit for conversation ${conversationId}`,
-        'ConversationThreadService',
-      )
-      // Renova TTL a cada acesso — qualquer interação mantém o thread vivo
-      await this.redis.getClient().expire(key, THREAD_REDIS_TTL)
-      return JSON.parse(cached) as ConversationThread
+      const cachedThread = JSON.parse(cached) as ConversationThread
+
+      // Invalida cache se o deal associado mudou (ex: novo deal aberto na conversa)
+      if (cachedThread.dealId !== dealId) {
+        this.logger.debug(
+          `Thread cache invalidated — deal changed (${cachedThread.dealId} → ${dealId}) for conversation ${conversationId}`,
+          'ConversationThreadService',
+        )
+        await this.redis.getClient().del(key)
+        // Segue para rebuild abaixo
+      } else {
+        this.logger.debug(
+          `Thread cache hit for conversation ${conversationId}`,
+          'ConversationThreadService',
+        )
+        // Renova TTL a cada acesso — qualquer interação mantém o thread vivo
+        await this.redis.getClient().expire(key, THREAD_REDIS_TTL)
+        return cachedThread
+      }
     }
 
     this.logger.debug(
-      `Thread cache miss — rebuilding from DB for conversation ${conversationId}`,
+      `Thread cache miss — rebuilding from DB for conversation ${conversationId}${deal ? ` (since deal ${deal.id} at ${deal.createdAt.toISOString()})` : ''}`,
       'ConversationThreadService',
     )
 
-    // Reconstrói do banco: busca últimas THREAD_KEEP_RECENT mensagens + sumário salvo
+    // Reconstrói do banco: apenas mensagens do deal em andamento (desde deal.createdAt)
+    // Sem deal: pega as últimas THREAD_KEEP_RECENT mensagens disponíveis
     const { messages } = await this.inboxRepository.findMessages(
       tenantId,
       conversationId,
       1,
       THREAD_KEEP_RECENT,
+      deal?.createdAt,
     )
 
     // findMessages retorna desc — reverte para cronológico
@@ -79,12 +98,14 @@ export class ConversationThreadService {
       conversationId,
       tenantId,
       systemPrompt: assistant.systemPrompt,
-      summary: assistant.aiThreadSummary ?? null,
+      // Com deal ativo: apenas mensagens do deal, sem sumário anterior
+      summary: dealId ? null : (assistant.aiThreadSummary ?? null),
       messages: orderedMessages.map((m) => ({
         role: m.fromMe ? 'assistant' : 'user',
         content: m.body ?? '',
       })),
       totalMessageCount: orderedMessages.length,
+      dealId,
     }
 
     return thread
@@ -99,7 +120,7 @@ export class ConversationThreadService {
 
   // ── Verifica e comprime se necessário ────────────────────────────────────
 
-  async maybeCompress(thread: ConversationThread): Promise<boolean> {
+  async maybeCompress(thread: ConversationThread, apiKey?: string): Promise<boolean> {
     if (thread.messages.length <= THREAD_MAX_MESSAGES) return false
 
     this.logger.log(
@@ -120,7 +141,7 @@ export class ConversationThreadService {
     ]
 
     try {
-      const response = await this.llm.chat(summaryMessages, { maxTokens: 500 })
+      const response = await this.llm.chat(summaryMessages, { maxTokens: 500, apiKey })
 
       thread.summary = thread.summary
         ? `${thread.summary}\n\n${response.content}`
@@ -159,30 +180,21 @@ export class ConversationThreadService {
 
   buildLLMMessages(
     thread: ConversationThread,
+    assistant: { name: string; description?: string | null },
     kbContext: string,
     tools: Array<{ name: string; description: string | null }>,
     handoffKeywords: string[],
   ): ChatMessage[] {
-    const systemParts: string[] = [thread.systemPrompt]
+    const systemContent = AssistantPromptBuilder.build({
+      name: assistant.name,
+      description: assistant.description,
+      systemPrompt: thread.systemPrompt,
+      kbContext,
+      tools,
+      handoffKeywords,
+    })
 
-    if (kbContext) {
-      systemParts.push(`\n\n## Contexto relevante da base de conhecimento:\n${kbContext}`)
-    }
-
-    if (tools.length > 0) {
-      const desc = tools.map((t) => `- ${t.name}: ${t.description ?? ''}`).join('\n')
-      systemParts.push(
-        `\n\n## Ferramentas disponíveis:\n${desc}\n\nPara executar uma ferramenta, inclua [TOOL:TIPO] na sua resposta (ex: [TOOL:CRIAR_DEAL]).`,
-      )
-    }
-
-    if (handoffKeywords.length > 0) {
-      systemParts.push(
-        `\n\nSe o usuário pedir para falar com um humano (palavras como: ${handoffKeywords.join(', ')}), transfira o atendimento.`,
-      )
-    }
-
-    const messages: ChatMessage[] = [{ role: 'system', content: systemParts.join('') }]
+    const messages: ChatMessage[] = [{ role: 'system', content: systemContent }]
 
     // Injeta sumário de histórico anterior (se existir)
     if (thread.summary) {

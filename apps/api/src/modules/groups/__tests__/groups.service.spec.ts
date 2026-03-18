@@ -23,6 +23,7 @@ describe('GroupsService', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null as Date | null,
+    defaultAssistantId: null as string | null,
   }
 
   const mockGroups = [

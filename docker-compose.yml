@@ -16,8 +16,6 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
-    security_opt:
-      - no-new-privileges:true
     volumes:
       - .:/app
       - api_root_modules:/app/node_modules
@@ -38,6 +36,7 @@ services:
       EVOLUTION_API_URL: http://evolution:8080
       EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-changeme-evolution-key}
       WEBHOOK_URL: http://api:3001
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
@@ -70,8 +69,6 @@ services:
     restart: unless-stopped
     ports:
       - "3000:8080"
-    security_opt:
-      - no-new-privileges:true
     volumes:
       - .:/app
       - web_root_modules:/app/node_modules

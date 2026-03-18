@@ -5,6 +5,7 @@ import { InstancesGateway } from './instances.gateway'
 import { AppException } from '@core/errors/app.exception'
 import { LoggerService } from '@core/logger/logger.service'
 import { CreateInstanceDto } from './dto/create-instance.dto'
+import { UpdateInstanceDto } from './dto/update-instance.dto'
 import { PrismaService } from '@core/database/prisma.service'
 import { ConfigService } from '@nestjs/config'
 
@@ -138,6 +139,31 @@ export class InstancesService {
       throw AppException.notFound('INSTANCE_NOT_FOUND', 'Instância não encontrada', { id })
     }
     return instance
+  }
+
+  async update(tenantId: string, id: string, dto: UpdateInstanceDto) {
+    const instance = await this.repository.findById(tenantId, id)
+    if (!instance) {
+      throw AppException.notFound('INSTANCE_NOT_FOUND', 'Instância não encontrada', { id })
+    }
+
+    if (dto.name && dto.name !== instance.name) {
+      const existing = await this.repository.findByName(tenantId, dto.name)
+      if (existing && existing.id !== id) {
+        throw new AppException(
+          'INSTANCE_NAME_ALREADY_EXISTS',
+          `Já existe uma instância com o nome "${dto.name}"`,
+          { name: dto.name },
+          HttpStatus.CONFLICT,
+        )
+      }
+    }
+
+    const updateData: Record<string, unknown> = {}
+    if (dto.name !== undefined) updateData.name = dto.name
+    if (dto.defaultAssistantId !== undefined) updateData.defaultAssistantId = dto.defaultAssistantId
+
+    return this.repository.update(tenantId, id, updateData)
   }
 
   async connect(tenantId: string, id: string) {

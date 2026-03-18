@@ -30,7 +30,6 @@ describe('AssistantsService', () => {
 
   const mockConversation = {
     id: 'conv-1',
-    assistantId: null,
     assistantPausedAt: null,
   }
 
@@ -230,62 +229,34 @@ describe('AssistantsService', () => {
   })
 
   describe('setConversationAssistant', () => {
-    it('should activate assistant on conversation', async () => {
-      repository.findConversation.mockResolvedValue(mockConversation)
-      repository.findById.mockResolvedValue(mockAssistant)
+    it('deve pausar o assistente da conversa', async () => {
       repository.setConversationAssistant.mockResolvedValue({ count: 1 })
 
       const result = await service.setConversationAssistant(tenantId, 'conv-1', {
-        assistantId: 'assistant-1',
+        paused: true,
       })
 
-      expect(result.data.assistantId).toBe('assistant-1')
+      expect(result.data.paused).toBe(true)
       expect(repository.setConversationAssistant).toHaveBeenCalledWith(
-        tenantId, 'conv-1', 'assistant-1', false,
+        tenantId,
+        'conv-1',
+        true,
       )
     })
 
-    it('should deactivate assistant on conversation (null)', async () => {
-      repository.findConversation.mockResolvedValue({
-        ...mockConversation,
-        assistantId: 'assistant-1',
-      })
+    it('deve retomar o assistente da conversa', async () => {
       repository.setConversationAssistant.mockResolvedValue({ count: 1 })
 
       const result = await service.setConversationAssistant(tenantId, 'conv-1', {
-        assistantId: null,
+        paused: false,
       })
 
-      expect(result.data.assistantId).toBeNull()
+      expect(result.data.paused).toBe(false)
       expect(repository.setConversationAssistant).toHaveBeenCalledWith(
-        tenantId, 'conv-1', null, true,
+        tenantId,
+        'conv-1',
+        false,
       )
-    })
-
-    it('should throw CONVERSATION_NOT_FOUND when conversation not found', async () => {
-      repository.findConversation.mockResolvedValue(null)
-
-      await expect(
-        service.setConversationAssistant(tenantId, 'nonexistent', { assistantId: 'assistant-1' }),
-      ).rejects.toMatchObject({ code: 'CONVERSATION_NOT_FOUND' })
-    })
-
-    it('should throw ASSISTANT_NOT_FOUND when assistant not found', async () => {
-      repository.findConversation.mockResolvedValue(mockConversation)
-      repository.findById.mockResolvedValue(null)
-
-      await expect(
-        service.setConversationAssistant(tenantId, 'conv-1', { assistantId: 'assistant-1' }),
-      ).rejects.toMatchObject({ code: 'ASSISTANT_NOT_FOUND' })
-    })
-
-    it('should throw ASSISTANT_INACTIVE when assistant is inactive', async () => {
-      repository.findConversation.mockResolvedValue(mockConversation)
-      repository.findById.mockResolvedValue({ ...mockAssistant, isActive: false })
-
-      await expect(
-        service.setConversationAssistant(tenantId, 'conv-1', { assistantId: 'assistant-1' }),
-      ).rejects.toMatchObject({ code: 'ASSISTANT_INACTIVE' })
     })
   })
 })

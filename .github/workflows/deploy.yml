@@ -148,8 +148,8 @@ jobs:
             echo "▶ Reiniciando serviços de aplicação..."
             docker compose -f docker-compose.prod.yml up -d --no-build api web
 
-            echo "▶ Rodando migrations..."
-            docker compose -f docker-compose.prod.yml exec -T api pnpm --filter @repo/database db:migrate:deploy
+            echo "▶ Aguardando API inicializar (migrations rodam no entrypoint.sh)..."
+            sleep 15
 
             echo "▶ Limpando imagens antigas..."
             docker image prune -f

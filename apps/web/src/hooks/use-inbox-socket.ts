@@ -68,6 +68,7 @@ export function useInboxSocket() {
     const socket = getSocket()
 
     function handleConversationCreated(payload: { conversation: Conversation }) {
+      if (!payload.conversation?.id) return
       upsertConversation(payload.conversation)
       playNotificationSound()
       refreshInbox()
@@ -116,7 +117,7 @@ export function useInboxSocket() {
           const conversation = await apiGet<Conversation>(
             `inbox/conversations/${payload.conversationId}`,
           )
-          if (conversation) {
+          if (conversation?.id) {
             upsertConversation(conversation)
           }
         } catch {

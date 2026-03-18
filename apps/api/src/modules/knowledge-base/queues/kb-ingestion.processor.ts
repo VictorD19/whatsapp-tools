@@ -3,14 +3,15 @@ import { InjectQueue } from '@nestjs/bull'
 import { Job, Queue } from 'bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { LoggerService } from '@core/logger/logger.service'
+import { PrismaService } from '@core/database/prisma.service'
 import { LLM_PROVIDER } from '@modules/ai/ai.tokens'
 import { StorageService } from '@modules/storage/storage.service'
 import { KnowledgeBaseRepository } from '../knowledge-base.repository'
 import type { KbIngestionJobData } from './kb-ingestion.producer'
 import type { ILLMProvider } from '@modules/ai/ports/llm-provider.interface'
 
-const CHUNK_SIZE = 2000
-const CHUNK_OVERLAP = 200
+const CHUNK_SIZE = 500
+const CHUNK_OVERLAP = 50
 
 @Injectable()
 export class KbIngestionProcessor implements OnModuleInit {
@@ -20,6 +21,7 @@ export class KbIngestionProcessor implements OnModuleInit {
     private readonly repository: KnowledgeBaseRepository,
     @Inject(LLM_PROVIDER)
     private readonly llm: ILLMProvider,
+    private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly logger: LoggerService,
   ) {}
@@ -44,6 +46,10 @@ export class KbIngestionProcessor implements OnModuleInit {
     try {
       await this.repository.updateSourceStatus(sourceId, 'PROCESSING')
 
+      // Busca API key do tenant
+      const settings = await this.prisma.assistantSetting.findUnique({ where: { tenantId } })
+      const apiKey = settings?.openaiApiKey ?? undefined
+
       const text = await this.extractText(source)
       if (!text || text.trim().length === 0) {
         throw new Error('Nenhum texto extraido da source')
@@ -55,7 +61,7 @@ export class KbIngestionProcessor implements OnModuleInit {
 
       const chunkRecords: Array<{ content: string; embedding: number[]; chunkIndex: number }> = []
       for (let i = 0; i < chunks.length; i++) {
-        const embedding = await this.llm.embed(chunks[i])
+        const embedding = await this.llm.embed(chunks[i], apiKey)
         chunkRecords.push({
           content: chunks[i],
           embedding,
@@ -107,9 +113,12 @@ export class KbIngestionProcessor implements OnModuleInit {
     const { buffer } = await this.storage.download(fileKey)
 
     if (mimetype === 'application/pdf') {
-      const pdfParse = require('pdf-parse')
-      const result = await pdfParse(buffer)
-      return result.text
+      const { PDFParse, VerbosityLevel } = require('pdf-parse')
+      const parser = new PDFParse({ data: buffer, verbosity: VerbosityLevel.ERRORS })
+      const result = await parser.getText()
+      const text = result.pages.map((p: { text: string }) => p.text).join('\n\n')
+      await parser.destroy()
+      return text
     }
 
     if (

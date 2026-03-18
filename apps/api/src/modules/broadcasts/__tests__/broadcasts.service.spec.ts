@@ -38,6 +38,7 @@ describe('BroadcastsService', () => {
     name: 'Vendas',
     evolutionId: 'acme-vendas',
     status: 'CONNECTED' as const,
+    defaultAssistantId: null as string | null,
   }
 
   const mockBroadcast = {

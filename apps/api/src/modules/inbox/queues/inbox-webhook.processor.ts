@@ -10,6 +10,7 @@ import { InstancesService } from '@modules/instances/instances.service'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { TenantsService } from '@modules/tenants/tenants.service'
 import { StorageService, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
+import { DealService } from '@modules/deal/deal.service'
 import { parseWhatsAppMessage, extractQuotedStanzaId } from '../utils/message-parser'
 
 const DEFAULT_AI_WAIT_MS = 5000
@@ -43,6 +44,7 @@ export class InboxWebhookProcessor {
     private readonly whatsapp: WhatsAppService,
     private readonly tenantsService: TenantsService,
     private readonly storage: StorageService,
+    private readonly dealService: DealService,
     private readonly gateway: InboxGateway,
     private readonly logger: LoggerService,
     @InjectQueue(QUEUES.AI_RESPONSE)
@@ -70,7 +72,7 @@ export class InboxWebhookProcessor {
     switch (event) {
       case 'messages.upsert': {
         await this.handleMessageReceived(
-          { id: instance.id, tenantId: instance.tenantId, evolutionId: instance.evolutionId },
+          { id: instance.id, tenantId: instance.tenantId, evolutionId: instance.evolutionId, defaultAssistantId: instance.defaultAssistantId ?? null },
           data,
         )
         break
@@ -89,7 +91,7 @@ export class InboxWebhookProcessor {
   }
 
   private async handleMessageReceived(
-    instance: { id: string; tenantId: string; evolutionId: string },
+    instance: { id: string; tenantId: string; evolutionId: string; defaultAssistantId: string | null },
     data: Record<string, unknown>,
   ) {
     // Evolution sends messages array
@@ -217,6 +219,24 @@ export class InboxWebhookProcessor {
         await this.inboxRepository.incrementUnreadCount(conversation.id)
       }
 
+      // Auto-criar deal para conversas 1:1 inbound sem deal vinculado
+      if (!isGroup && !fromMe) {
+        try {
+          const deal = await this.dealService.findOrCreateForContact(instance.tenantId, contact.id, conversation.id)
+          if (deal) {
+            this.gateway.emitConversationDealUpdated(instance.tenantId, {
+              conversationId: conversation.id,
+              deal: deal as unknown as Record<string, unknown>,
+            })
+          }
+        } catch (err) {
+          this.logger.warn(
+            `Failed to auto-create deal for conversation ${conversation!.id}: ${(err as Error).message}`,
+            'InboxWebhookProcessor',
+          )
+        }
+      }
+
       // Deduplicate: skip if message already exists (e.g. fromMe sent via API — Evolution echoes it back)
       const evolutionMsgId = key.id as string | undefined
       if (evolutionMsgId) {
@@ -311,8 +331,9 @@ export class InboxWebhookProcessor {
         'InboxWebhookProcessor',
       )
 
-      // Enfileira resposta da IA se conversa tem assistente ativo e mensagem é inbound
-      if (!fromMe && conversation!.assistantId && !conversation!.assistantPausedAt) {
+      // Enfileira resposta da IA se instância tem assistente ativo e mensagem é inbound
+      const effectiveAssistantId = instance.defaultAssistantId
+      if (!fromMe && !isGroup && effectiveAssistantId && !conversation!.assistantPausedAt) {
         const convId = conversation!.id
         const jobId = `ai-response:${convId}`
         const existingJob = await this.aiResponseQueue.getJob(jobId)
@@ -329,6 +350,7 @@ export class InboxWebhookProcessor {
             conversationId: convId,
             tenantId: instance.tenantId,
             instanceEvolutionId: instance.evolutionId,
+            effectiveAssistantId,
           },
           {
             jobId,

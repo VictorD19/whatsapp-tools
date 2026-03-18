@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Bot, Search, SlidersHorizontal } from 'lucide-react'
+import { Plus, Bot, Search, SlidersHorizontal, Settings } from 'lucide-react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { AssistantCard } from '@/components/assistants/assistant-card'
 import { DeleteAssistantDialog } from '@/components/assistants/delete-assistant-dialog'
 import { CreateAssistantSheet } from '@/components/assistants/create-assistant-sheet'
+import { AssistantSettingsSheet } from '@/components/assistants/assistant-settings-sheet'
 import { useTranslations } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete } from '@/lib/api'
@@ -36,6 +37,7 @@ export default function AssistantsPage() {
   const [deletingAssistant, setDeletingAssistant] = useState<Assistant | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [createSheetOpen, setCreateSheetOpen] = useState(false)
+  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false)
   const [creating, setCreating] = useState(false)
 
   const filtered = useMemo(() => {
@@ -105,7 +107,10 @@ export default function AssistantsPage() {
             </Button>
           </div>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setSettingsSheetOpen(true)} title={t('settings.title')}>
+              <Settings className="h-4 w-4" />
+            </Button>
             <Button onClick={() => setCreateSheetOpen(true)}>
               <Plus className="h-4 w-4" />
               {t('addNew')}
@@ -157,6 +162,10 @@ export default function AssistantsPage() {
         saving={creating}
         onClose={() => setCreateSheetOpen(false)}
         onSave={handleCreate}
+      />
+      <AssistantSettingsSheet
+        open={settingsSheetOpen}
+        onClose={() => setSettingsSheetOpen(false)}
       />
     </PageLayout>
   )

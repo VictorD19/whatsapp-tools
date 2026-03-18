@@ -4,6 +4,7 @@ import { AssistantsRepository } from './assistants.repository'
 import type { CreateAssistantDto } from './dto/create-assistant.dto'
 import type { UpdateAssistantDto } from './dto/update-assistant.dto'
 import type { SetConversationAssistantDto } from './dto/set-conversation-assistant.dto'
+import type { UpdateAssistantSettingsDto } from './dto/update-assistant-settings.dto'
 
 @Injectable()
 export class AssistantsService {
@@ -96,28 +97,36 @@ export class AssistantsService {
     conversationId: string,
     dto: SetConversationAssistantDto,
   ) {
-    const conversation = await this.repository.findConversation(tenantId, conversationId)
-    if (!conversation) {
-      throw AppException.notFound('CONVERSATION_NOT_FOUND', 'Conversa nao encontrada')
+    await this.repository.setConversationAssistant(tenantId, conversationId, dto.paused)
+    return { data: { conversationId, paused: dto.paused } }
+  }
+
+  async getSettings(tenantId: string) {
+    const settings = await this.repository.findSettings(tenantId)
+    if (!settings) {
+      return { data: { openaiApiKey: null, hasApiKey: false } }
     }
-
-    if (dto.assistantId) {
-      const assistant = await this.repository.findById(tenantId, dto.assistantId)
-      if (!assistant) {
-        throw AppException.notFound('ASSISTANT_NOT_FOUND', 'Assistente nao encontrado')
-      }
-      if (!assistant.isActive) {
-        throw new AppException('ASSISTANT_INACTIVE', 'Assistente esta inativo')
-      }
+    return {
+      data: {
+        openaiApiKey: settings.openaiApiKey ? this.maskApiKey(settings.openaiApiKey) : null,
+        hasApiKey: !!settings.openaiApiKey,
+      },
     }
+  }
 
-    await this.repository.setConversationAssistant(
-      tenantId,
-      conversationId,
-      dto.assistantId,
-      dto.assistantId === null,
-    )
+  async updateSettings(tenantId: string, dto: UpdateAssistantSettingsDto) {
+    await this.repository.upsertSettings(tenantId, dto)
+    const hasApiKey = !!dto.openaiApiKey
+    return {
+      data: {
+        openaiApiKey: dto.openaiApiKey ? this.maskApiKey(dto.openaiApiKey) : null,
+        hasApiKey,
+      },
+    }
+  }
 
-    return { data: { conversationId, assistantId: dto.assistantId } }
+  private maskApiKey(key: string): string {
+    if (key.length <= 8) return '****'
+    return key.slice(0, 4) + '****' + key.slice(-4)
   }
 }

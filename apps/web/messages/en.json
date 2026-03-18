@@ -425,7 +425,19 @@
       "importTimeout": "Import unresponsive",
       "importTimeoutDesc": "Check server logs and try again.",
       "importFailed": "Error starting import"
-    }
+    },
+    "sheetTitle": "Instance settings",
+    "sheetNameLabel": "Name",
+    "sheetNamePlaceholder": "e.g. sales-main",
+    "sheetDefaultAssistant": "Default assistant",
+    "sheetDefaultAssistantPlaceholder": "None (no automatic AI)",
+    "sheetDefaultAssistantHint": "New incoming messages will be answered by this assistant.",
+    "sheetActions": "Actions",
+    "sheetSync": "Sync conversations",
+    "sheetRemove": "Remove instance",
+    "editSettings": "Settings",
+    "successUpdated": "Instance updated",
+    "errorUpdating": "Error updating instance"
   },
   "contacts": {
     "title": "Contacts",
@@ -807,6 +819,20 @@
       "creating": "Error creating assistant",
       "saving": "Error saving assistant",
       "deleting": "Error deleting assistant"
+    },
+    "settings": {
+      "title": "AI Settings",
+      "description": "Configure API keys for artificial intelligence models",
+      "openaiApiKeyLabel": "OpenAI API Key",
+      "openaiApiKeyPlaceholder": "sk-...",
+      "openaiApiKeyHint": "Required to use GPT models in assistants. Get it at platform.openai.com",
+      "saving": "Saving...",
+      "success": {
+        "saved": "Settings saved"
+      },
+      "error": {
+        "saving": "Error saving settings"
+      }
     }
   },
   "knowledgeBases": {
@@ -1079,7 +1105,8 @@
       "role": "Role",
       "rolePlaceholder": "E.g. Sales Manager",
       "roleHint": "Your role or position in the company",
-      "changePhoto": "Change photo"
+      "changePhoto": "Change photo",
+      "loggedAs": "Logged in as {email}"
     },
     "locale": {
       "title": "Language & Region",

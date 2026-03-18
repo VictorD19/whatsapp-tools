@@ -38,14 +38,19 @@ describe('InboxService', () => {
     unreadCount: 1,
     lastMessageAt: new Date(),
     closedAt: null,
-    assistantId: null,
     assistantPausedAt: null,
     aiThreadSummary: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
     contact: { id: 'contact-1', phone: '5511999999999', name: 'John', avatarUrl: null },
-    instance: { id: 'inst-1', name: 'vendas', evolutionId: 'acme-vendas' },
+    instance: {
+      id: 'inst-1',
+      name: 'vendas',
+      evolutionId: 'acme-vendas',
+      defaultAssistantId: null,
+      defaultAssistant: null,
+    },
     assignedTo: null,
     messages: [],
     deals: [],
@@ -849,6 +854,7 @@ describe('InboxService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
+        defaultAssistantId: null,
       } as never)
       importProducer.startImport.mockResolvedValue(undefined as never)
 
@@ -873,6 +879,7 @@ describe('InboxService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
+        defaultAssistantId: null,
       } as never)
 
       await expect(
@@ -890,6 +897,7 @@ describe('InboxService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
+        defaultAssistantId: null,
       } as never)
       importProducer.startImport.mockRejectedValue(new Error('Job is already waiting'))
 

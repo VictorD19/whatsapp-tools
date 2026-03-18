@@ -72,4 +72,8 @@ export class InboxGateway implements OnGatewayConnection, OnGatewayDisconnect {
   emitImportFailed(tenantId: string, payload: { instanceId: string; reason: string }) {
     this.server.to(`tenant:${tenantId}`).emit('import:failed', payload)
   }
+
+  emitConversationDealUpdated(tenantId: string, payload: { conversationId: string; deal: Record<string, unknown> }) {
+    this.server.to(`tenant:${tenantId}`).emit('conversation:deal_updated', payload)
+  }
 }

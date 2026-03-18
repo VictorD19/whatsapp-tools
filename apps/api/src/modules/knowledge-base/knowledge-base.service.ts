@@ -160,10 +160,10 @@ export class KnowledgeBaseService {
       throw AppException.notFound('KNOWLEDGE_SOURCE_NOT_FOUND', 'Fonte nao encontrada')
     }
 
-    if (source.status !== 'FAILED') {
+    if (source.status === 'PROCESSING') {
       throw new AppException(
         'KNOWLEDGE_SOURCE_REINGEST_INVALID_STATUS',
-        'Apenas sources com status FAILED podem ser re-ingeridas',
+        'Source esta sendo processada, aguarde a conclusao',
       )
     }
 
@@ -175,12 +175,29 @@ export class KnowledgeBaseService {
     return { data: { reIngested: true } }
   }
 
-  async searchContext(tenantId: string, kbIds: string[], query: string) {
-    const embedding = await this.llm.embed(query)
+  async searchContext(tenantId: string, kbIds: string[], query: string, apiKey?: string) {
+    this.logger.log(
+      `[KB Search] Generating embedding for query: "${query.substring(0, 80)}"`,
+      'KnowledgeBaseService',
+    )
+    const embedding = await this.llm.embed(query, apiKey)
+
     const chunks = await this.repository.searchSimilarChunks(tenantId, kbIds, embedding, 5)
 
-    const context = chunks
-      .filter((c) => c.similarity > 0.7)
+    this.logger.log(
+      `[KB Search] Found ${chunks.length} chunks — similarities: [${chunks.map((c) => c.similarity.toFixed(3)).join(', ')}]`,
+      'KnowledgeBaseService',
+    )
+
+    const SIMILARITY_THRESHOLD = 0.5
+    const filtered = chunks.filter((c) => c.similarity > SIMILARITY_THRESHOLD)
+
+    this.logger.log(
+      `[KB Search] ${filtered.length}/${chunks.length} chunks passed threshold (> ${SIMILARITY_THRESHOLD})`,
+      'KnowledgeBaseService',
+    )
+
+    const context = filtered
       .map((c) => c.content)
       .join('\n\n---\n\n')
 

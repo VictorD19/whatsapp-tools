@@ -18,6 +18,7 @@ function AudioPlayer({ src, fromMe }: { src: string; fromMe: boolean }) {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [progress, setProgress] = useState(0)
+  const [loadError, setLoadError] = useState(false)
 
   // Stable pseudo-random waveform based on URL
   const bars = useMemo(() => {
@@ -37,22 +38,34 @@ function AudioPlayer({ src, fromMe }: { src: string; fromMe: boolean }) {
     }
     const onMetadata = () => setDuration(audio.duration)
     const onEnded = () => { setIsPlaying(false); setProgress(0); setCurrentTime(0) }
+    const onError = () => { setIsPlaying(false); setLoadError(true) }
 
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('loadedmetadata', onMetadata)
     audio.addEventListener('ended', onEnded)
+    audio.addEventListener('error', onError)
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate)
       audio.removeEventListener('loadedmetadata', onMetadata)
       audio.removeEventListener('ended', onEnded)
+      audio.removeEventListener('error', onError)
     }
   }, [])
 
   const togglePlay = () => {
     const audio = audioRef.current
-    if (!audio) return
-    if (isPlaying) { audio.pause(); setIsPlaying(false) }
-    else { audio.play(); setIsPlaying(true) }
+    if (!audio || loadError) return
+    if (isPlaying) {
+      audio.pause()
+      setIsPlaying(false)
+    } else {
+      audio.play().then(() => {
+        setIsPlaying(true)
+      }).catch(() => {
+        setIsPlaying(false)
+        setLoadError(true)
+      })
+    }
   }
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -229,6 +242,39 @@ function ReactionBubbles({ reactions, fromMe }: { reactions: { senderJid: string
   )
 }
 
+/** Renderiza formatação WhatsApp: *bold* _italic_ ~strike~ ```code``` */
+function FormattedText({ text }: { text: string }) {
+  const parts: React.ReactNode[] = []
+  // Regex para capturar formatações WhatsApp (ordem importa: monospace primeiro por ser triplo)
+  const regex = /```([\s\S]+?)```|\*(.+?)\*|_(.+?)_|~(.+?)~/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = regex.exec(text)) !== null) {
+    // Texto antes do match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index))
+    }
+    if (match[1] != null) {
+      parts.push(<code key={match.index} className="bg-black/10 dark:bg-white/10 rounded px-1 py-0.5 text-xs font-mono">{match[1]}</code>)
+    } else if (match[2] != null) {
+      parts.push(<strong key={match.index}>{match[2]}</strong>)
+    } else if (match[3] != null) {
+      parts.push(<em key={match.index}>{match[3]}</em>)
+    } else if (match[4] != null) {
+      parts.push(<s key={match.index}>{match[4]}</s>)
+    }
+    lastIndex = match.index + match[0].length
+  }
+
+  // Texto restante
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex))
+  }
+
+  return <>{parts}</>
+}
+
 export function MessageBubble({ message, contactName, contactPhone, onReply, onMediaClick }: MessageBubbleProps) {
   const time = new Date(message.sentAt).toLocaleTimeString('pt-BR', {
     hour: '2-digit',
@@ -324,7 +370,7 @@ export function MessageBubble({ message, contactName, contactPhone, onReply, onM
           {isMediaType ? (
             <MediaContent message={message} onMediaClick={onMediaClick} />
           ) : (
-            message.body && <p className="leading-relaxed whitespace-pre-wrap break-words">{message.body}</p>
+            message.body && <p className="leading-relaxed whitespace-pre-wrap break-words"><FormattedText text={message.body} /></p>
           )}
 
           <div className="flex items-center gap-1 mt-1 justify-end">

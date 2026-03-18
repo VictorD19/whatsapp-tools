@@ -9,12 +9,26 @@ import { UpdateAssistantSchema, type UpdateAssistantDto } from './dto/update-ass
 import { LinkKnowledgeBaseSchema, type LinkKnowledgeBaseDto } from './dto/link-kb.dto'
 import { LinkToolSchema, type LinkToolDto } from './dto/link-tool.dto'
 import { SetConversationAssistantSchema, type SetConversationAssistantDto } from './dto/set-conversation-assistant.dto'
+import { UpdateAssistantSettingsSchema, type UpdateAssistantSettingsDto } from './dto/update-assistant-settings.dto'
 
 @UseGuards(RoleGuard)
 @Roles('admin')
 @Controller()
 export class AssistantsController {
   constructor(private readonly assistantsService: AssistantsService) {}
+
+  @Get('assistants/settings')
+  getSettings(@CurrentTenant() tenantId: string) {
+    return this.assistantsService.getSettings(tenantId)
+  }
+
+  @Patch('assistants/settings')
+  updateSettings(
+    @CurrentTenant() tenantId: string,
+    @Body(new ZodValidationPipe(UpdateAssistantSettingsSchema)) dto: UpdateAssistantSettingsDto,
+  ) {
+    return this.assistantsService.updateSettings(tenantId, dto)
+  }
 
   @Get('assistants')
   findAll(@CurrentTenant() tenantId: string) {

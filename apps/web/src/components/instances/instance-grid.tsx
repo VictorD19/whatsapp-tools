@@ -10,8 +10,7 @@ interface InstanceGridProps {
   importProgress: Record<string, ImportProgress>
   onConnect: (id: string) => void
   onDisconnect: (id: string) => void
-  onDelete: (id: string) => void
-  onImportConversations: (id: string) => void
+  onEdit: (instance: Instance) => void
 }
 
 function SkeletonCard() {
@@ -40,8 +39,7 @@ export function InstanceGrid({
   importProgress,
   onConnect,
   onDisconnect,
-  onDelete,
-  onImportConversations,
+  onEdit,
 }: InstanceGridProps) {
   if (isLoading) {
     return (
@@ -62,8 +60,7 @@ export function InstanceGrid({
           importProgress={importProgress[instance.id]}
           onConnect={onConnect}
           onDisconnect={onDisconnect}
-          onDelete={onDelete}
-          onImportConversations={onImportConversations}
+          onEdit={onEdit}
         />
       ))}
     </div>

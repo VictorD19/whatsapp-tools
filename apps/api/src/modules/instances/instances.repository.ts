@@ -67,6 +67,13 @@ export class InstancesRepository {
     })
   }
 
+  async update(tenantId: string, id: string, data: { name?: string; defaultAssistantId?: string | null }) {
+    return this.prisma.instance.update({
+      where: { id, tenantId, deletedAt: null },
+      data,
+    })
+  }
+
   async softDelete(tenantId: string, id: string) {
     return this.prisma.instance.updateMany({
       where: { id, tenantId, deletedAt: null },

@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslations } from 'next-intl'
-import { apiGet, apiPost, apiDelete } from '@/lib/api'
+import { apiGet, apiPost, apiDelete, apiPatch } from '@/lib/api'
 import { useInstancesStore, type Instance } from '@/stores/instances.store'
 import { USAGE_QUERY_KEY } from '@/components/layout/plan-usage'
 import { toast } from '@/components/ui/toaster'
@@ -23,6 +23,7 @@ export function useInstances() {
   const t = useTranslations('instances')
   const { setInstances, setLoading, addInstance, removeInstance, updateInstanceStatus, setImportProgress, clearImportProgress } =
     useInstancesStore()
+  const updateInstanceInStore = useInstancesStore((s) => s.updateInstance)
   const queryClient = useQueryClient()
 
   const fetchInstances = useCallback(async () => {
@@ -86,6 +87,16 @@ export function useInstances() {
     [removeInstance, t],
   )
 
+  const updateInstance = useCallback(
+    async (id: string, data: { name?: string; defaultAssistantId?: string | null }) => {
+      const result = await apiPatch<ApiResponse<Instance>>(`instances/${id}`, data)
+      updateInstanceInStore(id, { name: result.data.name, defaultAssistantId: result.data.defaultAssistantId })
+      toast({ title: t('successUpdated'), variant: 'success' })
+      return result.data
+    },
+    [t, updateInstanceInStore],
+  )
+
   const importConversations = useCallback(
     async (instanceId: string) => {
       setImportProgress(instanceId, { importing: true, imported: 0, total: 0, skipped: 0 })
@@ -116,5 +127,5 @@ export function useInstances() {
     [setImportProgress, clearImportProgress, t],
   )
 
-  return { fetchInstances, refreshInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, importConversations }
+  return { fetchInstances, refreshInstances, createInstance, connectInstance, disconnectInstance, deleteInstance, updateInstance, importConversations }
 }
