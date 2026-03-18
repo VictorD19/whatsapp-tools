@@ -271,9 +271,19 @@ describe('KnowledgeBaseService', () => {
       })
     })
 
-    it('deve lancar erro se source nao estiver com status FAILED', async () => {
+    it('deve permitir re-ingestao de source COMPLETED', async () => {
       const completedSource = { ...mockSource, status: 'COMPLETED' as const }
       repository.findSourceById.mockResolvedValue(completedSource as any)
+      repository.updateSourceStatus.mockResolvedValue(completedSource as any)
+      producer.enqueue.mockResolvedValue(undefined)
+
+      const result = await service.reIngestSource(tenantId, 'kb-1', 'source-1')
+      expect(result.data.reIngested).toBe(true)
+    })
+
+    it('deve lancar erro se source estiver PROCESSING', async () => {
+      const processingSource = { ...mockSource, status: 'PROCESSING' as const }
+      repository.findSourceById.mockResolvedValue(processingSource as any)
 
       await expect(
         service.reIngestSource(tenantId, 'kb-1', 'source-1'),
