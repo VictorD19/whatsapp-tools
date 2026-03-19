@@ -21,6 +21,8 @@ describe('AssistantsService', () => {
     waitTimeSeconds: 5,
     isActive: true,
     handoffKeywords: ['humano', 'atendente'],
+    audioResponseMode: 'never',
+    voiceId: 'pt-BR-FranciscaNeural',
     createdAt: now,
     updatedAt: now,
     deletedAt: null,

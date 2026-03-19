@@ -703,6 +703,8 @@ model Assistant {
   waitTimeSeconds    Int       @default(5)
   isActive           Boolean   @default(true)
   handoffKeywords    String[]
+  audioResponseMode  String    @default("never")
+  voiceId            String    @default("pt-BR-FranciscaNeural")
 
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt

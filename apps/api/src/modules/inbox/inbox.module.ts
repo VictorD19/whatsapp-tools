@@ -7,6 +7,7 @@ import { InstancesModule } from '@modules/instances/instances.module'
 import { TenantsModule } from '@modules/tenants/tenants.module'
 import { DealModule } from '@modules/deal/deal.module'
 import { StorageModule } from '@modules/storage/storage.module'
+import { AiModule } from '@modules/ai/ai.module'
 import { NotificationsModule } from '@modules/notifications/notifications.module'
 import { InboxController } from './inbox.controller'
 import { InboxService } from './inbox.service'
@@ -25,6 +26,7 @@ import { ConversationImportProcessor } from './queues/import.processor'
     TenantsModule,
     DealModule,
     StorageModule,
+    AiModule,
     NotificationsModule,
     BullModule.registerQueue(
       { name: QUEUES.WEBHOOK_INBOUND },

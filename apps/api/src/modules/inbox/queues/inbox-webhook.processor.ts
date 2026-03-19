@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common'
 import { Process, Processor } from '@nestjs/bull'
 import { InjectQueue } from '@nestjs/bull'
 import { Job, Queue } from 'bull'
@@ -11,6 +12,8 @@ import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { TenantsService } from '@modules/tenants/tenants.service'
 import { StorageService, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.service'
 import { DealService } from '@modules/deal/deal.service'
+import { SPEECH_TO_TEXT } from '@modules/ai/ai.tokens'
+import type { ISpeechToTextProvider } from '@modules/ai/ports/speech-to-text.interface'
 import { parseWhatsAppMessage, extractQuotedStanzaId } from '../utils/message-parser'
 
 const DEFAULT_AI_WAIT_MS = 5000
@@ -49,6 +52,8 @@ export class InboxWebhookProcessor {
     private readonly logger: LoggerService,
     @InjectQueue(QUEUES.AI_RESPONSE)
     private readonly aiResponseQueue: Queue,
+    @Inject(SPEECH_TO_TEXT)
+    private readonly stt: ISpeechToTextProvider,
   ) {}
 
   @Process('inbox-webhook')
@@ -148,6 +153,36 @@ export class InboxWebhookProcessor {
       }
       const parsed = parseWhatsAppMessage(message)
       const { body, type, mediaUrl } = parsed
+
+      // Transcribe audio messages synchronously for AI processing
+      let finalBody = body
+      let finalMediaUrl = mediaUrl
+      if (type === 'AUDIO' && key.id) {
+        try {
+          const media = await this.whatsapp.getMediaBase64(instance.evolutionId, key.id as string)
+          if (media?.base64 && media.mimetype) {
+            const buffer = Buffer.from(media.base64, 'base64')
+            // Store audio in storage
+            const storageKey = await this.storage.uploadMedia(instance.tenantId, buffer, media.mimetype)
+            finalMediaUrl = storageKey
+            // Transcribe
+            const result = await this.stt.transcribe(buffer, { language: 'pt' })
+            if (result.text) {
+              finalBody = result.text
+              this.logger.log(
+                `Audio transcribed: "${result.text.substring(0, 100)}..." (${result.duration ?? '?'}s)`,
+                'InboxWebhookProcessor',
+              )
+            }
+          }
+        } catch (err) {
+          this.logger.warn(
+            `Audio transcription failed: ${(err as Error).message}`,
+            'InboxWebhookProcessor',
+          )
+          // Continue with body=null — graceful degradation
+        }
+      }
 
       // Resolve quoted message (reply context)
       let quotedMessageId: string | undefined
@@ -267,11 +302,11 @@ export class InboxWebhookProcessor {
         tenantId: instance.tenantId,
         conversationId: conversation.id,
         fromMe,
-        body,
+        body: finalBody,
         type,
         status: fromMe ? 'SENT' : 'DELIVERED',
         evolutionId: evolutionMsgId,
-        mediaUrl,
+        mediaUrl: finalMediaUrl,
         quotedMessageId,
         senderJid,
         senderName,
@@ -279,7 +314,7 @@ export class InboxWebhookProcessor {
 
       // Download e armazena mídia inbound no storage local (fire and forget)
       // STICKER e tipos não suportados continuam via proxy Evolution
-      if (evolutionMsgId && STORABLE_MEDIA_TYPES.has(type)) {
+      if (evolutionMsgId && STORABLE_MEDIA_TYPES.has(type) && type !== 'AUDIO') {
         this.downloadAndStoreInboundMedia(
           instance,
           newMessage.id,

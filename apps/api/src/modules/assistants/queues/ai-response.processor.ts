@@ -3,16 +3,18 @@ import { InjectQueue } from '@nestjs/bull'
 import { Job, Queue } from 'bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { LoggerService } from '@core/logger/logger.service'
-import { LLM_PROVIDER } from '@modules/ai/ai.tokens'
+import { LLM_PROVIDER, TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
 import { KnowledgeBaseService } from '@modules/knowledge-base/knowledge-base.service'
 import { AiToolsService } from '@modules/ai-tools/ai-tools.service'
 import { ToolExecutorService, type ToolContext } from '@modules/ai-tools/definitions/tool-executor.service'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
+import { StorageService } from '@modules/storage/storage.service'
 import { InboxRepository } from '@modules/inbox/inbox.repository'
 import { InboxGateway } from '@modules/inbox/inbox.gateway'
 import { AssistantsRepository } from '../assistants.repository'
 import { ConversationThreadService } from '../services/conversation-thread.service'
 import type { ILLMProvider } from '@modules/ai/ports/llm-provider.interface'
+import type { ITextToSpeechProvider } from '@modules/ai/ports/text-to-speech.interface'
 import type { AiResponseJobData } from './ai-response.producer'
 import { AiToolType } from '@prisma/client'
 
@@ -30,6 +32,9 @@ export class AiResponseProcessor implements OnModuleInit {
     private readonly gateway: InboxGateway,
     @Inject(LLM_PROVIDER)
     private readonly llm: ILLMProvider,
+    @Inject(TEXT_TO_SPEECH)
+    private readonly tts: ITextToSpeechProvider,
+    private readonly storage: StorageService,
     private readonly threadService: ConversationThreadService,
     private readonly logger: LoggerService,
   ) {}
@@ -238,6 +243,38 @@ export class AiResponseProcessor implements OnModuleInit {
       this.threadService.appendMessage(thread, 'assistant', responseText)
       await this.threadService.save(thread, willCompress)
 
+      // Determine if response should be audio
+      const lastUserMsg = conversation.messages.find((m) => !m.fromMe)
+      const lastUserType = (lastUserMsg as any)?.type ?? 'TEXT'
+      const shouldSendAudio =
+        assistant.audioResponseMode === 'always' ||
+        (assistant.audioResponseMode === 'auto' && lastUserType === 'AUDIO')
+
+      let savedMessageType: 'TEXT' | 'AUDIO' = 'TEXT'
+      let savedMediaUrl: string | undefined
+
+      if (shouldSendAudio) {
+        try {
+          const ttsResult = await this.tts.synthesize(responseText, {
+            voiceId: assistant.voiceId,
+          })
+          const storageKey = await this.storage.uploadMedia(
+            tenantId,
+            ttsResult.audioBuffer,
+            ttsResult.mimetype,
+          )
+          savedMediaUrl = storageKey
+          savedMessageType = 'AUDIO'
+
+          step(`TTS generated — ${ttsResult.audioBuffer.length} bytes`)
+        } catch (ttsError) {
+          this.logger.warn(
+            `TTS failed, falling back to text: ${(ttsError as Error).message}`,
+            'AiResponseProcessor',
+          )
+        }
+      }
+
       // Salva mensagem da IA no banco
       const savedMessage = await this.inboxRepository.createMessage({
         tenantId,
@@ -245,17 +282,28 @@ export class AiResponseProcessor implements OnModuleInit {
         fromMe: true,
         fromBot: true,
         body: responseText,
-        type: 'TEXT',
+        type: savedMessageType,
         status: 'PENDING',
+        mediaUrl: savedMediaUrl,
       })
 
       // Envia via WhatsApp
       try {
-        const result = await this.whatsapp.sendText(
-          instanceEvolutionId,
-          conversation.contact.phone,
-          responseText,
-        )
+        let result: { messageId: string }
+        if (savedMessageType === 'AUDIO' && savedMediaUrl) {
+          const audioUrl = await this.storage.getSignedUrl(savedMediaUrl)
+          result = await this.whatsapp.sendAudio(
+            instanceEvolutionId,
+            conversation.contact.phone,
+            { url: audioUrl },
+          )
+        } else {
+          result = await this.whatsapp.sendText(
+            instanceEvolutionId,
+            conversation.contact.phone,
+            responseText,
+          )
+        }
         await this.inboxRepository.updateMessageStatusByEvolutionId(
           result.messageId,
           'SENT',
@@ -279,9 +327,9 @@ export class AiResponseProcessor implements OnModuleInit {
           fromMe: true,
           fromBot: true,
           body: responseText,
-          type: 'TEXT',
+          type: savedMessageType,
           status: 'PENDING',
-          mediaUrl: null,
+          mediaUrl: savedMediaUrl ?? null,
           quotedMessageId: null,
           quotedMessage: null,
           sentAt: savedMessage.sentAt,
