@@ -238,9 +238,7 @@ export class EvolutionAdapter implements IWhatsAppProvider {
     to: string,
     payload: AudioPayload,
   ): Promise<MessageResult> {
-    const audioValue = payload.base64
-      ? `data:${payload.mimetype ?? 'audio/mpeg'};base64,${payload.base64}`
-      : payload.url
+    const audioValue = payload.base64 ?? payload.url
 
     this.logger.log(
       `[SEND-AUDIO] instance=${instanceId} to=${to} format=${payload.base64 ? 'base64' : 'url'} size=${payload.base64?.length ?? 'N/A'}`,
