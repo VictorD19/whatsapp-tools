@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { AssistantsService } from '../assistants.service'
 import { AssistantsRepository } from '../assistants.repository'
+import { TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
+import { StorageService } from '@modules/storage/storage.service'
 
 describe('AssistantsService', () => {
   let service: AssistantsService
@@ -50,10 +52,24 @@ describe('AssistantsService', () => {
       findConversation: jest.fn(),
     }
 
+    const mockTts = {
+      synthesize: jest.fn().mockResolvedValue({
+        audioBuffer: Buffer.from('fake-audio'),
+        mimetype: 'audio/mpeg',
+      }),
+    }
+
+    const mockStorage = {
+      download: jest.fn(),
+      uploadRaw: jest.fn(),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssistantsService,
         { provide: AssistantsRepository, useValue: mockRepository },
+        { provide: TEXT_TO_SPEECH, useValue: mockTts },
+        { provide: StorageService, useValue: mockStorage },
       ],
     }).compile()
 
