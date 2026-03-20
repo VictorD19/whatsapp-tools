@@ -9,6 +9,8 @@ export interface Assistant {
   waitTimeSeconds: number
   isActive: boolean
   handoffKeywords: string[]
+  audioResponseMode: 'never' | 'auto' | 'always'
+  voiceId: string
   knowledgeBases: Array<{ knowledgeBaseId: string; knowledgeBase: { id: string; name: string } }>
   tools: Array<{ aiToolId: string; aiTool: { id: string; name: string; type: string } }>
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
-import { X, User, FileText, Settings2 } from 'lucide-react'
+import { X, User, FileText, Settings2, Volume2 } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -35,6 +35,16 @@ const MODEL_OPTIONS = [
   { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
 ]
 
+const VOICE_OPTIONS = [
+  { value: 'pt-BR-FranciscaNeural', label: 'Francisca (PT-BR)', lang: 'pt-BR' },
+  { value: 'pt-BR-AntonioNeural', label: 'Antonio (PT-BR)', lang: 'pt-BR' },
+  { value: 'pt-BR-ThalitaNeural', label: 'Thalita (PT-BR)', lang: 'pt-BR' },
+  { value: 'en-US-AriaNeural', label: 'Aria (EN-US)', lang: 'en-US' },
+  { value: 'en-US-GuyNeural', label: 'Guy (EN-US)', lang: 'en-US' },
+  { value: 'es-MX-DaliaNeural', label: 'Dalia (ES-MX)', lang: 'es-MX' },
+  { value: 'es-MX-JorgeNeural', label: 'Jorge (ES-MX)', lang: 'es-MX' },
+]
+
 type Tab = 'profile' | 'instructions' | 'advanced'
 
 interface AssistantSheetProps {
@@ -56,6 +66,8 @@ export interface AssistantFormData {
   handoffKeywords: string[]
   knowledgeBaseIds: string[]
   aiToolIds: string[]
+  audioResponseMode: 'never' | 'auto' | 'always'
+  voiceId: string
 }
 
 export function AssistantSheet({ open, assistant, saving, onClose, onSave }: AssistantSheetProps) {
@@ -73,6 +85,8 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
   const [keywordInput, setKeywordInput] = useState('')
   const [selectedKBs, setSelectedKBs] = useState<string[]>([])
   const [selectedTools, setSelectedTools] = useState<string[]>([])
+  const [audioResponseMode, setAudioResponseMode] = useState<'never' | 'auto' | 'always'>('never')
+  const [voiceId, setVoiceId] = useState('pt-BR-FranciscaNeural')
 
   const { data: knowledgeBases = [] } = useQuery({
     queryKey: ['knowledge-bases'],
@@ -100,6 +114,8 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
         setHandoffKeywords(assistant.handoffKeywords)
         setSelectedKBs(assistant.knowledgeBases.map((kb) => kb.knowledgeBaseId))
         setSelectedTools(assistant.tools.map((t) => t.aiToolId))
+        setAudioResponseMode(assistant.audioResponseMode ?? 'never')
+        setVoiceId(assistant.voiceId ?? 'pt-BR-FranciscaNeural')
       } else {
         setName('')
         setDescription('')
@@ -111,6 +127,8 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
         setHandoffKeywords([])
         setSelectedKBs([])
         setSelectedTools([])
+        setAudioResponseMode('never')
+        setVoiceId('pt-BR-FranciscaNeural')
       }
       setKeywordInput('')
     }
@@ -155,8 +173,10 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
       handoffKeywords,
       knowledgeBaseIds: selectedKBs,
       aiToolIds: selectedTools,
+      audioResponseMode,
+      voiceId,
     })
-  }, [name, description, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, handoffKeywords, selectedKBs, selectedTools, onSave])
+  }, [name, description, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, handoffKeywords, selectedKBs, selectedTools, audioResponseMode, voiceId, onSave])
 
   const tabs = [
     { id: 'profile' as Tab, label: t('tabs.profile'), icon: User },
@@ -411,6 +431,49 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
                       </label>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Audio Response */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4 text-muted-foreground" />
+                  <Label>{t('fields.audioResponse')}</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('fields.audioResponseHint')}
+                </p>
+                <Select value={audioResponseMode} onValueChange={(v) => setAudioResponseMode(v as 'never' | 'auto' | 'always')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="never">{t('fields.audioNever')}</SelectItem>
+                    <SelectItem value="auto">{t('fields.audioAuto')}</SelectItem>
+                    <SelectItem value="always">{t('fields.audioAlways')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Voice Selection */}
+              {audioResponseMode !== 'never' && (
+                <div className="space-y-2">
+                  <Label>{t('fields.voice')}</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {t('fields.voiceHint')}
+                  </p>
+                  <Select value={voiceId} onValueChange={setVoiceId}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VOICE_OPTIONS.map((voice) => (
+                        <SelectItem key={voice.value} value={voice.value}>
+                          {voice.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>

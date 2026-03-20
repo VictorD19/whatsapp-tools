@@ -796,7 +796,14 @@
       "handoffKeywords": "Handoff keywords",
       "handoffKeywordsHint": "When the customer types these words, the bot transfers to an agent",
       "handoffKeywordsPlaceholder": "E.g. human, agent — press Enter",
-      "tools": "Tools"
+      "tools": "Tools",
+      "audioResponse": "Audio response",
+      "audioResponseHint": "Define when the assistant should respond with audio instead of text",
+      "audioNever": "Never — always text",
+      "audioAuto": "Automatic — responds with audio when the customer sends audio",
+      "audioAlways": "Always — all responses as audio",
+      "voice": "Assistant voice",
+      "voiceHint": "Choose the voice used to synthesize audio responses"
     },
     "slashCommand": {
       "tools": "Tools",

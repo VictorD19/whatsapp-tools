@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, FileText, Check, Wrench } from 'lucide-react'
+import { ArrowLeft, User, FileText, Check, Wrench, Volume2 } from 'lucide-react'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -45,6 +45,16 @@ const MODEL_OPTIONS = [
   { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano' },
 ]
 
+const VOICE_OPTIONS = [
+  { value: 'pt-BR-FranciscaNeural', label: 'Francisca (PT-BR)', lang: 'pt-BR' },
+  { value: 'pt-BR-AntonioNeural', label: 'Antonio (PT-BR)', lang: 'pt-BR' },
+  { value: 'pt-BR-ThalitaNeural', label: 'Thalita (PT-BR)', lang: 'pt-BR' },
+  { value: 'en-US-AriaNeural', label: 'Aria (EN-US)', lang: 'en-US' },
+  { value: 'en-US-GuyNeural', label: 'Guy (EN-US)', lang: 'en-US' },
+  { value: 'es-MX-DaliaNeural', label: 'Dalia (ES-MX)', lang: 'es-MX' },
+  { value: 'es-MX-JorgeNeural', label: 'Jorge (ES-MX)', lang: 'es-MX' },
+]
+
 export interface AssistantFormData {
   name: string
   description: string
@@ -57,6 +67,8 @@ export interface AssistantFormData {
   handoffKeywords: string[]
   knowledgeBaseIds: string[]
   aiToolIds: string[]
+  audioResponseMode: 'never' | 'auto' | 'always'
+  voiceId: string
 }
 
 interface AssistantFormProps {
@@ -79,6 +91,8 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
   const [systemPrompt, setSystemPrompt] = useState(assistant?.systemPrompt ?? '')
   const [waitTimeSeconds, setWaitTimeSeconds] = useState(assistant?.waitTimeSeconds ?? 5)
   const [isActive, setIsActive] = useState(assistant?.isActive ?? true)
+  const [audioResponseMode, setAudioResponseMode] = useState<'never' | 'auto' | 'always'>(assistant?.audioResponseMode ?? 'never')
+  const [voiceId, setVoiceId] = useState(assistant?.voiceId ?? 'pt-BR-FranciscaNeural')
   const [selectedKBs, setSelectedKBs] = useState<string[]>(
     assistant?.knowledgeBases.map((kb) => kb.knowledgeBaseId) ?? [],
   )
@@ -93,6 +107,8 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
       setSystemPrompt(assistant.systemPrompt)
       setWaitTimeSeconds(assistant.waitTimeSeconds)
       setIsActive(assistant.isActive)
+      setAudioResponseMode(assistant.audioResponseMode ?? 'never')
+      setVoiceId(assistant.voiceId ?? 'pt-BR-FranciscaNeural')
       setSelectedKBs(assistant.knowledgeBases.map((kb) => kb.knowledgeBaseId))
     }
   }, [assistant])
@@ -145,8 +161,10 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
       handoffKeywords: [],
       knowledgeBaseIds: selectedKBs,
       aiToolIds: [],
+      audioResponseMode,
+      voiceId,
     })
-  }, [name, description, avatarUrl, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, selectedKBs, onSave])
+  }, [name, description, avatarUrl, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, selectedKBs, audioResponseMode, voiceId, onSave])
 
   return (
     <PageLayout
@@ -377,6 +395,49 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                   </div>
                 )}
               </div>
+
+              {/* Audio Response */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4 text-muted-foreground" />
+                  <Label>{t('fields.audioResponse')}</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('fields.audioResponseHint')}
+                </p>
+                <Select value={audioResponseMode} onValueChange={(v) => setAudioResponseMode(v as 'never' | 'auto' | 'always')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="never">{t('fields.audioNever')}</SelectItem>
+                    <SelectItem value="auto">{t('fields.audioAuto')}</SelectItem>
+                    <SelectItem value="always">{t('fields.audioAlways')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Voice Selection */}
+              {audioResponseMode !== 'never' && (
+                <div className="space-y-2">
+                  <Label>{t('fields.voice')}</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {t('fields.voiceHint')}
+                  </p>
+                  <Select value={voiceId} onValueChange={setVoiceId}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VOICE_OPTIONS.map((voice) => (
+                        <SelectItem key={voice.value} value={voice.value}>
+                          {voice.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
         </TabsContent>

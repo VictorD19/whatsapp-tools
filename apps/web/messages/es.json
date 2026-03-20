@@ -796,7 +796,14 @@
       "handoffKeywords": "Palabras de transferencia",
       "handoffKeywordsHint": "Cuando el cliente escriba estas palabras, el bot transfiere a un agente",
       "handoffKeywordsPlaceholder": "Ej: humano, agente — presiona Enter",
-      "tools": "Herramientas"
+      "tools": "Herramientas",
+      "audioResponse": "Respuesta en audio",
+      "audioResponseHint": "Define cuándo el asistente debe responder con audio en vez de texto",
+      "audioNever": "Nunca — siempre texto",
+      "audioAuto": "Automático — responde con audio cuando el cliente envía audio",
+      "audioAlways": "Siempre — todas las respuestas en audio",
+      "voice": "Voz del asistente",
+      "voiceHint": "Elige la voz que se usará para sintetizar las respuestas en audio"
     },
     "slashCommand": {
       "tools": "Herramientas",
