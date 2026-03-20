@@ -247,9 +247,7 @@ export class InboxService {
   }
 
   async findMessages(tenantId: string, conversationId: string, page: number, limit: number) {
-    // Verify conversation belongs to tenant
-    await this.findConversationById(tenantId, conversationId)
-
+    // findMessages already filters by tenantId + conversationId — no need for extra query
     const { messages, total } = await this.repository.findMessages(
       tenantId,
       conversationId,

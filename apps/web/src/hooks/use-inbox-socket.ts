@@ -24,7 +24,10 @@ function updateDocumentTitle(unreadTotal: number) {
 
 const ALL_TABS: InboxTab[] = ['all', 'mine', 'unassigned']
 
-async function refreshInbox() {
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
+let refreshPending = false
+
+async function doRefreshInbox() {
   const { activeTab, setConversations, setTabCount } = useInboxStore.getState()
 
   await Promise.all(
@@ -51,6 +54,23 @@ async function refreshInbox() {
       }
     }),
   )
+}
+
+function refreshInbox() {
+  if (refreshTimer) {
+    refreshPending = true
+    return
+  }
+
+  doRefreshInbox()
+
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null
+    if (refreshPending) {
+      refreshPending = false
+      refreshInbox()
+    }
+  }, 1000)
 }
 
 export function useInboxSocket() {
