@@ -46,10 +46,11 @@ export class AssistantsController {
     @Body() body: { voiceId: string },
     @Res() reply: FastifyReply,
   ) {
-    const result = await this.assistantsService.previewVoice(body.voiceId)
-    reply.header('Content-Type', result.mimetype)
-    reply.header('Content-Length', result.audioBuffer.length)
-    return reply.send(result.audioBuffer)
+    const { buffer, contentType } = await this.assistantsService.previewVoice(body.voiceId)
+    reply.header('Content-Type', contentType)
+    reply.header('Content-Length', buffer.length)
+    reply.header('Cache-Control', 'public, max-age=86400')
+    return reply.send(buffer)
   }
 
   @Post('assistants')

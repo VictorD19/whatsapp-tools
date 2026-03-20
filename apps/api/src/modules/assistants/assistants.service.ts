@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { AppException } from '@core/errors/app.exception'
 import { TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
 import type { ITextToSpeechProvider } from '@modules/ai/ports/text-to-speech.interface'
+import { StorageService } from '@modules/storage/storage.service'
 import { AssistantsRepository } from './assistants.repository'
 import type { CreateAssistantDto } from './dto/create-assistant.dto'
 import type { UpdateAssistantDto } from './dto/update-assistant.dto'
@@ -20,6 +21,7 @@ export class AssistantsService {
     private readonly repository: AssistantsRepository,
     @Inject(TEXT_TO_SPEECH)
     private readonly tts: ITextToSpeechProvider,
+    private readonly storage: StorageService,
   ) {}
 
   async findAll(tenantId: string) {
@@ -137,10 +139,24 @@ export class AssistantsService {
     }
   }
 
-  async previewVoice(voiceId: string) {
-    const lang = voiceId.split('-').slice(0, 2).join('-') // 'pt-BR-FranciscaNeural' → 'pt-BR'
+  async previewVoice(voiceId: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const storageKey = `voice-previews/${voiceId}.mp3`
+
+    // Tenta buscar do cache (MinIO)
+    try {
+      return await this.storage.download(storageKey)
+    } catch {
+      // Não existe ainda — gera e salva
+    }
+
+    const lang = voiceId.split('-').slice(0, 2).join('-')
     const text = PREVIEW_TEXTS[lang] ?? PREVIEW_TEXTS['pt-BR']
-    return this.tts.synthesize(text, { voiceId })
+    const result = await this.tts.synthesize(text, { voiceId })
+
+    // Salva no MinIO para próximas consultas
+    await this.storage.uploadRaw(storageKey, result.audioBuffer, result.mimetype)
+
+    return { buffer: result.audioBuffer, contentType: result.mimetype }
   }
 
   private maskApiKey(key: string): string {

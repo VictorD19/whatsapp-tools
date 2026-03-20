@@ -71,6 +71,13 @@ export class StorageService {
   }
 
   /**
+   * Upload com chave fixa (sem gerar UUID). Usado para cache/preview.
+   */
+  async uploadRaw(key: string, buffer: Buffer, mimetype: string): Promise<void> {
+    await this.provider.upload(key, buffer, mimetype)
+  }
+
+  /**
    * Retorna URL acessível pelo browser (pré-assinada ou pública).
    * Válida por 1 hora por padrão.
    */
