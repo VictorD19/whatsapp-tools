@@ -1,9 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { tts } from 'edge-tts'
 import type { ITextToSpeechProvider, TTSOptions, TTSResult } from '../../ports/text-to-speech.interface'
 
 const DEFAULT_VOICE = 'pt-BR-FranciscaNeural'
 const TIMEOUT_MS = 10_000
+
+// edge-tts is ESM-only — use native import() to avoid TS compiling it to require()
+let _tts: ((text: string, opts: { voice: string }) => Promise<Buffer>) | null = null
+async function getEdgeTTS() {
+  if (!_tts) {
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const mod = await (new Function('return import("edge-tts")')() as Promise<{ tts: typeof _tts }>)
+    _tts = mod.tts
+  }
+  return _tts!
+}
 
 @Injectable()
 export class EdgeTTSAdapter implements ITextToSpeechProvider {
@@ -23,6 +33,7 @@ export class EdgeTTSAdapter implements ITextToSpeechProvider {
     }
 
     try {
+      const tts = await getEdgeTTS()
       const voiceId = options?.voiceId ?? DEFAULT_VOICE
       const audioBuffer = await Promise.race([
         tts(text, { voice: voiceId }),
