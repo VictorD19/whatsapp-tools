@@ -1,14 +1,26 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { AppException } from '@core/errors/app.exception'
+import { TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
+import type { ITextToSpeechProvider } from '@modules/ai/ports/text-to-speech.interface'
 import { AssistantsRepository } from './assistants.repository'
 import type { CreateAssistantDto } from './dto/create-assistant.dto'
 import type { UpdateAssistantDto } from './dto/update-assistant.dto'
 import type { SetConversationAssistantDto } from './dto/set-conversation-assistant.dto'
 import type { UpdateAssistantSettingsDto } from './dto/update-assistant-settings.dto'
 
+const PREVIEW_TEXTS: Record<string, string> = {
+  'pt-BR': 'Olá! Sou seu assistente virtual. Como posso ajudá-lo hoje?',
+  'en-US': 'Hello! I am your virtual assistant. How can I help you today?',
+  'es-MX': 'Hola! Soy tu asistente virtual. ¿Cómo puedo ayudarte hoy?',
+}
+
 @Injectable()
 export class AssistantsService {
-  constructor(private readonly repository: AssistantsRepository) {}
+  constructor(
+    private readonly repository: AssistantsRepository,
+    @Inject(TEXT_TO_SPEECH)
+    private readonly tts: ITextToSpeechProvider,
+  ) {}
 
   async findAll(tenantId: string) {
     const assistants = await this.repository.findAll(tenantId)
@@ -123,6 +135,12 @@ export class AssistantsService {
         hasApiKey,
       },
     }
+  }
+
+  async previewVoice(voiceId: string) {
+    const lang = voiceId.split('-').slice(0, 2).join('-') // 'pt-BR-FranciscaNeural' → 'pt-BR'
+    const text = PREVIEW_TEXTS[lang] ?? PREVIEW_TEXTS['pt-BR']
+    return this.tts.synthesize(text, { voiceId })
   }
 
   private maskApiKey(key: string): string {

@@ -26,6 +26,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
+import { VoicePreviewButton } from './voice-preview-button'
 import type { Assistant, KnowledgeBase, AiTool, ApiResponse } from './types'
 
 const MODEL_OPTIONS = [
@@ -462,18 +463,21 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
                   <p className="text-xs text-muted-foreground">
                     {t('fields.voiceHint')}
                   </p>
-                  <Select value={voiceId} onValueChange={setVoiceId}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {VOICE_OPTIONS.map((voice) => (
-                        <SelectItem key={voice.value} value={voice.value}>
-                          {voice.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select value={voiceId} onValueChange={setVoiceId}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VOICE_OPTIONS.map((voice) => (
+                          <SelectItem key={voice.value} value={voice.value}>
+                            {voice.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <VoicePreviewButton voiceId={voiceId} />
+                  </div>
                 </div>
               )}
             </div>

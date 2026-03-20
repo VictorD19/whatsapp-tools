@@ -803,7 +803,10 @@
       "audioAuto": "Automático — responde con audio cuando el cliente envía audio",
       "audioAlways": "Siempre — todas las respuestas en audio",
       "voice": "Voz del asistente",
-      "voiceHint": "Elige la voz que se usará para sintetizar las respuestas en audio"
+      "voiceHint": "Elige la voz que se usará para sintetizar las respuestas en audio",
+      "voicePreview": "Escuchar",
+      "voiceLoading": "Generando...",
+      "voiceStop": "Detener"
     },
     "slashCommand": {
       "tools": "Herramientas",

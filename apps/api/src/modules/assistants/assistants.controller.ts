@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Patch, Delete, Param, Body, HttpCode, HttpStatus, UseGuards, Res, Header } from '@nestjs/common'
+import type { FastifyReply } from 'fastify'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
 import { ZodValidationPipe } from '@shared/pipes/zod-validation.pipe'
 import { Roles } from '@shared/decorators/roles.decorator'
@@ -38,6 +39,17 @@ export class AssistantsController {
   @Get('assistants/:id')
   findOne(@CurrentTenant() tenantId: string, @Param('id') id: string) {
     return this.assistantsService.findById(tenantId, id)
+  }
+
+  @Post('assistants/voice-preview')
+  async previewVoice(
+    @Body() body: { voiceId: string },
+    @Res() reply: FastifyReply,
+  ) {
+    const result = await this.assistantsService.previewVoice(body.voiceId)
+    reply.header('Content-Type', result.mimetype)
+    reply.header('Content-Length', result.audioBuffer.length)
+    return reply.send(result.audioBuffer)
   }
 
   @Post('assistants')
