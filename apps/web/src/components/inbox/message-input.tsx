@@ -227,6 +227,7 @@ interface RecordingBarProps {
 }
 
 function RecordingBar({ seconds, analyser, onCancel, onConfirm }: RecordingBarProps) {
+  const t = useTranslations('inbox')
   const [bars, setBars] = useState<number[]>(Array(BAR_COUNT).fill(8))
   const rafRef = useRef<number>(0)
 
@@ -388,7 +389,7 @@ export function MessageInput({
   useEffect(() => {
     return () => {
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current)
-      mediaRecorderRef.current?.stream?.getTracks().forEach((t) => t.stop())
+      mediaRecorderRef.current?.stream?.getTracks().forEach((track) => track.stop())
       audioContextRef.current?.close()
     }
   }, [])
@@ -498,7 +499,7 @@ export function MessageInput({
 
   function cancelRecording() {
     if (recordingTimerRef.current) clearInterval(recordingTimerRef.current)
-    mediaRecorderRef.current?.stream?.getTracks().forEach((t) => t.stop())
+    mediaRecorderRef.current?.stream?.getTracks().forEach((track) => track.stop())
     mediaRecorderRef.current = null
     audioChunksRef.current = []
     audioContextRef.current?.close()
@@ -521,7 +522,7 @@ export function MessageInput({
       audioChunksRef.current = []
     }
     mr.stop()
-    mr.stream?.getTracks().forEach((t) => t.stop())
+    mr.stream?.getTracks().forEach((track) => track.stop())
     mediaRecorderRef.current = null
     audioContextRef.current?.close()
     audioContextRef.current = null

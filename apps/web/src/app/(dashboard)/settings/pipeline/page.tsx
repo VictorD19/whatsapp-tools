@@ -395,18 +395,18 @@ export default function PipelineSettingsPage() {
             <div className="space-y-1.5">
               <Label>{t('create.typeLabel')}</Label>
               <div className="flex gap-2">
-                {(['ACTIVE', 'WON', 'LOST'] as const).map((t) => (
+                {(['ACTIVE', 'WON', 'LOST'] as const).map((type) => (
                   <button
-                    key={t}
+                    key={type}
                     type="button"
-                    onClick={() => setFormType(t)}
+                    onClick={() => setFormType(type)}
                     className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                      formType === t
+                      formType === type
                         ? 'border-foreground bg-foreground text-background'
                         : 'border-border hover:bg-accent'
                     }`}
                   >
-                    {typeLabels[t]}
+                    {typeLabels[type]}
                   </button>
                 ))}
               </div>

@@ -45,7 +45,7 @@ export default function EditAssistantPage() {
         }
 
         // Sync tools
-        const currentTools = assistant.tools.map((t) => t.aiToolId)
+        const currentTools = assistant.tools.map((tool) => tool.aiToolId)
         const toolsToAdd = aiToolIds.filter((toolId) => !currentTools.includes(toolId))
         const toolsToRemove = currentTools.filter((toolId) => !aiToolIds.includes(toolId))
         for (const toolId of toolsToAdd) {
