@@ -49,23 +49,25 @@ export class AiResponseProcessor implements OnModuleInit {
 
   async handleAiResponse(job: Job<AiResponseJobData>) {
     const { conversationId, tenantId, instanceEvolutionId, effectiveAssistantId } = job.data
+    const t0 = Date.now()
+    const elapsed = () => `${Date.now() - t0}ms`
 
-    this.logger.debug(
-      `Processing AI response for conversation ${conversationId}`,
+    this.logger.log(
+      `[AI-FLOW][2-START] conv=${conversationId} tenant=${tenantId} assistant=${effectiveAssistantId} — processando resposta IA`,
       'AiResponseProcessor',
     )
 
     // Carrega a conversa com assistente e contato
     const conversation = await this.inboxRepository.findConversationById(tenantId, conversationId)
     if (!conversation) {
-      this.logger.warn(`Conversation ${conversationId} not found`, 'AiResponseProcessor')
+      this.logger.warn(`[AI-FLOW][2-ABORT] conv=${conversationId} — conversa não encontrada`, 'AiResponseProcessor')
       return
     }
 
     // Verifica se o assistente ainda está ativo (não foi pausado após o job ser enfileirado)
     if (!effectiveAssistantId || conversation.assistantPausedAt) {
-      this.logger.debug(
-        `AI skipped: effectiveAssistantId=${effectiveAssistantId}, paused=${!!conversation.assistantPausedAt}`,
+      this.logger.log(
+        `[AI-FLOW][2-ABORT] conv=${conversationId} — assistente pausado ou ausente (assistantId=${effectiveAssistantId ?? 'NONE'}, paused=${!!conversation.assistantPausedAt})`,
         'AiResponseProcessor',
       )
       return
@@ -74,7 +76,7 @@ export class AiResponseProcessor implements OnModuleInit {
     const assistant = await this.assistantsRepository.findById(tenantId, effectiveAssistantId)
     if (!assistant || !assistant.isActive) {
       this.logger.warn(
-        `Assistant ${effectiveAssistantId} not found or inactive`,
+        `[AI-FLOW][2-ABORT] conv=${conversationId} — assistente ${effectiveAssistantId} não encontrado ou inativo`,
         'AiResponseProcessor',
       )
       return
@@ -84,20 +86,16 @@ export class AiResponseProcessor implements OnModuleInit {
     const settings = await this.assistantsRepository.findSettings(tenantId)
     const apiKey = settings?.openaiApiKey ?? undefined
 
-    const t0 = Date.now()
-    const step = (label: string) =>
-      this.logger.debug(`[AI][${conversationId}] +${Date.now() - t0}ms — ${label}`, 'AiResponseProcessor')
+    this.logger.log(
+      `[AI-FLOW][3-CONFIG] conv=${conversationId} assistant="${assistant.name}" model=${assistant.model} apiKey=${apiKey ? 'SET(' + apiKey.substring(0, 8) + '...)' : 'MISSING'} +${elapsed()}`,
+      'AiResponseProcessor',
+    )
 
     try {
-      step('start')
-
       // Deal ativo mais recente vinculado à conversa (se houver)
       const activeDeal = (conversation as any).deals?.[0] as { id: string; createdAt: Date } | undefined
 
-      step(`deal=${activeDeal?.id ?? 'none'} createdAt=${activeDeal?.createdAt?.toISOString() ?? '-'}`)
-
       // Carrega/reconstrói thread filtrando mensagens a partir do deal ativo
-      // Sem deal: pega as últimas mensagens disponíveis
       const thread = await this.threadService.getOrBuild(
         tenantId,
         conversationId,
@@ -108,19 +106,20 @@ export class AiResponseProcessor implements OnModuleInit {
         activeDeal ?? null,
       )
 
-      step(`thread loaded — ${thread.messages.length} msgs (dealId=${thread.dealId ?? 'none'})`)
-
       // Última mensagem do usuário: pega da conversa (source of truth — mensagem que trigou o job)
       const lastUserMessage =
         conversation.messages.find((m) => !m.fromMe)?.body ?? ''
 
       // Adiciona ao thread apenas se ainda não for a última mensagem
-      // (no cache miss, o rebuild do banco já inclui essa mensagem)
       const lastThreadMsg = thread.messages.at(-1)
       if (lastUserMessage && (!lastThreadMsg || lastThreadMsg.role !== 'user' || lastThreadMsg.content !== lastUserMessage)) {
         this.threadService.appendMessage(thread, 'user', lastUserMessage)
-        step('user msg appended to thread')
       }
+
+      this.logger.log(
+        `[AI-FLOW][4-THREAD] conv=${conversationId} msgs=${thread.messages.length} deal=${activeDeal?.id ?? 'none'} lastMsg="${lastUserMessage.substring(0, 80)}" +${elapsed()}`,
+        'AiResponseProcessor',
+      )
 
       // Verifica se vai precisar comprimir antes de comprimir
       const willCompress = thread.messages.length > 20
@@ -132,26 +131,14 @@ export class AiResponseProcessor implements OnModuleInit {
       let kbContext = ''
       if (assistant.knowledgeBases.length > 0) {
         const kbIds = assistant.knowledgeBases.map((k) => k.knowledgeBaseId)
+        kbContext = await this.knowledgeBaseService.searchContext(tenantId, kbIds, lastUserMessage, apiKey)
         this.logger.log(
-          `[KB] Assistant "${assistant.name}" has ${kbIds.length} KB(s) linked: [${kbIds.join(', ')}]. Searching for: "${lastUserMessage.substring(0, 100)}"`,
+          `[AI-FLOW][5-KB] conv=${conversationId} kbs=${kbIds.length} contextChars=${kbContext.length} +${elapsed()}`,
           'AiResponseProcessor',
         )
-        kbContext = await this.knowledgeBaseService.searchContext(tenantId, kbIds, lastUserMessage, apiKey)
-        if (kbContext) {
-          this.logger.log(
-            `[KB] Context found — ${kbContext.length} chars injected into prompt`,
-            'AiResponseProcessor',
-          )
-        } else {
-          this.logger.warn(
-            `[KB] No relevant context found (all chunks below similarity threshold)`,
-            'AiResponseProcessor',
-          )
-        }
-        step(`kb context fetched — ${kbContext.length} chars`)
       } else {
         this.logger.log(
-          `[KB] Assistant "${assistant.name}" has NO knowledge bases linked — skipping KB search`,
+          `[AI-FLOW][5-KB] conv=${conversationId} — sem KBs vinculadas, skip +${elapsed()}`,
           'AiResponseProcessor',
         )
       }
@@ -159,8 +146,6 @@ export class AiResponseProcessor implements OnModuleInit {
       // Busca tools vinculadas
       const toolIds = assistant.tools.map((t) => t.aiToolId)
       const tools = toolIds.length > 0 ? await this.aiToolsService.findByIds(tenantId, toolIds) : []
-
-      step(`tools loaded — ${tools.length} tools`)
 
       // Monta mensagens com thread (inclui sumário + msgs recentes)
       const messages = this.threadService.buildLLMMessages(
@@ -171,11 +156,8 @@ export class AiResponseProcessor implements OnModuleInit {
         assistant.handoffKeywords,
       )
 
-      step(`LLM payload built — ${messages.length} messages (system+history)`)
-
-      // Log do payload enviado ao LLM
-      this.logger.debug(
-        `[AI][${conversationId}] payload:\n${JSON.stringify(messages, null, 2)}`,
+      this.logger.log(
+        `[AI-FLOW][6-LLM-CALL] conv=${conversationId} model=${assistant.model} llmMsgs=${messages.length} tools=${tools.length} +${elapsed()}`,
         'AiResponseProcessor',
       )
 
@@ -187,13 +169,16 @@ export class AiResponseProcessor implements OnModuleInit {
         apiKey,
       })
 
-      step(`LLM responded — ${response.inputTokens} in / ${response.outputTokens} out tokens`)
+      this.logger.log(
+        `[AI-FLOW][7-LLM-OK] conv=${conversationId} tokensIn=${response.inputTokens} tokensOut=${response.outputTokens} +${elapsed()}`,
+        'AiResponseProcessor',
+      )
 
       let responseText = this.markdownToWhatsApp(response.content.trim())
 
       if (!responseText) {
         this.logger.warn(
-          `LLM returned empty response for conversation ${conversationId}`,
+          `[AI-FLOW][7-LLM-EMPTY] conv=${conversationId} — LLM retornou resposta vazia`,
           'AiResponseProcessor',
         )
         return
@@ -214,8 +199,11 @@ export class AiResponseProcessor implements OnModuleInit {
       // Executa tools marcadas na resposta (ex: [TOOL:CRIAR_DEAL])
       const toolResults = await this.executeToolsFromResponse(responseText, tools, toolContext)
       if (toolResults.length > 0) {
-        // Remove marcações de tool da resposta final
         responseText = this.stripToolMarkers(responseText)
+        this.logger.log(
+          `[AI-FLOW][8-TOOLS] conv=${conversationId} executed=${toolResults.map((t) => t.toolType).join(',')} +${elapsed()}`,
+          'AiResponseProcessor',
+        )
       }
 
       // Executa handoff se necessário
@@ -226,14 +214,13 @@ export class AiResponseProcessor implements OnModuleInit {
           if (handoffResult.output) {
             responseText = handoffResult.output
           }
-          // Pausa o assistente
           await this.assistantsRepository.setConversationAssistant(
             tenantId,
             conversationId,
             true,
           )
           this.logger.log(
-            `Handoff triggered for conversation ${conversationId}`,
+            `[AI-FLOW][8-HANDOFF] conv=${conversationId} — transferido para humano +${elapsed()}`,
             'AiResponseProcessor',
           )
         }
@@ -254,6 +241,10 @@ export class AiResponseProcessor implements OnModuleInit {
       let savedMediaUrl: string | undefined
 
       if (shouldSendAudio) {
+        this.logger.log(
+          `[AI-FLOW][9-TTS] conv=${conversationId} mode=${assistant.audioResponseMode} lastUserType=${lastUserType} voice=${assistant.voiceId ?? 'default'} — gerando áudio +${elapsed()}`,
+          'AiResponseProcessor',
+        )
         try {
           const ttsResult = await this.tts.synthesize(responseText, {
             voiceId: assistant.voiceId,
@@ -266,10 +257,13 @@ export class AiResponseProcessor implements OnModuleInit {
           savedMediaUrl = storageKey
           savedMessageType = 'AUDIO'
 
-          step(`TTS generated — ${ttsResult.audioBuffer.length} bytes`)
+          this.logger.log(
+            `[AI-FLOW][9-TTS-OK] conv=${conversationId} bytes=${ttsResult.audioBuffer.length} storageKey=${storageKey} +${elapsed()}`,
+            'AiResponseProcessor',
+          )
         } catch (ttsError) {
           this.logger.warn(
-            `TTS failed, falling back to text: ${(ttsError as Error).message}`,
+            `[AI-FLOW][9-TTS-FAIL] conv=${conversationId} — fallback para texto: ${(ttsError as Error).message} +${elapsed()}`,
             'AiResponseProcessor',
           )
         }
@@ -286,6 +280,11 @@ export class AiResponseProcessor implements OnModuleInit {
         status: 'PENDING',
         mediaUrl: savedMediaUrl,
       })
+
+      this.logger.log(
+        `[AI-FLOW][10-SAVED] conv=${conversationId} msgId=${savedMessage.id} type=${savedMessageType} +${elapsed()}`,
+        'AiResponseProcessor',
+      )
 
       // Envia via WhatsApp
       try {
@@ -309,9 +308,14 @@ export class AiResponseProcessor implements OnModuleInit {
           'SENT',
         )
         await this.inboxRepository.updateMessageEvolutionId(savedMessage.id, result.messageId)
+
+        this.logger.log(
+          `[AI-FLOW][11-SENT] conv=${conversationId} to=${conversation.contact.phone} type=${savedMessageType} evolutionId=${result.messageId} +${elapsed()}`,
+          'AiResponseProcessor',
+        )
       } catch (sendError) {
         this.logger.error(
-          `Failed to send AI message via WhatsApp: ${(sendError as Error).message}`,
+          `[AI-FLOW][11-SEND-FAIL] conv=${conversationId} to=${conversation.contact.phone} — ${(sendError as Error).message} +${elapsed()}`,
           (sendError as Error).stack,
           'AiResponseProcessor',
         )
@@ -338,12 +342,12 @@ export class AiResponseProcessor implements OnModuleInit {
       })
 
       this.logger.log(
-        `AI response sent for conversation ${conversationId} (${response.outputTokens} tokens)`,
+        `[AI-FLOW][12-DONE] conv=${conversationId} totalTime=${elapsed()} tokens=${response.outputTokens} response="${responseText.substring(0, 100)}..."`,
         'AiResponseProcessor',
       )
     } catch (error) {
       this.logger.error(
-        `AI response failed for conversation ${conversationId}: ${(error as Error).message}`,
+        `[AI-FLOW][ERROR] conv=${conversationId} — ${(error as Error).message} +${elapsed()}`,
         (error as Error).stack,
         'AiResponseProcessor',
       )

@@ -371,11 +371,21 @@ export class InboxWebhookProcessor {
       if (!fromMe && !isGroup && effectiveAssistantId && !conversation!.assistantPausedAt) {
         const convId = conversation!.id
         const jobId = `ai-response:${convId}`
+
+        this.logger.log(
+          `[AI-FLOW][1-TRIGGER] conv=${convId} phone=${phone} assistantId=${effectiveAssistantId} — mensagem inbound recebida, enfileirando IA`,
+          'InboxWebhookProcessor',
+        )
+
         const existingJob = await this.aiResponseQueue.getJob(jobId)
         if (existingJob) {
           const state = await existingJob.getState()
           if (state === 'delayed' || state === 'waiting') {
             await existingJob.remove()
+            this.logger.log(
+              `[AI-FLOW][1-TRIGGER] conv=${convId} — job anterior removido (state=${state}), debounce reset`,
+              'InboxWebhookProcessor',
+            )
           }
         }
 
@@ -397,8 +407,13 @@ export class InboxWebhookProcessor {
           },
         )
 
-        this.logger.debug(
-          `AI response enqueued for conversation ${convId} (delay: ${DEFAULT_AI_WAIT_MS}ms)`,
+        this.logger.log(
+          `[AI-FLOW][1-TRIGGER] conv=${convId} — job enfileirado (delay=${DEFAULT_AI_WAIT_MS}ms)`,
+          'InboxWebhookProcessor',
+        )
+      } else if (!fromMe && !isGroup) {
+        this.logger.log(
+          `[AI-FLOW][1-SKIP] conv=${conversation!.id} phone=${phone} — IA não acionada: assistantId=${effectiveAssistantId ?? 'NONE'} paused=${!!conversation!.assistantPausedAt}`,
           'InboxWebhookProcessor',
         )
       }
