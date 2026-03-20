@@ -238,6 +238,9 @@ export class EvolutionAdapter implements IWhatsAppProvider {
     to: string,
     payload: AudioPayload,
   ): Promise<MessageResult> {
+    this.logger.log(
+      `[SEND-AUDIO] instance=${instanceId} to=${to} url=${payload.url?.substring(0, 80)}...`,
+    )
     const res = await this.http.post<EvoMessageResponse>(
       `/message/sendWhatsAppAudio/${instanceId}`,
       {
@@ -247,6 +250,9 @@ export class EvolutionAdapter implements IWhatsAppProvider {
       },
     )
 
+    this.logger.log(
+      `[SEND-AUDIO] OK instance=${instanceId} messageId=${res.key?.id}`,
+    )
     return { messageId: res.key.id, status: 'sent' }
   }
 

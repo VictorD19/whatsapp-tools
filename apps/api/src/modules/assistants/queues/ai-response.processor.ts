@@ -240,6 +240,11 @@ export class AiResponseProcessor implements OnModuleInit {
       let savedMessageType: 'TEXT' | 'AUDIO' = 'TEXT'
       let savedMediaUrl: string | undefined
 
+      this.logger.log(
+        `[AI-FLOW][9-AUDIO-DECISION] conv=${conversationId} audioMode=${assistant.audioResponseMode} lastUserType=${lastUserType} shouldSendAudio=${shouldSendAudio} +${elapsed()}`,
+        'AiResponseProcessor',
+      )
+
       if (shouldSendAudio) {
         this.logger.log(
           `[AI-FLOW][9-TTS] conv=${conversationId} mode=${assistant.audioResponseMode} lastUserType=${lastUserType} voice=${assistant.voiceId ?? 'default'} — gerando áudio +${elapsed()}`,
@@ -291,6 +296,10 @@ export class AiResponseProcessor implements OnModuleInit {
         let result: { messageId: string }
         if (savedMessageType === 'AUDIO' && savedMediaUrl) {
           const audioUrl = await this.storage.getSignedUrl(savedMediaUrl)
+          this.logger.log(
+            `[AI-FLOW][11-AUDIO-SEND] conv=${conversationId} storageKey=${savedMediaUrl} audioUrl=${audioUrl.substring(0, 100)}... +${elapsed()}`,
+            'AiResponseProcessor',
+          )
           result = await this.whatsapp.sendAudio(
             instanceEvolutionId,
             conversation.contact.phone,

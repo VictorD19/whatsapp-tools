@@ -114,7 +114,7 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
         setIsActive(assistant.isActive)
         setHandoffKeywords(assistant.handoffKeywords)
         setSelectedKBs(assistant.knowledgeBases.map((kb) => kb.knowledgeBaseId))
-        setSelectedTools(assistant.tools.map((t) => t.aiToolId))
+        setSelectedTools(assistant.tools.map((tool) => tool.aiToolId))
         setAudioResponseMode(assistant.audioResponseMode ?? 'never')
         setVoiceId(assistant.voiceId ?? 'pt-BR-FranciscaNeural')
       } else {
@@ -158,7 +158,7 @@ export function AssistantSheet({ open, assistant, saving, onClose, onSave }: Ass
   }, [])
 
   const toggleTool = useCallback((id: string) => {
-    setSelectedTools((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]))
+    setSelectedTools((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
   }, [])
 
   const handleSubmit = useCallback(() => {

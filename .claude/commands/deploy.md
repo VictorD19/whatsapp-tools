@@ -1,77 +1,67 @@
-Execute o fluxo completo de deploy do WhatsApp Sales Platform seguindo exatamente os passos abaixo.
+Execute o fluxo de deploy do WhatsApp Sales Platform seguindo exatamente os passos abaixo.
 
 ## Contexto
 
-O deploy segue o fluxo: **build local → push para registry → pull no servidor**.
-- O build roda na máquina local (não sobrecarrega o servidor)
-- O servidor apenas faz `pull` da imagem pronta e reinicia os containers
-- Banco de dados e volumes não são afetados pelo deploy
+O deploy é **automático via GitHub Actions**. Ao fazer push para `master`:
+1. **CI** (`ci.yml`): Roda testes unitários
+2. **Deploy** (`deploy.yml`): Testes → Build Docker → Push GHCR → SSH deploy no servidor
 
-## Argumentos opcionais
-
-O usuário pode passar uma tag de versão. Exemplos:
-- `/deploy` → usa `TAG=latest`
-- `/deploy v1.3.0` → usa `TAG=v1.3.0`
+O Claude **NÃO precisa** buildar imagens localmente nem executar comandos no servidor.
+O fluxo é: **commit → push para master → pipeline cuida do resto**.
 
 ## Passos a executar
 
-### Passo 1 — Verificar pré-requisitos
-
-```bash
-# Verificar se REGISTRY está configurado no .env
-grep REGISTRY .env
-```
-
-Se `REGISTRY` não estiver configurado, pare e instrua o usuário a adicionar no `.env`:
-```
-REGISTRY=ghcr.io/sua-org/whatsapp-tools
-```
-
-### Passo 2 — Verificar status do git
+### Passo 1 — Verificar status do git
 
 ```bash
 git status
 git log --oneline -5
 ```
 
-Mostrar ao usuário quais commits serão deployados. Se houver mudanças não commitadas, alertar (não bloquear).
+- Mostrar ao usuário quais commits serão deployados
+- Se houver mudanças não commitadas relevantes, alertar (não bloquear)
+- Verificar se está na branch `master` (ou se precisa fazer merge)
 
-### Passo 3 — Build e push das imagens
-
-Se o usuário passou uma tag (ex: `/deploy v1.3.0`), use `TAG=v1.3.0`.
-Caso contrário use `TAG=latest`.
+### Passo 2 — Rodar testes localmente (validação rápida)
 
 ```bash
-make release TAG=<tag>
+pnpm --filter @repo/api test
 ```
 
-Este comando:
-1. Builda a imagem da API (`apps/api/Dockerfile`)
-2. Builda a imagem do Web (`apps/web/Dockerfile`) com as variáveis `NEXT_PUBLIC_*` do `.env`
-3. Faz push de ambas para o registry com a tag especificada e `:latest`
+Se os testes falharem, **parar e corrigir antes de fazer push**.
+A pipeline vai rodar os mesmos testes — melhor pegar erros localmente.
 
-### Passo 4 — Instruções para o servidor
+### Passo 3 — Push para master
 
-Após o push bem-sucedido, exibir o bloco de comandos para rodar no servidor:
+```bash
+git push origin master
+```
+
+Isso dispara automaticamente a pipeline de deploy no GitHub Actions.
+
+### Passo 4 — Confirmar ao usuário
+
+Após o push, informar:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Deploy pronto! Rode no servidor:
+ Push feito! A pipeline vai cuidar do deploy:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  make deploy
+  1. ✓ Testes (GitHub Actions)
+  2. ✓ Build Docker (API + Web)
+  3. ✓ Push para GHCR
+  4. ✓ Deploy via SSH no servidor (137.184.68.84)
 
- Ou manualmente:
-  docker compose -f docker-compose.prod.yml pull api web
-  docker compose -f docker-compose.prod.yml up -d --no-build api web
-  docker compose -f docker-compose.prod.yml exec api pnpm --filter @repo/database db:migrate:deploy
+ Acompanhe em: https://github.com/VictorD19/whatsapp-tools/actions
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ## Regras
 
+- **NUNCA** executar `make release` ou `docker build` — a pipeline faz isso
+- **NUNCA** executar comandos no servidor — a pipeline faz SSH automaticamente
+- Sempre rodar testes locais antes do push para evitar falha na pipeline
 - Sempre mostrar o último commit que está sendo deployado
-- Se `make release` falhar, não continuar — mostrar o erro e pedir ação do usuário
-- Não executar comandos no servidor (Claude não tem acesso SSH ao servidor)
-- Alertar se as variáveis `NEXT_PUBLIC_API_URL` ou `NEXT_PUBLIC_WS_URL` estiverem com valores de localhost (build errado para produção)
-- Após o push, sempre mostrar o bloco de instruções do servidor formatado claramente
+- Se o push falhar, mostrar o erro e orientar o usuário
+- Se estiver em outra branch (não master), perguntar se quer fazer merge antes
