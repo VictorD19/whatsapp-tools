@@ -834,12 +834,13 @@ describe('InboxService', () => {
       expect(result.meta.totalPages).toBe(1)
     })
 
-    it('should throw CONVERSATION_NOT_FOUND for invalid conversation', async () => {
-      repository.findConversationById.mockResolvedValue(null)
+    it('should return empty list for invalid conversation', async () => {
+      repository.findMessages.mockResolvedValue({ messages: [], total: 0 })
 
-      await expect(service.findMessages(tenantId, 'nonexistent', 1, 20)).rejects.toMatchObject({
-        code: 'CONVERSATION_NOT_FOUND',
-      })
+      const result = await service.findMessages(tenantId, 'nonexistent', 1, 20)
+
+      expect(result.data).toHaveLength(0)
+      expect(result.meta.total).toBe(0)
     })
   })
 
