@@ -4,6 +4,7 @@ initSentry()
 import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import compress from '@fastify/compress'
 import multipart from '@fastify/multipart'
 import helmet from '@fastify/helmet'
 import { AppModule } from './app.module'
@@ -32,6 +33,9 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter({ logger: false }),
   )
+
+  // Response compression (gzip/brotli)
+  await app.register(compress, { global: true })
 
   // File upload support (50MB limit for WhatsApp media)
   await app.register(multipart, {
