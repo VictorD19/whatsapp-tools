@@ -239,6 +239,8 @@ export class AiResponseProcessor implements OnModuleInit {
 
       let savedMessageType: 'TEXT' | 'AUDIO' = 'TEXT'
       let savedMediaUrl: string | undefined
+      let audioBuffer: Buffer | undefined
+      let audioMimetype: string | undefined
 
       this.logger.log(
         `[AI-FLOW][9-AUDIO-DECISION] conv=${conversationId} audioMode=${assistant.audioResponseMode} lastUserType=${lastUserType} shouldSendAudio=${shouldSendAudio} +${elapsed()}`,
@@ -254,6 +256,8 @@ export class AiResponseProcessor implements OnModuleInit {
           const ttsResult = await this.tts.synthesize(responseText, {
             voiceId: assistant.voiceId,
           })
+          audioBuffer = ttsResult.audioBuffer
+          audioMimetype = ttsResult.mimetype
           const storageKey = await this.storage.uploadMedia(
             tenantId,
             ttsResult.audioBuffer,
@@ -294,16 +298,15 @@ export class AiResponseProcessor implements OnModuleInit {
       // Envia via WhatsApp
       try {
         let result: { messageId: string }
-        if (savedMessageType === 'AUDIO' && savedMediaUrl) {
-          const audioUrl = await this.storage.getSignedUrl(savedMediaUrl)
+        if (savedMessageType === 'AUDIO' && audioBuffer) {
           this.logger.log(
-            `[AI-FLOW][11-AUDIO-SEND] conv=${conversationId} storageKey=${savedMediaUrl} audioUrl=${audioUrl.substring(0, 100)}... +${elapsed()}`,
+            `[AI-FLOW][11-AUDIO-SEND] conv=${conversationId} format=base64 bytes=${audioBuffer.length} +${elapsed()}`,
             'AiResponseProcessor',
           )
           result = await this.whatsapp.sendAudio(
             instanceEvolutionId,
             conversation.contact.phone,
-            { url: audioUrl },
+            { base64: audioBuffer.toString('base64'), mimetype: audioMimetype },
           )
         } else {
           result = await this.whatsapp.sendText(

@@ -20,7 +20,8 @@ export interface VideoPayload {
 }
 
 export interface AudioPayload {
-  url: string
+  url?: string
+  base64?: string
   mimetype?: string
 }
 
