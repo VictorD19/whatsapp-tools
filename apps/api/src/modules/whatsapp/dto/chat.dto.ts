@@ -16,6 +16,11 @@ export interface HistoryMessage {
   message?: Record<string, unknown>
 }
 
+export interface FindChatsOptions {
+  take?: number
+  skip?: number
+}
+
 export interface FindMessagesOptions {
   remoteJid: string
   limit?: number

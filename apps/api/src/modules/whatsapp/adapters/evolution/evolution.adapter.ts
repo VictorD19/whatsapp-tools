@@ -19,7 +19,7 @@ import type {
   MentionPayload,
 } from '../../dto/send-message.dto'
 import type { WebhookEvent } from '../../dto/webhook.dto'
-import type { ChatItem, HistoryMessage, FindMessagesOptions, ContactInfo } from '../../dto/chat.dto'
+import type { ChatItem, HistoryMessage, FindMessagesOptions, FindChatsOptions, ContactInfo } from '../../dto/chat.dto'
 import { EvolutionHttpClient } from './evolution-http.client'
 
 // ---------- Evolution API response shapes (internal only) ----------
@@ -326,7 +326,43 @@ export class EvolutionAdapter implements IWhatsAppProvider {
 
   // ── Chat history ─────────────────────────────────────────────────
 
-  async findChats(instanceId: string): Promise<ChatItem[]> {
+  private static readonly FIND_CHATS_PAGE_SIZE = 100
+  private static readonly FIND_CHATS_TIMEOUT_MS = 120_000
+
+  async findChats(instanceId: string, options?: FindChatsOptions): Promise<ChatItem[]> {
+    // If caller provides explicit take/skip, do a single request
+    if (options?.take != null) {
+      return this.findChatsPage(instanceId, options.take, options.skip ?? 0)
+    }
+
+    // Otherwise, paginate automatically to avoid timeout on large accounts
+    const allChats: ChatItem[] = []
+    let skip = 0
+    const take = EvolutionAdapter.FIND_CHATS_PAGE_SIZE
+
+    while (true) {
+      this.logger.log(
+        `Fetching chats page skip=${skip} take=${take} for ${instanceId}`,
+        'EvolutionAdapter',
+      )
+
+      const page = await this.findChatsPage(instanceId, take, skip)
+      allChats.push(...page)
+
+      // If we got less than a full page, we've reached the end
+      if (page.length < take) break
+      skip += take
+    }
+
+    this.logger.log(
+      `Fetched ${allChats.length} total chats for ${instanceId} (${Math.ceil(skip / take) + 1} pages)`,
+      'EvolutionAdapter',
+    )
+
+    return allChats
+  }
+
+  private async findChatsPage(instanceId: string, take: number, skip: number): Promise<ChatItem[]> {
     const res = await this.http.post<Array<{
       id: string | null
       remoteJid?: string
@@ -339,6 +375,8 @@ export class EvolutionAdapter implements IWhatsAppProvider {
       }
     }>>(
       `/chat/findChats/${instanceId}`,
+      { take, skip },
+      EvolutionAdapter.FIND_CHATS_TIMEOUT_MS,
     )
 
     const chats = Array.isArray(res) ? res : []

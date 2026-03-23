@@ -20,7 +20,7 @@ import type {
   MentionPayload,
 } from '../dto/send-message.dto'
 import type { WebhookEvent } from '../dto/webhook.dto'
-import type { ChatItem, HistoryMessage, FindMessagesOptions, ContactInfo } from '../dto/chat.dto'
+import type { ChatItem, HistoryMessage, FindMessagesOptions, FindChatsOptions, ContactInfo } from '../dto/chat.dto'
 
 export interface IWhatsAppProvider {
   // Instancias
@@ -44,7 +44,7 @@ export interface IWhatsAppProvider {
   sendGroupMention(instanceId: string, groupId: string, payload: MentionPayload): Promise<MessageResult>
 
   // Chat history
-  findChats(instanceId: string): Promise<ChatItem[]>
+  findChats(instanceId: string, options?: FindChatsOptions): Promise<ChatItem[]>
   findMessages(instanceId: string, options: FindMessagesOptions): Promise<HistoryMessage[]>
 
   // Contatos

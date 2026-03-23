@@ -32,103 +32,20 @@ export class ConversationImportProcessor {
     private readonly logger: LoggerService,
   ) {}
 
-  @Process({ name: 'import-chats', concurrency: 2 })
+  private static readonly CHAT_PAGE_SIZE = 100
+
+  @Process({ name: 'import-chats', concurrency: 1 })
   async handleImportChats(job: Job<ImportChatsJobData>) {
     const { tenantId, instanceId, evolutionId, messageLimit } = job.data
     const progressKey = `${tenantId}:${instanceId}`
+    const pageSize = ConversationImportProcessor.CHAT_PAGE_SIZE
 
     this.logger.log(
-      `Starting conversation import for instance ${instanceId}`,
+      `Starting paginated conversation import for instance ${instanceId}`,
       'ConversationImportProcessor',
     )
 
-    let chats: Awaited<ReturnType<WhatsAppService['findChats']>>
-    try {
-      chats = await this.whatsapp.findChats(evolutionId)
-    } catch (error) {
-      this.logger.error(
-        `Failed to fetch chats for instance ${evolutionId}: ${(error as Error).message}`,
-        (error as Error).stack,
-        'ConversationImportProcessor',
-      )
-      this.gateway.emitImportFailed(tenantId, {
-        instanceId,
-        reason: 'Falha ao buscar conversas do WhatsApp',
-      })
-      return
-    }
-
-    // Log and filter out unresolvable JIDs
-    const lidChats = chats.filter((chat) => chat.remoteJid.includes('@lid'))
-    if (lidChats.length > 0) {
-      this.logger.warn(
-        `Skipping ${lidChats.length} LID chats (unresolvable numbers): ${lidChats.slice(0, 5).map((c) => `${c.remoteJid} (${c.name ?? 'sem nome'})`).join(', ')}${lidChats.length > 5 ? '...' : ''}`,
-        'ConversationImportProcessor',
-      )
-    }
-
-    const statusChats = chats.filter((chat) => chat.remoteJid.includes('status@broadcast'))
-    if (statusChats.length > 0) {
-      this.logger.debug(
-        `Skipping ${statusChats.length} status@broadcast chats`,
-        'ConversationImportProcessor',
-      )
-    }
-
-    const filteredChats = chats.filter((chat) => {
-      const jid = chat.remoteJid
-      if (jid.includes('status@broadcast')) return false
-      if (jid.includes('@lid')) return false
-      return true
-    })
-
-    // Deduplicate by remoteJid (LID resolution can map to same phone as existing JID)
-    const seenJids = new Set<string>()
-    const validChats = filteredChats.filter((chat) => {
-      if (seenJids.has(chat.remoteJid)) {
-        this.logger.warn(
-          `Duplicate JID in chat list: ${chat.remoteJid} (${chat.name ?? 'sem nome'}) — skipping duplicate`,
-          'ConversationImportProcessor',
-        )
-        return false
-      }
-      seenJids.add(chat.remoteJid)
-      return true
-    })
-
-    if (validChats.length === 0) {
-      this.gateway.emitImportStarted(tenantId, {
-        instanceId,
-        totalChats: 0,
-        jobId: job.id as string,
-      })
-      this.gateway.emitImportCompleted(tenantId, {
-        instanceId,
-        totalImported: 0,
-        totalSkipped: 0,
-        totalErrors: 0,
-      })
-      return
-    }
-
-    // Initialize progress counter
-    importProgress.set(progressKey, {
-      imported: 0,
-      skipped: 0,
-      errors: 0,
-      total: validChats.length,
-    })
-
-    // Emit import:started NOW — before fetchContacts — so the frontend
-    // immediately shows the total count instead of waiting another 30-60s
-    this.gateway.emitImportStarted(tenantId, {
-      instanceId,
-      totalChats: validChats.length,
-      jobId: job.id as string,
-    })
-
-    // Fetch contacts to enrich names (findChats often has empty names for 1:1)
-    // Runs AFTER emitting import:started so it doesn't block the UI update
+    // Fetch contacts upfront for name enrichment (lightweight call)
     const contactNameMap = new Map<string, string>()
     try {
       const contacts = await this.whatsapp.findContacts(evolutionId)
@@ -148,26 +65,124 @@ export class ConversationImportProcessor {
       )
     }
 
-    // Create sub-jobs for each conversation
-    for (let i = 0; i < validChats.length; i++) {
-      const chat = validChats[i]
-      // Enrich: chat.name → findContacts pushName → undefined (never use phone as name)
-      const enrichedName = chat.name || contactNameMap.get(chat.remoteJid) || undefined
-      await this.importProducer.importConversation({
-        tenantId,
-        instanceId,
-        evolutionId,
-        remoteJid: chat.remoteJid,
-        contactName: enrichedName,
-        contactAvatarUrl: chat.profilePicUrl,
-        messageLimit,
-        index: i,
-        total: validChats.length,
+    const seenJids = new Set<string>()
+    let totalQueued = 0
+    let skip = 0
+    let pageNumber = 0
+    let startedEmitted = false
+
+    while (true) {
+      // Fetch one page of chats
+      let pageChats: Awaited<ReturnType<WhatsAppService['findChats']>>
+      try {
+        pageChats = await this.whatsapp.findChats(evolutionId, { take: pageSize, skip })
+      } catch (error) {
+        this.logger.error(
+          `Failed to fetch chats page ${pageNumber} (skip=${skip}) for instance ${evolutionId}: ${(error as Error).message}`,
+          (error as Error).stack,
+          'ConversationImportProcessor',
+        )
+        // If first page fails, emit failure and abort
+        if (!startedEmitted) {
+          this.gateway.emitImportFailed(tenantId, {
+            instanceId,
+            reason: 'Falha ao buscar conversas do WhatsApp',
+          })
+          return
+        }
+        // If a later page fails, stop paginating but let queued conversations finish
+        break
+      }
+
+      this.logger.log(
+        `Page ${pageNumber}: fetched ${pageChats.length} chats (skip=${skip})`,
+        'ConversationImportProcessor',
+      )
+
+      // Filter invalid chats
+      const validPageChats = pageChats.filter((chat) => {
+        const jid = chat.remoteJid
+        if (jid.includes('status@broadcast')) return false
+        if (jid.includes('@lid')) return false
+        if (seenJids.has(jid)) return false
+        seenJids.add(jid)
+        return true
       })
+
+      // Emit import:started on first page so the frontend gets immediate feedback
+      if (!startedEmitted) {
+        startedEmitted = true
+        // We don't know the exact total yet — use page count as estimate, updated later
+        this.gateway.emitImportStarted(tenantId, {
+          instanceId,
+          totalChats: validPageChats.length,
+          jobId: job.id as string,
+        })
+        importProgress.set(progressKey, {
+          imported: 0,
+          skipped: 0,
+          errors: 0,
+          total: validPageChats.length,
+        })
+      }
+
+      // Queue sub-jobs for each valid chat in this page
+      for (const chat of validPageChats) {
+        const enrichedName = chat.name || contactNameMap.get(chat.remoteJid) || undefined
+        await this.importProducer.importConversation({
+          tenantId,
+          instanceId,
+          evolutionId,
+          remoteJid: chat.remoteJid,
+          contactName: enrichedName,
+          contactAvatarUrl: chat.profilePicUrl,
+          messageLimit,
+          index: totalQueued,
+          total: 0, // updated after all pages loaded
+        })
+        totalQueued++
+      }
+
+      // If this page was smaller than pageSize, we've reached the end
+      if (pageChats.length < pageSize) break
+      skip += pageSize
+      pageNumber++
     }
 
+    // Now we know the real total — update progress and re-emit so frontend has accurate count
+    const counter = importProgress.get(progressKey)
+    if (counter) {
+      counter.total = totalQueued
+    }
+
+    if (totalQueued === 0) {
+      if (!startedEmitted) {
+        this.gateway.emitImportStarted(tenantId, {
+          instanceId,
+          totalChats: 0,
+          jobId: job.id as string,
+        })
+      }
+      this.gateway.emitImportCompleted(tenantId, {
+        instanceId,
+        totalImported: 0,
+        totalSkipped: 0,
+        totalErrors: 0,
+      })
+      importProgress.delete(progressKey)
+      return
+    }
+
+    // Emit updated total to frontend
+    this.gateway.emitImportProgress(tenantId, {
+      instanceId,
+      imported: counter?.imported ?? 0,
+      total: totalQueued,
+      skipped: counter?.skipped ?? 0,
+    })
+
     this.logger.log(
-      `Queued ${validChats.length} conversations for import (instance ${instanceId})`,
+      `Queued ${totalQueued} conversations for import across ${pageNumber + 1} pages (instance ${instanceId})`,
       'ConversationImportProcessor',
     )
   }
@@ -182,7 +197,6 @@ export class ConversationImportProcessor {
       contactName,
       contactAvatarUrl,
       messageLimit,
-      total,
     } = job.data
     const progressKey = `${tenantId}:${instanceId}`
 
@@ -213,7 +227,7 @@ export class ConversationImportProcessor {
 
       if (existing) {
         this.updateProgress(progressKey, 'skipped')
-        this.emitProgress(tenantId, instanceId, progressKey, total)
+        this.emitProgress(tenantId, instanceId, progressKey)
         return
       }
 
@@ -225,7 +239,7 @@ export class ConversationImportProcessor {
 
       if (historyMessages.length === 0) {
         this.updateProgress(progressKey, 'skipped')
-        this.emitProgress(tenantId, instanceId, progressKey, total)
+        this.emitProgress(tenantId, instanceId, progressKey)
         return
       }
 
@@ -244,7 +258,7 @@ export class ConversationImportProcessor {
 
       if (newMessages.length === 0) {
         this.updateProgress(progressKey, 'skipped')
-        this.emitProgress(tenantId, instanceId, progressKey, total)
+        this.emitProgress(tenantId, instanceId, progressKey)
         return
       }
 
@@ -277,7 +291,7 @@ export class ConversationImportProcessor {
       )
       if (existingBeforeCreate) {
         this.updateProgress(progressKey, 'skipped')
-        this.emitProgress(tenantId, instanceId, progressKey, total)
+        this.emitProgress(tenantId, instanceId, progressKey)
         return
       }
 
@@ -316,7 +330,7 @@ export class ConversationImportProcessor {
       await this.inboxRepository.createManyMessages(messagesToCreate)
 
       this.updateProgress(progressKey, 'imported')
-      this.emitProgress(tenantId, instanceId, progressKey, total)
+      this.emitProgress(tenantId, instanceId, progressKey)
 
       this.logger.debug(
         `Imported conversation with ${phone}: ${messagesToCreate.length} messages — types: ${JSON.stringify(typeCounts)}`,
@@ -329,7 +343,7 @@ export class ConversationImportProcessor {
         'ConversationImportProcessor',
       )
       this.updateProgress(progressKey, 'errors')
-      this.emitProgress(tenantId, instanceId, progressKey, total)
+      this.emitProgress(tenantId, instanceId, progressKey)
     }
   }
 
@@ -347,7 +361,6 @@ export class ConversationImportProcessor {
     tenantId: string,
     instanceId: string,
     progressKey: string,
-    total: number,
   ) {
     const counter = importProgress.get(progressKey)
     if (!counter) return
@@ -361,8 +374,8 @@ export class ConversationImportProcessor {
       skipped: counter.skipped,
     })
 
-    // Check if all conversations are processed
-    if (processed >= total) {
+    // Check if all conversations are processed (only when total is known > 0)
+    if (counter.total > 0 && processed >= counter.total) {
       this.gateway.emitImportCompleted(tenantId, {
         instanceId,
         totalImported: counter.imported,
