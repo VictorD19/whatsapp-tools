@@ -203,7 +203,8 @@ export class InboxWebhookProcessor {
         contactName,
       )
 
-      // Fetch profile picture if contact doesn't have one (skip for groups and fromMe)
+      // Fetch profile picture if contact doesn't have one (skip for groups, fromMe, and already-attempted)
+      // 'unavailable' means we already tried and got 404 — don't retry
       if (!isGroup && !fromMe && !contact.avatarUrl) {
         const avatarUrl = await this.whatsapp.getProfilePictureUrl(
           instance.evolutionId,
@@ -212,6 +213,10 @@ export class InboxWebhookProcessor {
         if (avatarUrl) {
           await this.contactsService.updateAvatarUrl(contact.id, avatarUrl)
           contact.avatarUrl = avatarUrl
+        } else {
+          // Cache negative result to avoid retrying on every message
+          await this.contactsService.updateAvatarUrl(contact.id, 'unavailable')
+          contact.avatarUrl = 'unavailable'
         }
       }
 
@@ -312,20 +317,23 @@ export class InboxWebhookProcessor {
         senderName,
       })
 
-      // Download e armazena mídia inbound no storage local (fire and forget)
+      // Download e armazena mídia inbound no storage local
       // STICKER e tipos não suportados continuam via proxy Evolution
+      // Awaited to prevent unbounded parallel buffer allocations (memory leak)
       if (evolutionMsgId && STORABLE_MEDIA_TYPES.has(type) && type !== 'AUDIO') {
-        this.downloadAndStoreInboundMedia(
-          instance,
-          newMessage.id,
-          evolutionMsgId,
-          instance.tenantId,
-        ).catch((err) =>
+        try {
+          await this.downloadAndStoreInboundMedia(
+            instance,
+            newMessage.id,
+            evolutionMsgId,
+            instance.tenantId,
+          )
+        } catch (err) {
           this.logger.warn(
             `Failed to store inbound media for message ${newMessage.id}: ${(err as Error).message}`,
             'InboxWebhookProcessor',
-          ),
-        )
+          )
+        }
       }
 
       // Emit WebSocket events

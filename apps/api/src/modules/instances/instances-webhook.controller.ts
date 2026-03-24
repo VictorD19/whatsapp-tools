@@ -60,19 +60,10 @@ export class InstancesWebhookController {
         backoff: { type: 'exponential', delay: 1000 },
       })
     } else if (INBOX_EVENTS.has(event)) {
-      const q = this.inboxQueue as any
-      console.log('[DEBUG-INBOX] queue name:', q.name, '| client status:', q.client?.status)
-      try {
-        const result = await this.inboxQueue.add('inbox-webhook', job, {
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 1000 },
-        })
-        console.log('[DEBUG-INBOX] Job added OK, id:', result?.id)
-        const idCounter = await q.client?.get(`bull:${q.name}:id`)
-        console.log('[DEBUG-INBOX] Counter after add:', idCounter)
-      } catch (err) {
-        console.error('[DEBUG-INBOX] add() FAILED:', (err as Error).message)
-      }
+      await this.inboxQueue.add('inbox-webhook', job, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+      })
     } else {
       this.logger.debug(`Unrouted webhook event: ${event}`, 'Webhook')
     }

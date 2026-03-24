@@ -68,7 +68,7 @@ export function ConversationListItem({
       {/* Avatar with WhatsApp badge */}
       <div className="relative shrink-0 mt-0.5">
         <Avatar className="h-9 w-9">
-          {conversation.contact?.avatarUrl && (
+          {conversation.contact?.avatarUrl && conversation.contact.avatarUrl !== 'unavailable' && (
             <AvatarImage src={conversation.contact.avatarUrl} alt={contactName} />
           )}
           <AvatarFallback className={cn('text-xs font-semibold', getAvatarColor(contactName))}>

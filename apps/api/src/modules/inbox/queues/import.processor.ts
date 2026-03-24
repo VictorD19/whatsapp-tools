@@ -15,10 +15,22 @@ interface ImportCounter {
   skipped: number
   errors: number
   total: number
+  startedAt: number
 }
 
 // In-memory progress tracking (per tenantId:instanceId)
 const importProgress = new Map<string, ImportCounter>()
+
+// Auto-cleanup stale entries every 5 minutes (entries older than 30 min)
+const IMPORT_PROGRESS_TTL_MS = 30 * 60 * 1000
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, counter] of importProgress) {
+    if (now - counter.startedAt > IMPORT_PROGRESS_TTL_MS) {
+      importProgress.delete(key)
+    }
+  }
+}, 5 * 60 * 1000).unref()
 
 @Processor(QUEUES.CONVERSATION_IMPORT)
 export class ConversationImportProcessor {
@@ -123,6 +135,7 @@ export class ConversationImportProcessor {
           skipped: 0,
           errors: 0,
           total: validPageChats.length,
+          startedAt: Date.now(),
         })
       }
 

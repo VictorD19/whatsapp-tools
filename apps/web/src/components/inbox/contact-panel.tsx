@@ -509,7 +509,7 @@ export function ContactPanel({ conversation }: ContactPanelProps) {
       {/* Contact info */}
       <div className="flex flex-col items-center gap-3 pt-2">
         <Avatar className="h-14 w-14">
-          {contact.avatarUrl && (
+          {contact.avatarUrl && contact.avatarUrl !== 'unavailable' && (
             <AvatarImage src={contact.avatarUrl} alt={contactName} />
           )}
           <AvatarFallback className="bg-primary-500/10 text-primary-500 text-lg">
