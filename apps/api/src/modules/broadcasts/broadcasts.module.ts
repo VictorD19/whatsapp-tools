@@ -3,6 +3,8 @@ import { BullModule } from '@nestjs/bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module'
 import { StorageModule } from '@modules/storage/storage.module'
+import { InboxModule } from '@modules/inbox/inbox.module'
+import { TenantsModule } from '@modules/tenants/tenants.module'
 import { BroadcastsController } from './broadcasts.controller'
 import { BroadcastsService } from './broadcasts.service'
 import { BroadcastsRepository } from './broadcasts.repository'
@@ -14,6 +16,8 @@ import { BroadcastProcessor } from './queues/broadcast.processor'
   imports: [
     WhatsAppModule,
     StorageModule,
+    InboxModule,
+    TenantsModule,
     BullModule.registerQueue({ name: QUEUES.BROADCAST }),
   ],
   controllers: [BroadcastsController],

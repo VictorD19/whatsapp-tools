@@ -127,6 +127,7 @@ export class BroadcastsRepository {
         tenant: { select: { id: true, timezone: true, locale: true } },
         instances: { include: { instance: { select: { id: true, name: true, evolutionId: true, status: true } } } },
         variations: { orderBy: { sortOrder: 'asc' } },
+        createdBy: { select: { id: true, name: true } },
       },
     })
   }

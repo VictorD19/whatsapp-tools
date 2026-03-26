@@ -5,6 +5,9 @@ import { QUEUES } from '@core/queue/queue.module'
 import { LoggerService } from '@core/logger/logger.service'
 import { WhatsAppService } from '@modules/whatsapp/whatsapp.service'
 import { StorageService, isStorageKey } from '@modules/storage/storage.service'
+import { InboxRepository } from '@modules/inbox/inbox.repository'
+import { InboxGateway } from '@modules/inbox/inbox.gateway'
+import { TenantsService } from '@modules/tenants/tenants.service'
 import { BroadcastsRepository } from '../broadcasts.repository'
 import { BroadcastGateway } from '../broadcasts.gateway'
 import type { BroadcastJobData } from './broadcast.producer'
@@ -32,6 +35,9 @@ export class BroadcastProcessor implements OnModuleInit {
     private readonly whatsapp: WhatsAppService,
     private readonly storage: StorageService,
     private readonly gateway: BroadcastGateway,
+    private readonly inboxRepository: InboxRepository,
+    private readonly inboxGateway: InboxGateway,
+    private readonly tenantsService: TenantsService,
     private readonly logger: LoggerService,
   ) {}
 
@@ -159,6 +165,17 @@ export class BroadcastProcessor implements OnModuleInit {
             })
             await this.repository.incrementCounters(broadcastId, 'sentCount')
             sentCount++
+
+            // Register message in inbox and assign conversation to broadcast creator
+            await this.registerInInbox({
+              tenantId,
+              instanceId: instance.id,
+              contactId: recipient.contact.id,
+              createdById: broadcast.createdById,
+              messageType: variation.messageType,
+              body: text,
+              mediaUrl: variation.mediaUrl,
+            })
           } catch (error) {
             const reason = (error as Error).message ?? 'Erro desconhecido'
             await this.repository.updateRecipientStatus(recipient.id, 'FAILED', {
@@ -219,6 +236,116 @@ export class BroadcastProcessor implements OnModuleInit {
         broadcastId,
         reason: (error as Error).message ?? 'Erro interno',
       })
+    }
+  }
+
+  /**
+   * Registra a mensagem enviada no inbox: busca/cria conversa, cria Message,
+   * atribui o criador do broadcast como atendente e emite eventos WebSocket.
+   */
+  private async registerInInbox(params: {
+    tenantId: string
+    instanceId: string
+    contactId: string
+    createdById: string
+    messageType: BroadcastMessageType
+    body: string
+    mediaUrl: string | null
+  }) {
+    try {
+      const { tenantId, instanceId, contactId, createdById, messageType, body, mediaUrl } = params
+      const now = new Date()
+
+      // Find active conversation or create/reopen one
+      let conversation = await this.inboxRepository.findActiveConversation(
+        tenantId,
+        instanceId,
+        contactId,
+      )
+
+      let isNewConversation = false
+
+      if (!conversation) {
+        const closedConversation = await this.inboxRepository.findConversationByContactAndInstance(
+          tenantId,
+          instanceId,
+          contactId,
+        )
+
+        if (closedConversation) {
+          conversation = await this.inboxRepository.reopenConversation(tenantId, closedConversation.id)
+          isNewConversation = true
+        } else {
+          const protocol = await this.tenantsService.getNextProtocol(tenantId)
+          conversation = await this.inboxRepository.createConversation({
+            tenantId,
+            instanceId,
+            contactId,
+            protocol,
+            lastMessageAt: now,
+          })
+          isNewConversation = true
+        }
+      }
+
+      // Assign broadcast creator as the conversation attendant
+      if (!conversation.assignedToId || conversation.assignedToId !== createdById) {
+        await this.inboxRepository.assignConversation(tenantId, conversation.id, createdById)
+      }
+
+      // Map broadcast message type to inbox message type
+      const msgType = this.mapMessageType(messageType)
+
+      // Create the message in inbox
+      const newMessage = await this.inboxRepository.createMessage({
+        tenantId,
+        conversationId: conversation.id,
+        fromMe: true,
+        body,
+        type: msgType,
+        status: 'SENT',
+        mediaUrl: mediaUrl ?? undefined,
+      })
+
+      // Update conversation lastMessageAt
+      await this.inboxRepository.updateLastMessageAt(conversation.id)
+
+      // Emit WebSocket events
+      if (isNewConversation) {
+        this.inboxGateway.emitConversationCreated(tenantId, {
+          conversationId: conversation.id,
+        })
+      }
+
+      this.inboxGateway.emitNewMessage(tenantId, {
+        conversationId: conversation.id,
+        message: {
+          id: newMessage.id,
+          fromMe: true,
+          body: newMessage.body,
+          type: newMessage.type,
+          status: newMessage.status,
+          mediaUrl: newMessage.mediaUrl,
+          sentAt: newMessage.sentAt,
+          createdAt: newMessage.createdAt,
+        },
+      })
+    } catch (error) {
+      this.logger.warn(
+        `Failed to register broadcast message in inbox for contact ${params.contactId}: ${(error as Error).message}`,
+        'BroadcastProcessor',
+      )
+    }
+  }
+
+  private mapMessageType(broadcastType: BroadcastMessageType): 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' {
+    switch (broadcastType) {
+      case 'TEXT': return 'TEXT'
+      case 'IMAGE': return 'IMAGE'
+      case 'VIDEO': return 'VIDEO'
+      case 'AUDIO': return 'AUDIO'
+      case 'DOCUMENT': return 'DOCUMENT'
+      default: return 'TEXT'
     }
   }
 
