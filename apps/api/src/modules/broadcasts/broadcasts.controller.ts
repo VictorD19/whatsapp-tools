@@ -3,6 +3,7 @@ import type { FastifyRequest } from 'fastify'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
 import { CurrentUser } from '@shared/decorators/current-user.decorator'
 import { ZodValidationPipe } from '@shared/pipes/zod-validation.pipe'
+import { AppException } from '@core/errors/app.exception'
 import { BroadcastsService } from './broadcasts.service'
 import type { CreateBroadcastDto, VariationInput } from './dto/create-broadcast.dto'
 import { listBroadcastsSchema, type ListBroadcastsDto } from './dto/list-broadcasts.dto'
@@ -25,6 +26,9 @@ export class BroadcastsController {
     @CurrentUser() user: { id: string },
     @Req() req: FastifyRequest,
   ) {
+    if (!req.isMultipart()) {
+      throw new AppException('INVALID_CONTENT_TYPE', 'Request deve ser multipart/form-data')
+    }
     const parts = (req as any).parts()
 
     const fields: Record<string, string | string[]> = {}
@@ -88,6 +92,9 @@ export class BroadcastsController {
     @Param('id') id: string,
     @Req() req: FastifyRequest,
   ) {
+    if (!req.isMultipart()) {
+      throw new AppException('INVALID_CONTENT_TYPE', 'Request deve ser multipart/form-data')
+    }
     const parts = (req as any).parts()
 
     const fields: Record<string, string | string[]> = {}

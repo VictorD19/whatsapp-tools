@@ -4,6 +4,7 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { randomUUID } from 'crypto'
@@ -11,6 +12,8 @@ import * as Sentry from '@sentry/node'
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger('ExceptionFilter')
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const reply = ctx.getResponse<FastifyReply>()
@@ -21,8 +24,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR
 
-    // Reporta ao Sentry apenas erros inesperados (não erros de negócio HTTP 4xx)
+    // Reporta ao Sentry e loga no console para erros inesperados (não erros de negócio HTTP 4xx)
     if (status >= 500) {
+      this.logger.error(
+        `${request.method} ${request.url} — ${(exception as Error)?.message ?? 'Unknown error'}`,
+        (exception as Error)?.stack,
+      )
       Sentry.captureException(exception, {
         extra: {
           url: request.url,

@@ -71,7 +71,7 @@ export const api: KyInstance = ky.create({
   timeout: 30_000,
   retry: {
     limit: 2,
-    statusCodes: [408, 429, 500, 502, 503, 504],
+    statusCodes: [408, 429, 502, 503, 504],
   },
   hooks: {
     beforeRequest: [
