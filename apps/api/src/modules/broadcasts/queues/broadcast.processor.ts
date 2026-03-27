@@ -52,27 +52,50 @@ export class BroadcastProcessor implements OnModuleInit {
   async handleSendBroadcast(job: Job<BroadcastJobData>) {
     const { broadcastId, tenantId } = job.data
 
+    this.logger.log(
+      `[DISPATCH] Job picked up — broadcastId=${broadcastId} tenantId=${tenantId}`,
+      'BroadcastProcessor',
+    )
+
     const broadcast = await this.repository.findByIdWithInstances(broadcastId)
     if (!broadcast) {
-      this.logger.error(`Broadcast ${broadcastId} not found`, undefined, 'BroadcastProcessor')
+      this.logger.error(
+        `[DISPATCH] Broadcast ${broadcastId} not found in DB — aborting`,
+        undefined,
+        'BroadcastProcessor',
+      )
       return
     }
+
+    this.logger.log(
+      `[DISPATCH] Broadcast loaded — name="${broadcast.name}" status=${broadcast.status} total=${broadcast.totalCount} sent=${broadcast.sentCount} failed=${broadcast.failedCount} scheduledAt=${broadcast.scheduledAt ?? 'immediate'}`,
+      'BroadcastProcessor',
+    )
 
     // Guard: skip if broadcast was cancelled or already completed
     if (['CANCELLED', 'COMPLETED', 'FAILED'].includes(broadcast.status)) {
       this.logger.log(
-        `Broadcast ${broadcastId} skipped — status is ${broadcast.status}`,
+        `[DISPATCH] Broadcast ${broadcastId} skipped — status is ${broadcast.status}`,
         'BroadcastProcessor',
       )
       return
     }
 
     // Get connected instances with evolutionId for sending
-    const connectedInstances = broadcast.instances
-      .map((bi) => bi.instance)
-      .filter((i) => i.status === 'CONNECTED')
+    const allInstances = broadcast.instances.map((bi) => bi.instance)
+    const connectedInstances = allInstances.filter((i) => i.status === 'CONNECTED')
+
+    this.logger.log(
+      `[DISPATCH] Instances: ${allInstances.length} total, ${connectedInstances.length} connected — [${allInstances.map((i) => `${i.name}(${i.status})`).join(', ')}]`,
+      'BroadcastProcessor',
+    )
 
     if (connectedInstances.length === 0) {
+      this.logger.error(
+        `[DISPATCH] Broadcast ${broadcastId} FAILED — no connected instances`,
+        undefined,
+        'BroadcastProcessor',
+      )
       await this.repository.updateStatus(broadcastId, 'FAILED')
       this.gateway.emitBroadcastFailed(tenantId, {
         broadcastId,
@@ -96,7 +119,17 @@ export class BroadcastProcessor implements OnModuleInit {
           fileName: broadcast.fileName,
         }))
 
+    this.logger.log(
+      `[DISPATCH] Variations: ${variations.length} — types=[${variations.map((v) => v.messageType).join(', ')}]`,
+      'BroadcastProcessor',
+    )
+
     if (variations.length === 0) {
+      this.logger.error(
+        `[DISPATCH] Broadcast ${broadcastId} FAILED — no variations configured`,
+        undefined,
+        'BroadcastProcessor',
+      )
       await this.repository.updateStatus(broadcastId, 'FAILED')
       this.gateway.emitBroadcastFailed(tenantId, {
         broadcastId,
@@ -112,6 +145,10 @@ export class BroadcastProcessor implements OnModuleInit {
       name: broadcast.name,
       total: broadcast.totalCount,
     })
+    this.logger.log(
+      `[DISPATCH] Broadcast ${broadcastId} marked RUNNING — starting send loop`,
+      'BroadcastProcessor',
+    )
 
     let sentCount = broadcast.sentCount
     let failedCount = broadcast.failedCount
@@ -120,9 +157,16 @@ export class BroadcastProcessor implements OnModuleInit {
 
     try {
       // Process in batches of 50
+      let batchNumber = 0
       while (true) {
         const recipients = await this.repository.findPendingRecipients(broadcastId, 50)
         if (recipients.length === 0) break
+        batchNumber++
+
+        this.logger.log(
+          `[DISPATCH] Batch #${batchNumber} — ${recipients.length} pending recipients fetched`,
+          'BroadcastProcessor',
+        )
 
         for (const recipient of recipients) {
           // Check if broadcast was paused or cancelled
@@ -130,7 +174,7 @@ export class BroadcastProcessor implements OnModuleInit {
             const currentStatus = await this.repository.getStatus(broadcastId)
             if (currentStatus !== 'RUNNING') {
               this.logger.log(
-                `Broadcast ${broadcastId} is no longer RUNNING (status: ${currentStatus}), stopping`,
+                `[DISPATCH] Broadcast ${broadcastId} interrupted — status changed to ${currentStatus} after ${processedInBatch} messages`,
                 'BroadcastProcessor',
               )
               return
@@ -150,6 +194,11 @@ export class BroadcastProcessor implements OnModuleInit {
           )
 
           try {
+            this.logger.log(
+              `[SEND] #${processedInBatch + 1} → phone=${recipient.phone} instance=${instance.name}(${instance.evolutionId}) type=${variation.messageType} hasMedia=${!!variation.mediaUrl}`,
+              'BroadcastProcessor',
+            )
+
             await this.sendMessage(
               instance.evolutionId,
               recipient.phone,
@@ -165,6 +214,11 @@ export class BroadcastProcessor implements OnModuleInit {
             })
             await this.repository.incrementCounters(broadcastId, 'sentCount')
             sentCount++
+
+            this.logger.log(
+              `[SEND OK] phone=${recipient.phone} — total sent=${sentCount}/${broadcast.totalCount}`,
+              'BroadcastProcessor',
+            )
 
             // Register message in inbox and assign conversation to broadcast creator
             await this.registerInInbox({
@@ -183,8 +237,9 @@ export class BroadcastProcessor implements OnModuleInit {
             })
             await this.repository.incrementCounters(broadcastId, 'failedCount')
             failedCount++
-            this.logger.warn(
-              `Failed to send to ${recipient.phone}: ${reason}`,
+            this.logger.error(
+              `[SEND FAIL] phone=${recipient.phone} instance=${instance.name}(${instance.evolutionId}) type=${variation.messageType} — error: ${reason}`,
+              (error as Error).stack,
               'BroadcastProcessor',
             )
           }
@@ -221,13 +276,13 @@ export class BroadcastProcessor implements OnModuleInit {
       })
 
       this.logger.log(
-        `Broadcast ${broadcastId} completed: ${sentCount} sent, ${failedCount} failed of ${broadcast.totalCount}`,
+        `[DISPATCH DONE] Broadcast ${broadcastId} "${broadcast.name}" COMPLETED — sent=${sentCount} failed=${failedCount} total=${broadcast.totalCount} batches=${batchNumber}`,
         'BroadcastProcessor',
       )
     } catch (error) {
       this.mediaBase64Cache.clear()
       this.logger.error(
-        `Broadcast ${broadcastId} fatal error: ${(error as Error).message}`,
+        `[DISPATCH FATAL] Broadcast ${broadcastId} "${broadcast.name}" FAILED after ${processedInBatch} messages (sent=${sentCount} failed=${failedCount}) — error: ${(error as Error).message}`,
         (error as Error).stack,
         'BroadcastProcessor',
       )
