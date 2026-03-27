@@ -120,6 +120,14 @@ export class BroadcastsRepository {
     })
   }
 
+  async getTenantTimezone(tenantId: string): Promise<string> {
+    const tenant = await this.prisma.tenant.findUniqueOrThrow({
+      where: { id: tenantId },
+      select: { timezone: true },
+    })
+    return tenant.timezone
+  }
+
   async findByIdWithInstances(id: string) {
     return this.prisma.broadcast.findFirst({
       where: { id, deletedAt: null },

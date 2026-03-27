@@ -141,9 +141,15 @@ export class BroadcastsService {
       })),
     ]
 
-    // 7. Determine status
+    // 7. Determine status and convert scheduledAt to UTC
     const isScheduled = !!dto.scheduledAt
     const status = isScheduled ? ('SCHEDULED' as const) : ('RUNNING' as const)
+
+    let scheduledAtUtc: Date | undefined
+    if (isScheduled && dto.scheduledAt) {
+      const timezone = await this.repository.getTenantTimezone(tenantId)
+      scheduledAtUtc = this.localToUtc(dto.scheduledAt, timezone)
+    }
 
     // 8. Create broadcast with variations
     const broadcast = await this.repository.create({
@@ -155,7 +161,7 @@ export class BroadcastsService {
       messageType: variationRecords[0].messageType,
       messageTexts: variationRecords.map((v) => v.text),
       delay: dto.delay,
-      scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
+      scheduledAt: scheduledAtUtc,
       instanceIds: dto.instanceIds,
       sources,
       recipients,
@@ -164,8 +170,8 @@ export class BroadcastsService {
 
     // 9. Enqueue job
     let delayMs: number | undefined
-    if (isScheduled && dto.scheduledAt) {
-      delayMs = this.calculateDelayMs(dto.scheduledAt)
+    if (scheduledAtUtc) {
+      delayMs = Math.max(scheduledAtUtc.getTime() - Date.now(), 0)
     }
     await this.producer.enqueue(broadcast.id, tenantId, delayMs)
 
@@ -300,9 +306,15 @@ export class BroadcastsService {
       await this.producer.removeJob(id)
     }
 
-    // Determine status
+    // Determine status and convert scheduledAt to UTC
     const isScheduled = !!dto.scheduledAt
     const status = isScheduled ? ('SCHEDULED' as const) : ('DRAFT' as const)
+
+    let scheduledAtUtc: Date | null = null
+    if (isScheduled && dto.scheduledAt) {
+      const timezone = await this.repository.getTenantTimezone(tenantId)
+      scheduledAtUtc = this.localToUtc(dto.scheduledAt, timezone)
+    }
 
     // Build sources
     const sources: Array<{
@@ -325,7 +337,7 @@ export class BroadcastsService {
     const updated = await this.repository.update(id, {
       name: dto.name,
       delay: dto.delay,
-      scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+      scheduledAt: scheduledAtUtc,
       status,
       messageType: variationRecords[0].messageType,
       messageTexts: variationRecords.map((v) => v.text),
@@ -337,8 +349,8 @@ export class BroadcastsService {
     })
 
     // Re-enqueue if scheduled
-    if (isScheduled && dto.scheduledAt) {
-      const delayMs = this.calculateDelayMs(dto.scheduledAt)
+    if (scheduledAtUtc) {
+      const delayMs = Math.max(scheduledAtUtc.getTime() - Date.now(), 0)
       await this.producer.enqueue(id, tenantId, delayMs)
     }
 
@@ -427,9 +439,33 @@ export class BroadcastsService {
     return { data: { deleted: true } }
   }
 
-  private calculateDelayMs(scheduledAt: string): number {
-    const scheduledDate = new Date(scheduledAt)
-    const now = new Date()
-    return Math.max(scheduledDate.getTime() - now.getTime(), 0)
+  /**
+   * Interpreta uma string datetime-local (ex: "2026-03-27T10:00") como
+   * horário no timezone do tenant e retorna um Date UTC.
+   */
+  private localToUtc(localDateTime: string, timezone: string): Date {
+    // Formata a data no timezone alvo para descobrir o offset
+    const fakeUtc = new Date(`${localDateTime}:00Z`)
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+
+    // Calcula o offset do timezone naquele instante
+    const parts = formatter.formatToParts(fakeUtc)
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '0'
+    const tzTime = new Date(
+      `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}Z`,
+    )
+    const offsetMs = tzTime.getTime() - fakeUtc.getTime()
+
+    // Subtrai o offset para converter local → UTC
+    return new Date(fakeUtc.getTime() - offsetMs)
   }
 }

@@ -138,8 +138,7 @@ export function BroadcastWizardDialog({
       }
 
       if (scheduledAt) {
-        const localDate = new Date(scheduledAt)
-        data.scheduledAt = localDate.toISOString()
+        data.scheduledAt = scheduledAt
       }
 
       await onSubmit(data)

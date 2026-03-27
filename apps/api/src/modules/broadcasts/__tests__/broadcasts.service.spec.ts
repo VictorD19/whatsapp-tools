@@ -87,6 +87,7 @@ describe('BroadcastsService', () => {
 
   beforeEach(async () => {
     const mockRepository = {
+      getTenantTimezone: jest.fn().mockResolvedValue('America/Sao_Paulo'),
       getTenantPlan: jest.fn(),
       countTodayBroadcasts: jest.fn(),
       findInstancesByIds: jest.fn(),
@@ -165,7 +166,7 @@ describe('BroadcastsService', () => {
     })
 
     it('should create broadcast with SCHEDULED status when scheduledAt provided', async () => {
-      const scheduledAt = new Date(Date.now() + 3600000).toISOString()
+      const scheduledAt = '2026-04-01T10:00'
 
       repository.getTenantPlan.mockResolvedValue(mockPlan)
       repository.countTodayBroadcasts.mockResolvedValue(0)
@@ -425,7 +426,7 @@ describe('BroadcastsService', () => {
       producer.removeJob.mockResolvedValue(undefined)
       producer.enqueue.mockResolvedValue({} as never)
 
-      const scheduledAt = new Date(Date.now() + 7200000).toISOString()
+      const scheduledAt = '2026-04-01T12:00'
       const result = await service.update(tenantId, 'bc-1', { ...baseDto, scheduledAt }, baseVariations)
 
       expect(result.data.name).toBe('Updated')
