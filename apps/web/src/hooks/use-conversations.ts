@@ -11,8 +11,10 @@ interface PaginatedResponse<T> {
 
 const ALL_TABS: InboxTab[] = ['all', 'mine', 'unassigned']
 
-function tabToFilters(tab: InboxTab) {
-  return `tab=${tab}`
+function tabToFilters(tab: InboxTab, instanceId?: string | null) {
+  let query = `tab=${tab}`
+  if (instanceId) query += `&instanceId=${instanceId}`
+  return query
 }
 
 export function useConversations() {
@@ -27,10 +29,10 @@ export function useConversations() {
   } = useInboxStore()
 
   const fetchConversations = useCallback(
-    async (tab: InboxTab) => {
+    async (tab: InboxTab, instanceId?: string | null) => {
       setLoadingConversations(true)
       try {
-        const query = tabToFilters(tab)
+        const query = tabToFilters(tab, instanceId)
         const res = await apiGet<PaginatedResponse<Conversation[]>>(
           `inbox/conversations?${query}&page=1&limit=20`
         )
@@ -52,14 +54,14 @@ export function useConversations() {
   )
 
   const fetchMoreConversations = useCallback(
-    async (tab: InboxTab) => {
+    async (tab: InboxTab, instanceId?: string | null) => {
       const { page, hasMore } = useInboxStore.getState().conversationsPagination
       if (!hasMore) return
 
       setLoadingMoreConversations(true)
       try {
         const nextPage = page + 1
-        const query = tabToFilters(tab)
+        const query = tabToFilters(tab, instanceId)
         const res = await apiGet<PaginatedResponse<Conversation[]>>(
           `inbox/conversations?${query}&page=${nextPage}&limit=20`
         )
@@ -79,11 +81,11 @@ export function useConversations() {
     [appendConversations, setLoadingMoreConversations],
   )
 
-  const fetchTabCounts = useCallback(async () => {
+  const fetchTabCounts = useCallback(async (instanceId?: string | null) => {
     await Promise.all(
       ALL_TABS.map(async (tab) => {
         try {
-          const query = tabToFilters(tab)
+          const query = tabToFilters(tab, instanceId)
           const res = await apiGet<PaginatedResponse<Conversation[]>>(
             `inbox/conversations?${query}&limit=1`
           )

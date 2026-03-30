@@ -146,6 +146,7 @@ interface ConversationsPagination {
 
 interface InboxState {
   activeTab: InboxTab
+  filterInstanceId: string | null
   selectedConversationId: string | null
   conversations: Conversation[]
   conversationsPagination: ConversationsPagination
@@ -157,6 +158,7 @@ interface InboxState {
   replyingTo: Message | null
 
   setActiveTab: (tab: InboxTab) => void
+  setFilterInstanceId: (instanceId: string | null) => void
   setTabCount: (tab: InboxTab, count: number) => void
   selectConversation: (id: string | null) => void
   setConversations: (conversations: Conversation[], pagination: ConversationsPagination) => void
@@ -177,6 +179,7 @@ interface InboxState {
 
 export const useInboxStore = create<InboxState>()((set) => ({
   activeTab: 'mine',
+  filterInstanceId: null,
   selectedConversationId: null,
   conversations: [],
   conversationsPagination: { page: 1, totalPages: 1, total: 0, hasMore: false },
@@ -188,6 +191,7 @@ export const useInboxStore = create<InboxState>()((set) => ({
   replyingTo: null,
 
   setActiveTab: (activeTab) => set({ activeTab }),
+  setFilterInstanceId: (filterInstanceId) => set({ filterInstanceId }),
   setTabCount: (tab, count) =>
     set((state) => ({ tabCounts: { ...state.tabCounts, [tab]: count } })),
 

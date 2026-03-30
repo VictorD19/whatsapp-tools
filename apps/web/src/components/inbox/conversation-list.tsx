@@ -1,12 +1,19 @@
 'use client'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Search, Plus, Loader2 } from 'lucide-react'
+import { Search, Plus, Loader2, Filter, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { useInboxStore, type InboxTab } from '@/stores/inbox.store'
+import { useInstancesStore } from '@/stores/instances.store'
+import { useInstances } from '@/hooks/use-instances'
 import { useConversations } from '@/hooks/use-conversations'
 import { ConversationListItem } from './conversation-list-item'
 import { NewConversationDialog } from './new-conversation-dialog'
@@ -22,8 +29,11 @@ export function ConversationList() {
   const t = useTranslations('inbox')
   const [search, setSearch] = useState('')
   const [newConvOpen, setNewConvOpen] = useState(false)
+  const [filterOpen, setFilterOpen] = useState(false)
   const activeTab = useInboxStore((s) => s.activeTab)
   const setActiveTab = useInboxStore((s) => s.setActiveTab)
+  const filterInstanceId = useInboxStore((s) => s.filterInstanceId)
+  const setFilterInstanceId = useInboxStore((s) => s.setFilterInstanceId)
   const conversations = useInboxStore((s) => s.conversations)
   const isLoading = useInboxStore((s) => s.isLoadingConversations)
   const isLoadingMore = useInboxStore((s) => s.isLoadingMoreConversations)
@@ -32,24 +42,31 @@ export function ConversationList() {
   const selectedConversationId = useInboxStore((s) => s.selectedConversationId)
   const selectConversation = useInboxStore((s) => s.selectConversation)
   const tabCounts = useInboxStore((s) => s.tabCounts)
+  const instances = useInstancesStore((s) => s.instances)
+  const connectedInstances = instances.filter((i) => i.status === 'CONNECTED')
+  const { fetchInstances } = useInstances()
   const { fetchConversations, fetchMoreConversations, fetchTabCounts } = useConversations()
 
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    fetchTabCounts()
-  }, [fetchTabCounts])
+    fetchInstances()
+  }, [fetchInstances])
 
   useEffect(() => {
-    fetchConversations(activeTab)
-  }, [activeTab, fetchConversations])
+    fetchTabCounts(filterInstanceId)
+  }, [fetchTabCounts, filterInstanceId])
+
+  useEffect(() => {
+    fetchConversations(activeTab, filterInstanceId)
+  }, [activeTab, filterInstanceId, fetchConversations])
 
   // Infinite scroll via IntersectionObserver
   const handleLoadMore = useCallback(() => {
     if (!isLoadingMore && hasMore && !search) {
-      fetchMoreConversations(activeTab)
+      fetchMoreConversations(activeTab, filterInstanceId)
     }
-  }, [isLoadingMore, hasMore, search, fetchMoreConversations, activeTab])
+  }, [isLoadingMore, hasMore, search, fetchMoreConversations, activeTab, filterInstanceId])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -92,6 +109,58 @@ export function ConversationList() {
       <div className="flex h-12 items-center justify-between border-b border-border px-3 shrink-0">
         <h2 className="text-[13px] font-semibold text-foreground">{t('conversations')}</h2>
         <div className="flex items-center gap-1">
+          <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-6 w-6 text-muted-foreground hover:text-foreground',
+                  filterInstanceId && 'text-primary'
+                )}
+                title={t('filter.title')}
+              >
+                <Filter className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="end">
+              <div className="space-y-1">
+                <p className="px-2 py-1 text-[11px] font-medium text-muted-foreground">{t('filter.byInstance')}</p>
+                <button
+                  onClick={() => { setFilterInstanceId(null); setFilterOpen(false) }}
+                  className={cn(
+                    'flex w-full items-center rounded-md px-2 py-1.5 text-xs transition-colors',
+                    !filterInstanceId
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-foreground hover:bg-muted'
+                  )}
+                >
+                  {t('filter.allInstances')}
+                </button>
+                {connectedInstances.map((instance) => (
+                  <button
+                    key={instance.id}
+                    onClick={() => { setFilterInstanceId(instance.id); setFilterOpen(false) }}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
+                      filterInstanceId === instance.id
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-foreground hover:bg-muted'
+                    )}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <span className="truncate">{instance.name}</span>
+                    {instance.phone && (
+                      <span className="ml-auto text-[10px] text-muted-foreground">{instance.phone}</span>
+                    )}
+                  </button>
+                ))}
+                {connectedInstances.length === 0 && (
+                  <p className="px-2 py-1.5 text-[11px] text-muted-foreground">{t('filter.noConnectedInstances')}</p>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             variant="ghost"
             size="icon"
@@ -150,6 +219,24 @@ export function ConversationList() {
           />
         </div>
       </div>
+
+      {/* Active filter badge */}
+      {filterInstanceId && (
+        <div className="px-3 pb-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+            <span className="text-[11px] text-primary truncate flex-1">
+              {connectedInstances.find((i) => i.id === filterInstanceId)?.name ?? t('filter.instance')}
+            </span>
+            <button
+              onClick={() => setFilterInstanceId(null)}
+              className="text-primary/60 hover:text-primary shrink-0"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Count + sort hint */}
       {!isLoading && filtered.length > 0 && (

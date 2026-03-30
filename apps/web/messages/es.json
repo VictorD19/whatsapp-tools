@@ -275,6 +275,13 @@
     },
     "errorLoadingConversations": "Error al cargar conversaciones",
     "errorLoadingMore": "Error al cargar más conversaciones",
+    "filter": {
+      "title": "Filtros",
+      "byInstance": "Por instancia",
+      "allInstances": "Todas las instancias",
+      "instance": "Instancia",
+      "noConnectedInstances": "Ninguna instancia conectada"
+    },
     "lightbox": {
       "close": "Cerrar",
       "previous": "Anterior",

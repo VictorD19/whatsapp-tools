@@ -275,6 +275,13 @@
     },
     "errorLoadingConversations": "Error loading conversations",
     "errorLoadingMore": "Error loading more conversations",
+    "filter": {
+      "title": "Filters",
+      "byInstance": "By instance",
+      "allInstances": "All instances",
+      "instance": "Instance",
+      "noConnectedInstances": "No connected instances"
+    },
     "lightbox": {
       "close": "Close",
       "previous": "Previous",
