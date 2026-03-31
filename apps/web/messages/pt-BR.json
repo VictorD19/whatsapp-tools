@@ -1196,12 +1196,15 @@
       },
       "edit": {
         "title": "Editar membro",
-        "description": "Altere as informações do membro"
+        "description": "Altere as informações do membro",
+        "newPasswordLabel": "Nova senha (opcional)",
+        "newPasswordPlaceholder": "Deixe em branco para manter a atual"
       },
       "password": {
         "title": "Alterar senha",
         "description": "Defina uma nova senha para {name}",
         "newPassword": "Nova senha",
+        "confirmPassword": "Confirmar senha",
         "saving": "Salvando..."
       },
       "deactivate": {
@@ -1326,6 +1329,7 @@
       "searchPlaceholder": "Buscar por nome ou slug...",
       "table": {
         "tenant": "Tenant",
+        "adminEmail": "Email do admin",
         "plan": "Plano",
         "resources": "Recursos",
         "createdAt": "Criado em",
@@ -1361,7 +1365,9 @@
       },
       "edit": {
         "title": "Editar Tenant",
-        "description": "Altere as configurações do tenant"
+        "description": "Altere as configurações do tenant",
+        "newPasswordLabel": "Nova senha do admin (opcional)",
+        "newPasswordPlaceholder": "Deixe em branco para manter a atual"
       },
       "delete": {
         "title": "Excluir Tenant",

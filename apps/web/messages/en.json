@@ -1196,12 +1196,15 @@
       },
       "edit": {
         "title": "Edit member",
-        "description": "Change member information"
+        "description": "Change member information",
+        "newPasswordLabel": "New password (optional)",
+        "newPasswordPlaceholder": "Leave blank to keep current"
       },
       "password": {
         "title": "Change password",
         "description": "Set a new password for {name}",
         "newPassword": "New password",
+        "confirmPassword": "Confirm password",
         "saving": "Saving..."
       },
       "deactivate": {
@@ -1326,6 +1329,7 @@
       "searchPlaceholder": "Search by name or slug...",
       "table": {
         "tenant": "Tenant",
+        "adminEmail": "Admin email",
         "plan": "Plan",
         "resources": "Resources",
         "createdAt": "Created at",
@@ -1361,7 +1365,9 @@
       },
       "edit": {
         "title": "Edit Tenant",
-        "description": "Change tenant settings"
+        "description": "Change tenant settings",
+        "newPasswordLabel": "New admin password (optional)",
+        "newPasswordPlaceholder": "Leave blank to keep current"
       },
       "delete": {
         "title": "Delete Tenant",

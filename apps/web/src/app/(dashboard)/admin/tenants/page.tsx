@@ -54,12 +54,19 @@ interface PlanOption {
   isDefault: boolean
 }
 
+interface TenantAdmin {
+  id: string
+  email: string
+  name: string
+}
+
 interface Tenant {
   id: string
   name: string
   slug: string
   planId: string
   plan?: { id: string; name: string; slug: string }
+  users?: TenantAdmin[]
   createdAt: string
   updatedAt: string
   _count?: {
@@ -141,6 +148,8 @@ export default function TenantsPage() {
   // Edit form state
   const [editName, setEditName] = useState('')
   const [editPlanId, setEditPlanId] = useState('')
+  const [editAdminEmail, setEditAdminEmail] = useState('')
+  const [editAdminPassword, setEditAdminPassword] = useState('')
 
   // Auto-generate slug from name
   useEffect(() => {
@@ -222,6 +231,8 @@ export default function TenantsPage() {
     setEditingTenant(tenant)
     setEditName(tenant.name)
     setEditPlanId(tenant.plan?.id ?? tenant.planId)
+    setEditAdminEmail(tenant.users?.[0]?.email ?? '')
+    setEditAdminPassword('')
     setEditOpen(true)
   }
 
@@ -259,12 +270,20 @@ export default function TenantsPage() {
 
   const handleEdit = async () => {
     if (!editingTenant || !editName.trim() || !editPlanId) return
+    if (editAdminPassword && editAdminPassword.length < 6) {
+      toast({ title: t('validation.minPassword'), variant: 'destructive' })
+      return
+    }
     setSaving(true)
     try {
-      const res = await apiPatch<SingleResponse>(`admin/tenants/${editingTenant.id}`, {
+      const payload: Record<string, string> = {
         name: editName.trim(),
         planId: editPlanId,
-      })
+      }
+      if (editAdminPassword) {
+        payload.adminPassword = editAdminPassword
+      }
+      const res = await apiPatch<SingleResponse>(`admin/tenants/${editingTenant.id}`, payload)
       setTenants((prev) =>
         prev.map((t) => (t.id === editingTenant.id ? { ...t, ...res.data } : t)),
       )
@@ -389,8 +408,9 @@ export default function TenantsPage() {
         <>
           <div className="rounded-md border border-border overflow-hidden">
             {/* Table header */}
-            <div className="hidden sm:grid sm:grid-cols-[1fr_100px_140px_100px_80px] gap-4 px-4 py-2.5 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <div className="hidden sm:grid sm:grid-cols-[1fr_1fr_100px_140px_100px_80px] gap-4 px-4 py-2.5 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
               <span>{t('table.tenant')}</span>
+              <span>{t('table.adminEmail')}</span>
               <span>{t('table.plan')}</span>
               <span>{t('table.resources')}</span>
               <span>{t('table.createdAt')}</span>
@@ -402,12 +422,19 @@ export default function TenantsPage() {
               <div
                 key={tenant.id}
                 data-testid={`tenant-row-${tenant.id}`}
-                className="flex flex-col sm:grid sm:grid-cols-[1fr_100px_140px_100px_80px] gap-2 sm:gap-4 sm:items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
+                className="flex flex-col sm:grid sm:grid-cols-[1fr_1fr_100px_140px_100px_80px] gap-2 sm:gap-4 sm:items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
               >
                 {/* Name + slug */}
                 <div className="min-w-0">
                   <p className="font-medium text-sm truncate">{tenant.name}</p>
                   <p className="text-xs text-muted-foreground truncate">{tenant.slug}</p>
+                </div>
+
+                {/* Admin email */}
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground truncate">
+                    {tenant.users?.[0]?.email ?? '—'}
+                  </p>
                 </div>
 
                 {/* Plan badge */}
@@ -657,13 +684,43 @@ export default function TenantsPage() {
                 </Select>
               )}
             </div>
+
+            <Separator />
+
+            <p className="text-sm font-medium text-muted-foreground">{t('create.adminSection')}</p>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-admin-email">{t('create.adminEmail')}</Label>
+              <Input
+                id="edit-admin-email"
+                type="email"
+                value={editAdminEmail}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-admin-password">{t('edit.newPasswordLabel')}</Label>
+              <Input
+                id="edit-admin-password"
+                type="password"
+                value={editAdminPassword}
+                onChange={(e) => setEditAdminPassword(e.target.value)}
+                placeholder={t('edit.newPasswordPlaceholder')}
+                minLength={6}
+              />
+            </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               {tc('cancel')}
             </Button>
-            <Button onClick={handleEdit} disabled={saving || !editName.trim() || !editPlanId}>
+            <Button
+              onClick={handleEdit}
+              disabled={saving || !editName.trim() || !editPlanId || (!!editAdminPassword && editAdminPassword.length < 6)}
+            >
               {saving ? tc('loading') : tc('save')}
             </Button>
           </DialogFooter>

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Plus, Pencil, KeyRound, UserX, UserCheck, Users, Search, ShieldCheck } from 'lucide-react'
+import { Plus, Pencil, UserX, UserCheck, Users, Search, ShieldCheck } from 'lucide-react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -70,7 +70,7 @@ const ROLE_VARIANTS: Record<UserRole, 'default' | 'info' | 'secondary'> = {
   viewer: 'secondary',
 }
 
-type DialogMode = 'create' | 'edit' | 'password' | 'deactivate' | null
+type DialogMode = 'create' | 'edit' | 'deactivate' | null
 
 // ── Component ──
 
@@ -165,15 +165,11 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
   const openEditDialog = (user: TeamUser) => {
     setSelectedUser(user)
     setFormName(user.name)
+    setFormEmail(user.email)
     setFormRole(user.role)
-    setDialogMode('edit')
-  }
-
-  const openPasswordDialog = (user: TeamUser) => {
-    setSelectedUser(user)
     setNewPassword('')
     setConfirmPassword('')
-    setDialogMode('password')
+    setDialogMode('edit')
   }
 
   const openDeactivateDialog = (user: TeamUser) => {
@@ -224,42 +220,28 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
       toast({ title: t('validation.minName'), variant: 'destructive' })
       return
     }
+    if (newPassword && newPassword.length < 6) {
+      toast({ title: t('validation.minPassword'), variant: 'destructive' })
+      return
+    }
+    if (newPassword && newPassword !== confirmPassword) {
+      toast({ title: t('validation.passwordMismatch'), variant: 'destructive' })
+      return
+    }
     setSaving(true)
     try {
       const res = await apiPatch<SingleResponse>(`users/${selectedUser.id}`, {
         name: formName.trim(),
         role: formRole,
       })
+      if (newPassword) {
+        await apiPatch(`users/${selectedUser.id}/password`, { password: newPassword })
+      }
       setUsers((prev) => prev.map((u) => (u.id === selectedUser.id ? res.data : u)))
       toast({ title: t('success.updated'), variant: 'success' })
       closeDialog()
     } catch (err) {
       const message = err instanceof Error ? err.message : t('error.updating')
-      toast({ title: message, variant: 'destructive' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleChangePassword = async () => {
-    if (!selectedUser) return
-    if (newPassword.length < 6) {
-      toast({ title: t('validation.minPassword'), variant: 'destructive' })
-      return
-    }
-    if (newPassword !== confirmPassword) {
-      toast({ title: t('validation.passwordMismatch'), variant: 'destructive' })
-      return
-    }
-    setSaving(true)
-    try {
-      await apiPatch<SingleResponse>(`users/${selectedUser.id}/password`, {
-        password: newPassword,
-      })
-      toast({ title: t('success.passwordChanged'), variant: 'success' })
-      closeDialog()
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('error.changingPassword')
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSaving(false)
@@ -399,20 +381,6 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
                     <TooltipContent>{t('tooltips.editMember')}</TooltipContent>
                   </Tooltip>
 
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => openPasswordDialog(member)}
-                      >
-                        <KeyRound className="h-3.5 w-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('tooltips.changePassword')}</TooltipContent>
-                  </Tooltip>
-
                   {isDeactivated ? (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -546,6 +514,17 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
 
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
+              <Label htmlFor="edit-email">{t('create.emailLabel')}</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={formEmail}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+
+            <div className="space-y-1.5">
               <Label htmlFor="edit-name">{t('create.nameLabel')}</Label>
               <Input
                 id="edit-name"
@@ -575,56 +554,35 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
                 ))}
               </div>
             </div>
-          </div>
 
-          <SheetFooter>
-            <Button variant="outline" onClick={closeDialog}>
-              {tc('cancel')}
-            </Button>
-            <Button onClick={handleEdit} disabled={saving || !formName.trim()}>
-              {saving ? t('password.saving') : tc('save')}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      {/* ── Change Password Sheet ── */}
-      <Sheet open={dialogMode === 'password'} onOpenChange={(open) => !open && closeDialog()}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{t('password.title')}</SheetTitle>
-            <SheetDescription>
-              {t('password.description', { name: selectedUser?.name ?? '' })}
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="space-y-4 py-4">
             <div className="space-y-1.5">
-              <Label htmlFor="new-password">{t('password.newPassword')}</Label>
+              <Label htmlFor="edit-password">{t('edit.newPasswordLabel')}</Label>
               <Input
-                id="new-password"
+                id="edit-password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder={t('validation.minPassword')}
+                placeholder={t('edit.newPasswordPlaceholder')}
                 minLength={6}
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="confirm-password">{t('password.confirmPassword')}</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder={t('password.confirmPassword')}
-                minLength={6}
-              />
-              {confirmPassword && newPassword !== confirmPassword && (
-                <p className="text-xs text-destructive">{t('validation.passwordMismatch')}</p>
-              )}
-            </div>
+            {newPassword && (
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-confirm-password">{t('password.confirmPassword')}</Label>
+                <Input
+                  id="edit-confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder={t('password.confirmPassword')}
+                  minLength={6}
+                />
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-xs text-destructive">{t('validation.passwordMismatch')}</p>
+                )}
+              </div>
+            )}
           </div>
 
           <SheetFooter>
@@ -632,10 +590,10 @@ function TeamContent({ currentUserId }: { currentUserId: string }) {
               {tc('cancel')}
             </Button>
             <Button
-              onClick={handleChangePassword}
-              disabled={saving || newPassword.length < 6 || newPassword !== confirmPassword}
+              onClick={handleEdit}
+              disabled={saving || !formName.trim() || (!!newPassword && (newPassword.length < 6 || newPassword !== confirmPassword))}
             >
-              {saving ? t('password.saving') : t('password.title')}
+              {saving ? t('password.saving') : tc('save')}
             </Button>
           </SheetFooter>
         </SheetContent>

@@ -162,7 +162,17 @@ export class TenantsService {
       await this.planService.findById(dto.planId)
     }
 
-    const updated = await this.tenantsRepository.update(id, dto)
+    // Update admin password if provided
+    if (dto.adminPassword) {
+      const adminUser = await this.tenantsRepository.findAdminUser(id)
+      if (adminUser) {
+        const passwordHash = await bcrypt.hash(dto.adminPassword, 10)
+        await this.tenantsRepository.updateUserPassword(adminUser.id, passwordHash)
+      }
+    }
+
+    const { adminPassword: _, ...tenantData } = dto
+    const updated = await this.tenantsRepository.update(id, tenantData)
     return { data: updated }
   }
 

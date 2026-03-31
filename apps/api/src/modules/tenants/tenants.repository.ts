@@ -90,6 +90,12 @@ export class TenantsRepository {
           plan: {
             select: { id: true, name: true, slug: true },
           },
+          users: {
+            where: { role: 'admin', deletedAt: null },
+            select: { id: true, email: true, name: true },
+            take: 1,
+            orderBy: { createdAt: 'asc' },
+          },
           _count: {
             select: {
               users: { where: { deletedAt: null } },
@@ -110,6 +116,12 @@ export class TenantsRepository {
       include: {
         plan: {
           select: { id: true, name: true, slug: true },
+        },
+        users: {
+          where: { role: 'admin', deletedAt: null },
+          select: { id: true, email: true, name: true },
+          take: 1,
+          orderBy: { createdAt: 'asc' },
         },
         _count: {
           select: {
@@ -160,6 +172,21 @@ export class TenantsRepository {
   async findUserByEmail(email: string) {
     return this.prisma.user.findFirst({
       where: { email, deletedAt: null },
+    })
+  }
+
+  async findAdminUser(tenantId: string) {
+    return this.prisma.user.findFirst({
+      where: { tenantId, role: 'admin', deletedAt: null },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    })
+  }
+
+  async updateUserPassword(userId: string, passwordHash: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { password: passwordHash },
     })
   }
 
