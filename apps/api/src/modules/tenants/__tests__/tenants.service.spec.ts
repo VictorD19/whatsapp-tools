@@ -32,6 +32,7 @@ describe('TenantsService', () => {
     updatedAt: new Date(),
     deletedAt: null,
     plan: { id: 'plan-pro', name: 'Pro', slug: 'pro' },
+    users: [{ id: 'user-1', email: 'admin@acme.com', name: 'Admin User' }],
     _count: {
       users: 3,
       instances: 2,
@@ -69,6 +70,8 @@ describe('TenantsService', () => {
       getProtocolSettings: jest.fn(),
       getLocaleSettings: jest.fn(),
       updateLocaleSettings: jest.fn(),
+      findAdminUser: jest.fn(),
+      updateUserPassword: jest.fn(),
     }
 
     const mockPipelineService = {
