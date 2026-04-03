@@ -499,20 +499,20 @@ export class InboxWebhookProcessor {
     const updates = Array.isArray(data) ? data : [data]
 
     for (const update of updates) {
-      const key = update.key as Record<string, unknown> | undefined
-      const evolutionId = key?.id as string | undefined
+      // Evolution API sends flat `keyId` field (not nested `key.id`)
+      const evolutionId = (update.keyId ?? (update.key as Record<string, unknown> | undefined)?.id) as string | undefined
       if (!evolutionId) continue
 
-      const statusNum = update.status as number | undefined
-      const statusMap: Record<number, 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'> = {
-        1: 'SENT',
-        2: 'DELIVERED',
-        3: 'READ',
-        4: 'FAILED',
-        5: 'READ',
+      // Evolution sends status as string ("SERVER_ACK", "DELIVERY_ACK", "READ", "PLAYED")
+      const statusStr = update.status as string | undefined
+      const statusMap: Record<string, 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'> = {
+        SERVER_ACK: 'SENT',
+        DELIVERY_ACK: 'DELIVERED',
+        READ: 'READ',
+        PLAYED: 'READ',
       }
 
-      const status = statusNum ? statusMap[statusNum] : undefined
+      const status = statusStr ? statusMap[statusStr] : undefined
       if (!status) continue
 
       const updated = await this.inboxRepository.updateMessageStatusByEvolutionId(
