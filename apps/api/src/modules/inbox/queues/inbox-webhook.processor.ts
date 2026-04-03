@@ -160,24 +160,51 @@ export class InboxWebhookProcessor {
       const parsed = parseWhatsAppMessage(message)
       const { body, type, mediaUrl } = parsed
 
+      // Log detailed trace for audio messages to diagnose reception issues
+      if (type === 'AUDIO') {
+        this.logger.log(
+          `[AUDIO-TRACE] msgId=${key.id as string ?? 'NONE'} fromMe=${fromMe} remoteJid=${remoteJid} age=${messageTimestamp ? Math.floor(Date.now() / 1000) - messageTimestamp : 'no-ts'}s mediaUrl=${mediaUrl ?? 'NONE'} instance=${instance.evolutionId}`,
+          'InboxWebhookProcessor',
+        )
+      }
+
       // Download and transcribe incoming audio messages for AI processing
       // Skip for fromMe=true — outgoing audio is already saved by sendMessage; no transcription needed
       let finalBody = body
       let finalMediaUrl = mediaUrl
       if (type === 'AUDIO' && !fromMe && key.id) {
+        this.logger.log(
+          `[AUDIO-TRACE] Entering audio download block for msgId=${key.id as string}`,
+          'InboxWebhookProcessor',
+        )
         try {
           const media = await this.whatsapp.getMediaBase64(instance.evolutionId, key.id as string)
+          this.logger.log(
+            `[AUDIO-TRACE] getMediaBase64 result for msgId=${key.id as string}: hasBase64=${!!media?.base64} mimetype=${media?.mimetype ?? 'NONE'}`,
+            'InboxWebhookProcessor',
+          )
           if (media?.base64 && media.mimetype) {
             const buffer = Buffer.from(media.base64, 'base64')
             // Store audio in storage
             const storageKey = await this.storage.uploadMedia(instance.tenantId, buffer, media.mimetype)
             finalMediaUrl = storageKey
+            this.logger.log(
+              `[AUDIO-TRACE] Audio uploaded to storage: ${storageKey}`,
+              'InboxWebhookProcessor',
+            )
             // Transcribe
-            const result = await this.stt.transcribe(buffer, { language: 'pt' })
-            if (result.text) {
-              finalBody = result.text
-              this.logger.log(
-                `Audio transcribed: "${result.text.substring(0, 100)}..." (${result.duration ?? '?'}s)`,
+            try {
+              const result = await this.stt.transcribe(buffer, { language: 'pt' })
+              if (result.text) {
+                finalBody = result.text
+                this.logger.log(
+                  `Audio transcribed: "${result.text.substring(0, 100)}..." (${result.duration ?? '?'}s)`,
+                  'InboxWebhookProcessor',
+                )
+              }
+            } catch (sttErr) {
+              this.logger.warn(
+                `[AUDIO-TRACE] Transcription failed for msgId=${key.id as string}: ${(sttErr as Error).message} — audio saved at ${storageKey}`,
                 'InboxWebhookProcessor',
               )
             }
@@ -194,6 +221,11 @@ export class InboxWebhookProcessor {
           )
           // Continue with body=null — graceful degradation
         }
+      } else if (type === 'AUDIO' && fromMe) {
+        this.logger.log(
+          `[AUDIO-TRACE] Skipping audio download for fromMe=true msgId=${key.id as string ?? 'NONE'} — outgoing echo`,
+          'InboxWebhookProcessor',
+        )
       }
 
       // Resolve quoted message (reply context)
@@ -294,12 +326,26 @@ export class InboxWebhookProcessor {
       if (evolutionMsgId) {
         const existing = await this.inboxRepository.findMessageByEvolutionId(evolutionMsgId)
         if (existing) {
-          this.logger.debug(
-            `Skipping duplicate message evolutionId=${evolutionMsgId}`,
-            'InboxWebhookProcessor',
-          )
+          if (type === 'AUDIO') {
+            this.logger.log(
+              `[AUDIO-TRACE] Dedup skipping AUDIO msgId=${evolutionMsgId} fromMe=${fromMe} — already in DB as ${existing.id}`,
+              'InboxWebhookProcessor',
+            )
+          } else {
+            this.logger.debug(
+              `Skipping duplicate message evolutionId=${evolutionMsgId}`,
+              'InboxWebhookProcessor',
+            )
+          }
           continue
         }
+      }
+
+      if (type === 'AUDIO') {
+        this.logger.log(
+          `[AUDIO-TRACE] Saving AUDIO message msgId=${evolutionMsgId ?? 'NONE'} fromMe=${fromMe} finalMediaUrl=${finalMediaUrl ?? 'NONE'}`,
+          'InboxWebhookProcessor',
+        )
       }
 
       // Extract sender info for group messages
