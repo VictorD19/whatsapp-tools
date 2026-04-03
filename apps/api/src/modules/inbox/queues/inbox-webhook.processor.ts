@@ -108,11 +108,17 @@ export class InboxWebhookProcessor {
 
       const fromMe = key.fromMe as boolean
 
-      // Skip old messages from history sync (only process messages from last 60s)
+      // Skip old messages from history sync — allow up to 5min for media-heavy messages
       const messageTimestamp = msg.messageTimestamp as number | undefined
       if (messageTimestamp) {
         const msgAge = Math.floor(Date.now() / 1000) - messageTimestamp
-        if (msgAge > 60) continue
+        if (msgAge > 300) {
+          this.logger.warn(
+            `Skipping old message (age=${msgAge}s) from ${key.remoteJid ?? 'unknown'} — fromMe=${key.fromMe}`,
+            'InboxWebhookProcessor',
+          )
+          continue
+        }
       }
 
       let remoteJid = key.remoteJid as string | undefined
@@ -154,10 +160,11 @@ export class InboxWebhookProcessor {
       const parsed = parseWhatsAppMessage(message)
       const { body, type, mediaUrl } = parsed
 
-      // Transcribe audio messages synchronously for AI processing
+      // Download and transcribe incoming audio messages for AI processing
+      // Skip for fromMe=true — outgoing audio is already saved by sendMessage; no transcription needed
       let finalBody = body
       let finalMediaUrl = mediaUrl
-      if (type === 'AUDIO' && key.id) {
+      if (type === 'AUDIO' && !fromMe && key.id) {
         try {
           const media = await this.whatsapp.getMediaBase64(instance.evolutionId, key.id as string)
           if (media?.base64 && media.mimetype) {
@@ -174,10 +181,15 @@ export class InboxWebhookProcessor {
                 'InboxWebhookProcessor',
               )
             }
+          } else {
+            this.logger.warn(
+              `Audio media not available from Evolution for msgId=${key.id as string} — saving without audio file`,
+              'InboxWebhookProcessor',
+            )
           }
         } catch (err) {
           this.logger.warn(
-            `Audio transcription failed: ${(err as Error).message}`,
+            `Audio processing failed for msgId=${key.id as string}: ${(err as Error).message}`,
             'InboxWebhookProcessor',
           )
           // Continue with body=null — graceful degradation
