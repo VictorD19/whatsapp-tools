@@ -48,6 +48,10 @@ export class DealService {
     return deal
   }
 
+  /**
+   * Returns the most recent active deal for a contact, or null if none exists.
+   * Returning null is not an error condition.
+   */
   async findActiveDealByContact(tenantId: string, contactId: string) {
     return this.repository.findActiveDealByContact(tenantId, contactId)
   }

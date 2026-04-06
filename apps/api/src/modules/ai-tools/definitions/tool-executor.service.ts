@@ -147,7 +147,14 @@ export class ToolExecutorService {
       }
     }
 
-    await this.dealService.moveDeal(context.tenantId, deal.id, { stageId: config.stageId })
+    try {
+      await this.dealService.moveDeal(context.tenantId, deal.id, { stageId: config.stageId })
+    } catch (error) {
+      return {
+        success: false,
+        output: `Não foi possível mover o deal: ${(error as Error).message}`,
+      }
+    }
 
     return {
       success: true,

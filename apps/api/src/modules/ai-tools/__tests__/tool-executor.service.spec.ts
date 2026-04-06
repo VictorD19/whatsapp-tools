@@ -218,6 +218,22 @@ describe('ToolExecutorService', () => {
       expect(result.output).toContain('nenhum deal ativo')
       expect(dealService.moveDeal).not.toHaveBeenCalled()
     })
+
+    it('should return success false when moveDeal throws', async () => {
+      dealService.findActiveDealByContact.mockResolvedValue({ id: 'deal-1' } as any)
+      dealService.moveDeal.mockRejectedValue(new Error('Deal ja esta encerrado'))
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.SETAR_ETAPA_PIPELINE,
+        config: { pipelineId: 'pipe-1', stageId: 'stage-won' },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(false)
+      expect(result.output).toContain('Não foi possível mover')
+    })
   })
 
   describe('WEBHOOK_EXTERNO', () => {
