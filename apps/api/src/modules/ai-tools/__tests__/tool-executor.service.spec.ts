@@ -56,6 +56,8 @@ describe('ToolExecutorService', () => {
           provide: DealService,
           useValue: {
             createDeal: jest.fn(),
+            findActiveDealByContact: jest.fn(),
+            moveDeal: jest.fn(),
           },
         },
         {
@@ -180,6 +182,57 @@ describe('ToolExecutorService', () => {
         stageId: 'stage-1',
         title: 'Lead - Joao Silva',
       })
+    })
+  })
+
+  describe('SETAR_ETAPA_PIPELINE', () => {
+    it('should move active deal to configured stage', async () => {
+      dealService.findActiveDealByContact.mockResolvedValue({ id: 'deal-1' } as any)
+      dealService.moveDeal.mockResolvedValue({ id: 'deal-1' } as any)
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.SETAR_ETAPA_PIPELINE,
+        config: { pipelineId: 'pipe-1', stageId: 'stage-2' },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(true)
+      expect(result.output).toContain('deal-1')
+      expect(dealService.moveDeal).toHaveBeenCalledWith('tenant-123', 'deal-1', { stageId: 'stage-2' })
+    })
+
+    it('should return success false when contact has no active deal', async () => {
+      dealService.findActiveDealByContact.mockResolvedValue(null)
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.SETAR_ETAPA_PIPELINE,
+        config: { pipelineId: 'pipe-1', stageId: 'stage-2' },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(false)
+      expect(result.output).toContain('nenhum deal ativo')
+      expect(dealService.moveDeal).not.toHaveBeenCalled()
+    })
+
+    it('should return success false when moveDeal throws', async () => {
+      dealService.findActiveDealByContact.mockResolvedValue({ id: 'deal-1' } as any)
+      dealService.moveDeal.mockRejectedValue(new Error('Deal ja esta encerrado'))
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.SETAR_ETAPA_PIPELINE,
+        config: { pipelineId: 'pipe-1', stageId: 'stage-won' },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(false)
+      expect(result.output).toContain('Não foi possível mover')
     })
   })
 

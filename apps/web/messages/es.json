@@ -1025,6 +1025,10 @@
       "CRIAR_DEAL": {
         "label": "Crear Negocio",
         "description": "Abre un negocio en CRM"
+      },
+      "SETAR_ETAPA_PIPELINE": {
+        "label": "Definir Etapa",
+        "description": "Mueve el negocio a una etapa del pipeline"
       }
     },
     "delete": {

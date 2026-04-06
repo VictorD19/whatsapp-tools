@@ -48,6 +48,14 @@ export class DealService {
     return deal
   }
 
+  /**
+   * Returns the most recent active deal for a contact, or null if none exists.
+   * Returning null is not an error condition.
+   */
+  async findActiveDealByContact(tenantId: string, contactId: string) {
+    return this.repository.findActiveDealByContact(tenantId, contactId)
+  }
+
   async createDeal(tenantId: string, dto: CreateDealDto) {
     // Check if contact already has an active deal
     const existingDeal = await this.repository.findActiveDealByContact(tenantId, dto.contactId)

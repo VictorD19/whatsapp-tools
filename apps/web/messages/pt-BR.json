@@ -1025,6 +1025,10 @@
       "CRIAR_DEAL": {
         "label": "Criar Deal",
         "description": "Abre um deal no CRM"
+      },
+      "SETAR_ETAPA_PIPELINE": {
+        "label": "Setar Etapa",
+        "description": "Move o deal para uma etapa do pipeline"
       }
     },
     "delete": {

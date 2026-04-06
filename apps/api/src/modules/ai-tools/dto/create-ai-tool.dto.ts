@@ -10,6 +10,10 @@ const WebhookExternoConfig = z.object({
   headers: z.record(z.string()).optional(),
   bodyTemplate: z.string().optional(),
 })
+const SetarEtapaPipelineConfig = z.object({
+  pipelineId: z.string().min(1),
+  stageId: z.string().min(1),
+})
 
 export const createAiToolSchema = z.object({
   name: z.string().min(1).max(100),
@@ -20,6 +24,7 @@ export const createAiToolSchema = z.object({
     CriarDealConfig,
     TransferirHumanoConfig,
     WebhookExternoConfig,
+    SetarEtapaPipelineConfig,
     z.object({}),
   ]),
   isActive: z.boolean().default(true),

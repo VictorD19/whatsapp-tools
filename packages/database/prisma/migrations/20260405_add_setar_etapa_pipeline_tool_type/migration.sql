@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "AiToolType" ADD VALUE 'SETAR_ETAPA_PIPELINE';
