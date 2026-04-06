@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ToolTypeSelector, type AiToolType } from './tool-type-selector'
 import { TagConfig } from './config-forms/tag-config'
 import { DealConfig } from './config-forms/deal-config'
+import { PipelineStageConfig } from './config-forms/pipeline-stage-config'
 
 export interface AiTool {
   id: string
@@ -138,6 +139,12 @@ export function AiToolSheet({ open, onClose, onSave, tool, saving }: AiToolSheet
             )}
             {type === 'CRIAR_DEAL' && (
               <DealConfig
+                value={config as { pipelineId?: string; stageId?: string }}
+                onChange={setConfig}
+              />
+            )}
+            {type === 'SETAR_ETAPA_PIPELINE' && (
+              <PipelineStageConfig
                 value={config as { pipelineId?: string; stageId?: string }}
                 onChange={setConfig}
               />

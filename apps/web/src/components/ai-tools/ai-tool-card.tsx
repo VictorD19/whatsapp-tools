@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Pencil, Trash2, Search, UserPlus, Tag, Briefcase, Handshake, Webhook } from 'lucide-react'
+import { Pencil, Trash2, Search, UserPlus, Tag, Briefcase, Handshake, Webhook, GitMerge } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ const TYPE_META: Record<AiToolType, { icon: React.ElementType; variant: 'default
   CRIAR_DEAL: { icon: Briefcase, variant: 'default' },
   TRANSFERIR_HUMANO: { icon: Handshake, variant: 'secondary' },
   WEBHOOK_EXTERNO: { icon: Webhook, variant: 'info' },
+  SETAR_ETAPA_PIPELINE: { icon: GitMerge, variant: 'default' },
 }
 
 interface AiToolCardProps {
