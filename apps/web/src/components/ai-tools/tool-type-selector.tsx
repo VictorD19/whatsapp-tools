@@ -6,8 +6,12 @@ import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 export type AiToolType =
+  | 'BUSCAR_CONTATO'
+  | 'CRIAR_CONTATO'
   | 'ADICIONAR_TAG'
   | 'CRIAR_DEAL'
+  | 'TRANSFERIR_HUMANO'
+  | 'WEBHOOK_EXTERNO'
   | 'SETAR_ETAPA_PIPELINE'
 
 interface ToolTypeOption {
