@@ -48,6 +48,10 @@ export class DealService {
     return deal
   }
 
+  async findActiveDealByContact(tenantId: string, contactId: string) {
+    return this.repository.findActiveDealByContact(tenantId, contactId)
+  }
+
   async createDeal(tenantId: string, dto: CreateDealDto) {
     // Check if contact already has an active deal
     const existingDeal = await this.repository.findActiveDealByContact(tenantId, dto.contactId)

@@ -44,6 +44,8 @@ export class ToolExecutorService {
           return this.executeTransferirHumano(tool)
         case AiToolType.WEBHOOK_EXTERNO:
           return this.executeWebhookExterno(tool, context)
+        case AiToolType.SETAR_ETAPA_PIPELINE:
+          return this.executeSetarEtapaPipeline(tool, context)
         default:
           return { success: false, output: `Tipo de ferramenta desconhecido: ${tool.type}` }
       }
@@ -130,6 +132,27 @@ export class ToolExecutorService {
       success: true,
       output: config.message,
       data: { handoff: true },
+    }
+  }
+
+  private async executeSetarEtapaPipeline(tool: AiTool, context: ToolContext): Promise<ToolResult> {
+    const config = tool.config as { pipelineId: string; stageId: string }
+
+    const deal = await this.dealService.findActiveDealByContact(context.tenantId, context.contactId)
+
+    if (!deal) {
+      return {
+        success: false,
+        output: 'Contato não possui nenhum deal ativo para mover de etapa',
+      }
+    }
+
+    await this.dealService.moveDeal(context.tenantId, deal.id, { stageId: config.stageId })
+
+    return {
+      success: true,
+      output: `Deal ${deal.id} movido para a etapa configurada`,
+      data: { dealId: deal.id, stageId: config.stageId },
     }
   }
 
