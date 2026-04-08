@@ -3,6 +3,7 @@ import { AssistantsService } from '../assistants.service'
 import { AssistantsRepository } from '../assistants.repository'
 import { TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
 import { StorageService } from '@modules/storage/storage.service'
+import { AiToolsService } from '@modules/ai-tools/ai-tools.service'
 
 describe('AssistantsService', () => {
   let service: AssistantsService
@@ -70,6 +71,7 @@ describe('AssistantsService', () => {
         { provide: AssistantsRepository, useValue: mockRepository },
         { provide: TEXT_TO_SPEECH, useValue: mockTts },
         { provide: StorageService, useValue: mockStorage },
+        { provide: AiToolsService, useValue: { findAll: jest.fn().mockResolvedValue({ data: [] }) } },
       ],
     }).compile()
 
