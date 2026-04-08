@@ -1,7 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import { AppException } from '@core/errors/app.exception'
 import { TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
 import type { ITextToSpeechProvider } from '@modules/ai/ports/text-to-speech.interface'
+import { AiToolsService } from '@modules/ai-tools/ai-tools.service'
 import { StorageService } from '@modules/storage/storage.service'
 import { AssistantsRepository } from './assistants.repository'
 import type { CreateAssistantDto } from './dto/create-assistant.dto'
@@ -17,11 +18,14 @@ const PREVIEW_TEXTS: Record<string, string> = {
 
 @Injectable()
 export class AssistantsService {
+  private readonly logger = new Logger(AssistantsService.name)
+
   constructor(
     private readonly repository: AssistantsRepository,
     @Inject(TEXT_TO_SPEECH)
     private readonly tts: ITextToSpeechProvider,
     private readonly storage: StorageService,
+    private readonly aiToolsService: AiToolsService,
   ) {}
 
   async findAll(tenantId: string) {
@@ -49,6 +53,12 @@ export class AssistantsService {
     }
 
     const updated = await this.repository.update(tenantId, id, dto)
+
+    // Auto-vincula tools mencionadas no systemPrompt
+    if (dto.systemPrompt !== undefined) {
+      await this.autoLinkToolsFromPrompt(tenantId, id, dto.systemPrompt, existing.tools.map((t) => t.aiToolId))
+    }
+
     return { data: updated }
   }
 
@@ -157,6 +167,38 @@ export class AssistantsService {
     await this.storage.uploadRaw(storageKey, result.audioBuffer, result.mimetype)
 
     return { buffer: result.audioBuffer, contentType: result.mimetype }
+  }
+
+  /**
+   * Detecta menções de tools no systemPrompt e vincula automaticamente.
+   * Formato esperado: `**🔧 Nome da Tool**` (inserido pelo slash command do editor)
+   */
+  private async autoLinkToolsFromPrompt(
+    tenantId: string,
+    assistantId: string,
+    systemPrompt: string,
+    currentToolIds: string[],
+  ) {
+    // Busca todas as tools do tenant
+    const { data: allTools } = await this.aiToolsService.findAll(tenantId)
+    if (!allTools?.length) return
+
+    // Detecta tools mencionadas no prompt (formato: **🔧 Nome da Tool**)
+    const mentionedToolIds: string[] = []
+    for (const tool of allTools) {
+      // Verifica pelo nome da tool no prompt
+      if (systemPrompt.includes(tool.name)) {
+        mentionedToolIds.push(tool.id)
+      }
+    }
+
+    // Vincula tools mencionadas que ainda não estão vinculadas
+    const toLink = mentionedToolIds.filter((id) => !currentToolIds.includes(id))
+    for (const toolId of toLink) {
+      const tool = allTools.find((t) => t.id === toolId)
+      this.logger.log(`Auto-linking tool "${tool?.name}" (${toolId}) to assistant ${assistantId}`)
+      await this.repository.linkTool(assistantId, toolId)
+    }
   }
 
   private maskApiKey(key: string): string {
