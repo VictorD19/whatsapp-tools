@@ -5,7 +5,7 @@ services:
     container_name: wt-api
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     security_opt:
       - no-new-privileges:true
     environment:
@@ -49,7 +49,7 @@ services:
     container_name: wt-web
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -77,7 +77,7 @@ services:
     container_name: wt-evolution
     restart: unless-stopped
     ports:
-      - "8085:8080"
+      - "127.0.0.1:8085:8080"
     environment:
       SERVER_URL: http://evolution:8080
       DATABASE_ENABLED: "true"
