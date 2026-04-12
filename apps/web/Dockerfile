@@ -70,12 +70,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
 # ── Security hardening ────────────────────────────────────
-# Remove shells and network tools to prevent reverse shells
-RUN apk del apk-tools busybox-suid 2>/dev/null; \
-    rm -f /bin/sh /bin/ash /bin/bash /usr/bin/sh /usr/bin/ash /usr/bin/bash \
-           /bin/busybox /usr/bin/wget /usr/bin/curl /usr/bin/nc \
-           /usr/bin/ncat /usr/bin/netcat /usr/bin/telnet 2>/dev/null; \
-    find / -name "nc" -delete 2>/dev/null; true
+# Remove network tools to hamper reverse shells
+# Shell is kept (needed by docker-entrypoint.sh and healthcheck wget)
+RUN apk del --no-cache apk-tools 2>/dev/null; \
+    rm -f /usr/bin/wget /usr/bin/curl /usr/bin/nc \
+           /usr/bin/ncat /usr/bin/netcat /usr/bin/telnet \
+           /usr/bin/ssh /usr/bin/scp /usr/bin/rsync 2>/dev/null; \
+    find / -maxdepth 3 \( -name "nc" -o -name "netcat" -o -name "ncat" \) -delete 2>/dev/null; true
 
 USER nextjs
 EXPOSE 3000
