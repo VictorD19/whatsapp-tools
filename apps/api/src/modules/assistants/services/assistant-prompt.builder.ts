@@ -46,13 +46,28 @@ export class AssistantPromptBuilder {
       const toolList = input.tools
         .map((t) => `- ${t.name}: ${t.description ?? ''}`)
         .join('\n')
-      sections.push(
-        [
-          '## Ferramentas disponíveis:',
-          toolList,
-          'Para executar uma ferramenta, inclua [TOOL:TIPO] na sua resposta (ex: [TOOL:CRIAR_DEAL]).',
-        ].join('\n'),
+
+      const toolSections: string[] = [
+        '## Ferramentas disponíveis:',
+        toolList,
+        'Para executar uma ferramenta, inclua [TOOL:TIPO] na sua resposta (ex: [TOOL:CRIAR_DEAL]).',
+      ]
+
+      const hasCalendarTools = input.tools.some(
+        (t) => t.name === 'Consultar Disponibilidade' || t.name === 'Criar Evento',
       )
+      if (hasCalendarTools) {
+        toolSections.push(
+          '',
+          '### Instruções para agendamento:',
+          '- Para consultar horários disponíveis: use [TOOL:CONSULTAR_DISPONIBILIDADE]',
+          '- Para criar um evento após confirmação: use [TOOL:CRIAR_EVENTO]',
+          '- Sempre confirme data e horário com o contato antes de agendar',
+          '- Se o contato não informar email, pergunte antes de criar o evento',
+        )
+      }
+
+      sections.push(toolSections.join('\n'))
     }
 
     // 5. HANDOFF
