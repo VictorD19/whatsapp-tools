@@ -10,7 +10,6 @@ import {
   Check,
   Loader2,
   ExternalLink,
-  ChevronRight,
   BellOff,
   MessageSquare,
   Smartphone,
@@ -23,6 +22,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { LocaleSettingsContent } from '@/components/settings/locale-settings'
+import { GoogleCalendarCard } from '@/components/settings/google-calendar-card'
+import { useIntegrations } from '@/hooks/use-integrations'
 import { useAuthStore } from '@/stores/auth.store'
 import { getInitials } from '@/lib/utils'
 
@@ -277,83 +278,38 @@ function NotificationsSection() {
 }
 
 /* ──────────────────── Integrations ──────────────────── */
-const INTEGRATIONS = [
-  {
-    name: 'n8n',
-    description: 'Automações e fluxos de trabalho personalizados',
-    logo: '⚙️',
-    category: 'Automação',
-  },
-  {
-    name: 'Google Calendar',
-    description: 'Sincronize agendamentos com sua agenda',
-    logo: '📅',
-    category: 'Produtividade',
-  },
-  {
-    name: 'Zapier',
-    description: 'Conecte com mais de 5.000 aplicativos',
-    logo: '⚡',
-    category: 'Automação',
-  },
-  {
-    name: 'Google Sheets',
-    description: 'Exporte contatos e conversas para planilhas',
-    logo: '📊',
-    category: 'Produtividade',
-  },
-]
-
 function IntegrationsSection() {
   const t = useTranslations('settings.integrations')
+  const { integrations, loading, connectGoogle, disconnect } = useIntegrations()
+
+  const googleCalendarIntegration = integrations.find(
+    (i) => i.provider === 'google_calendar',
+  )
+
   return (
     <SectionBlock icon={Plug} title={t('title')} description={t('description')}>
-      <div className="relative">
-        {/* Overlay de bloqueio */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-[2px]">
-          <div className="flex flex-col items-center gap-2 text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted border border-border">
-              <Plug className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-sm font-semibold text-foreground">Em breve</p>
-            <p className="text-xs text-muted-foreground max-w-[200px]">
-              Integrações estarão disponíveis em uma versão futura.
-            </p>
-          </div>
-        </div>
+      <div className="space-y-3">
+        <GoogleCalendarCard
+          integration={googleCalendarIntegration}
+          onConnect={connectGoogle}
+          onDisconnect={disconnect}
+          loading={loading}
+        />
 
-        {/* Conteúdo bloqueado (desfocado) */}
-        <div className="pointer-events-none select-none opacity-40 space-y-2">
-          {INTEGRATIONS.map((integration, i) => (
-            <div key={integration.name}>
-              {i > 0 && <div className="h-px bg-border my-3" />}
-              <div className="flex items-center justify-between gap-4 py-1">
-                <div className="flex items-center gap-3.5">
-                  <div className="h-9 w-9 rounded-lg bg-muted border border-border flex items-center justify-center text-lg shrink-0">
-                    {integration.logo}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-foreground">{integration.name}</p>
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-wider">
-                        {integration.category}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{integration.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button className="p-1.5 text-muted-foreground/50">
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </button>
-                  <Button variant="outline" size="sm" className="text-xs h-7 gap-1 pr-2" disabled>
-                    Conectar
-                    <ChevronRight className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
+        <div className="h-px bg-border" />
+        <div className="flex items-center justify-between gap-4 py-1 opacity-40 pointer-events-none select-none">
+          <div className="flex items-center gap-3.5">
+            <div className="h-9 w-9 rounded-lg bg-muted border border-border flex items-center justify-center text-lg shrink-0">
+              ⚙️
             </div>
-          ))}
+            <div>
+              <p className="text-sm font-semibold text-foreground">n8n</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('n8n')}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" className="text-xs h-7 gap-1 pr-2" disabled>
+            {t('connect')}
+          </Button>
         </div>
       </div>
     </SectionBlock>

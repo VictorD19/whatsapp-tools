@@ -1155,15 +1155,26 @@
     "integrations": {
       "title": "Integrations",
       "description": "Connect external tools",
-      "comingSoon": "Coming soon",
-      "comingSoonDescription": "Integrations will be available in a future version.",
       "connect": "Connect",
-      "n8n": "Custom automations and workflows",
+      "disconnect": "Disconnect",
+      "connected": "Connected",
+      "expired": "Token expired",
+      "reconnect": "Reconnect",
+      "confirmDisconnect": "Disconnect Google Calendar?",
+      "confirmDisconnectDescription": "Existing appointments will not be affected, but the AI will not be able to create new events.",
+      "n8n": "Automations and custom workflows",
       "googleCalendar": "Sync appointments with your calendar",
       "zapier": "Connect with over 5,000 apps",
       "googleSheets": "Export contacts and conversations to spreadsheets",
       "automation": "Automation",
-      "productivity": "Productivity"
+      "productivity": "Productivity",
+      "success": {
+        "disconnected": "Google Calendar disconnected successfully"
+      },
+      "error": {
+        "loading": "Error loading integrations",
+        "disconnecting": "Error disconnecting"
+      }
     },
     "danger": {
       "title": "Danger zone",

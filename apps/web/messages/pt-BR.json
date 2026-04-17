@@ -1155,15 +1155,26 @@
     "integrations": {
       "title": "Integrações",
       "description": "Conecte ferramentas externas",
-      "comingSoon": "Em breve",
-      "comingSoonDescription": "Integrações estarão disponíveis em uma versão futura.",
       "connect": "Conectar",
+      "disconnect": "Desconectar",
+      "connected": "Conectado",
+      "expired": "Token expirado",
+      "reconnect": "Reconectar",
+      "confirmDisconnect": "Desconectar Google Calendar?",
+      "confirmDisconnectDescription": "Os agendamentos existentes não serão afetados, mas a IA não poderá criar novos eventos.",
       "n8n": "Automações e fluxos de trabalho personalizados",
       "googleCalendar": "Sincronize agendamentos com sua agenda",
       "zapier": "Conecte com mais de 5.000 aplicativos",
       "googleSheets": "Exporte contatos e conversas para planilhas",
       "automation": "Automação",
-      "productivity": "Produtividade"
+      "productivity": "Produtividade",
+      "success": {
+        "disconnected": "Google Calendar desconectado com sucesso"
+      },
+      "error": {
+        "loading": "Erro ao carregar integrações",
+        "disconnecting": "Erro ao desconectar"
+      }
     },
     "danger": {
       "title": "Zona de perigo",
