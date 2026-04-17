@@ -1,8 +1,11 @@
-import { Injectable, HttpStatus } from '@nestjs/common'
+import { Injectable, HttpStatus, Inject } from '@nestjs/common'
 import { AiTool, AiToolType } from '@prisma/client'
 import { ContactsService } from '@modules/contacts/contacts.service'
 import { TagService } from '@modules/tag/tag.service'
 import { DealService } from '@modules/deal/deal.service'
+import { IntegrationsService } from '@modules/integrations/integrations.service'
+import { CALENDAR_PROVIDER } from '@modules/integrations/integrations.tokens'
+import type { ICalendarProvider } from '@modules/integrations/ports/calendar-provider.interface'
 import { AppException } from '@core/errors/app.exception'
 import { LoggerService } from '@core/logger/logger.service'
 
@@ -26,6 +29,9 @@ export class ToolExecutorService {
     private readonly contactsService: ContactsService,
     private readonly tagService: TagService,
     private readonly dealService: DealService,
+    @Inject(CALENDAR_PROVIDER)
+    private readonly calendarProvider: ICalendarProvider,
+    private readonly integrationsService: IntegrationsService,
     private readonly logger: LoggerService,
   ) {}
 
@@ -46,6 +52,10 @@ export class ToolExecutorService {
           return this.executeWebhookExterno(tool, context)
         case AiToolType.SETAR_ETAPA_PIPELINE:
           return this.executeSetarEtapaPipeline(tool, context)
+        case AiToolType.CONSULTAR_DISPONIBILIDADE:
+          return this.executeConsultarDisponibilidade(tool, context)
+        case AiToolType.CRIAR_EVENTO:
+          return this.executeCriarEvento(tool, context)
         default:
           return { success: false, output: `Tipo de ferramenta desconhecido: ${tool.type}` }
       }
@@ -160,6 +170,95 @@ export class ToolExecutorService {
       success: true,
       output: `Deal ${deal.id} movido para a etapa configurada`,
       data: { dealId: deal.id, stageId: config.stageId },
+    }
+  }
+
+  private async executeConsultarDisponibilidade(tool: AiTool, context: ToolContext): Promise<ToolResult> {
+    const config = tool.config as {
+      integrationId: string
+      lookAheadDays: number
+      slotDurationMinutes: number
+      workingHours: { start: string; end: string; workingDays: number[] }
+    }
+
+    try {
+      const accessToken = await this.integrationsService.getDecryptedAccessToken(
+        context.tenantId,
+        config.integrationId,
+      )
+
+      const from = new Date()
+      const to = new Date(from.getTime() + config.lookAheadDays * 24 * 60 * 60 * 1000)
+
+      const slots = await this.calendarProvider.getFreeSlots(
+        accessToken,
+        from,
+        to,
+        config.slotDurationMinutes,
+        config.workingHours,
+      )
+
+      if (slots.length === 0) {
+        return { success: true, output: 'Nenhum horário disponível nos próximos dias.' }
+      }
+
+      const formatted = slots.slice(0, 20).map((s) => {
+        const date = s.startAt.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
+        const time = s.startAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        return `${date} às ${time}`
+      })
+
+      return {
+        success: true,
+        output: `Horários disponíveis:\n${formatted.join('\n')}`,
+        data: { slots: slots.slice(0, 20) },
+      }
+    } catch (error) {
+      return {
+        success: false,
+        output: `Erro ao consultar disponibilidade: ${(error as Error).message}`,
+      }
+    }
+  }
+
+  private async executeCriarEvento(tool: AiTool, context: ToolContext): Promise<ToolResult> {
+    const config = tool.config as {
+      integrationId: string
+      defaultDurationMinutes: number
+      defaultLocation?: string
+      timezone: string
+      createMeetLink: boolean
+    }
+
+    try {
+      const accessToken = await this.integrationsService.getDecryptedAccessToken(
+        context.tenantId,
+        config.integrationId,
+      )
+
+      const startAt = new Date()
+      const endAt = new Date(startAt.getTime() + config.defaultDurationMinutes * 60_000)
+
+      const result = await this.calendarProvider.createEvent(accessToken, {
+        title: `Reunião - ${context.contactName ?? context.contactPhone}`,
+        description: `Agendado via WhatsApp por ${context.contactName ?? context.contactPhone}`,
+        startAt,
+        endAt,
+        timezone: config.timezone,
+        location: config.defaultLocation,
+        createMeetLink: config.createMeetLink,
+      })
+
+      return {
+        success: true,
+        output: `Evento criado!\nLink: ${result.htmlLink}${result.hangoutLink ? `\nMeet: ${result.hangoutLink}` : ''}`,
+        data: { eventId: result.eventId, htmlLink: result.htmlLink, hangoutLink: result.hangoutLink },
+      }
+    } catch (error) {
+      return {
+        success: false,
+        output: `Erro ao criar evento: ${(error as Error).message}`,
+      }
     }
   }
 

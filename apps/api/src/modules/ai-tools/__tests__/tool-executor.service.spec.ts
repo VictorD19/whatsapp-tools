@@ -6,12 +6,17 @@ import { DealService } from '@modules/deal/deal.service'
 import { LoggerService } from '@core/logger/logger.service'
 import { AiToolType } from '@prisma/client'
 import type { ToolContext } from '../definitions/tool-executor.service'
+import { CALENDAR_PROVIDER } from '@modules/integrations/integrations.tokens'
+import type { ICalendarProvider } from '@modules/integrations/ports/calendar-provider.interface'
+import { IntegrationsService } from '@modules/integrations/integrations.service'
 
 describe('ToolExecutorService', () => {
   let executor: ToolExecutorService
   let contactsService: jest.Mocked<ContactsService>
   let tagService: jest.Mocked<TagService>
   let dealService: jest.Mocked<DealService>
+  let calendarProvider: jest.Mocked<ICalendarProvider>
+  let integrationsService: jest.Mocked<IntegrationsService>
 
   const now = new Date()
 
@@ -68,6 +73,19 @@ describe('ToolExecutorService', () => {
             warn: jest.fn(),
           },
         },
+        {
+          provide: CALENDAR_PROVIDER,
+          useValue: {
+            createEvent: jest.fn(),
+            getFreeSlots: jest.fn(),
+          },
+        },
+        {
+          provide: IntegrationsService,
+          useValue: {
+            getDecryptedAccessToken: jest.fn(),
+          },
+        },
       ],
     }).compile()
 
@@ -75,6 +93,8 @@ describe('ToolExecutorService', () => {
     contactsService = module.get(ContactsService)
     tagService = module.get(TagService)
     dealService = module.get(DealService)
+    calendarProvider = module.get(CALENDAR_PROVIDER) as unknown as jest.Mocked<ICalendarProvider>
+    integrationsService = module.get(IntegrationsService) as unknown as jest.Mocked<IntegrationsService>
   })
 
   describe('BUSCAR_CONTATO', () => {
@@ -285,6 +305,127 @@ describe('ToolExecutorService', () => {
 
       expect(result.success).toBe(false)
       expect(result.output).toContain('erro')
+    })
+  })
+
+  describe('CONSULTAR_DISPONIBILIDADE', () => {
+    it('should return formatted free slots', async () => {
+      integrationsService.getDecryptedAccessToken = jest.fn().mockResolvedValue('access-token')
+      calendarProvider.getFreeSlots = jest.fn().mockResolvedValue([
+        { startAt: new Date('2026-04-17T09:00:00'), endAt: new Date('2026-04-17T10:00:00') },
+        { startAt: new Date('2026-04-17T10:00:00'), endAt: new Date('2026-04-17T11:00:00') },
+      ])
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.CONSULTAR_DISPONIBILIDADE,
+        config: {
+          integrationId: 'int-1',
+          lookAheadDays: 7,
+          slotDurationMinutes: 60,
+          workingHours: { start: '08:00', end: '18:00', workingDays: [1, 2, 3, 4, 5] },
+        },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(true)
+      expect(result.output).toContain('Horários disponíveis')
+      expect(integrationsService.getDecryptedAccessToken).toHaveBeenCalledWith('tenant-123', 'int-1')
+    })
+
+    it('should return message when no slots available', async () => {
+      integrationsService.getDecryptedAccessToken = jest.fn().mockResolvedValue('access-token')
+      calendarProvider.getFreeSlots = jest.fn().mockResolvedValue([])
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.CONSULTAR_DISPONIBILIDADE,
+        config: {
+          integrationId: 'int-1',
+          lookAheadDays: 7,
+          slotDurationMinutes: 60,
+          workingHours: { start: '08:00', end: '18:00', workingDays: [1, 2, 3, 4, 5] },
+        },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(true)
+      expect(result.output).toContain('Nenhum horário disponível')
+    })
+
+    it('should return error when integration not found', async () => {
+      integrationsService.getDecryptedAccessToken = jest.fn().mockRejectedValue(
+        new Error('Integration not found'),
+      )
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.CONSULTAR_DISPONIBILIDADE,
+        config: {
+          integrationId: 'nonexistent',
+          lookAheadDays: 7,
+          slotDurationMinutes: 60,
+          workingHours: { start: '08:00', end: '18:00', workingDays: [1, 2, 3, 4, 5] },
+        },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(false)
+      expect(result.output).toContain('Erro ao consultar')
+    })
+  })
+
+  describe('CRIAR_EVENTO', () => {
+    it('should create event and return link', async () => {
+      integrationsService.getDecryptedAccessToken = jest.fn().mockResolvedValue('access-token')
+      calendarProvider.createEvent = jest.fn().mockResolvedValue({
+        eventId: 'evt-1',
+        htmlLink: 'https://calendar.google.com/event?eid=xxx',
+        hangoutLink: 'https://meet.google.com/abc',
+        status: 'confirmed',
+      })
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.CRIAR_EVENTO,
+        config: {
+          integrationId: 'int-1',
+          defaultDurationMinutes: 60,
+          timezone: 'America/Sao_Paulo',
+          createMeetLink: true,
+        },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(true)
+      expect(result.output).toContain('Evento criado')
+      expect(result.data).toHaveProperty('eventId', 'evt-1')
+    })
+
+    it('should return error when integration is disconnected', async () => {
+      integrationsService.getDecryptedAccessToken = jest.fn().mockRejectedValue(
+        new Error('Integration disconnected'),
+      )
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.CRIAR_EVENTO,
+        config: {
+          integrationId: 'int-1',
+          defaultDurationMinutes: 60,
+          timezone: 'America/Sao_Paulo',
+          createMeetLink: true,
+        },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(false)
+      expect(result.output).toContain('Erro ao criar evento')
     })
   })
 })
