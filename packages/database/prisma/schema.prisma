@@ -75,6 +75,8 @@ model Tenant {
   messageReactions MessageReaction[]
   followUps        FollowUp[]
   assistantSetting AssistantSetting?
+  integrations    Integration[]
+  calendarEvents  CalendarEvent[]
 
   @@index([planId])
 }
@@ -102,6 +104,7 @@ model User {
   pushSubscriptions PushSubscription[]
   broadcastsCreated Broadcast[] @relation("BroadcastCreator")
   followUpsCreated  FollowUp[]  @relation("FollowUpCreator")
+  integrations      Integration[]
 
   @@index([tenantId])
 }
@@ -842,4 +845,56 @@ enum AiToolType {
   TRANSFERIR_HUMANO
   WEBHOOK_EXTERNO
   SETAR_ETAPA_PIPELINE
+  CONSULTAR_DISPONIBILIDADE
+  CRIAR_EVENTO
+}
+
+// ── Integrations ──────────────────────────────────
+
+model Integration {
+  id                String    @id @default(cuid())
+  tenantId          String
+  userId            String
+  provider          String              // "google_calendar", "outlook"
+  providerAccountId String              // email da conta Google
+  accessToken       String?   @db.Text  // criptografado AES-256
+  refreshToken      String?   @db.Text  // criptografado AES-256
+  tokenExpiresAt    DateTime?
+  scopes            String[]
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+  calendarEvents CalendarEvent[]
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model CalendarEvent {
+  id               String   @id @default(cuid())
+  tenantId         String
+  integrationId    String
+  externalEventId  String
+  title            String
+  description      String?
+  startAt          DateTime
+  endAt            DateTime
+  timezone         String   @default("America/Sao_Paulo")
+  location         String?
+  attendees        Json?
+  hangoutLink      String?
+  status           String   @default("confirmed")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  integration Integration @relation(fields: [integrationId], references: [id])
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([integrationId])
+  @@index([startAt])
 }
