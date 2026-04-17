@@ -20,6 +20,7 @@ import { AiToolsModule } from './modules/ai-tools/ai-tools.module'
 import { AssistantsModule } from './modules/assistants/assistants.module'
 import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.module'
 import { FollowUpModule } from './modules/follow-up/follow-up.module'
+import { IntegrationsModule } from './modules/integrations/integrations.module'
 import { HealthModule } from './modules/health/health.module'
 // import { CrmModule } from './modules/crm/crm.module'
 
@@ -44,6 +45,7 @@ import { HealthModule } from './modules/health/health.module'
     AssistantsModule,
     KnowledgeBaseModule,
     FollowUpModule,
+    IntegrationsModule,
     HealthModule,
     // CrmModule,
   ],

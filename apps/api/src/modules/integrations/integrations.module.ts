@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { IntegrationsController } from './integrations.controller'
 import { IntegrationsService } from './integrations.service'
 import { IntegrationsRepository } from './integrations.repository'
 import { GoogleAuthService } from './adapters/google/google-auth.service'
@@ -6,6 +7,7 @@ import { GoogleCalendarAdapter } from './adapters/google/google-calendar.adapter
 import { CALENDAR_PROVIDER } from './integrations.tokens'
 
 @Module({
+  controllers: [IntegrationsController],
   providers: [
     {
       provide: CALENDAR_PROVIDER,
