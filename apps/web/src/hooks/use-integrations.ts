@@ -25,7 +25,7 @@ export function useIntegrations() {
   const fetchIntegrations = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${apiUrl}/integrations`, {
+      const res = await fetch(`${apiUrl}/api/v1/integrations`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
@@ -48,7 +48,7 @@ export function useIntegrations() {
 
   const disconnect = async (id: string) => {
     try {
-      const res = await fetch(`${apiUrl}/integrations/${id}`, {
+      const res = await fetch(`${apiUrl}/api/v1/integrations/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
