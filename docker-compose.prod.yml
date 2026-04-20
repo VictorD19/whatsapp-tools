@@ -29,6 +29,11 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      WEB_URL: ${WEB_URL:-http://localhost:3000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL:-}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
