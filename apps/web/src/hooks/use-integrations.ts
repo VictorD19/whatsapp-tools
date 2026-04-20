@@ -43,7 +43,7 @@ export function useIntegrations() {
   }, [token, fetchIntegrations])
 
   const connectGoogle = () => {
-    window.location.href = `${apiUrl}/integrations/google/connect`
+    window.location.href = `${apiUrl}/api/v1/integrations/google/connect`
   }
 
   const disconnect = async (id: string) => {
