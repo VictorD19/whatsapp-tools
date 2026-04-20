@@ -48,8 +48,8 @@ export function useIntegrations() {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
-      const { url } = await res.json()
-      window.location.href = url
+      const { data } = await res.json()
+      window.location.href = data.url
     } catch {
       toast.error(t('error.connecting'))
     }
