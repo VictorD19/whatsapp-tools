@@ -27,9 +27,9 @@ export class IntegrationsController {
   async connectGoogle(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: { id: string },
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    const { url, codeVerifier, state } = this.integrationsService.getConnectUrl(tenantId, user.id)
+    const { url, codeVerifier } = this.integrationsService.getConnectUrl(tenantId, user.id)
 
     res.cookie('google_oauth_verifier', codeVerifier, {
       httpOnly: true,
@@ -38,7 +38,7 @@ export class IntegrationsController {
       maxAge: 10 * 60 * 1000,
     })
 
-    return res.redirect(url)
+    return { url }
   }
 
   @Public()

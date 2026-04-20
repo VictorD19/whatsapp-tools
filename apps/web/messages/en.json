@@ -1173,7 +1173,8 @@
       },
       "error": {
         "loading": "Error loading integrations",
-        "disconnecting": "Error disconnecting"
+        "disconnecting": "Error disconnecting",
+        "connecting": "Error connecting to Google"
       }
     },
     "danger": {

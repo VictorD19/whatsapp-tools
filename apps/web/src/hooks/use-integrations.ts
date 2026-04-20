@@ -42,8 +42,17 @@ export function useIntegrations() {
     if (token) fetchIntegrations()
   }, [token, fetchIntegrations])
 
-  const connectGoogle = () => {
-    window.location.href = `${apiUrl}/api/v1/integrations/google/connect`
+  const connectGoogle = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/integrations/google/connect`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error()
+      const { url } = await res.json()
+      window.location.href = url
+    } catch {
+      toast.error(t('error.connecting'))
+    }
   }
 
   const disconnect = async (id: string) => {
