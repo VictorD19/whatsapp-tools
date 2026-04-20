@@ -49,7 +49,19 @@ export function useIntegrations() {
       })
       if (!res.ok) throw new Error()
       const { data } = await res.json()
-      window.location.href = data.url
+
+      const popup = window.open(data.url, 'google-auth', 'width=500,height=600,left=200,top=100')
+      if (!popup) {
+        window.location.href = data.url
+        return
+      }
+
+      const timer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(timer)
+          fetchIntegrations()
+        }
+      }, 500)
     } catch {
       toast.error(t('error.connecting'))
     }
