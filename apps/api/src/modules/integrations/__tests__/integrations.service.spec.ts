@@ -82,7 +82,7 @@ describe('IntegrationsService', () => {
 
   describe('handleCallback', () => {
     it('should exchange code and create integration', async () => {
-      googleAuth.parseState.mockReturnValue({ tenantId, userId })
+      googleAuth.parseState.mockReturnValue({ tenantId, userId, codeVerifier: 'verifier-123' })
       googleAuth.exchangeCode.mockResolvedValue({
         accessToken: 'access-123',
         refreshToken: 'refresh-123',
@@ -97,7 +97,7 @@ describe('IntegrationsService', () => {
         json: () => Promise.resolve({ email: 'joao@gmail.com' }),
       })
 
-      const result = await service.handleCallback('auth-code', 'state-123', 'verifier-123')
+      const result = await service.handleCallback('auth-code', 'state-123')
 
       expect(result.provider).toBe('google_calendar')
       expect(repository.create).toHaveBeenCalledWith(

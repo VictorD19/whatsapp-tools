@@ -22,7 +22,7 @@ export class GoogleAuthService {
 
   getAuthUrl(tenantId: string, userId: string): { url: string; codeVerifier: string; state: string } {
     const codeVerifier = this.generateCodeVerifier()
-    const state = Buffer.from(JSON.stringify({ tenantId, userId, ts: Date.now() })).toString('base64url')
+    const state = Buffer.from(JSON.stringify({ tenantId, userId, codeVerifier, ts: Date.now() })).toString('base64url')
 
     const params = new URLSearchParams({
       client_id: this.clientId,
@@ -123,9 +123,9 @@ export class GoogleAuthService {
     return decipher.update(encrypted) + decipher.final('utf-8')
   }
 
-  parseState(state: string): { tenantId: string; userId: string } {
+  parseState(state: string): { tenantId: string; userId: string; codeVerifier: string } {
     const parsed = JSON.parse(Buffer.from(state, 'base64url').toString('utf-8'))
-    return { tenantId: parsed.tenantId, userId: parsed.userId }
+    return { tenantId: parsed.tenantId, userId: parsed.userId, codeVerifier: parsed.codeVerifier }
   }
 
   private generateCodeVerifier(): string {

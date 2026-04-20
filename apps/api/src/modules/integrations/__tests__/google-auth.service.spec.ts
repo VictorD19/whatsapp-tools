@@ -40,6 +40,15 @@ describe('GoogleAuthService', () => {
       expect(result.state).toBeTruthy()
       expect(result.codeVerifier).toBeTruthy()
     })
+
+    it('should include codeVerifier in the state', () => {
+      const result = service.getAuthUrl('tenant-1', 'user-1')
+
+      const parsed = service.parseState(result.state)
+      expect(parsed.codeVerifier).toBe(result.codeVerifier)
+      expect(parsed.tenantId).toBe('tenant-1')
+      expect(parsed.userId).toBe('user-1')
+    })
   })
 
   describe('encrypt/decrypt', () => {

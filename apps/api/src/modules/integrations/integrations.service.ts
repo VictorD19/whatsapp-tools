@@ -14,8 +14,8 @@ export class IntegrationsService {
     return this.googleAuth.getAuthUrl(tenantId, userId)
   }
 
-  async handleCallback(code: string, state: string, codeVerifier: string) {
-    const { tenantId, userId } = this.googleAuth.parseState(state)
+  async handleCallback(code: string, state: string) {
+    const { tenantId, userId, codeVerifier } = this.googleAuth.parseState(state)
 
     const tokens = await this.googleAuth.exchangeCode(code, codeVerifier)
 

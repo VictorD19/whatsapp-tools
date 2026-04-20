@@ -9,7 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
-import { Response } from 'express'
+import { FastifyReply } from 'fastify'
 import { IntegrationsService } from './integrations.service'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
 import { CurrentUser } from '@shared/decorators/current-user.decorator'
@@ -27,17 +27,8 @@ export class IntegrationsController {
   async connectGoogle(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: { id: string },
-    @Res({ passthrough: true }) res: Response,
   ) {
-    const { url, codeVerifier } = this.integrationsService.getConnectUrl(tenantId, user.id)
-
-    res.cookie('google_oauth_verifier', codeVerifier, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 10 * 60 * 1000,
-    })
-
+    const { url } = this.integrationsService.getConnectUrl(tenantId, user.id)
     return { url }
   }
 
@@ -46,20 +37,15 @@ export class IntegrationsController {
   async googleCallback(
     @Query('code') code: string,
     @Query('state') state: string,
-    @Res() res: Response,
+    @Res() res: FastifyReply,
   ) {
-    const codeVerifier = res.req.cookies?.['google_oauth_verifier']
-
-    if (!codeVerifier) {
-      return res.redirect(`${process.env.WEB_URL ?? 'http://localhost:3001'}/settings?error=oauth_expired`)
-    }
+    const webUrl = process.env.WEB_URL ?? 'http://localhost:3000'
 
     try {
-      await this.integrationsService.handleCallback(code, state, codeVerifier)
-      res.clearCookie('google_oauth_verifier')
-      return res.redirect(`${process.env.WEB_URL ?? 'http://localhost:3001'}/settings?connected=google_calendar`)
+      await this.integrationsService.handleCallback(code, state)
+      return res.redirect(`${webUrl}/settings?connected=google_calendar`)
     } catch {
-      return res.redirect(`${process.env.WEB_URL ?? 'http://localhost:3001'}/settings?error=oauth_failed`)
+      return res.redirect(`${webUrl}/settings?error=oauth_failed`)
     }
   }
 
