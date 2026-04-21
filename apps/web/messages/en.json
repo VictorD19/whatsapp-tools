@@ -1029,7 +1029,30 @@
       "SETAR_ETAPA_PIPELINE": {
         "label": "Set Stage",
         "description": "Moves the deal to a pipeline stage"
+      },
+      "CONSULTAR_DISPONIBILIDADE": {
+        "label": "Check Availability",
+        "description": "Finds free time slots in Google Calendar"
+      },
+      "CRIAR_EVENTO": {
+        "label": "Create Event",
+        "description": "Creates an event in Google Calendar"
       }
+    },
+    "config": {
+      "noCalendarIntegration": "No Google Calendar account connected. Connect one in Settings.",
+      "integration": "Google Account",
+      "selectIntegration": "Select account",
+      "lookAheadDays": "Look ahead (days)",
+      "slotDuration": "Slot duration",
+      "workingHours": "Working hours",
+      "workingDays": "Working days",
+      "defaultDuration": "Default duration",
+      "timezone": "Timezone",
+      "defaultLocation": "Default location",
+      "defaultLocationPlaceholder": "e.g. Office, Online...",
+      "createMeetLink": "Google Meet link",
+      "createMeetLinkHint": "Auto-generates a video call link"
     },
     "delete": {
       "title": "Delete tool",

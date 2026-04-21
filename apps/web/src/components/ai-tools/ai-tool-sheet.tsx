@@ -14,6 +14,8 @@ import { ToolTypeSelector, type AiToolType } from './tool-type-selector'
 import { TagConfig } from './config-forms/tag-config'
 import { DealConfig } from './config-forms/deal-config'
 import { PipelineStageConfig } from './config-forms/pipeline-stage-config'
+import { CalendarAvailabilityConfig } from './config-forms/calendar-availability-config'
+import { CalendarEventConfig } from './config-forms/calendar-event-config'
 
 export interface AiTool {
   id: string
@@ -146,6 +148,18 @@ export function AiToolSheet({ open, onClose, onSave, tool, saving }: AiToolSheet
             {type === 'SETAR_ETAPA_PIPELINE' && (
               <PipelineStageConfig
                 value={config as { pipelineId?: string; stageId?: string }}
+                onChange={setConfig}
+              />
+            )}
+            {type === 'CONSULTAR_DISPONIBILIDADE' && (
+              <CalendarAvailabilityConfig
+                value={config as Record<string, unknown>}
+                onChange={setConfig}
+              />
+            )}
+            {type === 'CRIAR_EVENTO' && (
+              <CalendarEventConfig
+                value={config as Record<string, unknown>}
                 onChange={setConfig}
               />
             )}

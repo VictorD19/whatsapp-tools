@@ -1029,7 +1029,30 @@
       "SETAR_ETAPA_PIPELINE": {
         "label": "Definir Etapa",
         "description": "Mueve el negocio a una etapa del pipeline"
+      },
+      "CONSULTAR_DISPONIBILIDADE": {
+        "label": "Consultar Disponibilidad",
+        "description": "Busca horarios libres en Google Calendar"
+      },
+      "CRIAR_EVENTO": {
+        "label": "Crear Evento",
+        "description": "Crea un evento en Google Calendar"
       }
+    },
+    "config": {
+      "noCalendarIntegration": "Ninguna cuenta de Google Calendar conectada. Conecte en Configuracion.",
+      "integration": "Cuenta Google",
+      "selectIntegration": "Seleccionar cuenta",
+      "lookAheadDays": "Buscar proximos (dias)",
+      "slotDuration": "Duracion del turno",
+      "workingHours": "Horario de trabajo",
+      "workingDays": "Dias habiles",
+      "defaultDuration": "Duracion predeterminada",
+      "timezone": "Zona horaria",
+      "defaultLocation": "Ubicacion predeterminada",
+      "defaultLocationPlaceholder": "Ej: Oficina, Online...",
+      "createMeetLink": "Link Google Meet",
+      "createMeetLinkHint": "Genera un link de videollamada automaticamente"
     },
     "delete": {
       "title": "Eliminar herramienta",

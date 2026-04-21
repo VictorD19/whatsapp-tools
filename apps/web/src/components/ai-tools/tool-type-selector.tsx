@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Tag, Briefcase, GitMerge } from 'lucide-react'
+import { Tag, Briefcase, GitMerge, CalendarSearch, CalendarPlus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
@@ -13,6 +13,8 @@ export type AiToolType =
   | 'TRANSFERIR_HUMANO'
   | 'WEBHOOK_EXTERNO'
   | 'SETAR_ETAPA_PIPELINE'
+  | 'CONSULTAR_DISPONIBILIDADE'
+  | 'CRIAR_EVENTO'
 
 interface ToolTypeOption {
   type: AiToolType
@@ -23,6 +25,8 @@ const TOOL_TYPE_ICONS: ToolTypeOption[] = [
   { type: 'ADICIONAR_TAG', icon: Tag },
   { type: 'CRIAR_DEAL', icon: Briefcase },
   { type: 'SETAR_ETAPA_PIPELINE', icon: GitMerge },
+  { type: 'CONSULTAR_DISPONIBILIDADE', icon: CalendarSearch },
+  { type: 'CRIAR_EVENTO', icon: CalendarPlus },
 ]
 
 export { TOOL_TYPE_ICONS as TOOL_TYPES }
