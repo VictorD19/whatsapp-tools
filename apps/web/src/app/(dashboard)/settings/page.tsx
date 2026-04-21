@@ -74,6 +74,18 @@ function SectionBlock({
 export default function SettingsPage() {
   const t = useTranslations('settings')
   React.useEffect(() => { document.title = `${t('title')} | SistemaZapChat` }, [t])
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const connected = params.get('connected')
+    const error = params.get('error')
+    if (!connected && !error) return
+
+    if (window.opener) {
+      window.opener.postMessage({ type: 'google-oauth-callback', connected: !!connected, error })
+      window.close()
+    }
+  }, [])
   return (
     <PageLayout breadcrumb={[{ label: t('title') }]}>
         {/* Page title */}

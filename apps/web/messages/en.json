@@ -1169,7 +1169,8 @@
       "automation": "Automation",
       "productivity": "Productivity",
       "success": {
-        "disconnected": "Google Calendar disconnected successfully"
+        "disconnected": "Google Calendar disconnected successfully",
+        "connected": "Google Calendar connected successfully"
       },
       "error": {
         "loading": "Error loading integrations",

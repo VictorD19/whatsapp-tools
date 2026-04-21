@@ -56,9 +56,24 @@ export function useIntegrations() {
         return
       }
 
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type !== 'google-oauth-callback') return
+        window.removeEventListener('message', handleMessage)
+        clearInterval(timer)
+
+        if (event.data.connected) {
+          toast.success(t('success.connected'))
+        } else if (event.data.error) {
+          toast.error(t('error.connecting'))
+        }
+        fetchIntegrations()
+      }
+      window.addEventListener('message', handleMessage)
+
       const timer = setInterval(() => {
         if (popup.closed) {
           clearInterval(timer)
+          window.removeEventListener('message', handleMessage)
           fetchIntegrations()
         }
       }, 500)
