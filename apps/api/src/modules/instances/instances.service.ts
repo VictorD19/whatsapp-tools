@@ -18,7 +18,7 @@ export class InstancesService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly logger: LoggerService,
-  ) {}
+  ) { }
 
   async create(tenantId: string, dto: CreateInstanceDto) {
     // Check for duplicate name within tenant
@@ -162,6 +162,7 @@ export class InstancesService {
     const updateData: Record<string, unknown> = {}
     if (dto.name !== undefined) updateData.name = dto.name
     if (dto.defaultAssistantId !== undefined) updateData.defaultAssistantId = dto.defaultAssistantId
+    if (dto.inactivityFlowRules !== undefined) updateData.inactivityFlowRules = dto.inactivityFlowRules
 
     return this.repository.update(tenantId, id, updateData)
   }

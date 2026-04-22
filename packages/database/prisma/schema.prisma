@@ -17,22 +17,22 @@ datasource db {
 // ── Plan ──────────────────────────────────────────
 
 model Plan {
-  id                      String    @id @default(cuid())
+  id                      String   @id @default(cuid())
   name                    String
-  slug                    String    @unique
+  slug                    String   @unique
   description             String?
-  benefits                Json      @default("[]")
-  maxInstances            Int       @default(3)
-  maxUsers                Int       @default(5)
-  maxAssistants           Int       @default(1)
-  maxBroadcastsPerDay     Int       @default(5)
-  maxContactsPerBroadcast Int       @default(500)
-  price                   Decimal?  @db.Decimal(10, 2)
-  isDefault               Boolean   @default(false)
-  isActive                Boolean   @default(true)
-  sortOrder               Int       @default(0)
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  benefits                Json     @default("[]")
+  maxInstances            Int      @default(3)
+  maxUsers                Int      @default(5)
+  maxAssistants           Int      @default(1)
+  maxBroadcastsPerDay     Int      @default(5)
+  maxContactsPerBroadcast Int      @default(500)
+  price                   Decimal? @db.Decimal(10, 2)
+  isDefault               Boolean  @default(false)
+  isActive                Boolean  @default(true)
+  sortOrder               Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   tenants Tenant[]
 
@@ -56,27 +56,27 @@ model Tenant {
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
-  plan          Plan       @relation(fields: [planId], references: [id])
-  instances     Instance[]
-  users         User[]
-  contacts      Contact[]
-  conversations Conversation[]
-  messages      Message[]
-  pipelines     Pipeline[]
-  deals         Deal[]
-  dealNotes     DealNote[]
-  tags          Tag[]
-  contactLists  ContactList[]
-  notifications Notification[]
-  broadcasts    Broadcast[]
+  plan             Plan              @relation(fields: [planId], references: [id])
+  instances        Instance[]
+  users            User[]
+  contacts         Contact[]
+  conversations    Conversation[]
+  messages         Message[]
+  pipelines        Pipeline[]
+  deals            Deal[]
+  dealNotes        DealNote[]
+  tags             Tag[]
+  contactLists     ContactList[]
+  notifications    Notification[]
+  broadcasts       Broadcast[]
   assistants       Assistant[]
   knowledgeBases   KnowledgeBase[]
   aiTools          AiTool[]
   messageReactions MessageReaction[]
   followUps        FollowUp[]
   assistantSetting AssistantSetting?
-  integrations    Integration[]
-  calendarEvents  CalendarEvent[]
+  integrations     Integration[]
+  calendarEvents   CalendarEvent[]
 
   @@index([planId])
 }
@@ -95,16 +95,16 @@ model User {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  tenant        Tenant         @relation(fields: [tenantId], references: [id])
-  conversations Conversation[] @relation("AssignedConversations")
-  assignedDeals Deal[]         @relation("DealAssignee")
-  dealNotes     DealNote[]     @relation("DealNoteAuthor")
-  notifications Notification[]
+  tenant                  Tenant                   @relation(fields: [tenantId], references: [id])
+  conversations           Conversation[]           @relation("AssignedConversations")
+  assignedDeals           Deal[]                   @relation("DealAssignee")
+  dealNotes               DealNote[]               @relation("DealNoteAuthor")
+  notifications           Notification[]
   notificationPreferences NotificationPreference[]
-  pushSubscriptions PushSubscription[]
-  broadcastsCreated Broadcast[] @relation("BroadcastCreator")
-  followUpsCreated  FollowUp[]  @relation("FollowUpCreator")
-  integrations      Integration[]
+  pushSubscriptions       PushSubscription[]
+  broadcastsCreated       Broadcast[]              @relation("BroadcastCreator")
+  followUpsCreated        FollowUp[]               @relation("FollowUpCreator")
+  integrations            Integration[]
 
   @@index([tenantId])
 }
@@ -119,16 +119,17 @@ enum InstanceStatus {
 }
 
 model Instance {
-  id          String         @id @default(cuid())
-  tenantId    String
-  name        String
-  phone       String?
-  status      InstanceStatus @default(DISCONNECTED)
-  evolutionId        String         @unique
-  defaultAssistantId String?
-  createdAt          DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  deletedAt   DateTime?
+  id                  String         @id @default(cuid())
+  tenantId            String
+  name                String
+  phone               String?
+  status              InstanceStatus @default(DISCONNECTED)
+  evolutionId         String         @unique
+  defaultAssistantId  String?
+  inactivityFlowRules Json           @default("[]")
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  deletedAt           DateTime?
 
   tenant             Tenant              @relation(fields: [tenantId], references: [id])
   conversations      Conversation[]
@@ -173,23 +174,25 @@ enum ConversationStatus {
 }
 
 model Conversation {
-  id            String             @id @default(cuid())
-  tenantId      String
-  instanceId    String
-  contactId     String
-  assignedToId  String?
-  protocol      String
-  status        ConversationStatus @default(PENDING)
-  tags          String[]           @default([])
-  summary       String?
-  unreadCount   Int                @default(0)
-  lastMessageAt DateTime?
-  closedAt          DateTime?
-  assistantPausedAt DateTime?
-  aiThreadSummary   String?            @db.Text
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  deletedAt         DateTime?
+  id                 String             @id @default(cuid())
+  tenantId           String
+  instanceId         String
+  contactId          String
+  assignedToId       String?
+  protocol           String
+  status             ConversationStatus @default(PENDING)
+  tags               String[]           @default([])
+  summary            String?
+  unreadCount        Int                @default(0)
+  lastMessageAt      DateTime?
+  closedAt           DateTime?
+  assistantPausedAt  DateTime?
+  aiThreadSummary    String?            @db.Text
+  lastInactivityStep Int?
+  lastInactivityAt   DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  deletedAt          DateTime?
 
   tenant     Tenant     @relation(fields: [tenantId], references: [id])
   instance   Instance   @relation(fields: [instanceId], references: [id])
@@ -469,26 +472,26 @@ enum BroadcastSourceType {
 }
 
 model Broadcast {
-  id             String               @id @default(cuid())
-  tenantId       String
-  createdById    String
-  name           String
-  status         BroadcastStatus      @default(DRAFT)
-  messageType    BroadcastMessageType @default(TEXT)
-  messageTexts   String[]             @default([])
-  mediaUrl       String?
-  caption        String?
-  fileName       String?
-  delay          Int                  @default(5)
-  totalCount     Int                  @default(0)
-  sentCount      Int                  @default(0)
-  failedCount    Int                  @default(0)
-  scheduledAt    DateTime?
-  startedAt      DateTime?
-  completedAt    DateTime?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  deletedAt      DateTime?
+  id           String               @id @default(cuid())
+  tenantId     String
+  createdById  String
+  name         String
+  status       BroadcastStatus      @default(DRAFT)
+  messageType  BroadcastMessageType @default(TEXT)
+  messageTexts String[]             @default([])
+  mediaUrl     String?
+  caption      String?
+  fileName     String?
+  delay        Int                  @default(5)
+  totalCount   Int                  @default(0)
+  sentCount    Int                  @default(0)
+  failedCount  Int                  @default(0)
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  deletedAt    DateTime?
 
   tenant     Tenant               @relation(fields: [tenantId], references: [id])
   createdBy  User                 @relation("BroadcastCreator", fields: [createdById], references: [id])
@@ -503,16 +506,16 @@ model Broadcast {
 }
 
 model BroadcastVariation {
-  id           String               @id @default(cuid())
-  broadcastId  String
-  messageType  BroadcastMessageType @default(TEXT)
-  text         String               @default("")
-  mediaUrl     String?
-  fileName     String?
-  sortOrder    Int                  @default(0)
-  createdAt    DateTime             @default(now())
+  id          String               @id @default(cuid())
+  broadcastId String
+  messageType BroadcastMessageType @default(TEXT)
+  text        String               @default("")
+  mediaUrl    String?
+  fileName    String?
+  sortOrder   Int                  @default(0)
+  createdAt   DateTime             @default(now())
 
-  broadcast    Broadcast            @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  broadcast Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
 
   @@index([broadcastId])
 }
@@ -695,28 +698,28 @@ model AssistantSetting {
 // ── AI: Assistants ──────────────────────────────
 
 model Assistant {
-  id                 String    @id @default(cuid())
-  tenantId           String
-  name               String
-  description        String?
-  avatarUrl          String?
-  avatarEmoji        String?
-  model              String    @default("gpt-4o-mini")
-  systemPrompt       String    @db.Text
-  waitTimeSeconds    Int       @default(5)
-  isActive           Boolean   @default(true)
-  handoffKeywords    String[]
-  audioResponseMode  String    @default("never")
-  voiceId            String    @default("pt-BR-FranciscaNeural")
+  id                String   @id @default(cuid())
+  tenantId          String
+  name              String
+  description       String?
+  avatarUrl         String?
+  avatarEmoji       String?
+  model             String   @default("gpt-4o-mini")
+  systemPrompt      String   @db.Text
+  waitTimeSeconds   Int      @default(5)
+  isActive          Boolean  @default(true)
+  handoffKeywords   String[]
+  audioResponseMode String   @default("never")
+  voiceId           String   @default("pt-BR-FranciscaNeural")
 
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  deletedAt          DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  tenant             Tenant              @relation(fields: [tenantId], references: [id])
-  knowledgeBases     AssistantKnowledgeBase[]
-  tools              AssistantTool[]
-  instanceDefaults   Instance[]          @relation("InstanceDefaultAssistant")
+  tenant           Tenant                   @relation(fields: [tenantId], references: [id])
+  knowledgeBases   AssistantKnowledgeBase[]
+  tools            AssistantTool[]
+  instanceDefaults Instance[]               @relation("InstanceDefaultAssistant")
 
   @@index([tenantId])
 }
@@ -724,19 +727,19 @@ model Assistant {
 // ── AI: Knowledge Base ──────────────────────────
 
 model KnowledgeBase {
-  id          String    @id @default(cuid())
+  id          String  @id @default(cuid())
   tenantId    String
   name        String
   description String?
-  isActive    Boolean   @default(true)
+  isActive    Boolean @default(true)
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  tenant      Tenant    @relation(fields: [tenantId], references: [id])
-  sources     KnowledgeSource[]
-  assistants  AssistantKnowledgeBase[]
+  tenant     Tenant                   @relation(fields: [tenantId], references: [id])
+  sources    KnowledgeSource[]
+  assistants AssistantKnowledgeBase[]
 
   @@index([tenantId])
 }
@@ -753,25 +756,25 @@ model KnowledgeSource {
   status          IngestionStatus     @default(PENDING)
   errorMessage    String?
 
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  knowledgeBase   KnowledgeBase       @relation(fields: [knowledgeBaseId], references: [id])
-  chunks          KnowledgeChunk[]
+  knowledgeBase KnowledgeBase    @relation(fields: [knowledgeBaseId], references: [id])
+  chunks        KnowledgeChunk[]
 
   @@index([knowledgeBaseId])
   @@index([tenantId])
 }
 
 model KnowledgeChunk {
-  id         String   @id @default(cuid())
+  id         String                      @id @default(cuid())
   sourceId   String
   tenantId   String
-  content    String   @db.Text
+  content    String                      @db.Text
   embedding  Unsupported("vector(1536)")
   chunkIndex Int
 
-  source     KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  source KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
 
   @@index([sourceId])
   @@index([tenantId])
@@ -780,20 +783,20 @@ model KnowledgeChunk {
 // ── AI: Tools ───────────────────────────────────
 
 model AiTool {
-  id          String      @id @default(cuid())
+  id          String     @id @default(cuid())
   tenantId    String
   name        String
   description String?
   type        AiToolType
-  config      Json        @default("{}")
-  isActive    Boolean     @default(true)
+  config      Json       @default("{}")
+  isActive    Boolean    @default(true)
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  deletedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  tenant      Tenant      @relation(fields: [tenantId], references: [id])
-  assistants  AssistantTool[]
+  tenant     Tenant          @relation(fields: [tenantId], references: [id])
+  assistants AssistantTool[]
 
   @@index([tenantId])
 }
@@ -805,8 +808,8 @@ model AssistantKnowledgeBase {
   knowledgeBaseId String
   createdAt       DateTime @default(now())
 
-  assistant       Assistant     @relation(fields: [assistantId], references: [id], onDelete: Cascade)
-  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  assistant     Assistant     @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  knowledgeBase KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
 
   @@id([assistantId, knowledgeBaseId])
 }
@@ -816,8 +819,8 @@ model AssistantTool {
   aiToolId    String
   createdAt   DateTime @default(now())
 
-  assistant   Assistant @relation(fields: [assistantId], references: [id], onDelete: Cascade)
-  aiTool      AiTool    @relation(fields: [aiToolId], references: [id], onDelete: Cascade)
+  assistant Assistant @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  aiTool    AiTool    @relation(fields: [aiToolId], references: [id], onDelete: Cascade)
 
   @@id([assistantId, aiToolId])
 }
@@ -855,10 +858,10 @@ model Integration {
   id                String    @id @default(cuid())
   tenantId          String
   userId            String
-  provider          String              // "google_calendar", "outlook"
-  providerAccountId String              // email da conta Google
-  accessToken       String?   @db.Text  // criptografado AES-256
-  refreshToken      String?   @db.Text  // criptografado AES-256
+  provider          String // "google_calendar", "outlook"
+  providerAccountId String // email da conta Google
+  accessToken       String?   @db.Text // criptografado AES-256
+  refreshToken      String?   @db.Text // criptografado AES-256
   tokenExpiresAt    DateTime?
   scopes            String[]
   isActive          Boolean   @default(true)
@@ -875,21 +878,21 @@ model Integration {
 }
 
 model CalendarEvent {
-  id               String   @id @default(cuid())
-  tenantId         String
-  integrationId    String
-  externalEventId  String
-  title            String
-  description      String?
-  startAt          DateTime
-  endAt            DateTime
-  timezone         String   @default("America/Sao_Paulo")
-  location         String?
-  attendees        Json?
-  hangoutLink      String?
-  status           String   @default("confirmed")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default(cuid())
+  tenantId        String
+  integrationId   String
+  externalEventId String
+  title           String
+  description     String?
+  startAt         DateTime
+  endAt           DateTime
+  timezone        String   @default("America/Sao_Paulo")
+  location        String?
+  attendees       Json?
+  hangoutLink     String?
+  status          String   @default("confirmed")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   integration Integration @relation(fields: [integrationId], references: [id])
   tenant      Tenant      @relation(fields: [tenantId], references: [id])

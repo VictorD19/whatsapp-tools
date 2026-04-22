@@ -4,7 +4,7 @@ import { ConversationStatus, MessageType, Prisma } from '@prisma/client'
 
 @Injectable()
 export class InboxRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // ── Conversations ──
 
@@ -215,6 +215,16 @@ export class InboxRepository {
       data: {
         status: 'CLOSE',
         closedAt: new Date(),
+      },
+    })
+  }
+
+  async resetInactivityTracking(id: string) {
+    return this.prisma.conversation.update({
+      where: { id },
+      data: {
+        lastInactivityStep: null,
+        lastInactivityAt: null,
       },
     })
   }

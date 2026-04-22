@@ -12,6 +12,16 @@ export const updateInstanceSchema = z.object({
     .cuid('ID de assistente inválido')
     .nullable()
     .optional(),
+  inactivityFlowRules: z
+    .array(
+      z.object({
+        timeInSeconds: z.coerce.number(),
+        actionType: z.enum(['interact', 'close']),
+        message: z.string().max(512).optional(),
+        allowExecutionAnyTime: z.boolean().default(true),
+      })
+    )
+    .optional(),
 })
 
 export type UpdateInstanceDto = z.infer<typeof updateInstanceSchema>

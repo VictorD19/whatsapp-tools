@@ -12,6 +12,7 @@ export const QUEUES = {
   GROUP_CONTACT_EXTRACT: 'group-contact-extract',
   KB_INGESTION: 'kb-ingestion',
   FOLLOW_UP_SCHEDULER: 'follow-up-scheduler',
+  INACTIVITY_SCANNER: 'inactivity-scanner',
 } as const
 
 function parseRedisConfig() {
@@ -50,4 +51,4 @@ function parseRedisConfig() {
   ],
   exports: [BullModule],
 })
-export class QueueModule {}
+export class QueueModule { }

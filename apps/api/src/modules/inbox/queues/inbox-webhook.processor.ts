@@ -54,7 +54,7 @@ export class InboxWebhookProcessor {
     private readonly aiResponseQueue: Queue,
     @Inject(SPEECH_TO_TEXT)
     private readonly stt: ISpeechToTextProvider,
-  ) {}
+  ) { }
 
   @Process('inbox-webhook')
   async handleInboxWebhook(job: Job<InboxWebhookJob>) {
@@ -374,6 +374,11 @@ export class InboxWebhookProcessor {
         senderJid,
         senderName,
       })
+
+      // Reset inactivity tracking when customer sends a new message
+      if (!fromMe) {
+        await this.inboxRepository.resetInactivityTracking(conversation.id)
+      }
 
       // Download e armazena mídia inbound no storage local
       // STICKER e tipos não suportados continuam via proxy Evolution

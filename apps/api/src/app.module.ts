@@ -22,6 +22,7 @@ import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.mod
 import { FollowUpModule } from './modules/follow-up/follow-up.module'
 import { IntegrationsModule } from './modules/integrations/integrations.module'
 import { HealthModule } from './modules/health/health.module'
+import { InactivityScannerModule } from './modules/inactivity-scanner/inactivity-scanner.module'
 // import { CrmModule } from './modules/crm/crm.module'
 
 @Module({
@@ -47,7 +48,8 @@ import { HealthModule } from './modules/health/health.module'
     FollowUpModule,
     IntegrationsModule,
     HealthModule,
+    InactivityScannerModule,
     // CrmModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
