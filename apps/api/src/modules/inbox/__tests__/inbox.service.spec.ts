@@ -40,6 +40,8 @@ describe('InboxService', () => {
     closedAt: null,
     assistantPausedAt: null,
     aiThreadSummary: null,
+    lastInactivityStep: null,
+    lastInactivityAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
