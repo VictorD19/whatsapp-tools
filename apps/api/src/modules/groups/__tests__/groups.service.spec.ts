@@ -24,6 +24,7 @@ describe('GroupsService', () => {
     updatedAt: new Date(),
     deletedAt: null as Date | null,
     defaultAssistantId: null as string | null,
+    inactivityFlowRules: null,
   }
 
   const mockGroups = [
