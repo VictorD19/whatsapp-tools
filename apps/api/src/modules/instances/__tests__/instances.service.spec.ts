@@ -26,6 +26,7 @@ describe('InstancesService', () => {
     status: 'DISCONNECTED' as const,
     evolutionId: 'acme-vendas',
     defaultAssistantId: null as string | null,
+    inactivityFlowRules: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
