@@ -126,7 +126,6 @@ model Instance {
   status              InstanceStatus @default(DISCONNECTED)
   evolutionId         String         @unique
   defaultAssistantId  String?
-  inactivityFlowRules Json           @default("[]")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   deletedAt           DateTime?
@@ -709,8 +708,9 @@ model Assistant {
   waitTimeSeconds   Int      @default(5)
   isActive          Boolean  @default(true)
   handoffKeywords   String[]
-  audioResponseMode String   @default("never")
-  voiceId           String   @default("pt-BR-FranciscaNeural")
+  audioResponseMode    String   @default("never")
+  voiceId              String   @default("pt-BR-FranciscaNeural")
+  inactivityFlowRules  Json     @default("[]")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

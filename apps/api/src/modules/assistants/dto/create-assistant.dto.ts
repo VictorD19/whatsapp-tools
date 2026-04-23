@@ -12,6 +12,14 @@ export const CreateAssistantSchema = z.object({
   handoffKeywords: z.array(z.string()).default([]),
   audioResponseMode: z.enum(['never', 'auto', 'always']).default('never'),
   voiceId: z.string().max(100).default('pt-BR-FranciscaNeural'),
+  inactivityFlowRules: z.array(
+    z.object({
+      timeInSeconds: z.coerce.number(),
+      actionType: z.enum(['interact', 'close']),
+      message: z.string().max(512).optional(),
+      allowExecutionAnyTime: z.boolean().default(true),
+    })
+  ).default([]),
 })
 
 export type CreateAssistantDto = z.infer<typeof CreateAssistantSchema>

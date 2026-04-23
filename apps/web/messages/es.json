@@ -850,6 +850,24 @@
       "error": {
         "saving": "Error al guardar configuración"
       }
+    },
+    "inactivity": {
+      "tab": "Inactividad",
+      "title": "Reglas de Inactividad",
+      "description": "Configure acciones automáticas cuando el cliente deja de responder.",
+      "addStep": "Agregar etapa",
+      "removeStep": "Eliminar etapa",
+      "after": "Después de",
+      "minutes": "minutos",
+      "action": "Acción",
+      "actionInteract": "Enviar mensaje",
+      "actionClose": "Cerrar conversación",
+      "message": "Mensaje",
+      "messagePlaceholder": "Escriba el mensaje que se enviará...",
+      "businessHours": "Ejecutar solo en horario comercial (8h–18h, lun–vie)",
+      "empty": "Sin reglas configuradas",
+      "emptyHint": "Agregue etapas para automatizar el seguimiento de conversaciones inactivas.",
+      "step": "Etapa {number}"
     }
   },
   "knowledgeBases": {

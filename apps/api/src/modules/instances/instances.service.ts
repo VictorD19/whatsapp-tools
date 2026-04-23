@@ -162,7 +162,6 @@ export class InstancesService {
     const updateData: Record<string, unknown> = {}
     if (dto.name !== undefined) updateData.name = dto.name
     if (dto.defaultAssistantId !== undefined) updateData.defaultAssistantId = dto.defaultAssistantId
-    if (dto.inactivityFlowRules !== undefined) updateData.inactivityFlowRules = dto.inactivityFlowRules
 
     return this.repository.update(tenantId, id, updateData)
   }

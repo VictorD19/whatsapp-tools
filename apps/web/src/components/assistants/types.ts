@@ -1,3 +1,10 @@
+export interface InactivityRule {
+  timeInSeconds: number
+  actionType: 'interact' | 'close'
+  message?: string
+  allowExecutionAnyTime: boolean
+}
+
 export interface Assistant {
   id: string
   name: string
@@ -11,6 +18,7 @@ export interface Assistant {
   handoffKeywords: string[]
   audioResponseMode: 'never' | 'auto' | 'always'
   voiceId: string
+  inactivityFlowRules: InactivityRule[]
   knowledgeBases: Array<{ knowledgeBaseId: string; knowledgeBase: { id: string; name: string } }>
   tools: Array<{ aiToolId: string; aiTool: { id: string; name: string; type: string } }>
 }

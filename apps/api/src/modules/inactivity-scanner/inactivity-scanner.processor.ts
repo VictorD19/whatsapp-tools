@@ -26,17 +26,22 @@ export class InactivityScannerProcessor {
     @Process('scan')
     async handle() {
         const instances = await this.prisma.instance.findMany({
-            where: { status: 'CONNECTED' },
+            where: {
+                status: 'CONNECTED',
+                defaultAssistantId: { not: null },
+            },
             select: {
                 id: true,
                 evolutionId: true,
                 tenantId: true,
-                inactivityFlowRules: true,
+                defaultAssistant: {
+                    select: { inactivityFlowRules: true },
+                },
             },
         })
 
         for (const instance of instances) {
-            const rules = instance.inactivityFlowRules as unknown as InactivityRule[]
+            const rules = instance.defaultAssistant?.inactivityFlowRules as unknown as InactivityRule[]
             if (!Array.isArray(rules) || rules.length === 0) continue
 
             const conversations = await this.prisma.conversation.findMany({

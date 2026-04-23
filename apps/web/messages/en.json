@@ -850,6 +850,24 @@
       "error": {
         "saving": "Error saving settings"
       }
+    },
+    "inactivity": {
+      "tab": "Inactivity",
+      "title": "Inactivity Rules",
+      "description": "Configure automatic actions when a customer stops responding.",
+      "addStep": "Add step",
+      "removeStep": "Remove step",
+      "after": "After",
+      "minutes": "minutes",
+      "action": "Action",
+      "actionInteract": "Send message",
+      "actionClose": "Close conversation",
+      "message": "Message",
+      "messagePlaceholder": "Type the message that will be sent...",
+      "businessHours": "Only execute during business hours (8AM–6PM, Mon–Fri)",
+      "empty": "No rules configured",
+      "emptyHint": "Add steps to automate follow-up on inactive conversations.",
+      "step": "Step {number}"
     }
   },
   "knowledgeBases": {

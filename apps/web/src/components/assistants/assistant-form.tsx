@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, FileText, Check, Wrench, Volume2 } from 'lucide-react'
+import { ArrowLeft, User, FileText, Check, Wrench, Volume2, Clock } from 'lucide-react'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,7 +29,7 @@ import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
 import { VoicePreviewButton } from './voice-preview-button'
-import type { Assistant, KnowledgeBase, AiTool, ApiResponse } from './types'
+import type { Assistant, KnowledgeBase, AiTool, ApiResponse, InactivityRule } from './types'
 
 const AI_AVATARS = [
   '/ai-avatars/1.png',
@@ -70,6 +70,7 @@ export interface AssistantFormData {
   aiToolIds: string[]
   audioResponseMode: 'never' | 'auto' | 'always'
   voiceId: string
+  inactivityFlowRules: InactivityRule[]
 }
 
 interface AssistantFormProps {
@@ -97,6 +98,9 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
   const [selectedKBs, setSelectedKBs] = useState<string[]>(
     assistant?.knowledgeBases.map((kb) => kb.knowledgeBaseId) ?? [],
   )
+  const [inactivityRules, setInactivityRules] = useState<InactivityRule[]>(
+    assistant?.inactivityFlowRules ?? [],
+  )
 
   useEffect(() => {
     if (assistant) {
@@ -111,6 +115,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
       setAudioResponseMode(assistant.audioResponseMode ?? 'never')
       setVoiceId(assistant.voiceId ?? 'pt-BR-FranciscaNeural')
       setSelectedKBs(assistant.knowledgeBases.map((kb) => kb.knowledgeBaseId))
+      setInactivityRules(assistant.inactivityFlowRules ?? [])
     }
   }, [assistant])
 
@@ -164,8 +169,9 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
       aiToolIds: [],
       audioResponseMode,
       voiceId,
+      inactivityFlowRules: inactivityRules,
     })
-  }, [name, description, avatarUrl, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, selectedKBs, audioResponseMode, voiceId, onSave])
+  }, [name, description, avatarUrl, avatarEmoji, model, systemPrompt, waitTimeSeconds, isActive, selectedKBs, audioResponseMode, voiceId, inactivityRules, onSave])
 
   return (
     <PageLayout
@@ -206,6 +212,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
             {[
               { value: 'profile', label: t('tabs.profile'), icon: User },
               { value: 'instructions', label: t('tabs.instructions'), icon: FileText },
+              { value: 'inactivity', label: t('inactivity.tab'), icon: Clock },
             ].map(({ value, label, icon: Icon }) => (
               <TabsTrigger
                 key={value}
@@ -463,6 +470,130 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                 slashCommands={slashCommands}
               />
             </div>
+          </div>
+        </TabsContent>
+
+        {/* INATIVIDADE */}
+        <TabsContent value="inactivity" className="flex-1 overflow-y-auto p-5 mt-0">
+          <div className="max-w-2xl">
+            <div className="space-y-1 mb-5">
+              <h3 className="text-sm font-medium">{t('inactivity.title')}</h3>
+              <p className="text-xs text-muted-foreground">{t('inactivity.description')}</p>
+            </div>
+
+            {inactivityRules.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">{t('inactivity.empty')}</p>
+                <p className="text-xs mt-1">{t('inactivity.emptyHint')}</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {inactivityRules.map((rule, index) => (
+                  <div key={index} className="rounded-lg border p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {t('inactivity.step', { number: index + 1 })}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setInactivityRules((prev) => prev.filter((_, i) => i !== index))
+                        }}
+                      >
+                        {t('inactivity.removeStep')}
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground shrink-0">{t('inactivity.after')}</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={Math.round(rule.timeInSeconds / 60)}
+                        onChange={(e) => {
+                          const minutes = Number(e.target.value)
+                          if (minutes < 1) return
+                          setInactivityRules((prev) =>
+                            prev.map((r, i) => (i === index ? { ...r, timeInSeconds: minutes * 60 } : r)),
+                          )
+                        }}
+                        className="w-24"
+                      />
+                      <span className="text-sm text-muted-foreground">{t('inactivity.minutes')}</span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">{t('inactivity.action')}</Label>
+                      <Select
+                        value={rule.actionType}
+                        onValueChange={(v) => {
+                          setInactivityRules((prev) =>
+                            prev.map((r, i) => (i === index ? { ...r, actionType: v as 'interact' | 'close' } : r)),
+                          )
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="interact">{t('inactivity.actionInteract')}</SelectItem>
+                          <SelectItem value="close">{t('inactivity.actionClose')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {rule.actionType === 'interact' && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">{t('inactivity.message')}</Label>
+                        <Textarea
+                          value={rule.message ?? ''}
+                          onChange={(e) => {
+                            setInactivityRules((prev) =>
+                              prev.map((r, i) => (i === index ? { ...r, message: e.target.value } : r)),
+                            )
+                          }}
+                          placeholder={t('inactivity.messagePlaceholder')}
+                          rows={2}
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id={`business-hours-${index}`}
+                        checked={!rule.allowExecutionAnyTime}
+                        onCheckedChange={(checked) => {
+                          setInactivityRules((prev) =>
+                            prev.map((r, i) =>
+                              i === index ? { ...r, allowExecutionAnyTime: !checked } : r,
+                            ),
+                          )
+                        }}
+                      />
+                      <Label htmlFor={`business-hours-${index}`} className="text-xs font-normal cursor-pointer">
+                        {t('inactivity.businessHours')}
+                      </Label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Button
+              variant="outline"
+              className="mt-4 w-full"
+              onClick={() => {
+                setInactivityRules((prev) => [
+                  ...prev,
+                  { timeInSeconds: 1800, actionType: 'interact', message: '', allowExecutionAnyTime: true },
+                ])
+              }}
+            >
+              + {t('inactivity.addStep')}
+            </Button>
           </div>
         </TabsContent>
       </Tabs>
