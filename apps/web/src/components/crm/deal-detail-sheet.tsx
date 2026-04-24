@@ -22,7 +22,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { useRouter } from 'next/navigation'
-import { useInboxStore } from '@/stores/inbox.store'
 import { useDeal, type Deal, type DealNote } from '@/hooks/use-deal'
 import type { PipelineStage } from '@/hooks/use-pipeline-stages'
 import { getInitials, formatPhone, cn } from '@/lib/utils'
@@ -45,7 +44,6 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
   const t = useTranslations('crm')
   const tc = useTranslations('common')
   const router = useRouter()
-  const selectConversation = useInboxStore((s) => s.selectConversation)
   const { updateDeal, deleteDeal, moveDeal, notes, isLoadingNotes, fetchNotes, addNote, deleteNote } = useDeal()
 
   const [editingTitle, setEditingTitle] = useState(false)
@@ -308,9 +306,8 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                   size="sm"
                   className="w-full"
                   onClick={() => {
-                    selectConversation(deal.conversationId!)
                     onClose()
-                    router.push('/inbox')
+                    router.push(`/inbox?conversationId=${deal.conversationId}`)
                   }}
                 >
                   <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
