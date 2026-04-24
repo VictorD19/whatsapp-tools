@@ -351,6 +351,7 @@
     "assigneeFilter": "Atendente",
     "allAssignees": "Todos",
     "saving": "Salvando...",
+    "goToConversation": "Ir para conversa",
     "success": {
       "deleted": "Negócio excluído",
       "noteAdded": "Nota adicionada"

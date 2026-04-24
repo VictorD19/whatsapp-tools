@@ -351,6 +351,7 @@
     "assigneeFilter": "Agente",
     "allAssignees": "Todos",
     "saving": "Guardando...",
+    "goToConversation": "Ir a conversación",
     "success": {
       "deleted": "Negocio eliminado",
       "noteAdded": "Nota agregada"

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
-  Phone, User, Calendar, Check, ChevronDown, Pencil, X, Loader2, StickyNote, Trash2,
+  Phone, User, Calendar, Check, ChevronDown, Pencil, X, Loader2, StickyNote, Trash2, MessageSquare,
 } from 'lucide-react'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
@@ -21,6 +21,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
+import { useRouter } from 'next/navigation'
+import { useInboxStore } from '@/stores/inbox.store'
 import { useDeal, type Deal, type DealNote } from '@/hooks/use-deal'
 import type { PipelineStage } from '@/hooks/use-pipeline-stages'
 import { getInitials, formatPhone, cn } from '@/lib/utils'
@@ -42,6 +44,8 @@ function formatNoteDate(dateStr: string): string {
 export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDeleted }: DealDetailSheetProps) {
   const t = useTranslations('crm')
   const tc = useTranslations('common')
+  const router = useRouter()
+  const selectConversation = useInboxStore((s) => s.selectConversation)
   const { updateDeal, deleteDeal, moveDeal, notes, isLoadingNotes, fetchNotes, addNote, deleteNote } = useDeal()
 
   const [editingTitle, setEditingTitle] = useState(false)
@@ -298,6 +302,21 @@ export function DealDetailSheet({ open, onClose, deal, stages, onUpdated, onDele
                   </div>
                 </div>
               </div>
+              {deal.conversationId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    selectConversation(deal.conversationId!)
+                    onClose()
+                    router.push('/inbox')
+                  }}
+                >
+                  <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                  {t('goToConversation')}
+                </Button>
+              )}
             </div>
 
             <Separator />

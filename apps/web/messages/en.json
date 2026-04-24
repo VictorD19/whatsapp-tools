@@ -351,6 +351,7 @@
     "assigneeFilter": "Assignee",
     "allAssignees": "All",
     "saving": "Saving...",
+    "goToConversation": "Go to conversation",
     "success": {
       "deleted": "Deal deleted",
       "noteAdded": "Note added"
