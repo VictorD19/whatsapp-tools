@@ -589,10 +589,15 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                   <Input
                     type="number"
                     min={1}
-                    value={Math.round(modalRule.timeInSeconds / 60)}
+                    value={modalRule.timeInSeconds > 0 ? Math.round(modalRule.timeInSeconds / 60) : ''}
                     onChange={(e) => {
-                      const minutes = Number(e.target.value)
-                      if (minutes < 1) return
+                      const val = e.target.value
+                      if (val === '') {
+                        setModalRule((prev) => ({ ...prev, timeInSeconds: 0 }))
+                        return
+                      }
+                      const minutes = Number(val)
+                      if (isNaN(minutes) || minutes < 0) return
                       setModalRule((prev) => ({ ...prev, timeInSeconds: minutes * 60 }))
                     }}
                     className="w-24"
@@ -657,7 +662,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                     }
                     setRuleModalOpen(false)
                   }}
-                  disabled={modalRule.actionType === 'interact' && !modalRule.message?.trim()}
+                  disabled={modalRule.timeInSeconds < 60 || (modalRule.actionType === 'interact' && !modalRule.message?.trim())}
                 >
                   {editingRuleIndex !== null ? tc('save') : t('inactivity.addStep')}
                 </Button>
