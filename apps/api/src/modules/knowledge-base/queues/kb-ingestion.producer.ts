@@ -16,6 +16,8 @@ export class KbIngestionProducer {
     await this.queue.add('ingest-source', data, {
       attempts: 3,
       backoff: { type: 'exponential', delay: 2000 },
+      removeOnComplete: 5000,
+      removeOnFail: 3600000,
     })
   }
 }

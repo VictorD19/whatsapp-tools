@@ -15,7 +15,8 @@ export class NotificationProducer {
     return this.queue.add('create-notification', data, {
       attempts: 3,
       backoff: { type: 'exponential', delay: 1000 },
-      removeOnComplete: true,
+      removeOnComplete: 5000,
+      removeOnFail: 3600000,
     })
   }
 }

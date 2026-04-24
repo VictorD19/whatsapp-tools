@@ -22,7 +22,8 @@ export class FollowUpProducer {
       delay,
       attempts: 3,
       backoff: { type: 'exponential', delay: 5000 },
-      removeOnComplete: true,
+      removeOnComplete: 5000,
+      removeOnFail: 3600000,
     })
   }
 

@@ -25,7 +25,8 @@ export class BroadcastProducer {
         jobId: `broadcast-${broadcastId}`,
         delay: delayMs ?? 0,
         attempts: 1,
-        removeOnComplete: true,
+        removeOnComplete: 5000,
+        removeOnFail: 3600000,
       },
     )
     this.logger.log(

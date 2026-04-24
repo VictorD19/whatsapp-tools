@@ -42,8 +42,8 @@ export class AiResponseProducer {
       delay: delayMs,
       attempts: 2,
       backoff: { type: 'fixed', delay: 5000 },
-      removeOnComplete: true,
-      removeOnFail: false,
+      removeOnComplete: 5000,
+      removeOnFail: 3600000,
     })
   }
 }

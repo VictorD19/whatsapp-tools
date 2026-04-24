@@ -25,7 +25,8 @@ export class GroupExtractProducer {
     return this.queue.add('extract-contacts', payload, {
       jobId: `extract-${payload.tenantId}-${payload.instanceId}-${Date.now()}`,
       attempts: 1,
-      removeOnComplete: true,
+      removeOnComplete: 5000,
+      removeOnFail: 3600000,
     })
   }
 }

@@ -473,8 +473,8 @@ export class InboxWebhookProcessor {
             delay: DEFAULT_AI_WAIT_MS,
             attempts: 2,
             backoff: { type: 'fixed', delay: 5000 },
-            removeOnComplete: true,
-            removeOnFail: false,
+            removeOnComplete: 5000,
+            removeOnFail: 3600000,
           },
         )
 

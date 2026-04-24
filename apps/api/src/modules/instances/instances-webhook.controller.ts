@@ -58,11 +58,15 @@ export class InstancesWebhookController {
       await this.instanceQueue.add('instance-webhook', job, {
         attempts: 3,
         backoff: { type: 'exponential', delay: 1000 },
+        removeOnComplete: 5000,
+        removeOnFail: 3600000,
       })
     } else if (INBOX_EVENTS.has(event)) {
       await this.inboxQueue.add('inbox-webhook', job, {
         attempts: 3,
         backoff: { type: 'exponential', delay: 1000 },
+        removeOnComplete: 5000,
+        removeOnFail: 3600000,
       })
     } else {
       this.logger.debug(`Unrouted webhook event: ${event}`, 'Webhook')
