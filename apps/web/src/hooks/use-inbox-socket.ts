@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { getSocket } from '@/lib/socket'
 import { apiGet } from '@/lib/api'
 import { useInboxStore, type Conversation, type InboxTab, type Message, type MessageReaction, type MessageStatus } from '@/stores/inbox.store'
+import { useNotificationsStore } from '@/stores/notifications.store'
 
 const NOTIFICATION_SOUND_URL = '/sounds/notification.wav'
 
@@ -73,6 +74,13 @@ function refreshInbox() {
   }, 1000)
 }
 
+function isInAppEnabled(type: string): boolean {
+  const { preferences } = useNotificationsStore.getState()
+  const pref = preferences.find((p) => p.type === type)
+  // Default to true if no preference set
+  return pref?.inApp ?? true
+}
+
 export function useInboxSocket() {
   const upsertConversation = useInboxStore((s) => s.upsertConversation)
   const removeConversation = useInboxStore((s) => s.removeConversation)
@@ -90,7 +98,9 @@ export function useInboxSocket() {
     function handleConversationCreated(payload: { conversation: Conversation }) {
       if (!payload.conversation?.id) return
       upsertConversation(payload.conversation)
-      playNotificationSound()
+      if (isInAppEnabled('NEW_MESSAGE')) {
+        playNotificationSound()
+      }
       refreshInbox()
       // Update badge in title
       const total = useInboxStore.getState().conversations.reduce(
@@ -108,7 +118,9 @@ export function useInboxSocket() {
       // Only increment unread if not currently viewing this conversation
       if (selectedRef.current !== payload.conversationId) {
         incrementUnread(payload.conversationId)
-        playNotificationSound()
+        if (isInAppEnabled('NEW_MESSAGE')) {
+          playNotificationSound()
+        }
       }
 
       // Reorder conversations — move to top

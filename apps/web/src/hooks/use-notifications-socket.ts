@@ -29,11 +29,15 @@ export function useNotificationsSocket() {
     socket.on(
       'notification:new',
       ({ notification, unreadCount }: { notification: Notification; unreadCount: number }) => {
-        addNotification(notification)
-        setUnreadCount(unreadCount)
+        const pref = preferences.find((p) => p.type === notification.type)
+
+        // Only add to store (bell badge) if inApp is enabled
+        if (pref?.inApp !== false) {
+          addNotification(notification)
+          setUnreadCount(unreadCount)
+        }
 
         // Show browser notification if preference is active for this type
-        const pref = preferences.find((p) => p.type === notification.type)
         if (pref?.browser) {
           showBrowserNotification(
             notification.title,
