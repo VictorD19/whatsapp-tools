@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, FileText, Check, Wrench, Volume2, Clock } from 'lucide-react'
+import { ArrowLeft, User, FileText, Check, Wrench, Volume2, Clock, Plus, Pencil, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,6 +12,14 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import {
   Popover,
   PopoverContent,
@@ -101,6 +109,14 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
   const [inactivityRules, setInactivityRules] = useState<InactivityRule[]>(
     assistant?.inactivityFlowRules ?? [],
   )
+  const [editingRuleIndex, setEditingRuleIndex] = useState<number | null>(null)
+  const [ruleModalOpen, setRuleModalOpen] = useState(false)
+  const [modalRule, setModalRule] = useState<InactivityRule>({
+    timeInSeconds: 1800,
+    actionType: 'interact',
+    message: '',
+    allowExecutionAnyTime: true,
+  })
 
   useEffect(() => {
     if (assistant) {
@@ -476,125 +492,178 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
         {/* INATIVIDADE */}
         <TabsContent value="inactivity" className="flex-1 overflow-y-auto p-5 mt-0">
           <div className="max-w-2xl">
-            <div className="space-y-1 mb-5">
-              <h3 className="text-sm font-medium">{t('inactivity.title')}</h3>
-              <p className="text-xs text-muted-foreground">{t('inactivity.description')}</p>
+            <div className="flex items-center justify-between mb-5">
+              <div className="space-y-1">
+                <h3 className="text-sm font-medium">{t('inactivity.title')}</h3>
+                <p className="text-xs text-muted-foreground">{t('inactivity.description')}</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setModalRule({ timeInSeconds: 1800, actionType: 'interact', message: '', allowExecutionAnyTime: true })
+                  setEditingRuleIndex(null)
+                  setRuleModalOpen(true)
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                {t('inactivity.addStep')}
+              </Button>
             </div>
 
             {inactivityRules.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed">
                 <Clock className="h-8 w-8 mx-auto mb-3 opacity-50" />
                 <p className="text-sm">{t('inactivity.empty')}</p>
                 <p className="text-xs mt-1">{t('inactivity.emptyHint')}</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {inactivityRules.map((rule, index) => (
-                  <div key={index} className="rounded-lg border p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {t('inactivity.step', { number: index + 1 })}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          setInactivityRules((prev) => prev.filter((_, i) => i !== index))
-                        }}
-                      >
-                        {t('inactivity.removeStep')}
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground shrink-0">{t('inactivity.after')}</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={Math.round(rule.timeInSeconds / 60)}
-                        onChange={(e) => {
-                          const minutes = Number(e.target.value)
-                          if (minutes < 1) return
-                          setInactivityRules((prev) =>
-                            prev.map((r, i) => (i === index ? { ...r, timeInSeconds: minutes * 60 } : r)),
-                          )
-                        }}
-                        className="w-24"
-                      />
-                      <span className="text-sm text-muted-foreground">{t('inactivity.minutes')}</span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">{t('inactivity.action')}</Label>
-                      <Select
-                        value={rule.actionType}
-                        onValueChange={(v) => {
-                          setInactivityRules((prev) =>
-                            prev.map((r, i) => (i === index ? { ...r, actionType: v as 'interact' | 'close' } : r)),
-                          )
-                        }}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="interact">{t('inactivity.actionInteract')}</SelectItem>
-                          <SelectItem value="close">{t('inactivity.actionClose')}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {rule.actionType === 'interact' && (
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">{t('inactivity.message')}</Label>
-                        <Textarea
-                          value={rule.message ?? ''}
-                          onChange={(e) => {
-                            setInactivityRules((prev) =>
-                              prev.map((r, i) => (i === index ? { ...r, message: e.target.value } : r)),
-                            )
-                          }}
-                          placeholder={t('inactivity.messagePlaceholder')}
-                          rows={2}
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id={`business-hours-${index}`}
-                        checked={!rule.allowExecutionAnyTime}
-                        onCheckedChange={(checked) => {
-                          setInactivityRules((prev) =>
-                            prev.map((r, i) =>
-                              i === index ? { ...r, allowExecutionAnyTime: !checked } : r,
-                            ),
-                          )
-                        }}
-                      />
-                      <Label htmlFor={`business-hours-${index}`} className="text-xs font-normal cursor-pointer">
-                        {t('inactivity.businessHours')}
-                      </Label>
-                    </div>
-                  </div>
-                ))}
+              <div className="rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">{t('inactivity.tableStep')}</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">{t('inactivity.tableTime')}</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">{t('inactivity.action')}</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">{t('inactivity.businessHoursShort')}</th>
+                      <th className="w-20 px-4 py-2.5"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inactivityRules.map((rule, index) => (
+                      <tr key={index} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3 font-medium">{index + 1}</td>
+                        <td className="px-4 py-3">{Math.round(rule.timeInSeconds / 60)} {t('inactivity.minutes')}</td>
+                        <td className="px-4 py-3">
+                          {rule.actionType === 'interact' ? t('inactivity.actionInteract') : t('inactivity.actionClose')}
+                        </td>
+                        <td className="px-4 py-3">
+                          {rule.allowExecutionAnyTime ? t('inactivity.anyTime') : t('inactivity.businessOnly')}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={() => {
+                                setModalRule({ ...rule })
+                                setEditingRuleIndex(index)
+                                setRuleModalOpen(true)
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setInactivityRules((prev) => prev.filter((_, i) => i !== index))
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
-
-            <Button
-              variant="outline"
-              className="mt-4 w-full"
-              onClick={() => {
-                setInactivityRules((prev) => [
-                  ...prev,
-                  { timeInSeconds: 1800, actionType: 'interact', message: '', allowExecutionAnyTime: true },
-                ])
-              }}
-            >
-              + {t('inactivity.addStep')}
-            </Button>
           </div>
+
+          {/* Modal de criar/editar regra */}
+          <Dialog open={ruleModalOpen} onOpenChange={(v) => !v && setRuleModalOpen(false)}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingRuleIndex !== null ? t('inactivity.editStep') : t('inactivity.addStep')}
+                </DialogTitle>
+                <DialogDescription>{t('inactivity.modalDescription')}</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground shrink-0">{t('inactivity.after')}</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={Math.round(modalRule.timeInSeconds / 60)}
+                    onChange={(e) => {
+                      const minutes = Number(e.target.value)
+                      if (minutes < 1) return
+                      setModalRule((prev) => ({ ...prev, timeInSeconds: minutes * 60 }))
+                    }}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-muted-foreground">{t('inactivity.minutes')}</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>{t('inactivity.action')}</Label>
+                  <Select
+                    value={modalRule.actionType}
+                    onValueChange={(v) => setModalRule((prev) => ({ ...prev, actionType: v as 'interact' | 'close' }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="interact">{t('inactivity.actionInteract')}</SelectItem>
+                      <SelectItem value="close">{t('inactivity.actionClose')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {modalRule.actionType === 'interact' && (
+                  <div className="space-y-1.5">
+                    <Label>{t('inactivity.message')}</Label>
+                    <Textarea
+                      value={modalRule.message ?? ''}
+                      onChange={(e) => setModalRule((prev) => ({ ...prev, message: e.target.value }))}
+                      placeholder={t('inactivity.messagePlaceholder')}
+                      rows={3}
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="modal-business-hours"
+                    checked={!modalRule.allowExecutionAnyTime}
+                    onCheckedChange={(checked) => {
+                      setModalRule((prev) => ({ ...prev, allowExecutionAnyTime: !checked }))
+                    }}
+                  />
+                  <Label htmlFor="modal-business-hours" className="text-sm font-normal cursor-pointer">
+                    {t('inactivity.businessHours')}
+                  </Label>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setRuleModalOpen(false)}>
+                  {tc('cancel')}
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (editingRuleIndex !== null) {
+                      setInactivityRules((prev) =>
+                        prev.map((r, i) => (i === editingRuleIndex ? modalRule : r)),
+                      )
+                    } else {
+                      setInactivityRules((prev) => [...prev, modalRule])
+                    }
+                    setRuleModalOpen(false)
+                  }}
+                  disabled={modalRule.actionType === 'interact' && !modalRule.message?.trim()}
+                >
+                  {editingRuleIndex !== null ? tc('save') : t('inactivity.addStep')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </PageLayout>
