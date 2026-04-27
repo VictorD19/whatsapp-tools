@@ -21,6 +21,7 @@ import {
   Tag,
   Building,
   CreditCard,
+  CalendarDays,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -50,6 +51,7 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
       items: [
         { icon: Inbox, label: tNav('items.inbox'), href: '/inbox' },
         { icon: Briefcase, label: tNav('items.crm'), href: '/crm' },
+        { icon: CalendarDays, label: tNav('items.calendar'), href: '/calendar' },
       ],
     },
     {

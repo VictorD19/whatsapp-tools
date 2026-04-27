@@ -122,7 +122,8 @@
       "plans": "Plans",
       "knowledgeBases": "Knowledge Bases",
       "aiTools": "AI Tools",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "calendar": "Calendar"
     },
     "user": {
       "myProfile": "My profile",
@@ -1643,5 +1644,22 @@
     "delivered": "Delivered",
     "read": "Read",
     "failed": "Failed"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "today": "Today",
+    "noEvents": "No events in this period",
+    "filterPlaceholder": "All assistants",
+    "detail": {
+      "assistant": "Assistant",
+      "contact": "Associated contact",
+      "location": "Location",
+      "description": "Description",
+      "meetLink": "Open in Google Meet",
+      "noDescription": "No description"
+    },
+    "legend": {
+      "title": "Assistants"
+    }
   }
 }
