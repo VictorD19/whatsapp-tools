@@ -36,38 +36,47 @@ function InboxContent() {
   // Socket for real-time updates
   useInboxSocket()
 
+  const lastFetchedId = React.useRef<string | null>(null)
+
   // Handle ?conversationId= from external navigation (e.g. CRM)
   useEffect(() => {
     const targetId = searchParams.get('conversationId')
     if (!targetId) return
 
     // Already selected and present in store
-    if (selectedId === targetId && conversations.some((c) => c.id === targetId)) return
+    if (selectedId === targetId && conversations.some((c) => c.id === targetId)) {
+      lastFetchedId.current = null // Reset so we could fetch again if unselected
+      return
+    }
 
     // If conversation is in the list, just select it
     if (conversations.some((c) => c.id === targetId)) {
       selectConversation(targetId)
+      lastFetchedId.current = null
+      return
+    }
+
+    if (lastFetchedId.current === targetId) {
+      if (selectedId !== targetId) selectConversation(targetId)
       return
     }
 
     // Select immediately so setConversations preserves this conversation
     selectConversation(targetId)
+    lastFetchedId.current = targetId
 
-    // Fetch conversation from API and upsert into store
-    let cancelled = false
-    ;(async () => {
-      try {
-        const conv = await apiGet<Conversation>(`inbox/conversations/${targetId}`)
-        if (!cancelled && conv?.id) {
-          upsertConversation(conv)
+      // Fetch conversation from API and upsert into store
+      ; (async () => {
+        try {
+          const conv = await apiGet<Conversation>(`inbox/conversations/${targetId}`)
+          if (conv?.id) {
+            upsertConversation(conv)
+          }
+        } catch {
+          // Conversation may not exist or not belong to this tenant
+          selectConversation(null)
         }
-      } catch {
-        // Conversation may not exist or not belong to this tenant
-        if (!cancelled) selectConversation(null)
-      }
-    })()
-
-    return () => { cancelled = true }
+      })()
   }, [searchParams, selectedId, conversations, selectConversation, upsertConversation])
 
   return (
