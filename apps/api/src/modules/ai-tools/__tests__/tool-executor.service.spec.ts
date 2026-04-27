@@ -9,6 +9,7 @@ import type { ToolContext } from '../definitions/tool-executor.service'
 import { CALENDAR_PROVIDER } from '@modules/integrations/integrations.tokens'
 import type { ICalendarProvider } from '@modules/integrations/ports/calendar-provider.interface'
 import { IntegrationsService } from '@modules/integrations/integrations.service'
+import { IntegrationsRepository } from '@modules/integrations/integrations.repository'
 
 describe('ToolExecutorService', () => {
   let executor: ToolExecutorService
@@ -17,6 +18,7 @@ describe('ToolExecutorService', () => {
   let dealService: jest.Mocked<DealService>
   let calendarProvider: jest.Mocked<ICalendarProvider>
   let integrationsService: jest.Mocked<IntegrationsService>
+  let integrationsRepository: jest.Mocked<IntegrationsRepository>
 
   const now = new Date()
 
@@ -86,6 +88,13 @@ describe('ToolExecutorService', () => {
             getDecryptedAccessToken: jest.fn(),
           },
         },
+        {
+          provide: IntegrationsRepository,
+          useValue: {
+            findByTenantAndId: jest.fn(),
+            createCalendarEvent: jest.fn().mockResolvedValue({ id: 'evt-db-1' }),
+          },
+        },
       ],
     }).compile()
 
@@ -95,6 +104,7 @@ describe('ToolExecutorService', () => {
     dealService = module.get(DealService)
     calendarProvider = module.get(CALENDAR_PROVIDER) as unknown as jest.Mocked<ICalendarProvider>
     integrationsService = module.get(IntegrationsService) as unknown as jest.Mocked<IntegrationsService>
+    integrationsRepository = module.get(IntegrationsRepository) as unknown as jest.Mocked<IntegrationsRepository>
   })
 
   describe('BUSCAR_CONTATO', () => {
