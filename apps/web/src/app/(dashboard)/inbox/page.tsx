@@ -68,7 +68,8 @@ function InboxContent() {
       // Fetch conversation from API and upsert into store
       ; (async () => {
         try {
-          const conv = await apiGet<Conversation>(`inbox/conversations/${targetId}`)
+          const res = await apiGet<{ data: Conversation }>(`inbox/conversations/${targetId}`)
+          const conv = res.data
           if (conv?.id) {
             upsertConversation(conv)
           }
