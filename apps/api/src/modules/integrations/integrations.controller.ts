@@ -16,6 +16,8 @@ import { CurrentUser } from '@shared/decorators/current-user.decorator'
 import { Public } from '@shared/decorators/current-user.decorator'
 import { Roles } from '@shared/decorators/roles.decorator'
 import { RoleGuard } from '@core/guards/role.guard'
+import { ZodValidationPipe } from '@shared/pipes/zod-validation.pipe'
+import { listCalendarEventsSchema } from './dto/list-calendar-events.dto'
 
 @UseGuards(RoleGuard)
 @Roles('admin', 'agent')
@@ -52,6 +54,20 @@ export class IntegrationsController {
   @Get()
   findAll(@CurrentTenant() tenantId: string) {
     return this.integrationsService.findAll(tenantId)
+  }
+
+  @Get('calendar-events')
+  findCalendarEvents(
+    @CurrentTenant() tenantId: string,
+    @Query(new ZodValidationPipe(listCalendarEventsSchema))
+    query: { start: string; end: string; assistantId?: string },
+  ) {
+    return this.integrationsService.findCalendarEvents(
+      tenantId,
+      query.start,
+      query.end,
+      query.assistantId,
+    )
   }
 
   @Get(':id')

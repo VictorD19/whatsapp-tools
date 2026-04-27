@@ -92,4 +92,34 @@ export class IntegrationsService {
 
     return this.googleAuth.decrypt(integration.accessToken!)
   }
+
+  async findCalendarEvents(
+    tenantId: string,
+    start: string,
+    end: string,
+    assistantId?: string,
+  ) {
+    const events = await this.repository.findCalendarEvents(
+      tenantId,
+      new Date(start),
+      new Date(end),
+      assistantId,
+    )
+    return {
+      data: events.map((e) => ({
+        id: e.id,
+        title: e.title,
+        description: e.description,
+        startAt: e.startAt.toISOString(),
+        endAt: e.endAt.toISOString(),
+        timezone: e.timezone,
+        location: e.location,
+        hangoutLink: e.hangoutLink,
+        status: e.status,
+        attendees: e.attendees,
+        assistant: e.assistant,
+        createdAt: e.createdAt.toISOString(),
+      })),
+    }
+  }
 }

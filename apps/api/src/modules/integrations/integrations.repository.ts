@@ -75,4 +75,25 @@ export class IntegrationsRepository {
   }) {
     return this.prisma.calendarEvent.create({ data })
   }
+
+  async findCalendarEvents(
+    tenantId: string,
+    start: Date,
+    end: Date,
+    assistantId?: string,
+  ) {
+    return this.prisma.calendarEvent.findMany({
+      where: {
+        tenantId,
+        startAt: { gte: start, lte: end },
+        ...(assistantId ? { assistantId } : {}),
+      },
+      include: {
+        assistant: {
+          select: { id: true, name: true, avatarEmoji: true },
+        },
+      },
+      orderBy: { startAt: 'asc' },
+    })
+  }
 }
