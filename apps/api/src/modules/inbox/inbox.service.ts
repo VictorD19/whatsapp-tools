@@ -125,6 +125,7 @@ export class InboxService {
       assignedToId,
       unassigned,
       instanceId: filters.instanceId,
+      search: filters.search,
       page: filters.page,
       limit: filters.limit,
     })

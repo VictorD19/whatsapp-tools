@@ -11,9 +11,10 @@ interface PaginatedResponse<T> {
 
 const ALL_TABS: InboxTab[] = ['all', 'mine', 'unassigned']
 
-function tabToFilters(tab: InboxTab, instanceId?: string | null) {
+function tabToFilters(tab: InboxTab, instanceId?: string | null, search?: string) {
   let query = `tab=${tab}`
   if (instanceId) query += `&instanceId=${instanceId}`
+  if (search) query += `&search=${encodeURIComponent(search)}`
   return query
 }
 
@@ -29,10 +30,10 @@ export function useConversations() {
   } = useInboxStore()
 
   const fetchConversations = useCallback(
-    async (tab: InboxTab, instanceId?: string | null) => {
+    async (tab: InboxTab, instanceId?: string | null, search?: string) => {
       setLoadingConversations(true)
       try {
-        const query = tabToFilters(tab, instanceId)
+        const query = tabToFilters(tab, instanceId, search)
         const res = await apiGet<PaginatedResponse<Conversation[]>>(
           `inbox/conversations?${query}&page=1&limit=20`
         )
@@ -43,25 +44,25 @@ export function useConversations() {
           hasMore: res.meta.page < res.meta.totalPages,
         }
         setConversations(res.data, pagination)
-        setTabCount(tab, res.meta.total)
+        if (!search) setTabCount(tab, res.meta.total)
       } catch {
         toast({ title: t('errorLoadingConversations'), variant: 'destructive' })
       } finally {
         setLoadingConversations(false)
       }
     },
-    [setConversations, setLoadingConversations, setTabCount],
+    [setConversations, setLoadingConversations, setTabCount, t],
   )
 
   const fetchMoreConversations = useCallback(
-    async (tab: InboxTab, instanceId?: string | null) => {
+    async (tab: InboxTab, instanceId?: string | null, search?: string) => {
       const { page, hasMore } = useInboxStore.getState().conversationsPagination
       if (!hasMore) return
 
       setLoadingMoreConversations(true)
       try {
         const nextPage = page + 1
-        const query = tabToFilters(tab, instanceId)
+        const query = tabToFilters(tab, instanceId, search)
         const res = await apiGet<PaginatedResponse<Conversation[]>>(
           `inbox/conversations?${query}&page=${nextPage}&limit=20`
         )
@@ -78,7 +79,7 @@ export function useConversations() {
         setLoadingMoreConversations(false)
       }
     },
-    [appendConversations, setLoadingMoreConversations],
+    [appendConversations, setLoadingMoreConversations, t],
   )
 
   const fetchTabCounts = useCallback(async (instanceId?: string | null) => {

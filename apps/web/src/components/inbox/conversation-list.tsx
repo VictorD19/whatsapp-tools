@@ -25,9 +25,12 @@ const tabKeys: { key: InboxTab; labelKey: string; shortLabelKey: string }[] = [
   { key: 'unassigned', labelKey: 'tabs.unassigned', shortLabelKey: 'tabs.unassignedShort' },
 ]
 
+const SEARCH_DEBOUNCE_MS = 300
+
 export function ConversationList() {
   const t = useTranslations('inbox')
-  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [newConvOpen, setNewConvOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const activeTab = useInboxStore((s) => s.activeTab)
@@ -57,16 +60,54 @@ export function ConversationList() {
     fetchTabCounts(filterInstanceId)
   }, [fetchTabCounts, filterInstanceId])
 
+  // Debounce search input
   useEffect(() => {
-    fetchConversations(activeTab, filterInstanceId)
-  }, [activeTab, filterInstanceId, fetchConversations])
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput)
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
+  // Fetch conversations when tab, filter, or debounced search changes
+  useEffect(() => {
+    fetchConversations(activeTab, filterInstanceId, debouncedSearch || undefined)
+  }, [activeTab, filterInstanceId, debouncedSearch, fetchConversations])
+
+  // Remember selection before search started
+  const prevSelectionRef = useRef<string | null>(selectedConversationId)
+  useEffect(() => {
+    if (selectedConversationId) {
+      prevSelectionRef.current = selectedConversationId
+    }
+  }, [selectedConversationId])
+
+  // Restore selection when search is cleared
+  const prevSearchActiveRef = useRef(false)
+  useEffect(() => {
+    const wasActive = prevSearchActiveRef.current
+    const isActive = !!debouncedSearch
+
+    if (wasActive && !isActive) {
+      // Search cleared — restore previous selection if still in list
+      const prev = prevSelectionRef.current
+      if (prev && conversations.some((c) => c.id === prev)) {
+        selectConversation(prev)
+      }
+    } else if (isActive && selectedConversationId) {
+      // Search is active — deselect if selected conversation is not in results
+      if (!conversations.some((c) => c.id === selectedConversationId)) {
+        selectConversation(null)
+      }
+    }
+    prevSearchActiveRef.current = isActive
+  }, [debouncedSearch, conversations, selectedConversationId, selectConversation])
 
   // Infinite scroll via IntersectionObserver
   const handleLoadMore = useCallback(() => {
-    if (!isLoadingMore && hasMore && !search) {
-      fetchMoreConversations(activeTab, filterInstanceId)
+    if (!isLoadingMore && hasMore) {
+      fetchMoreConversations(activeTab, filterInstanceId, debouncedSearch || undefined)
     }
-  }, [isLoadingMore, hasMore, search, fetchMoreConversations, activeTab, filterInstanceId])
+  }, [isLoadingMore, hasMore, fetchMoreConversations, activeTab, filterInstanceId, debouncedSearch])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -85,13 +126,6 @@ export function ConversationList() {
     return () => observer.disconnect()
   }, [handleLoadMore])
 
-  const filtered = search
-    ? conversations.filter((c) => {
-      const name = c.contact.name ?? c.contact.phone
-      return name.toLowerCase().includes(search.toLowerCase())
-    })
-    : conversations
-
   return (
     <div className="flex h-full flex-col bg-background">
       <NewConversationDialog
@@ -99,8 +133,6 @@ export function ConversationList() {
         onClose={() => setNewConvOpen(false)}
         onConversationCreated={(id) => {
           setNewConvOpen(false)
-          // Deseleciona primeiro para forçar re-mount do MessageThread
-          // caso a conversa já estivesse selecionada (useEffect não re-executa com mesmo id)
           selectConversation(null)
           setTimeout(() => selectConversation(id), 0)
         }}
@@ -212,11 +244,19 @@ export function ConversationList() {
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
           <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             placeholder={t('searchContact')}
             className="pl-7 h-7 text-xs bg-muted/40 border-transparent focus-visible:border-border focus-visible:bg-background rounded-lg placeholder:text-muted-foreground/60"
           />
+          {searchInput && (
+            <button
+              onClick={() => setSearchInput('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -239,13 +279,13 @@ export function ConversationList() {
       )}
 
       {/* Count + sort hint */}
-      {!isLoading && filtered.length > 0 && (
+      {!isLoading && conversations.length > 0 && (
         <div className="px-3 pb-1.5 shrink-0">
           <p className="text-[10px] text-muted-foreground/60">
-            {search
-              ? (filtered.length === 1
-                  ? t('conversationCountSearchSingle', { count: filtered.length })
-                  : t('conversationCountSearch', { count: filtered.length }))
+            {debouncedSearch
+              ? (conversations.length === 1
+                  ? t('conversationCountSearchSingle', { count: conversations.length })
+                  : t('conversationCountSearch', { count: conversations.length }))
               : (total === 1
                   ? t('conversationCountSingle', { count: conversations.length, total })
                   : t('conversationCount', { count: conversations.length, total }))
@@ -272,15 +312,15 @@ export function ConversationList() {
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : conversations.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
               <Search className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="text-xs font-medium text-muted-foreground">
-              {search ? t('noResultsSearch') : t('noConversationsHere')}
+              {debouncedSearch ? t('noResultsSearch') : t('noConversationsHere')}
             </p>
-            {!search && (
+            {!debouncedSearch && (
               <p className="text-[11px] text-muted-foreground/60">
                 {t('conversationsWillAppear')}
               </p>
@@ -288,7 +328,7 @@ export function ConversationList() {
           </div>
         ) : (
           <div className="space-y-px px-1 pb-2">
-            {filtered.map((conv) => (
+            {conversations.map((conv) => (
               <ConversationListItem
                 key={conv.id}
                 conversation={conv}
@@ -298,7 +338,7 @@ export function ConversationList() {
             ))}
 
             {/* Infinite scroll sentinel */}
-            {!search && hasMore && (
+            {hasMore && (
               <div ref={sentinelRef} className="flex items-center justify-center py-3">
                 {isLoadingMore && (
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

@@ -16,6 +16,7 @@ export class InboxRepository {
       assignedToId?: string
       unassigned?: boolean
       instanceId?: string
+      search?: string
       page: number
       limit: number
     },
@@ -28,6 +29,12 @@ export class InboxRepository {
       ...(filters.assignedToId && { assignedToId: filters.assignedToId }),
       ...(filters.unassigned && { assignedToId: null }),
       ...(filters.instanceId && { instanceId: filters.instanceId }),
+      ...(filters.search && {
+        OR: [
+          { contact: { name: { contains: filters.search, mode: 'insensitive' } } },
+          { contact: { phone: { contains: filters.search } } },
+        ],
+      }),
     }
 
     const [conversations, total] = await Promise.all([
