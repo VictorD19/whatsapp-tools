@@ -720,6 +720,7 @@ model Assistant {
   knowledgeBases   AssistantKnowledgeBase[]
   tools            AssistantTool[]
   instanceDefaults Instance[]               @relation("InstanceDefaultAssistant")
+  calendarEvents   CalendarEvent[]
 
   @@index([tenantId])
 }
@@ -893,11 +894,14 @@ model CalendarEvent {
   status          String   @default("confirmed")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  assistantId     String?
 
   integration Integration @relation(fields: [integrationId], references: [id])
   tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  assistant   Assistant?  @relation(fields: [assistantId], references: [id])
 
   @@index([tenantId])
   @@index([integrationId])
   @@index([startAt])
+  @@index([assistantId])
 }
