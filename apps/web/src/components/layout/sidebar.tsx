@@ -51,7 +51,6 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
       items: [
         { icon: Inbox, label: tNav('items.inbox'), href: '/inbox' },
         { icon: Briefcase, label: tNav('items.crm'), href: '/crm' },
-        { icon: CalendarDays, label: tNav('items.calendar'), href: '/calendar' },
       ],
     },
     {
@@ -72,6 +71,7 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
         { icon: Bot, label: tNav('items.assistants'), href: '/assistants', exactMatch: true },
         { icon: BookOpen, label: tNav('items.knowledgeBases'), href: '/assistants/knowledge-bases' },
         { icon: Wrench, label: tNav('items.aiTools'), href: '/assistants/tools' },
+        { icon: CalendarDays, label: tNav('items.calendar'), href: '/calendar' },
       ],
     })
     const settingsItems: NavItem[] = [
