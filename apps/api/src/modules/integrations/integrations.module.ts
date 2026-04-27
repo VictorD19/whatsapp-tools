@@ -17,6 +17,6 @@ import { CALENDAR_PROVIDER } from './integrations.tokens'
     IntegrationsService,
     IntegrationsRepository,
   ],
-  exports: [IntegrationsService, CALENDAR_PROVIDER],
+  exports: [IntegrationsService, IntegrationsRepository, CALENDAR_PROVIDER],
 })
 export class IntegrationsModule {}

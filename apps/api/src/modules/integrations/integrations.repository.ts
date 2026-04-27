@@ -71,6 +71,7 @@ export class IntegrationsRepository {
     attendees?: any
     hangoutLink?: string
     status: string
+    assistantId?: string
   }) {
     return this.prisma.calendarEvent.create({ data })
   }

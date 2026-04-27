@@ -4,6 +4,7 @@ import { ContactsService } from '@modules/contacts/contacts.service'
 import { TagService } from '@modules/tag/tag.service'
 import { DealService } from '@modules/deal/deal.service'
 import { IntegrationsService } from '@modules/integrations/integrations.service'
+import { IntegrationsRepository } from '@modules/integrations/integrations.repository'
 import { CALENDAR_PROVIDER } from '@modules/integrations/integrations.tokens'
 import type { ICalendarProvider } from '@modules/integrations/ports/calendar-provider.interface'
 import { AppException } from '@core/errors/app.exception'
@@ -15,6 +16,7 @@ export interface ToolContext {
   contactId: string
   contactPhone: string
   contactName?: string
+  assistantId?: string
 }
 
 export interface ToolResult {
@@ -32,6 +34,7 @@ export class ToolExecutorService {
     @Inject(CALENDAR_PROVIDER)
     private readonly calendarProvider: ICalendarProvider,
     private readonly integrationsService: IntegrationsService,
+    private readonly integrationsRepository: IntegrationsRepository,
     private readonly logger: LoggerService,
   ) {}
 
@@ -238,15 +241,32 @@ export class ToolExecutorService {
 
       const startAt = new Date()
       const endAt = new Date(startAt.getTime() + config.defaultDurationMinutes * 60_000)
+      const title = `Reunião - ${context.contactName ?? context.contactPhone}`
+      const description = `Agendado via WhatsApp por ${context.contactName ?? context.contactPhone}`
 
       const result = await this.calendarProvider.createEvent(accessToken, {
-        title: `Reunião - ${context.contactName ?? context.contactPhone}`,
-        description: `Agendado via WhatsApp por ${context.contactName ?? context.contactPhone}`,
+        title,
+        description,
         startAt,
         endAt,
         timezone: config.timezone,
         location: config.defaultLocation,
         createMeetLink: config.createMeetLink,
+      })
+
+      await this.integrationsRepository.createCalendarEvent({
+        tenantId: context.tenantId,
+        integrationId: config.integrationId,
+        externalEventId: result.eventId,
+        title,
+        description,
+        startAt,
+        endAt,
+        timezone: config.timezone,
+        location: config.defaultLocation,
+        hangoutLink: result.hangoutLink,
+        status: 'confirmed',
+        assistantId: context.assistantId,
       })
 
       return {

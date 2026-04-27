@@ -191,6 +191,7 @@ export class AiResponseProcessor implements OnModuleInit {
         contactId: conversation.contactId,
         contactPhone: conversation.contact.phone,
         contactName: conversation.contact.name ?? undefined,
+        assistantId: effectiveAssistantId,
       }
 
       // Verifica keywords de handoff
