@@ -197,7 +197,28 @@ export const useInboxStore = create<InboxState>()((set) => ({
 
   selectConversation: (selectedConversationId) => set({ selectedConversationId }),
 
-  setConversations: (conversations, pagination) => set({ conversations, conversationsPagination: pagination }),
+  setConversations: (conversations, pagination) =>
+    set((state) => {
+      if (!state.selectedConversationId) {
+        return { conversations, conversationsPagination: pagination }
+      }
+      const isSelectedInList = conversations.some(
+        (c) => c.id === state.selectedConversationId,
+      )
+      if (isSelectedInList) {
+        return { conversations, conversationsPagination: pagination }
+      }
+      const selectedConv = state.conversations.find(
+        (c) => c.id === state.selectedConversationId,
+      )
+      if (!selectedConv) {
+        return { conversations, conversationsPagination: pagination }
+      }
+      return {
+        conversations: [selectedConv, ...conversations],
+        conversationsPagination: pagination,
+      }
+    }),
 
   appendConversations: (newConversations, pagination) =>
     set((state) => {

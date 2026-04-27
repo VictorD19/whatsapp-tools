@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Inbox as InboxIcon, ArrowLeft } from 'lucide-react'
 import { ConversationList } from '@/components/inbox/conversation-list'
@@ -14,6 +14,14 @@ import { apiGet } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export default function InboxPage() {
+  return (
+    <Suspense>
+      <InboxContent />
+    </Suspense>
+  )
+}
+
+function InboxContent() {
   React.useEffect(() => { document.title = 'Inbox | SistemaZapChat' }, [])
 
   const searchParams = useSearchParams()
@@ -33,14 +41,17 @@ export default function InboxPage() {
     const targetId = searchParams.get('conversationId')
     if (!targetId) return
 
-    // Already selected
-    if (selectedId === targetId) return
+    // Already selected and present in store
+    if (selectedId === targetId && conversations.some((c) => c.id === targetId)) return
 
     // If conversation is in the list, just select it
     if (conversations.some((c) => c.id === targetId)) {
       selectConversation(targetId)
       return
     }
+
+    // Select immediately so setConversations preserves this conversation
+    selectConversation(targetId)
 
     // Fetch conversation from API and upsert into store
     let cancelled = false
@@ -49,10 +60,10 @@ export default function InboxPage() {
         const conv = await apiGet<Conversation>(`inbox/conversations/${targetId}`)
         if (!cancelled && conv?.id) {
           upsertConversation(conv)
-          selectConversation(targetId)
         }
       } catch {
         // Conversation may not exist or not belong to this tenant
+        if (!cancelled) selectConversation(null)
       }
     })()
 
