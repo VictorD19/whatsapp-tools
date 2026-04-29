@@ -52,6 +52,7 @@ export class InactivityScannerProcessor {
                     instanceId: instance.id,
                     status: 'OPEN',
                     lastMessageAt: { gte: cutoffTime },
+                    assistantPausedAt: null,
                     NOT: { protocol: { endsWith: '@g.us' } },
                 },
                 select: {
