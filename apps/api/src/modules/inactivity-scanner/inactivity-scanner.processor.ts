@@ -61,10 +61,18 @@ export class InactivityScannerProcessor {
                     lastInactivityStep: true,
                     lastMessageAt: true,
                     contact: { select: { phone: true } },
+                    messages: {
+                        orderBy: { sentAt: 'desc' },
+                        take: 1,
+                        select: { fromMe: true },
+                    },
                 },
             })
 
             for (const conv of conversations) {
+                const lastMessage = conv.messages[0]
+                if (!lastMessage?.fromMe) continue
+
                 const nextStepIndex = conv.lastInactivityStep !== null ? conv.lastInactivityStep + 1 : 0
                 if (nextStepIndex >= rules.length) continue
 
@@ -102,7 +110,7 @@ export class InactivityScannerProcessor {
     private async executeRule(
         rule: InactivityRule,
         stepIndex: number,
-        conv: { id: string; tenantId: string; lastInactivityStep: number | null; contact: { phone: string } },
+        conv: { id: string; tenantId: string; lastInactivityStep: number | null; contact: { phone: string }; messages: { fromMe: boolean }[] },
         instance: { evolutionId: string; tenantId: string },
     ) {
         if (rule.actionType === 'interact' && rule.message) {
