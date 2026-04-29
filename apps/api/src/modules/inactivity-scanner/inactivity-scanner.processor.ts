@@ -44,11 +44,15 @@ export class InactivityScannerProcessor {
             const rules = instance.defaultAssistant?.inactivityFlowRules as unknown as InactivityRule[]
             if (!Array.isArray(rules) || rules.length === 0) continue
 
+            const maxRuleTimeMs = Math.max(...rules.map((r) => r.timeInSeconds * 1000))
+            const cutoffTime = new Date(Date.now() - maxRuleTimeMs)
+
             const conversations = await this.prisma.conversation.findMany({
                 where: {
                     instanceId: instance.id,
                     status: 'OPEN',
-                    lastMessageAt: { not: null },
+                    lastMessageAt: { gte: cutoffTime },
+                    NOT: { protocol: { endsWith: '@g.us' } },
                 },
                 select: {
                     id: true,
