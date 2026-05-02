@@ -11,6 +11,7 @@ import { apiPost } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 import { useLocaleStore } from '@/stores/locale.store'
 import { useTranslations } from 'next-intl'
+import { AuthFooter } from '@/components/auth/auth-footer'
 
 interface LoginResponse {
   data: {
@@ -235,6 +236,8 @@ export default function LoginPage() {
         </div>
 
       </div>
+
+      <AuthFooter />
     </div>
   )
 }

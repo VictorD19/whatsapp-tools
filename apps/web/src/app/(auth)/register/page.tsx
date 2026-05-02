@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useLocaleStore } from '@/stores/locale.store'
 import { toast } from '@/components/ui/toaster'
 import { useTranslations } from 'next-intl'
+import { AuthFooter } from '@/components/auth/auth-footer'
 
 interface RegisterResponse {
   data: {
@@ -286,6 +287,8 @@ export default function RegisterPage() {
         </div>
 
       </div>
+
+      <AuthFooter />
     </div>
   )
 }
