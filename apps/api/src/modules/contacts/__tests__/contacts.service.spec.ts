@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ContactsService } from '../contacts.service'
 import { ContactsRepository } from '../contacts.repository'
 import { AppException } from '@core/errors/app.exception'
+import { MetaCapiService } from '@modules/meta-capi/meta-capi.service'
 
 describe('ContactsService', () => {
   let service: ContactsService
@@ -42,6 +43,7 @@ describe('ContactsService', () => {
       providers: [
         ContactsService,
         { provide: ContactsRepository, useValue: mockRepository },
+        { provide: MetaCapiService, useValue: { fireEvent: jest.fn() } },
       ],
     }).compile()
 

@@ -4,6 +4,7 @@ import { DealRepository } from '../deal.repository'
 import { LoggerService } from '@core/logger/logger.service'
 import { PrismaService } from '@core/database/prisma.service'
 import { NotificationsService } from '@modules/notifications/notifications.service'
+import { MetaCapiService } from '@modules/meta-capi/meta-capi.service'
 import { Decimal } from '@prisma/client/runtime/library'
 import { ConversationStatus } from '@prisma/client'
 
@@ -95,6 +96,7 @@ describe('DealService', () => {
         { provide: LoggerService, useValue: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() } },
         { provide: PrismaService, useValue: mockPrisma },
         { provide: NotificationsService, useValue: { dispatch: jest.fn() } },
+        { provide: MetaCapiService, useValue: { fireEvent: jest.fn() } },
       ],
     }).compile()
 
