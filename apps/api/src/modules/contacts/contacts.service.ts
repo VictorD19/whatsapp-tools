@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ContactsRepository } from './contacts.repository'
 import { AppException } from '@core/errors/app.exception'
+import { MetaCapiService } from '@modules/meta-capi/meta-capi.service'
 import type { ContactFiltersDto } from './dto/contact-filters.dto'
 import type { CreateContactDto } from './dto/create-contact.dto'
 import type { UpdateContactDto } from './dto/update-contact.dto'
@@ -29,7 +30,10 @@ function normalizePhone(phone: string): string {
 
 @Injectable()
 export class ContactsService {
-  constructor(private readonly repository: ContactsRepository) {}
+  constructor(
+    private readonly repository: ContactsRepository,
+    private readonly metaCapi: MetaCapiService,
+  ) {}
 
   async findOrCreate(tenantId: string, phone: string, name?: string) {
     // Group JIDs (@g.us) are kept as-is — they are unique identifiers, not phone numbers
@@ -76,6 +80,16 @@ export class ContactsService {
     }
 
     const contact = await this.repository.create(tenantId, { ...dto, phone: normalizedPhone })
+
+    void this.metaCapi.fireEvent({
+      tenantId,
+      eventName: 'Lead',
+      externalId: contact.id,
+      phone: contact.phone,
+      firstName: contact.name?.split(' ')[0],
+      lastName: contact.name?.split(' ').slice(1).join(' ') || undefined,
+    })
+
     return { data: contact }
   }
 

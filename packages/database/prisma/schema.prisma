@@ -77,6 +77,7 @@ model Tenant {
   assistantSetting AssistantSetting?
   integrations     Integration[]
   calendarEvents   CalendarEvent[]
+  metaPixelConfig  MetaPixelConfig?
 
   @@index([planId])
 }
@@ -904,4 +905,23 @@ model CalendarEvent {
   @@index([integrationId])
   @@index([startAt])
   @@index([assistantId])
+}
+
+// ── Meta CAPI ──────────────────────────────────────
+
+model MetaPixelConfig {
+  id              String    @id @default(cuid())
+  tenantId        String    @unique
+  pixelId         String
+  accessToken     String    @db.Text
+  isActive        Boolean   @default(true)
+  eventRules      Json      @default("{}")
+  testEventCode   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
 }

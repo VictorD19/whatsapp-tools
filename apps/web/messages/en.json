@@ -1228,6 +1228,45 @@
         "connecting": "Error connecting to Google"
       }
     },
+    "metaCapi": {
+      "categoryMarketing": "Marketing",
+      "description": "Send conversion events to Meta Ads",
+      "connected": "Connected",
+      "enableIntegration": "Integration active",
+      "enableIntegrationHint": "Disabling pauses event sending without removing the configuration",
+      "pixelId": "Pixel ID",
+      "pixelIdPlaceholder": "E.g.: 123456789012345",
+      "accessToken": "Access Token",
+      "accessTokenPlaceholder": "EAAxxxxxxxxxxxxxxxx",
+      "accessTokenMasked": "Token saved — fill in to replace",
+      "accessTokenHint": "Leave blank to keep the current token",
+      "testEventCode": "Test Event Code",
+      "testEventCodePlaceholder": "E.g.: TEST12345",
+      "testEventCodeHint": "Events Manager code to validate events in real time. Leave empty in production.",
+      "testEvent": "Test event",
+      "eventRules": "Enabled events",
+      "eventRulesDescription": "Choose which events will be sent to Meta and when",
+      "triggerContactCreated": "Fired when a new contact is created",
+      "triggerConversationStarted": "Fired when a conversation starts",
+      "triggerDealWon": "Fired when a deal is marked as won",
+      "triggerAppointmentConfirmed": "Fired when an appointment is confirmed",
+      "triggerCompleteRegistration": "Fired when a new contact is created",
+      "saving": "Saving...",
+      "removing": "Removing...",
+      "confirmRemove": "Remove Meta integration?",
+      "confirmRemoveDescription": "The Pixel ID and Access Token will be removed. Events will stop being sent.",
+      "success": {
+        "saved": "Meta configuration saved",
+        "removed": "Meta integration removed",
+        "tested": "Test event sent — check Events Manager"
+      },
+      "error": {
+        "loading": "Error loading Meta configuration",
+        "saving": "Error saving Meta configuration",
+        "removing": "Error removing Meta integration",
+        "testing": "Error sending test event"
+      }
+    },
     "danger": {
       "title": "Danger zone",
       "description": "Irreversible actions",

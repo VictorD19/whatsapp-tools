@@ -21,6 +21,7 @@ import { AssistantsModule } from './modules/assistants/assistants.module'
 import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.module'
 import { FollowUpModule } from './modules/follow-up/follow-up.module'
 import { IntegrationsModule } from './modules/integrations/integrations.module'
+import { MetaCapiModule } from './modules/meta-capi/meta-capi.module'
 import { HealthModule } from './modules/health/health.module'
 import { InactivityScannerModule } from './modules/inactivity-scanner/inactivity-scanner.module'
 // import { CrmModule } from './modules/crm/crm.module'
@@ -47,6 +48,7 @@ import { InactivityScannerModule } from './modules/inactivity-scanner/inactivity
     KnowledgeBaseModule,
     FollowUpModule,
     IntegrationsModule,
+    MetaCapiModule,
     HealthModule,
     InactivityScannerModule,
     // CrmModule,

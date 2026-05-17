@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { LocaleSettingsContent } from '@/components/settings/locale-settings'
 import { GoogleCalendarCard } from '@/components/settings/google-calendar-card'
+import { FacebookPixelCard } from '@/components/settings/facebook-pixel-card'
 import { useIntegrations } from '@/hooks/use-integrations'
 import { useAuthStore } from '@/stores/auth.store'
 import { getInitials } from '@/lib/utils'
@@ -307,6 +308,9 @@ function IntegrationsSection() {
           onDisconnect={disconnect}
           loading={loading}
         />
+
+        <div className="h-px bg-border" />
+        <FacebookPixelCard />
 
         <div className="h-px bg-border" />
         <div className="flex items-center justify-between gap-4 py-1 opacity-40 pointer-events-none select-none">

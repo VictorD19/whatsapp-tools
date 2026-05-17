@@ -1,0 +1,1 @@
+export const META_CAPI_PROVIDER = 'META_CAPI_PROVIDER'

@@ -1228,6 +1228,45 @@
         "connecting": "Error al conectar con Google"
       }
     },
+    "metaCapi": {
+      "categoryMarketing": "Marketing",
+      "description": "Envía eventos de conversión a Meta Ads",
+      "connected": "Conectado",
+      "enableIntegration": "Integración activa",
+      "enableIntegrationHint": "Desactivar pausa el envío de eventos sin eliminar la configuración",
+      "pixelId": "Pixel ID",
+      "pixelIdPlaceholder": "Ej: 123456789012345",
+      "accessToken": "Access Token",
+      "accessTokenPlaceholder": "EAAxxxxxxxxxxxxxxxx",
+      "accessTokenMasked": "Token guardado — rellena para reemplazar",
+      "accessTokenHint": "Deja en blanco para mantener el token actual",
+      "testEventCode": "Test Event Code",
+      "testEventCodePlaceholder": "Ej: TEST12345",
+      "testEventCodeHint": "Código del Events Manager para validar eventos en tiempo real. Vacío en producción.",
+      "testEvent": "Probar evento",
+      "eventRules": "Eventos habilitados",
+      "eventRulesDescription": "Elige qué eventos se enviarán a Meta y cuándo",
+      "triggerContactCreated": "Se activa al crear un nuevo contacto",
+      "triggerConversationStarted": "Se activa al iniciar una conversación",
+      "triggerDealWon": "Se activa al marcar un trato como ganado",
+      "triggerAppointmentConfirmed": "Se activa al confirmar una cita",
+      "triggerCompleteRegistration": "Se activa al crear un nuevo contacto",
+      "saving": "Guardando...",
+      "removing": "Eliminando...",
+      "confirmRemove": "¿Eliminar integración de Meta?",
+      "confirmRemoveDescription": "El Pixel ID y el Access Token serán eliminados. Los eventos dejarán de enviarse.",
+      "success": {
+        "saved": "Configuración de Meta guardada",
+        "removed": "Integración de Meta eliminada",
+        "tested": "Evento de prueba enviado — verifica el Events Manager"
+      },
+      "error": {
+        "loading": "Error al cargar la configuración de Meta",
+        "saving": "Error al guardar la configuración de Meta",
+        "removing": "Error al eliminar la integración de Meta",
+        "testing": "Error al enviar el evento de prueba"
+      }
+    },
     "danger": {
       "title": "Zona de peligro",
       "description": "Acciones irreversibles",

@@ -9,6 +9,7 @@ import { MoveDealDto } from './dto/move-deal.dto'
 import { CreateDealNoteDto } from './dto/create-deal-note.dto'
 import { DealFiltersDto } from './dto/deal-filters.dto'
 import { NotificationsService } from '@modules/notifications/notifications.service'
+import { MetaCapiService } from '@modules/meta-capi/meta-capi.service'
 
 @Injectable()
 export class DealService {
@@ -17,6 +18,7 @@ export class DealService {
     private readonly logger: LoggerService,
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly metaCapi: MetaCapiService,
   ) {}
 
   async findDeals(tenantId: string, filters: DealFiltersDto) {
@@ -232,6 +234,16 @@ export class DealService {
           )
         }
       }
+    }
+
+    if (newStage.type === 'WON') {
+      void this.metaCapi.fireEvent({
+        tenantId,
+        eventName: 'Purchase',
+        externalId: deal.contactId ?? undefined,
+        orderId: id,
+        value: deal.value != null ? Number(deal.value) : undefined,
+      })
     }
 
     this.logger.log(
