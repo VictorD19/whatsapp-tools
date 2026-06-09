@@ -32,7 +32,7 @@ export class AiResponseProducer {
     const existing = await this.queue.getJob(jobId)
     if (existing) {
       const state = await existing.getState()
-      if (state === 'delayed' || state === 'waiting') {
+      if (state === 'delayed' || state === 'waiting' || state === 'completed' || state === 'failed') {
         await existing.remove()
       }
     }
