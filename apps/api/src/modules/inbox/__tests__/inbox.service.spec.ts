@@ -33,6 +33,7 @@ describe('InboxService', () => {
     assignedToId: null as string | null,
     protocol: 'SCHA1000',
     status: 'PENDING' as const,
+    isSandbox: false,
     tags: [],
     summary: null,
     unreadCount: 1,

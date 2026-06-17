@@ -16,6 +16,7 @@ describe('ContactsService', () => {
     phone: '5511999999999',
     name: 'João Silva',
     avatarUrl: null as string | null,
+    isSandbox: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null as Date | null,

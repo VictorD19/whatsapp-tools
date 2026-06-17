@@ -11,6 +11,7 @@ import { LinkKnowledgeBaseSchema, type LinkKnowledgeBaseDto } from './dto/link-k
 import { LinkToolSchema, type LinkToolDto } from './dto/link-tool.dto'
 import { SetConversationAssistantSchema, type SetConversationAssistantDto } from './dto/set-conversation-assistant.dto'
 import { UpdateAssistantSettingsSchema, type UpdateAssistantSettingsDto } from './dto/update-assistant-settings.dto'
+import { PlaygroundMessageSchema, type PlaygroundMessageDto } from './dto/playground-message.dto'
 
 @UseGuards(RoleGuard)
 @Roles('admin')
@@ -51,6 +52,14 @@ export class AssistantsController {
     reply.header('Content-Length', buffer.length)
     reply.header('Cache-Control', 'public, max-age=86400')
     return reply.send(buffer)
+  }
+
+  @Post('assistants/playground')
+  playground(
+    @CurrentTenant() tenantId: string,
+    @Body(new ZodValidationPipe(PlaygroundMessageSchema)) dto: PlaygroundMessageDto,
+  ) {
+    return this.assistantsService.playground(tenantId, dto)
   }
 
   @Post('assistants')

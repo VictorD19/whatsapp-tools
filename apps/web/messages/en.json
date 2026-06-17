@@ -823,6 +823,16 @@
       "noTools": "No tools registered",
       "hint": "Type / to insert commands"
     },
+    "playground": {
+      "title": "Test instructions",
+      "empty": "Start chatting to test the assistant",
+      "emptyHint": "Messages are temporary and disappear when you leave",
+      "inputPlaceholder": "Type a test message...",
+      "typing": "Typing...",
+      "clear": "Clear",
+      "needName": "Give the assistant a name before testing",
+      "error": "Error generating response"
+    },
     "delete": {
       "title": "Delete assistant",
       "description": "Are you sure you want to delete the assistant <strong>{name}</strong>? This action cannot be undone.",

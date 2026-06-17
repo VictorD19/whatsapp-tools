@@ -112,6 +112,45 @@ export class AssistantsRepository {
     })
   }
 
+  /**
+   * Contato + conversa reservados exclusivamente para o playground de testes.
+   * Marcados com `isSandbox` para nunca aparecerem na inbox ou lista de contatos.
+   * A conversa só é criada se o tenant possuir ao menos uma instância (FK obrigatória).
+   */
+  async getOrCreateSandbox(tenantId: string) {
+    const SANDBOX_PHONE = '00000000000'
+    const SANDBOX_PROTOCOL = 'PLAYGROUND'
+
+    const contact = await this.prisma.contact.upsert({
+      where: { tenantId_phone: { tenantId, phone: SANDBOX_PHONE } },
+      create: { tenantId, phone: SANDBOX_PHONE, name: 'Playground (teste)', isSandbox: true },
+      update: {},
+    })
+
+    const instance = await this.prisma.instance.findFirst({
+      where: { tenantId, deletedAt: null },
+      orderBy: { createdAt: 'asc' },
+    })
+    if (!instance) {
+      return { contact, conversation: null }
+    }
+
+    const conversation = await this.prisma.conversation.upsert({
+      where: { tenantId_protocol: { tenantId, protocol: SANDBOX_PROTOCOL } },
+      create: {
+        tenantId,
+        instanceId: instance.id,
+        contactId: contact.id,
+        protocol: SANDBOX_PROTOCOL,
+        status: 'OPEN',
+        isSandbox: true,
+      },
+      update: {},
+    })
+
+    return { contact, conversation }
+  }
+
   async upsertSettings(tenantId: string, data: UpdateAssistantSettingsDto) {
     return this.prisma.assistantSetting.upsert({
       where: { tenantId },

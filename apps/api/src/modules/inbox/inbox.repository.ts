@@ -24,6 +24,7 @@ export class InboxRepository {
     const where: Prisma.ConversationWhereInput = {
       tenantId,
       deletedAt: null,
+      isSandbox: false,
       ...(filters.status && { status: filters.status }),
       ...(filters.statusNot && { status: { not: filters.statusNot } }),
       ...(filters.assignedToId && { assignedToId: filters.assignedToId }),

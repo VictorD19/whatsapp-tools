@@ -823,6 +823,16 @@
       "noTools": "Ninguna herramienta registrada",
       "hint": "Escribe / para insertar comandos"
     },
+    "playground": {
+      "title": "Probar instrucciones",
+      "empty": "Conversa para probar el asistente",
+      "emptyHint": "Los mensajes son temporales y desaparecen al salir",
+      "inputPlaceholder": "Escribe un mensaje de prueba...",
+      "typing": "Escribiendo...",
+      "clear": "Limpiar",
+      "needName": "Dale un nombre al asistente antes de probar",
+      "error": "Error al generar respuesta"
+    },
     "delete": {
       "title": "Eliminar asistente",
       "description": "¿Estás seguro de que deseas eliminar el asistente <strong>{name}</strong>? Esta acción no se puede deshacer.",

@@ -1,14 +1,19 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { AppException } from '@core/errors/app.exception'
-import { TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
+import { LLM_PROVIDER, TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
 import type { ITextToSpeechProvider } from '@modules/ai/ports/text-to-speech.interface'
+import type { ILLMProvider, ChatMessage } from '@modules/ai/ports/llm-provider.interface'
 import { AiToolsService } from '@modules/ai-tools/ai-tools.service'
+import { ToolExecutorService, type ToolContext } from '@modules/ai-tools/definitions/tool-executor.service'
+import { KnowledgeBaseService } from '@modules/knowledge-base/knowledge-base.service'
 import { StorageService } from '@modules/storage/storage.service'
 import { AssistantsRepository } from './assistants.repository'
+import { AssistantPromptBuilder } from './services/assistant-prompt.builder'
 import type { CreateAssistantDto } from './dto/create-assistant.dto'
 import type { UpdateAssistantDto } from './dto/update-assistant.dto'
 import type { SetConversationAssistantDto } from './dto/set-conversation-assistant.dto'
 import type { UpdateAssistantSettingsDto } from './dto/update-assistant-settings.dto'
+import type { PlaygroundMessageDto } from './dto/playground-message.dto'
 
 const PREVIEW_TEXTS: Record<string, string> = {
   'pt-BR': 'Olá! Sou seu assistente virtual. Como posso ajudá-lo hoje?',
@@ -24,8 +29,12 @@ export class AssistantsService {
     private readonly repository: AssistantsRepository,
     @Inject(TEXT_TO_SPEECH)
     private readonly tts: ITextToSpeechProvider,
+    @Inject(LLM_PROVIDER)
+    private readonly llm: ILLMProvider,
     private readonly storage: StorageService,
     private readonly aiToolsService: AiToolsService,
+    private readonly toolExecutor: ToolExecutorService,
+    private readonly knowledgeBaseService: KnowledgeBaseService,
   ) {}
 
   async findAll(tenantId: string) {
@@ -167,6 +176,103 @@ export class AssistantsService {
     await this.storage.uploadRaw(storageKey, result.audioBuffer, result.mimetype)
 
     return { buffer: result.audioBuffer, contentType: result.mimetype }
+  }
+
+  /**
+   * Playground stateless: testa o rascunho atual do assistente sem persistir nada.
+   * Reusa o AssistantPromptBuilder (instruções + KB + tools) para fidelidade total e,
+   * quando a IA aciona uma tool ([TOOL:TIPO]), executa de verdade sobre o contato sandbox.
+   */
+  async playground(tenantId: string, dto: PlaygroundMessageDto) {
+    const settings = await this.repository.findSettings(tenantId)
+    const apiKey = settings?.openaiApiKey ?? process.env.OPENAI_API_KEY ?? undefined
+    if (!apiKey) {
+      throw new AppException(
+        'ASSISTANT_PLAYGROUND_NO_API_KEY',
+        'Configure a API key da OpenAI nas configurações de assistentes para usar o playground',
+      )
+    }
+
+    const lastUserMessage = [...dto.messages].reverse().find((m) => m.role === 'user')?.content ?? ''
+
+    // Contexto da base de conhecimento (mesma busca do fluxo real)
+    let kbContext = ''
+    if (dto.knowledgeBaseIds.length > 0 && lastUserMessage) {
+      kbContext = await this.knowledgeBaseService.searchContext(
+        tenantId,
+        dto.knowledgeBaseIds,
+        lastUserMessage,
+        apiKey,
+      )
+    }
+
+    // Tools vinculadas
+    const tools = dto.aiToolIds.length > 0 ? await this.aiToolsService.findByIds(tenantId, dto.aiToolIds) : []
+
+    const systemPrompt = AssistantPromptBuilder.build({
+      name: dto.name,
+      description: dto.description,
+      systemPrompt: dto.systemPrompt,
+      kbContext,
+      tools: tools.map((t) => ({ name: t.name, description: t.description })),
+    })
+
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...dto.messages.map((m) => ({ role: m.role, content: m.content })),
+    ]
+
+    const response = await this.llm.chat(messages, {
+      model: dto.model,
+      temperature: 0.7,
+      maxTokens: 500,
+      apiKey,
+    })
+
+    let reply = response.content.trim()
+
+    // Executa tools acionadas na resposta (de verdade, sobre o contato sandbox)
+    const executedTools: Array<{ type: string; name: string; output: string; success: boolean }> = []
+    if (tools.length > 0) {
+      const { contact, conversation } = await this.repository.getOrCreateSandbox(tenantId)
+      const context: ToolContext = {
+        tenantId,
+        conversationId: conversation?.id ?? '',
+        contactId: contact.id,
+        contactPhone: contact.phone,
+        contactName: contact.name ?? undefined,
+      }
+
+      const toolPattern = /\[TOOL:([A-Z_]+)\]/g
+      let match: RegExpExecArray | null
+      while ((match = toolPattern.exec(reply)) !== null) {
+        const tool = tools.find((t) => t.type === match![1])
+        if (!tool) continue
+        try {
+          const result = await this.toolExecutor.execute(tool, context)
+          executedTools.push({ type: tool.type, name: tool.name, output: result.output, success: result.success })
+        } catch (error) {
+          executedTools.push({
+            type: tool.type,
+            name: tool.name,
+            output: (error as Error).message,
+            success: false,
+          })
+        }
+      }
+
+      if (executedTools.length > 0) {
+        reply = reply.replace(/\[TOOL:[A-Z_]+\]/g, '').trim()
+      }
+    }
+
+    return {
+      data: {
+        reply,
+        executedTools,
+        usage: { inputTokens: response.inputTokens, outputTokens: response.outputTokens },
+      },
+    }
   }
 
   /**

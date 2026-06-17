@@ -37,6 +37,7 @@ import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
 import { VoicePreviewButton } from './voice-preview-button'
+import { PlaygroundPanel } from './playground-panel'
 import type { Assistant, KnowledgeBase, AiTool, ApiResponse, InactivityRule } from './types'
 
 const AI_AVATARS = [
@@ -167,6 +168,12 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
     (id: string) =>
       setSelectedKBs((prev) => (prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id])),
     [],
+  )
+
+  // Tools mencionadas no prompt — espelha o auto-link do backend para o playground testar de verdade
+  const playgroundToolIds = React.useMemo(
+    () => aiTools.filter((tool) => systemPrompt.includes(tool.name)).map((tool) => tool.id),
+    [aiTools, systemPrompt],
   )
 
   const handleSubmit = useCallback(() => {
@@ -470,9 +477,10 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
         </TabsContent>
 
         {/* INSTRUÇÕES */}
-        <TabsContent value="instructions" className="flex-1 overflow-y-auto p-5 mt-0">
-          <div className="max-w-3xl">
-            <div className="space-y-3">
+        <TabsContent value="instructions" className="flex-1 overflow-y-auto lg:overflow-hidden p-5 mt-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:h-full">
+            {/* Editor */}
+            <div className="flex flex-col gap-3 lg:overflow-y-auto">
               <div>
                 <Label>{t('fields.systemPrompt')}</Label>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -484,6 +492,20 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                 onChange={setSystemPrompt}
                 placeholder={t('fields.systemPromptPlaceholder')}
                 slashCommands={slashCommands}
+              />
+            </div>
+
+            {/* Playground */}
+            <div className="h-[520px] lg:h-full lg:min-h-[400px]">
+              <PlaygroundPanel
+                draft={{
+                  name,
+                  description,
+                  model,
+                  systemPrompt,
+                  knowledgeBaseIds: selectedKBs,
+                  aiToolIds: playgroundToolIds,
+                }}
               />
             </div>
           </div>

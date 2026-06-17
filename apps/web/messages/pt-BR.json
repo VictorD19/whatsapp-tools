@@ -823,6 +823,16 @@
       "noTools": "Nenhuma ferramenta cadastrada",
       "hint": "Digite / para inserir comandos"
     },
+    "playground": {
+      "title": "Testar instruções",
+      "empty": "Converse para testar o assistente",
+      "emptyHint": "As mensagens são temporárias e somem ao sair",
+      "inputPlaceholder": "Digite uma mensagem de teste...",
+      "typing": "Digitando...",
+      "clear": "Limpar",
+      "needName": "Dê um nome ao assistente antes de testar",
+      "error": "Erro ao gerar resposta"
+    },
     "delete": {
       "title": "Excluir assistente",
       "description": "Tem certeza que deseja excluir o assistente <strong>{name}</strong>? Esta ação não pode ser desfeita.",

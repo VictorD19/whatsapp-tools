@@ -1,13 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { AssistantsService } from '../assistants.service'
 import { AssistantsRepository } from '../assistants.repository'
-import { TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
+import { LLM_PROVIDER, TEXT_TO_SPEECH } from '@modules/ai/ai.tokens'
 import { StorageService } from '@modules/storage/storage.service'
 import { AiToolsService } from '@modules/ai-tools/ai-tools.service'
+import { ToolExecutorService } from '@modules/ai-tools/definitions/tool-executor.service'
+import { KnowledgeBaseService } from '@modules/knowledge-base/knowledge-base.service'
 
 describe('AssistantsService', () => {
   let service: AssistantsService
   let repository: jest.Mocked<AssistantsRepository>
+  let llm: { chat: jest.Mock; stream: jest.Mock; embed: jest.Mock }
+  let toolExecutor: { execute: jest.Mock }
+  let aiToolsService: { findAll: jest.Mock; findByIds: jest.Mock }
+  let knowledgeBaseService: { searchContext: jest.Mock }
 
   const tenantId = 'tenant-123'
   const now = new Date()
@@ -52,6 +58,8 @@ describe('AssistantsService', () => {
       unlinkTool: jest.fn(),
       setConversationAssistant: jest.fn(),
       findConversation: jest.fn(),
+      findSettings: jest.fn(),
+      getOrCreateSandbox: jest.fn(),
     }
 
     const mockTts = {
@@ -66,13 +74,24 @@ describe('AssistantsService', () => {
       uploadRaw: jest.fn(),
     }
 
+    llm = { chat: jest.fn(), stream: jest.fn(), embed: jest.fn() }
+    toolExecutor = { execute: jest.fn() }
+    aiToolsService = {
+      findAll: jest.fn().mockResolvedValue({ data: [] }),
+      findByIds: jest.fn().mockResolvedValue([]),
+    }
+    knowledgeBaseService = { searchContext: jest.fn().mockResolvedValue('') }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssistantsService,
         { provide: AssistantsRepository, useValue: mockRepository },
         { provide: TEXT_TO_SPEECH, useValue: mockTts },
+        { provide: LLM_PROVIDER, useValue: llm },
         { provide: StorageService, useValue: mockStorage },
-        { provide: AiToolsService, useValue: { findAll: jest.fn().mockResolvedValue({ data: [] }) } },
+        { provide: AiToolsService, useValue: aiToolsService },
+        { provide: ToolExecutorService, useValue: toolExecutor },
+        { provide: KnowledgeBaseService, useValue: knowledgeBaseService },
       ],
     }).compile()
 
@@ -246,6 +265,77 @@ describe('AssistantsService', () => {
 
       expect(result.data!.tools).toHaveLength(0)
       expect(repository.unlinkTool).toHaveBeenCalledWith('assistant-1', 'tool-1')
+    })
+  })
+
+  describe('playground', () => {
+    const baseDto = {
+      name: 'SDR Bot',
+      description: 'Bot de vendas',
+      model: 'gpt-4o-mini',
+      systemPrompt: 'Voce e um assistente de vendas',
+      knowledgeBaseIds: [] as string[],
+      aiToolIds: [] as string[],
+      messages: [{ role: 'user' as const, content: 'Ola' }],
+    }
+
+    it('deve gerar resposta da IA com o rascunho atual (happy path)', async () => {
+      repository.findSettings.mockResolvedValue({ openaiApiKey: 'sk-test' } as any)
+      llm.chat.mockResolvedValue({
+        content: 'Ola! Como posso ajudar?',
+        model: 'gpt-4o-mini',
+        inputTokens: 10,
+        outputTokens: 5,
+      })
+
+      const result = await service.playground(tenantId, baseDto)
+
+      expect(result.data.reply).toBe('Ola! Como posso ajudar?')
+      expect(result.data.executedTools).toHaveLength(0)
+      // System prompt deve ser a primeira mensagem enviada ao LLM
+      const sentMessages = llm.chat.mock.calls[0][0]
+      expect(sentMessages[0].role).toBe('system')
+      expect(sentMessages[0].content).toContain('Voce e um assistente de vendas')
+      expect(sentMessages[1]).toEqual({ role: 'user', content: 'Ola' })
+    })
+
+    it('deve lançar ASSISTANT_PLAYGROUND_NO_API_KEY quando nao ha api key', async () => {
+      repository.findSettings.mockResolvedValue(null)
+      const original = process.env.OPENAI_API_KEY
+      delete process.env.OPENAI_API_KEY
+
+      await expect(service.playground(tenantId, baseDto)).rejects.toMatchObject({
+        code: 'ASSISTANT_PLAYGROUND_NO_API_KEY',
+      })
+
+      if (original) process.env.OPENAI_API_KEY = original
+    })
+
+    it('deve executar tool acionada na resposta sobre o contato sandbox', async () => {
+      repository.findSettings.mockResolvedValue({ openaiApiKey: 'sk-test' } as any)
+      aiToolsService.findByIds.mockResolvedValue([
+        { id: 'tool-1', type: 'CRIAR_DEAL', name: 'Criar Deal', description: 'cria deal', config: {} },
+      ])
+      repository.getOrCreateSandbox.mockResolvedValue({
+        contact: { id: 'c-sandbox', phone: '00000000000', name: 'Playground (teste)' },
+        conversation: { id: 'conv-sandbox' },
+      } as any)
+      toolExecutor.execute.mockResolvedValue({ success: true, output: 'Deal criado: Lead' })
+      llm.chat.mockResolvedValue({
+        content: 'Vou criar o negocio [TOOL:CRIAR_DEAL]',
+        model: 'gpt-4o-mini',
+        inputTokens: 10,
+        outputTokens: 5,
+      })
+
+      const result = await service.playground(tenantId, { ...baseDto, aiToolIds: ['tool-1'] })
+
+      expect(toolExecutor.execute).toHaveBeenCalledTimes(1)
+      expect(result.data.executedTools).toEqual([
+        { type: 'CRIAR_DEAL', name: 'Criar Deal', output: 'Deal criado: Lead', success: true },
+      ])
+      // Marcador [TOOL:...] deve ser removido da resposta final
+      expect(result.data.reply).not.toContain('[TOOL:CRIAR_DEAL]')
     })
   })
 
