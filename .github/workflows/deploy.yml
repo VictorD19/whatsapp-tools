@@ -100,8 +100,8 @@ jobs:
           tags: |
             ghcr.io/${{ steps.repo.outputs.name }}/api:latest
             ghcr.io/${{ steps.repo.outputs.name }}/api:${{ github.sha }}
-          cache-from: type=gha,scope=api
-          cache-to: type=gha,mode=max,scope=api
+          cache-from: type=gha,scope=api-v2
+          cache-to: type=gha,mode=max,scope=api-v2
 
       - name: Build e push — Web
         uses: docker/build-push-action@v6
@@ -118,8 +118,8 @@ jobs:
           tags: |
             ghcr.io/${{ steps.repo.outputs.name }}/web:latest
             ghcr.io/${{ steps.repo.outputs.name }}/web:${{ github.sha }}
-          cache-from: type=gha,scope=web
-          cache-to: type=gha,mode=max,scope=web
+          cache-from: type=gha,scope=web-v2
+          cache-to: type=gha,mode=max,scope=web-v2
 
   # ── 3. Deploy no servidor (só pull — sem build) ───────────────────────────
   deploy:
