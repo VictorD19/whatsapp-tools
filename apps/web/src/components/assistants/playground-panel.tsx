@@ -117,7 +117,7 @@ export function PlaygroundPanel({ draft }: PlaygroundPanelProps) {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[280px]">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !loading ? (
           <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground py-8">
             <FlaskConical className="h-8 w-8 mb-3 opacity-40" />
