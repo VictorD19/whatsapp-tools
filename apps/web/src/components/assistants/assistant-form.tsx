@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, User, FileText, Check, Wrench, Volume2, Clock, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, User, FileText, Check, Wrench, Volume2, Clock, Plus, Pencil, Trash2, FlaskConical } from 'lucide-react'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -246,6 +246,13 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                 {label}
               </TabsTrigger>
             ))}
+            <TabsTrigger
+              value="playground"
+              className="flex lg:hidden items-center gap-1.5 px-4 py-3 text-sm rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-primary text-muted-foreground"
+            >
+              <FlaskConical className="h-3.5 w-3.5" />
+              {t('playground.title')}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -495,8 +502,8 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
               />
             </div>
 
-            {/* Playground */}
-            <div className="h-[520px] lg:h-full lg:min-h-[400px]">
+            {/* Playground — visible only on desktop (mobile gets its own tab) */}
+            <div className="hidden lg:block h-[520px] lg:h-full lg:min-h-[400px]">
               <PlaygroundPanel
                 draft={{
                   name,
@@ -508,6 +515,22 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                 }}
               />
             </div>
+          </div>
+        </TabsContent>
+
+        {/* PLAYGROUND — tab exclusiva para mobile */}
+        <TabsContent value="playground" className="flex lg:hidden flex-col flex-1 overflow-hidden p-5 mt-0">
+          <div className="h-[520px]">
+            <PlaygroundPanel
+              draft={{
+                name,
+                description,
+                model,
+                systemPrompt,
+                knowledgeBaseIds: selectedKBs,
+                aiToolIds: playgroundToolIds,
+              }}
+            />
           </div>
         </TabsContent>
 
