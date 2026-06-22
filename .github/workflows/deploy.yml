@@ -86,7 +86,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Configurar Docker Buildx (build multi-layer com cache)
         uses: docker/setup-buildx-action@v3
@@ -144,7 +144,7 @@ jobs:
             git reset --hard origin/master
 
             echo "▶ Login no registry..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             echo "▶ Pulling imagens atualizadas (sem build no servidor)..."
             docker compose -f docker-compose.prod.yml pull api web
