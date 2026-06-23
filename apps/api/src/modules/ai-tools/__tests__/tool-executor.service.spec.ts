@@ -10,6 +10,7 @@ import { CALENDAR_PROVIDER } from '@modules/integrations/integrations.tokens'
 import type { ICalendarProvider } from '@modules/integrations/ports/calendar-provider.interface'
 import { IntegrationsService } from '@modules/integrations/integrations.service'
 import { IntegrationsRepository } from '@modules/integrations/integrations.repository'
+import { MetaCapiService } from '@modules/meta-capi/meta-capi.service'
 
 describe('ToolExecutorService', () => {
   let executor: ToolExecutorService
@@ -19,6 +20,7 @@ describe('ToolExecutorService', () => {
   let calendarProvider: jest.Mocked<ICalendarProvider>
   let integrationsService: jest.Mocked<IntegrationsService>
   let integrationsRepository: jest.Mocked<IntegrationsRepository>
+  let metaCapiService: jest.Mocked<MetaCapiService>
 
   const now = new Date()
 
@@ -95,6 +97,12 @@ describe('ToolExecutorService', () => {
             createCalendarEvent: jest.fn().mockResolvedValue({ id: 'evt-db-1' }),
           },
         },
+        {
+          provide: MetaCapiService,
+          useValue: {
+            fireEvent: jest.fn(),
+          },
+        },
       ],
     }).compile()
 
@@ -105,6 +113,7 @@ describe('ToolExecutorService', () => {
     calendarProvider = module.get(CALENDAR_PROVIDER) as unknown as jest.Mocked<ICalendarProvider>
     integrationsService = module.get(IntegrationsService) as unknown as jest.Mocked<IntegrationsService>
     integrationsRepository = module.get(IntegrationsRepository) as unknown as jest.Mocked<IntegrationsRepository>
+    metaCapiService = module.get(MetaCapiService) as unknown as jest.Mocked<MetaCapiService>
   })
 
   describe('BUSCAR_CONTATO', () => {
@@ -436,6 +445,66 @@ describe('ToolExecutorService', () => {
 
       expect(result.success).toBe(false)
       expect(result.output).toContain('Erro ao criar evento')
+    })
+  })
+
+  describe('DISPARAR_EVENTO_META', () => {
+    it('should fire event and return success', async () => {
+      metaCapiService.fireEvent.mockResolvedValue(undefined)
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.DISPARAR_EVENTO_META,
+        config: { eventName: 'Lead' },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(true)
+      expect(result.output).toContain('Lead')
+      expect(metaCapiService.fireEvent).toHaveBeenCalledWith({
+        tenantId: 'tenant-123',
+        eventName: 'Lead',
+        externalId: 'contact-1',
+        phone: '5511999999999',
+        firstName: 'Joao',
+        lastName: 'Silva',
+      })
+    })
+
+    it('should fire Purchase event', async () => {
+      metaCapiService.fireEvent.mockResolvedValue(undefined)
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.DISPARAR_EVENTO_META,
+        config: { eventName: 'Purchase' },
+      }
+
+      const result = await executor.execute(tool, context)
+
+      expect(result.success).toBe(true)
+      expect(result.output).toContain('Purchase')
+      expect(metaCapiService.fireEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ eventName: 'Purchase' }),
+      )
+    })
+
+    it('should handle contact with single name (no lastName)', async () => {
+      metaCapiService.fireEvent.mockResolvedValue(undefined)
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.DISPARAR_EVENTO_META,
+        config: { eventName: 'Lead' },
+      }
+
+      const result = await executor.execute({ ...tool }, { ...context, contactName: 'Joao' })
+
+      expect(result.success).toBe(true)
+      expect(metaCapiService.fireEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ firstName: 'Joao', lastName: undefined }),
+      )
     })
   })
 })

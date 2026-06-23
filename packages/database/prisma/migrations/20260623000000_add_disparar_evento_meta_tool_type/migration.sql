@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "AiToolType" ADD VALUE 'DISPARAR_EVENTO_META';

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Tag, Briefcase, GitMerge, CalendarSearch, CalendarPlus } from 'lucide-react'
+import { Tag, Briefcase, GitMerge, CalendarSearch, CalendarPlus, Facebook } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +15,7 @@ export type AiToolType =
   | 'SETAR_ETAPA_PIPELINE'
   | 'CONSULTAR_DISPONIBILIDADE'
   | 'CRIAR_EVENTO'
+  | 'DISPARAR_EVENTO_META'
 
 interface ToolTypeOption {
   type: AiToolType
@@ -27,6 +28,7 @@ const TOOL_TYPE_ICONS: ToolTypeOption[] = [
   { type: 'SETAR_ETAPA_PIPELINE', icon: GitMerge },
   { type: 'CONSULTAR_DISPONIBILIDADE', icon: CalendarSearch },
   { type: 'CRIAR_EVENTO', icon: CalendarPlus },
+  { type: 'DISPARAR_EVENTO_META', icon: Facebook },
 ]
 
 export { TOOL_TYPE_ICONS as TOOL_TYPES }

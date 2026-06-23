@@ -9,6 +9,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common'
+import { z } from 'zod'
 import { RoleGuard } from '@core/guards/role.guard'
 import { Roles } from '@shared/decorators/roles.decorator'
 import { CurrentTenant } from '@shared/decorators/current-tenant.decorator'
@@ -16,8 +17,13 @@ import { ZodValidationPipe } from '@shared/pipes/zod-validation.pipe'
 import { MetaCapiService } from './meta-capi.service'
 import {
   upsertMetaCapiConfigSchema,
+  META_CAPI_EVENTS,
   type UpsertMetaCapiConfigDto,
 } from './dto/upsert-meta-capi-config.dto'
+
+const testEventSchema = z.object({
+  eventName: z.enum(META_CAPI_EVENTS).optional(),
+})
 
 @UseGuards(RoleGuard)
 @Roles('admin')
@@ -46,7 +52,10 @@ export class MetaCapiController {
 
   @Post('test')
   @HttpCode(HttpStatus.OK)
-  testEvent(@CurrentTenant() tenantId: string) {
-    return this.metaCapiService.testEvent(tenantId)
+  testEvent(
+    @CurrentTenant() tenantId: string,
+    @Body(new ZodValidationPipe(testEventSchema)) body: { eventName?: typeof META_CAPI_EVENTS[number] },
+  ) {
+    return this.metaCapiService.testEvent(tenantId, body.eventName)
   }
 }

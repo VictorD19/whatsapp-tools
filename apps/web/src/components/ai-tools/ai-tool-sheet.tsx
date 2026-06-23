@@ -16,6 +16,7 @@ import { DealConfig } from './config-forms/deal-config'
 import { PipelineStageConfig } from './config-forms/pipeline-stage-config'
 import { CalendarAvailabilityConfig } from './config-forms/calendar-availability-config'
 import { CalendarEventConfig } from './config-forms/calendar-event-config'
+import { MetaCapiConfig } from './config-forms/meta-capi-config'
 
 export interface AiTool {
   id: string
@@ -160,6 +161,12 @@ export function AiToolSheet({ open, onClose, onSave, tool, saving }: AiToolSheet
             {type === 'CRIAR_EVENTO' && (
               <CalendarEventConfig
                 value={config as Record<string, unknown>}
+                onChange={setConfig}
+              />
+            )}
+            {type === 'DISPARAR_EVENTO_META' && (
+              <MetaCapiConfig
+                value={config as { eventName?: 'Lead' | 'Purchase' | 'Contact' | 'Schedule' | 'CompleteRegistration' }}
                 onChange={setConfig}
               />
             )}

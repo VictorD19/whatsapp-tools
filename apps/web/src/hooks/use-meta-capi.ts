@@ -95,12 +95,13 @@ export function useMetaCapi() {
     }
   }
 
-  const testEvent = async () => {
+  const testEvent = async (eventName?: string) => {
     setTesting(true)
     try {
       const res = await fetch(`${apiUrl}/api/v1/meta-capi/test`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventName }),
       })
       if (!res.ok) throw new Error()
       toast.success(t('success.tested'))

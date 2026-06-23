@@ -854,6 +854,7 @@ enum AiToolType {
   SETAR_ETAPA_PIPELINE
   CONSULTAR_DISPONIBILIDADE
   CRIAR_EVENTO
+  DISPARAR_EVENTO_META
 }
 
 // ── Integrations ──────────────────────────────────

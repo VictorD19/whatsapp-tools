@@ -84,7 +84,7 @@ export class MetaCapiService {
     return { data: { deleted: true } }
   }
 
-  async testEvent(tenantId: string) {
+  async testEvent(tenantId: string, eventName: MetaCapiEventName = 'Lead') {
     const config = await this.repository.findByTenant(tenantId)
     if (!config?.isActive) {
       throw AppException.notFound('META_CAPI_NOT_CONFIGURED', 'Integração Meta não configurada', {})
@@ -95,11 +95,11 @@ export class MetaCapiService {
     await this.provider.sendEvent(
       config.pixelId,
       accessToken,
-      { eventName: 'Lead', externalId: `test_${tenantId}`, actionSource: 'system_generated' },
+      { eventName, externalId: `test_${tenantId}`, actionSource: 'system_generated' },
       config.testEventCode ?? undefined,
     )
 
-    return { data: { ok: true } }
+    return { data: { ok: true, eventName } }
   }
 
   async fireEvent(opts: FireEventOptions): Promise<void> {

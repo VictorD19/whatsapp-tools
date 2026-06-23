@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Check, Eye, EyeOff, FlaskConical, Loader2, Save, Trash2 } from 'lucide-react'
+import { Check, ChevronDown, Eye, EyeOff, FlaskConical, Loader2, Save, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useMetaCapi, type MetaCapiEventRules } from '@/hooks/use-meta-capi'
+
+const META_EVENTS = ['Lead', 'Purchase', 'Contact', 'Schedule', 'CompleteRegistration'] as const
 
 const EVENT_ITEMS: { key: keyof MetaCapiEventRules; triggerKey: string }[] = [
   { key: 'Lead', triggerKey: 'triggerContactCreated' },
@@ -127,18 +135,29 @@ export function FacebookPixelCard() {
 
         {config && (
           <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-7 gap-1 pr-2"
-              onClick={testEvent}
-              disabled={testing}
-            >
-              {testing
-                ? <Loader2 className="h-3 w-3 animate-spin" />
-                : <FlaskConical className="h-3 w-3" />}
-              {t('testEvent')}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7 gap-1 pr-2"
+                  disabled={testing}
+                >
+                  {testing
+                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                    : <FlaskConical className="h-3 w-3" />}
+                  {t('testEvent')}
+                  <ChevronDown className="h-3 w-3 ml-0.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {META_EVENTS.map((event) => (
+                  <DropdownMenuItem key={event} onClick={() => testEvent(event)}>
+                    {event}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               size="sm"

@@ -1074,6 +1074,10 @@
       "CRIAR_EVENTO": {
         "label": "Create Event",
         "description": "Creates an event in Google Calendar"
+      },
+      "DISPARAR_EVENTO_META": {
+        "label": "Meta Event",
+        "description": "Sends an event to Meta (Facebook)"
       }
     },
     "config": {
@@ -1089,7 +1093,19 @@
       "defaultLocation": "Default location",
       "defaultLocationPlaceholder": "e.g. Office, Online...",
       "createMeetLink": "Google Meet link",
-      "createMeetLinkHint": "Auto-generates a video call link"
+      "createMeetLinkHint": "Auto-generates a video call link",
+      "meta": {
+        "eventName": "Event to fire",
+        "selectEvent": "Select event",
+        "hint": "This event will be sent to Meta Pixel when the assistant calls this tool",
+        "events": {
+          "Lead": "Lead — Lead generated",
+          "Purchase": "Purchase — Sale completed",
+          "Contact": "Contact — Conversation started",
+          "Schedule": "Schedule — Appointment confirmed",
+          "CompleteRegistration": "CompleteRegistration — Registration complete"
+        }
+      }
     },
     "delete": {
       "title": "Delete tool",

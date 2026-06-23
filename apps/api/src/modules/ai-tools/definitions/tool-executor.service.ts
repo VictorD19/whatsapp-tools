@@ -7,6 +7,8 @@ import { IntegrationsService } from '@modules/integrations/integrations.service'
 import { IntegrationsRepository } from '@modules/integrations/integrations.repository'
 import { CALENDAR_PROVIDER } from '@modules/integrations/integrations.tokens'
 import type { ICalendarProvider } from '@modules/integrations/ports/calendar-provider.interface'
+import { MetaCapiService } from '@modules/meta-capi/meta-capi.service'
+import type { MetaCapiEventName } from '@modules/meta-capi/dto/upsert-meta-capi-config.dto'
 import { AppException } from '@core/errors/app.exception'
 import { LoggerService } from '@core/logger/logger.service'
 
@@ -35,6 +37,7 @@ export class ToolExecutorService {
     private readonly calendarProvider: ICalendarProvider,
     private readonly integrationsService: IntegrationsService,
     private readonly integrationsRepository: IntegrationsRepository,
+    private readonly metaCapiService: MetaCapiService,
     private readonly logger: LoggerService,
   ) {}
 
@@ -59,6 +62,8 @@ export class ToolExecutorService {
           return this.executeConsultarDisponibilidade(tool, context)
         case AiToolType.CRIAR_EVENTO:
           return this.executeCriarEvento(tool, context)
+        case AiToolType.DISPARAR_EVENTO_META:
+          return this.executeDispararEventoMeta(tool, context)
         default:
           return { success: false, output: `Tipo de ferramenta desconhecido: ${tool.type}` }
       }
@@ -279,6 +284,25 @@ export class ToolExecutorService {
         success: false,
         output: `Erro ao criar evento: ${(error as Error).message}`,
       }
+    }
+  }
+
+  private async executeDispararEventoMeta(tool: AiTool, context: ToolContext): Promise<ToolResult> {
+    const config = tool.config as { eventName: MetaCapiEventName }
+
+    await this.metaCapiService.fireEvent({
+      tenantId: context.tenantId,
+      eventName: config.eventName,
+      externalId: context.contactId,
+      phone: context.contactPhone,
+      firstName: context.contactName?.split(' ')[0],
+      lastName: context.contactName?.split(' ').slice(1).join(' ') || undefined,
+    })
+
+    return {
+      success: true,
+      output: `Evento "${config.eventName}" enviado para o Meta`,
+      data: { eventName: config.eventName },
     }
   }
 

@@ -36,6 +36,10 @@ const CriarEventoConfig = z.object({
   createMeetLink: z.boolean().default(true),
 })
 
+const DispararEventoMetaConfig = z.object({
+  eventName: z.enum(['Lead', 'Purchase', 'Contact', 'Schedule', 'CompleteRegistration']),
+})
+
 export const createAiToolSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
@@ -48,6 +52,7 @@ export const createAiToolSchema = z.object({
     SetarEtapaPipelineConfig,
     ConsultarDisponibilidadeConfig,
     CriarEventoConfig,
+    DispararEventoMetaConfig,
     z.object({}),
   ]),
   isActive: z.boolean().default(true),
