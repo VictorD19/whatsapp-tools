@@ -503,7 +503,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
             </div>
 
             {/* Playground — visible only on desktop (mobile gets its own tab) */}
-            <div className="hidden lg:block h-[520px] lg:h-full lg:min-h-[400px]">
+            <div className="hidden lg:block h-[520px]">
               <PlaygroundPanel
                 draft={{
                   name,

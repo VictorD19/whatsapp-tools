@@ -290,6 +290,11 @@ export class ToolExecutorService {
   private async executeDispararEventoMeta(tool: AiTool, context: ToolContext): Promise<ToolResult> {
     const config = tool.config as { eventName: MetaCapiEventName }
 
+    this.logger.log(
+      `[DISPARAR_EVENTO_META] Iniciando disparo — evento="${config.eventName}" tenant=${context.tenantId} contactId=${context.contactId} phone=${context.contactPhone}`,
+      'ToolExecutorService',
+    )
+
     await this.metaCapiService.fireEvent({
       tenantId: context.tenantId,
       eventName: config.eventName,
@@ -298,6 +303,11 @@ export class ToolExecutorService {
       firstName: context.contactName?.split(' ')[0],
       lastName: context.contactName?.split(' ').slice(1).join(' ') || undefined,
     })
+
+    this.logger.log(
+      `[DISPARAR_EVENTO_META] Concluído — evento="${config.eventName}" tenant=${context.tenantId}`,
+      'ToolExecutorService',
+    )
 
     return {
       success: true,

@@ -104,13 +104,22 @@ export class MetaCapiService {
 
   async fireEvent(opts: FireEventOptions): Promise<void> {
     const config = await this.repository.findByTenant(opts.tenantId)
-    if (!config?.isActive) return
+
+    if (!config?.isActive) {
+      this.logger.log(`[fireEvent] Ignorado — integração inativa ou não configurada (tenant=${opts.tenantId} evento=${opts.eventName})`)
+      return
+    }
 
     const eventRules = (config.eventRules ?? {}) as EventRules
-    if (!eventRules[opts.eventName]) return
+    if (!eventRules[opts.eventName]) {
+      this.logger.log(`[fireEvent] Ignorado — regra desabilitada para evento="${opts.eventName}" (tenant=${opts.tenantId})`)
+      return
+    }
 
     const accessToken = this.crypto.decrypt(config.accessToken)
     const testCode = config.testEventCode ?? undefined
+
+    this.logger.log(`[fireEvent] Enviando evento="${opts.eventName}" pixelId=${config.pixelId} tenant=${opts.tenantId} phone=${opts.phone ?? '-'} testCode=${testCode ?? 'none'}`)
 
     try {
       await this.provider.sendEvent(
@@ -130,8 +139,9 @@ export class MetaCapiService {
         },
         testCode,
       )
+      this.logger.log(`[fireEvent] Evento="${opts.eventName}" enviado com sucesso (tenant=${opts.tenantId})`)
     } catch (err) {
-      this.logger.error(`fireEvent(${opts.eventName}) falhou para tenant ${opts.tenantId}: ${err}`)
+      this.logger.error(`[fireEvent] Falhou — evento="${opts.eventName}" tenant=${opts.tenantId}: ${err}`)
     }
   }
 }
