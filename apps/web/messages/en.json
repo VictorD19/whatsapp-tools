@@ -122,6 +122,7 @@
       "plans": "Plans",
       "knowledgeBases": "Knowledge Bases",
       "aiTools": "AI Tools",
+      "apiLogs": "API Logs",
       "notifications": "Notifications",
       "calendar": "Calendar"
     },
@@ -1727,5 +1728,58 @@
       "title": "Assistants"
     },
     "comingSoon": "Coming soon"
+  },
+  "apiLogs": {
+    "title": "API Logs",
+    "breadcrumb": "API Logs",
+    "subtitle": "AI call monitoring",
+    "empty": "No logs found",
+    "emptyHint": "Logs will appear here when AI assistants make calls",
+    "searchPlaceholder": "Filter by type...",
+    "filter": {
+      "all": "All types",
+      "LLM_CHAT": "LLM Chat",
+      "EMBEDDING": "Embedding",
+      "TOOL_EXECUTION": "Tool",
+      "TTS": "Text to Speech",
+      "STT": "Speech to Text"
+    },
+    "table": {
+      "type": "Type",
+      "status": "Status",
+      "model": "Model",
+      "tokens": "Tokens",
+      "tool": "Tool",
+      "duration": "Duration",
+      "date": "Date",
+      "input": "Input",
+      "output": "Output",
+      "tokensFormat": "{input}↑ {output}↓",
+      "durationMs": "{ms}ms",
+      "noModel": "—",
+      "showing": "{start}–{end} of {total}",
+      "pageInfo": "Page {current} of {total}",
+      "endOfList": "All logs loaded"
+    },
+    "status": {
+      "SUCCESS": "Success",
+      "ERROR": "Error"
+    },
+    "type": {
+      "LLM_CHAT": "LLM Chat",
+      "EMBEDDING": "Embedding",
+      "TOOL_EXECUTION": "Tool",
+      "TTS": "Text to Speech",
+      "STT": "Speech to Text"
+    },
+    "detail": {
+      "title": "Log Detail",
+      "conversationId": "Conversation",
+      "assistantId": "Assistant",
+      "errorMessage": "Error"
+    },
+    "error": {
+      "loading": "Error loading logs"
+    }
   }
 }

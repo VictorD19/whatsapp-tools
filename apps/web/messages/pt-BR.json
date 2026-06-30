@@ -123,7 +123,8 @@
       "knowledgeBases": "Bases de Conhecimento",
       "aiTools": "Ferramentas de IA",
       "notifications": "Notificações",
-      "calendar": "Calendário"
+      "calendar": "Calendário",
+      "apiLogs": "Logs de API"
     },
     "user": {
       "myProfile": "Meu perfil",
@@ -1727,5 +1728,58 @@
       "title": "Assistentes"
     },
     "comingSoon": "Em breve"
+  },
+  "apiLogs": {
+    "title": "Logs de API",
+    "breadcrumb": "Logs de API",
+    "subtitle": "Monitoramento de chamadas de IA",
+    "empty": "Nenhum log encontrado",
+    "emptyHint": "Os logs aparecerão aqui quando os assistentes de IA fizerem chamadas",
+    "searchPlaceholder": "Filtrar por tipo...",
+    "filter": {
+      "all": "Todos os tipos",
+      "LLM_CHAT": "Chat LLM",
+      "EMBEDDING": "Embedding",
+      "TOOL_EXECUTION": "Ferramenta",
+      "TTS": "Texto para Voz",
+      "STT": "Voz para Texto"
+    },
+    "table": {
+      "type": "Tipo",
+      "status": "Status",
+      "model": "Modelo",
+      "tokens": "Tokens",
+      "tool": "Ferramenta",
+      "duration": "Duração",
+      "date": "Data",
+      "input": "Entrada",
+      "output": "Saída",
+      "tokensFormat": "{input}↑ {output}↓",
+      "durationMs": "{ms}ms",
+      "noModel": "—",
+      "showing": "{start}–{end} de {total}",
+      "pageInfo": "Página {current} de {total}",
+      "endOfList": "Todos os logs carregados"
+    },
+    "status": {
+      "SUCCESS": "Sucesso",
+      "ERROR": "Erro"
+    },
+    "type": {
+      "LLM_CHAT": "Chat LLM",
+      "EMBEDDING": "Embedding",
+      "TOOL_EXECUTION": "Ferramenta",
+      "TTS": "Texto para Voz",
+      "STT": "Voz para Texto"
+    },
+    "detail": {
+      "title": "Detalhe do Log",
+      "conversationId": "Conversa",
+      "assistantId": "Assistente",
+      "errorMessage": "Erro"
+    },
+    "error": {
+      "loading": "Erro ao carregar logs"
+    }
   }
 }

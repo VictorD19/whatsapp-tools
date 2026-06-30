@@ -7,6 +7,7 @@ import { AiToolsModule } from '@modules/ai-tools/ai-tools.module'
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module'
 import { StorageModule } from '@modules/storage/storage.module'
 import { InboxModule } from '@modules/inbox/inbox.module'
+import { ApiLogsModule } from '@modules/api-logs/api-logs.module'
 import { AssistantsController } from './assistants.controller'
 import { AssistantsService } from './assistants.service'
 import { AssistantsRepository } from './assistants.repository'
@@ -21,6 +22,7 @@ import { ConversationThreadService } from './services/conversation-thread.servic
     AiToolsModule,
     WhatsAppModule,
     StorageModule,
+    ApiLogsModule,
     forwardRef(() => InboxModule),
     BullModule.registerQueue({ name: QUEUES.AI_RESPONSE }),
   ],

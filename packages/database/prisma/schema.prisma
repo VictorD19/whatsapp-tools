@@ -78,6 +78,7 @@ model Tenant {
   integrations     Integration[]
   calendarEvents   CalendarEvent[]
   metaPixelConfig  MetaPixelConfig?
+  apiLogs          ApiLog[]
 
   @@index([planId])
 }
@@ -908,6 +909,53 @@ model CalendarEvent {
   @@index([integrationId])
   @@index([startAt])
   @@index([assistantId])
+}
+
+// ── API Logs (Beta) ───────────────────────────────
+
+enum ApiLogType {
+  LLM_CHAT
+  EMBEDDING
+  TOOL_EXECUTION
+  TTS
+  STT
+}
+
+enum ApiLogStatus {
+  SUCCESS
+  ERROR
+}
+
+model ApiLog {
+  id             String       @id @default(cuid())
+  tenantId       String
+  type           ApiLogType
+  status         ApiLogStatus @default(SUCCESS)
+
+  conversationId String?
+  assistantId    String?
+  model          String?
+
+  inputTokens    Int?
+  outputTokens   Int?
+
+  toolType       String?
+  toolName       String?
+
+  inputSummary   String?      @db.Text
+  outputSummary  String?      @db.Text
+  errorMessage   String?
+
+  durationMs     Int?
+
+  createdAt      DateTime     @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, type])
+  @@index([conversationId])
 }
 
 // ── Meta CAPI ──────────────────────────────────────

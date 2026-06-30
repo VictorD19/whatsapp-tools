@@ -9,6 +9,7 @@ import { StorageService } from '@modules/storage/storage.service'
 import { KnowledgeBaseRepository } from '../knowledge-base.repository'
 import type { KbIngestionJobData } from './kb-ingestion.producer'
 import type { ILLMProvider } from '@modules/ai/ports/llm-provider.interface'
+import { ApiLogsService } from '@modules/api-logs/api-logs.service'
 
 const CHUNK_SIZE = 500
 const CHUNK_OVERLAP = 50
@@ -24,6 +25,7 @@ export class KbIngestionProcessor implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly logger: LoggerService,
+    private readonly apiLogs: ApiLogsService,
   ) {}
 
   async onModuleInit() {
@@ -60,6 +62,7 @@ export class KbIngestionProcessor implements OnModuleInit {
       await this.repository.deleteChunksBySource(sourceId)
 
       const chunkRecords: Array<{ content: string; embedding: number[]; chunkIndex: number }> = []
+      const embeddingStart = Date.now()
       for (let i = 0; i < chunks.length; i++) {
         const embedding = await this.llm.embed(chunks[i], apiKey)
         chunkRecords.push({
@@ -68,6 +71,15 @@ export class KbIngestionProcessor implements OnModuleInit {
           chunkIndex: i,
         })
       }
+      void this.apiLogs.record({
+        tenantId,
+        type: 'EMBEDDING',
+        status: 'SUCCESS',
+        model: 'text-embedding-3-small',
+        inputSummary: `source=${sourceId} chunks=${chunkRecords.length}`,
+        outputSummary: `${chunkRecords.length} embeddings gerados (1536 dims)`,
+        durationMs: Date.now() - embeddingStart,
+      })
 
       await this.repository.saveChunks(sourceId, tenantId, chunkRecords)
       await this.repository.updateSourceStatus(sourceId, 'COMPLETED')
@@ -83,6 +95,14 @@ export class KbIngestionProcessor implements OnModuleInit {
         (error as Error).stack,
         'KbIngestionProcessor',
       )
+      void this.apiLogs.record({
+        tenantId,
+        type: 'EMBEDDING',
+        status: 'ERROR',
+        model: 'text-embedding-3-small',
+        inputSummary: `source=${sourceId}`,
+        errorMessage: message.substring(0, 500),
+      })
       await this.repository.updateSourceStatus(sourceId, 'FAILED', message.substring(0, 500))
     }
   }

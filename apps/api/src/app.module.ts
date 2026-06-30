@@ -24,6 +24,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module'
 import { MetaCapiModule } from './modules/meta-capi/meta-capi.module'
 import { HealthModule } from './modules/health/health.module'
 import { InactivityScannerModule } from './modules/inactivity-scanner/inactivity-scanner.module'
+import { ApiLogsModule } from './modules/api-logs/api-logs.module'
 // import { CrmModule } from './modules/crm/crm.module'
 
 @Module({
@@ -51,6 +52,7 @@ import { InactivityScannerModule } from './modules/inactivity-scanner/inactivity
     MetaCapiModule,
     HealthModule,
     InactivityScannerModule,
+    ApiLogsModule,
     // CrmModule,
   ],
 })

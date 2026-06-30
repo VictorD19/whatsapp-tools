@@ -17,6 +17,7 @@ import type { ILLMProvider } from '@modules/ai/ports/llm-provider.interface'
 import type { ITextToSpeechProvider } from '@modules/ai/ports/text-to-speech.interface'
 import type { AiResponseJobData } from './ai-response.producer'
 import { AiToolType } from '@prisma/client'
+import { ApiLogsService } from '@modules/api-logs/api-logs.service'
 
 @Injectable()
 export class AiResponseProcessor implements OnModuleInit {
@@ -37,6 +38,7 @@ export class AiResponseProcessor implements OnModuleInit {
     private readonly storage: StorageService,
     private readonly threadService: ConversationThreadService,
     private readonly logger: LoggerService,
+    private readonly apiLogs: ApiLogsService,
   ) {}
 
   async onModuleInit() {
@@ -162,12 +164,42 @@ export class AiResponseProcessor implements OnModuleInit {
       )
 
       // Chama o LLM
-      const response = await this.llm.chat(messages, {
-        model: assistant.model,
-        temperature: 0.7,
-        maxTokens: 500,
-        apiKey,
-      })
+      const llmStart = Date.now()
+      let response: Awaited<ReturnType<typeof this.llm.chat>>
+      try {
+        response = await this.llm.chat(messages, {
+          model: assistant.model,
+          temperature: 0.7,
+          maxTokens: 500,
+          apiKey,
+        })
+        void this.apiLogs.record({
+          tenantId,
+          type: 'LLM_CHAT',
+          status: 'SUCCESS',
+          conversationId,
+          assistantId: effectiveAssistantId,
+          model: response.model || assistant.model,
+          inputTokens: response.inputTokens,
+          outputTokens: response.outputTokens,
+          inputSummary: lastUserMessage.substring(0, 500),
+          outputSummary: response.content.substring(0, 500),
+          durationMs: Date.now() - llmStart,
+        })
+      } catch (llmError) {
+        void this.apiLogs.record({
+          tenantId,
+          type: 'LLM_CHAT',
+          status: 'ERROR',
+          conversationId,
+          assistantId: effectiveAssistantId,
+          model: assistant.model,
+          inputSummary: lastUserMessage.substring(0, 500),
+          errorMessage: (llmError as Error).message.substring(0, 500),
+          durationMs: Date.now() - llmStart,
+        })
+        throw llmError
+      }
 
       this.logger.log(
         `[AI-FLOW][7-LLM-OK] conv=${conversationId} tokensIn=${response.inputTokens} tokensOut=${response.outputTokens} +${elapsed()}`,

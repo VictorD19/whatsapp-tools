@@ -11,6 +11,7 @@ import { MetaCapiService } from '@modules/meta-capi/meta-capi.service'
 import type { MetaCapiEventName } from '@modules/meta-capi/dto/upsert-meta-capi-config.dto'
 import { AppException } from '@core/errors/app.exception'
 import { LoggerService } from '@core/logger/logger.service'
+import { ApiLogsService } from '@modules/api-logs/api-logs.service'
 
 export interface ToolContext {
   tenantId: string
@@ -39,35 +40,71 @@ export class ToolExecutorService {
     private readonly integrationsRepository: IntegrationsRepository,
     private readonly metaCapiService: MetaCapiService,
     private readonly logger: LoggerService,
+    private readonly apiLogs: ApiLogsService,
   ) {}
 
   async execute(tool: AiTool, context: ToolContext): Promise<ToolResult> {
+    const t0 = Date.now()
     try {
+      let result: ToolResult
       switch (tool.type) {
         case AiToolType.BUSCAR_CONTATO:
-          return this.executeBuscarContato(context)
+          result = await this.executeBuscarContato(context)
+          break
         case AiToolType.CRIAR_CONTATO:
-          return this.executeCriarContato(context)
+          result = await this.executeCriarContato(context)
+          break
         case AiToolType.ADICIONAR_TAG:
-          return this.executeAdicionarTag(tool, context)
+          result = await this.executeAdicionarTag(tool, context)
+          break
         case AiToolType.CRIAR_DEAL:
-          return this.executeCriarDeal(tool, context)
+          result = await this.executeCriarDeal(tool, context)
+          break
         case AiToolType.TRANSFERIR_HUMANO:
-          return this.executeTransferirHumano(tool)
+          result = this.executeTransferirHumano(tool)
+          break
         case AiToolType.WEBHOOK_EXTERNO:
-          return this.executeWebhookExterno(tool, context)
+          result = await this.executeWebhookExterno(tool, context)
+          break
         case AiToolType.SETAR_ETAPA_PIPELINE:
-          return this.executeSetarEtapaPipeline(tool, context)
+          result = await this.executeSetarEtapaPipeline(tool, context)
+          break
         case AiToolType.CONSULTAR_DISPONIBILIDADE:
-          return this.executeConsultarDisponibilidade(tool, context)
+          result = await this.executeConsultarDisponibilidade(tool, context)
+          break
         case AiToolType.CRIAR_EVENTO:
-          return this.executeCriarEvento(tool, context)
+          result = await this.executeCriarEvento(tool, context)
+          break
         case AiToolType.DISPARAR_EVENTO_META:
-          return this.executeDispararEventoMeta(tool, context)
+          result = await this.executeDispararEventoMeta(tool, context)
+          break
         default:
-          return { success: false, output: `Tipo de ferramenta desconhecido: ${tool.type}` }
+          result = { success: false, output: `Tipo de ferramenta desconhecido: ${tool.type}` }
       }
+      void this.apiLogs.record({
+        tenantId: context.tenantId,
+        type: 'TOOL_EXECUTION',
+        status: result.success ? 'SUCCESS' : 'ERROR',
+        conversationId: context.conversationId,
+        assistantId: context.assistantId,
+        toolType: tool.type,
+        toolName: tool.name,
+        outputSummary: result.output.substring(0, 500),
+        durationMs: Date.now() - t0,
+      })
+      return result
     } catch (error) {
+      void this.apiLogs.record({
+        tenantId: context.tenantId,
+        type: 'TOOL_EXECUTION',
+        status: 'ERROR',
+        conversationId: context.conversationId,
+        assistantId: context.assistantId,
+        toolType: tool.type,
+        toolName: tool.name,
+        errorMessage: (error as Error).message.substring(0, 500),
+        durationMs: Date.now() - t0,
+      })
       this.logger.error(
         `Tool execution failed: ${tool.type} - ${(error as Error).message}`,
         'ToolExecutorService',

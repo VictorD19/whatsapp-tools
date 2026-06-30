@@ -22,6 +22,7 @@ import {
   Building,
   CreditCard,
   CalendarDays,
+  ScrollText,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -71,6 +72,7 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
         { icon: Bot, label: tNav('items.assistants'), href: '/assistants', exactMatch: true },
         { icon: BookOpen, label: tNav('items.knowledgeBases'), href: '/assistants/knowledge-bases' },
         { icon: Wrench, label: tNav('items.aiTools'), href: '/assistants/tools' },
+        { icon: ScrollText, label: tNav('items.apiLogs'), href: '/assistants/api-logs' },
         { icon: CalendarDays, label: tNav('items.calendar'), href: '/calendar' },
       ],
     })
