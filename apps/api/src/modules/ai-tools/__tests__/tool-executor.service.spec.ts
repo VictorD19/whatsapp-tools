@@ -11,6 +11,7 @@ import type { ICalendarProvider } from '@modules/integrations/ports/calendar-pro
 import { IntegrationsService } from '@modules/integrations/integrations.service'
 import { IntegrationsRepository } from '@modules/integrations/integrations.repository'
 import { MetaCapiService } from '@modules/meta-capi/meta-capi.service'
+import { ApiLogsService } from '@modules/api-logs/api-logs.service'
 
 describe('ToolExecutorService', () => {
   let executor: ToolExecutorService
@@ -101,6 +102,12 @@ describe('ToolExecutorService', () => {
           provide: MetaCapiService,
           useValue: {
             fireEvent: jest.fn(),
+          },
+        },
+        {
+          provide: ApiLogsService,
+          useValue: {
+            record: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
