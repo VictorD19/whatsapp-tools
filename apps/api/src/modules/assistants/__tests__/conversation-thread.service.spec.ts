@@ -346,7 +346,7 @@ describe('ConversationThreadService', () => {
 
     it('deve incluir tools e handoff keywords no system prompt', () => {
       const thread = makeThread()
-      const tools = [{ name: 'CRIAR_DEAL', description: 'Cria um deal no CRM' }]
+      const tools = [{ name: 'CRIAR_DEAL', type: 'CRIAR_DEAL', description: 'Cria um deal no CRM' }]
       const keywords = ['humano', 'atendente']
 
       const result = service.buildLLMMessages(thread, { name: 'Bot', description: null }, '', tools, keywords)

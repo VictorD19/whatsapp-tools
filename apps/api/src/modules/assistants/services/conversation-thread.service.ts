@@ -182,7 +182,7 @@ export class ConversationThreadService {
     thread: ConversationThread,
     assistant: { name: string; description?: string | null },
     kbContext: string,
-    tools: Array<{ name: string; description: string | null }>,
+    tools: Array<{ name: string; type: string; description: string | null }>,
     handoffKeywords: string[],
   ): ChatMessage[] {
     const systemContent = AssistantPromptBuilder.build({

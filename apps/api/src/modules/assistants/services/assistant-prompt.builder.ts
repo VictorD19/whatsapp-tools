@@ -3,7 +3,7 @@ export interface AssistantPromptBuildInput {
   description?: string | null
   systemPrompt: string
   kbContext?: string
-  tools?: Array<{ name: string; description: string | null }>
+  tools?: Array<{ name: string; type: string; description: string | null }>
   handoffKeywords?: string[]
 }
 
@@ -44,13 +44,13 @@ export class AssistantPromptBuilder {
     // 4. AVAILABLE TOOLS
     if (input.tools?.length) {
       const toolList = input.tools
-        .map((t) => `- ${t.name}: ${t.description ?? ''}`)
+        .map((t) => `- [TOOL:${t.type}] ${t.name}: ${t.description ?? ''}`)
         .join('\n')
 
       const toolSections: string[] = [
         '## Ferramentas disponíveis:',
         toolList,
-        'Para executar uma ferramenta, inclua [TOOL:TIPO] na sua resposta (ex: [TOOL:CRIAR_DEAL]).',
+        'Para executar uma ferramenta, inclua o marcador exato [TOOL:TIPO] na sua resposta no momento certo (ex: [TOOL:CRIAR_DEAL]). Nunca mencione o marcador para o usuário.',
       ]
 
       const hasCalendarTools = input.tools.some(
