@@ -78,8 +78,8 @@ describe('AssistantPromptBuilder', () => {
         name: 'Bot',
         systemPrompt: '',
         tools: [
-          { name: 'CRIAR_DEAL', description: 'Cria um deal no CRM' },
-          { name: 'AGENDAR', description: null },
+          { name: 'CRIAR_DEAL', type: 'CRIAR_DEAL', description: 'Cria um deal no CRM' },
+          { name: 'AGENDAR', type: 'CRIAR_EVENTO', description: null },
         ],
       })
 
@@ -158,7 +158,7 @@ describe('AssistantPromptBuilder', () => {
         description: 'Qualifica leads',
         systemPrompt: 'Siga o script de vendas.',
         kbContext: 'Produto X: R$ 100',
-        tools: [{ name: 'CRIAR_DEAL', description: 'Cria deal' }],
+        tools: [{ name: 'CRIAR_DEAL', type: 'CRIAR_DEAL', description: 'Cria deal' }],
         handoffKeywords: ['humano'],
       })
 

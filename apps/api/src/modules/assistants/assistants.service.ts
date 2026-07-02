@@ -214,7 +214,7 @@ export class AssistantsService {
       description: dto.description,
       systemPrompt: dto.systemPrompt,
       kbContext,
-      tools: tools.map((t) => ({ name: t.name, description: t.description })),
+      tools: tools.map((t) => ({ name: t.name, type: t.type, description: t.description })),
     })
 
     const messages: ChatMessage[] = [
