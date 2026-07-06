@@ -70,6 +70,7 @@ describe('InboxService', () => {
       closeConversation: jest.fn(),
       transferConversation: jest.fn(),
       reopenConversation: jest.fn(),
+      markConversationRead: jest.fn(),
       incrementUnreadCount: jest.fn(),
       updateLastMessageAt: jest.fn(),
       findMessages: jest.fn(),
@@ -87,6 +88,7 @@ describe('InboxService', () => {
       emitConversationAssigned: jest.fn(),
       emitConversationClosed: jest.fn(),
       emitConversationTransferred: jest.fn(),
+      emitConversationRead: jest.fn(),
       emitMessageStatusUpdated: jest.fn(),
     }
 
@@ -250,6 +252,63 @@ describe('InboxService', () => {
       await expect(
         service.assignConversation(tenantId, 'conv-1', userId),
       ).rejects.toMatchObject({ code: 'CONVERSATION_ALREADY_ASSIGNED' })
+    })
+  })
+
+  describe('markConversationRead', () => {
+    it('should reset unreadCount and emit WebSocket event when conversation belongs to the user', async () => {
+      const ownConversation = { ...mockConversation, assignedToId: userId, unreadCount: 3 }
+      repository.findConversationById.mockResolvedValue(ownConversation)
+      repository.markConversationRead.mockResolvedValue({ ...ownConversation, unreadCount: 0 })
+
+      const result = await service.markConversationRead(tenantId, 'conv-1', userId)
+
+      expect(result.unreadCount).toBe(0)
+      expect(repository.markConversationRead).toHaveBeenCalledWith('conv-1')
+      expect(gateway.emitConversationRead).toHaveBeenCalledWith(tenantId, {
+        conversationId: 'conv-1',
+        unreadCount: 0,
+      })
+    })
+
+    it('should not reset unreadCount when conversation is not assigned to the user', async () => {
+      const otherConversation = { ...mockConversation, assignedToId: 'other-user', unreadCount: 3 }
+      repository.findConversationById.mockResolvedValue(otherConversation)
+
+      const result = await service.markConversationRead(tenantId, 'conv-1', userId)
+
+      expect(result.unreadCount).toBe(3)
+      expect(repository.markConversationRead).not.toHaveBeenCalled()
+      expect(gateway.emitConversationRead).not.toHaveBeenCalled()
+    })
+
+    it('should not reset unreadCount when conversation is unassigned', async () => {
+      const unassignedConversation = { ...mockConversation, assignedToId: null, unreadCount: 1 }
+      repository.findConversationById.mockResolvedValue(unassignedConversation)
+
+      const result = await service.markConversationRead(tenantId, 'conv-1', userId)
+
+      expect(result.unreadCount).toBe(1)
+      expect(repository.markConversationRead).not.toHaveBeenCalled()
+      expect(gateway.emitConversationRead).not.toHaveBeenCalled()
+    })
+
+    it('should be a no-op when unreadCount is already 0', async () => {
+      const readConversation = { ...mockConversation, assignedToId: userId, unreadCount: 0 }
+      repository.findConversationById.mockResolvedValue(readConversation)
+
+      await service.markConversationRead(tenantId, 'conv-1', userId)
+
+      expect(repository.markConversationRead).not.toHaveBeenCalled()
+      expect(gateway.emitConversationRead).not.toHaveBeenCalled()
+    })
+
+    it('should throw CONVERSATION_NOT_FOUND for invalid conversation', async () => {
+      repository.findConversationById.mockResolvedValue(null)
+
+      await expect(
+        service.markConversationRead(tenantId, 'nonexistent', userId),
+      ).rejects.toMatchObject({ code: 'CONVERSATION_NOT_FOUND' })
     })
   })
 

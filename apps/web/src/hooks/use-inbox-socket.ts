@@ -191,6 +191,17 @@ export function useInboxSocket() {
       }
     }
 
+    function handleConversationRead(payload: { conversationId: string; unreadCount: number }) {
+      const conversations = useInboxStore.getState().conversations
+      const conv = conversations.find((c) => c.id === payload.conversationId)
+      if (conv) {
+        upsertConversation({
+          ...conv,
+          unreadCount: payload.unreadCount,
+        })
+      }
+    }
+
     function handleMessageStatusUpdated(payload: {
       conversationId: string
       messageId: string
@@ -222,6 +233,7 @@ export function useInboxSocket() {
     socket.on('conversation:assigned', handleConversationAssigned)
     socket.on('conversation:closed', handleConversationClosed)
     socket.on('conversation:transferred', handleConversationTransferred)
+    socket.on('conversation:read', handleConversationRead)
     socket.on('message:status_updated', handleMessageStatusUpdated)
     socket.on('message:reaction_updated', handleMessageReactionUpdated)
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -232,6 +244,7 @@ export function useInboxSocket() {
       socket.off('conversation:assigned', handleConversationAssigned)
       socket.off('conversation:closed', handleConversationClosed)
       socket.off('conversation:transferred', handleConversationTransferred)
+      socket.off('conversation:read', handleConversationRead)
       socket.off('message:status_updated', handleMessageStatusUpdated)
       socket.off('message:reaction_updated', handleMessageReactionUpdated)
       document.removeEventListener('visibilitychange', handleVisibilityChange)

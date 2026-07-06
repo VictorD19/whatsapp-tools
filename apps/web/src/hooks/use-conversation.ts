@@ -50,7 +50,6 @@ export function useConversation() {
           const existing = useInboxStore.getState().messages[conversationId] ?? []
           setMessages(conversationId, [...messages, ...existing])
         }
-        clearUnread(conversationId)
         return res.meta
       } catch {
         toast({ title: 'Erro ao carregar mensagens', variant: 'destructive' })
@@ -59,7 +58,19 @@ export function useConversation() {
         setLoadingMessages(false)
       }
     },
-    [setMessages, setLoadingMessages, clearUnread],
+    [setMessages, setLoadingMessages],
+  )
+
+  const markAsRead = useCallback(
+    async (conversationId: string) => {
+      try {
+        await apiPost<ApiResponse<unknown>>(`inbox/conversations/${conversationId}/read`, {})
+        clearUnread(conversationId)
+      } catch {
+        // Best-effort — a failed read receipt shouldn't disrupt the UI
+      }
+    },
+    [clearUnread],
   )
 
   const assignConversation = useCallback(async (conversationId: string) => {
@@ -130,5 +141,5 @@ export function useConversation() {
     [appendMessage],
   )
 
-  return { fetchMessages, assignConversation, closeConversation, sendMessage, syncMessages, sendMedia }
+  return { fetchMessages, markAsRead, assignConversation, closeConversation, sendMessage, syncMessages, sendMedia }
 }

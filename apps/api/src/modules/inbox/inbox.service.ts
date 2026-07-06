@@ -267,6 +267,25 @@ export class InboxService {
     }
   }
 
+  async markConversationRead(tenantId: string, conversationId: string, userId: string) {
+    const conversation = await this.findConversationById(tenantId, conversationId)
+
+    // Only the assigned agent's own conversations get marked as read — a conversation
+    // that isn't yours (unassigned, or assigned to someone else) keeps its unread count.
+    if (conversation.assignedToId !== userId || conversation.unreadCount === 0) {
+      return conversation
+    }
+
+    const updated = await this.repository.markConversationRead(conversationId)
+
+    this.gateway.emitConversationRead(tenantId, {
+      conversationId,
+      unreadCount: 0,
+    })
+
+    return updated
+  }
+
   async assignConversation(tenantId: string, conversationId: string, userId: string) {
     const conversation = await this.findConversationById(tenantId, conversationId)
 

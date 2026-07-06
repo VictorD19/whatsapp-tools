@@ -35,7 +35,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   const isLoading = useInboxStore((s) => s.isLoadingMessages)
   const replyingTo = useInboxStore((s) => s.replyingTo)
   const setReplyingTo = useInboxStore((s) => s.setReplyingTo)
-  const { fetchMessages, sendMessage, syncMessages, sendMedia } = useConversation()
+  const { fetchMessages, markAsRead, sendMessage, syncMessages, sendMedia } = useConversation()
   const { members: groupMembers, loading: loadingMembers, fetchMembers, clearMembers } = useGroupMembers()
   const userId = useAuthStore((s) => s.user?.id)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -59,13 +59,19 @@ export function MessageThread({ conversation }: MessageThreadProps) {
     // Fire-and-forget sync to catch messages missed while offline
     syncMessages(conversation.id)
 
+    // Only mark as read when the conversation is assigned to the current user —
+    // conversations viewed from "Todas"/"Livres" that aren't yours keep their unread count
+    if (conversation.assignedToId === userId) {
+      markAsRead(conversation.id)
+    }
+
     // Fetch group members if this is a group conversation
     if (conversation.contact.phone.endsWith('@g.us')) {
       fetchMembers(conversation.id)
     } else {
       clearMembers()
     }
-  }, [conversation.id, fetchMessages, syncMessages, setReplyingTo, fetchMembers, clearMembers, conversation.contact.phone])
+  }, [conversation.id, conversation.assignedToId, userId, fetchMessages, markAsRead, syncMessages, setReplyingTo, fetchMembers, clearMembers, conversation.contact.phone])
 
   // Auto-scroll to bottom on initial load or new messages (only if already near bottom)
   const isInitialLoad = useRef(true)

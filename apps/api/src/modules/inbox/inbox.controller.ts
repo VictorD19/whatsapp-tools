@@ -95,6 +95,16 @@ export class InboxController {
       .send(buffer)
   }
 
+  @Post('conversations/:id/read')
+  @HttpCode(HttpStatus.OK)
+  markConversationRead(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.inboxService.markConversationRead(tenantId, id, user.id)
+  }
+
   @Post('conversations/:id/assign')
   @HttpCode(HttpStatus.OK)
   assignConversation(

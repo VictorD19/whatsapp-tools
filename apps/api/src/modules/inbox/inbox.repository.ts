@@ -257,6 +257,15 @@ export class InboxRepository {
     })
   }
 
+  async markConversationRead(id: string) {
+    return this.prisma.conversation.update({
+      where: { id },
+      data: {
+        unreadCount: 0,
+      },
+    })
+  }
+
   async incrementUnreadCount(id: string) {
     return this.prisma.conversation.update({
       where: { id },
