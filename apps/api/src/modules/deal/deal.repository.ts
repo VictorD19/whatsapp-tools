@@ -51,7 +51,7 @@ export class DealRepository {
     return this.prisma.deal.findFirst({
       where: { id, tenantId, deletedAt: null },
       include: {
-        contact: { select: { id: true, phone: true, name: true, avatarUrl: true } },
+        contact: { select: { id: true, phone: true, name: true, avatarUrl: true, ctwaClid: true } },
         stage: { select: { id: true, name: true, color: true, type: true, order: true } },
         pipeline: { select: { id: true, name: true } },
         conversation: { select: { id: true, protocol: true, status: true } },

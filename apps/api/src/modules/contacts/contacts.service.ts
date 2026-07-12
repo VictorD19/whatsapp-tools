@@ -45,6 +45,10 @@ export class ContactsService {
     return this.repository.updateAvatarUrl(id, avatarUrl)
   }
 
+  async setCtwaClidIfMissing(id: string, ctwaClid: string) {
+    return this.repository.setCtwaClidIfMissing(id, ctwaClid)
+  }
+
   async findById(tenantId: string, id: string) {
     const contact = await this.repository.findById(tenantId, id)
     if (!contact) {
@@ -88,6 +92,7 @@ export class ContactsService {
       phone: contact.phone,
       firstName: contact.name?.split(' ')[0],
       lastName: contact.name?.split(' ').slice(1).join(' ') || undefined,
+      ctwaClid: contact.ctwaClid ?? undefined,
     })
 
     return { data: contact }

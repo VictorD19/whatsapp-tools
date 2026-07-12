@@ -332,6 +332,8 @@ export class ToolExecutorService {
       'ToolExecutorService',
     )
 
+    const contact = await this.contactsService.findById(context.tenantId, context.contactId)
+
     await this.metaCapiService.fireEvent({
       tenantId: context.tenantId,
       eventName: config.eventName,
@@ -339,6 +341,7 @@ export class ToolExecutorService {
       phone: context.contactPhone,
       firstName: context.contactName?.split(' ')[0],
       lastName: context.contactName?.split(' ').slice(1).join(' ') || undefined,
+      ctwaClid: contact.ctwaClid ?? undefined,
     })
 
     this.logger.log(

@@ -456,7 +456,15 @@ describe('ToolExecutorService', () => {
   })
 
   describe('DISPARAR_EVENTO_META', () => {
+    const mockContact = {
+      id: 'contact-1',
+      name: 'Joao Silva',
+      phone: '5511999999999',
+      ctwaClid: null as string | null,
+    }
+
     it('should fire event and return success', async () => {
+      contactsService.findById.mockResolvedValue(mockContact as never)
       metaCapiService.fireEvent.mockResolvedValue(undefined)
 
       const tool = {
@@ -476,10 +484,12 @@ describe('ToolExecutorService', () => {
         phone: '5511999999999',
         firstName: 'Joao',
         lastName: 'Silva',
+        ctwaClid: undefined,
       })
     })
 
     it('should fire Purchase event', async () => {
+      contactsService.findById.mockResolvedValue(mockContact as never)
       metaCapiService.fireEvent.mockResolvedValue(undefined)
 
       const tool = {
@@ -498,6 +508,7 @@ describe('ToolExecutorService', () => {
     })
 
     it('should handle contact with single name (no lastName)', async () => {
+      contactsService.findById.mockResolvedValue(mockContact as never)
       metaCapiService.fireEvent.mockResolvedValue(undefined)
 
       const tool = {
@@ -511,6 +522,23 @@ describe('ToolExecutorService', () => {
       expect(result.success).toBe(true)
       expect(metaCapiService.fireEvent).toHaveBeenCalledWith(
         expect.objectContaining({ firstName: 'Joao', lastName: undefined }),
+      )
+    })
+
+    it('should propagate ctwaClid from the contact when present', async () => {
+      contactsService.findById.mockResolvedValue({ ...mockContact, ctwaClid: 'ARAkLk...clid' } as never)
+      metaCapiService.fireEvent.mockResolvedValue(undefined)
+
+      const tool = {
+        ...baseTool,
+        type: AiToolType.DISPARAR_EVENTO_META,
+        config: { eventName: 'Lead' },
+      }
+
+      await executor.execute(tool, context)
+
+      expect(metaCapiService.fireEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ ctwaClid: 'ARAkLk...clid' }),
       )
     })
   })

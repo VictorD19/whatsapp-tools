@@ -150,6 +150,7 @@ model Contact {
   phone     String
   name      String?
   avatarUrl String?
+  ctwaClid  String?
   isSandbox Boolean   @default(false)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

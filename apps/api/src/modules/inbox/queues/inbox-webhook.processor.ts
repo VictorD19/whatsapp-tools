@@ -14,7 +14,7 @@ import { StorageService, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.s
 import { DealService } from '@modules/deal/deal.service'
 import { SPEECH_TO_TEXT } from '@modules/ai/ai.tokens'
 import type { ISpeechToTextProvider } from '@modules/ai/ports/speech-to-text.interface'
-import { parseWhatsAppMessage, extractQuotedStanzaId } from '../utils/message-parser'
+import { parseWhatsAppMessage, extractQuotedStanzaId, extractCtwaClid } from '../utils/message-parser'
 
 const DEFAULT_AI_WAIT_MS = 5000
 
@@ -246,6 +246,19 @@ export class InboxWebhookProcessor {
         phone,
         contactName,
       )
+
+      // Captura o ctwa_clid (Click-to-WhatsApp Click ID) na primeira mensagem
+      // originada de um anúncio — necessário para atribuição no Meta Ads Manager
+      if (!fromMe && !isGroup) {
+        const ctwaClid = extractCtwaClid(message)
+        if (ctwaClid) {
+          await this.contactsService.setCtwaClidIfMissing(contact.id, ctwaClid)
+          this.logger.log(
+            `[CTWA] ctwa_clid capturado para contato ${contact.id}`,
+            'InboxWebhookProcessor',
+          )
+        }
+      }
 
       // Fetch profile picture if contact doesn't have one (skip for groups, fromMe, and already-attempted)
       // 'unavailable' means we already tried and got 404 — don't retry

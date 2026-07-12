@@ -32,6 +32,17 @@ export class ContactsRepository {
     })
   }
 
+  /**
+   * Persiste o ctwa_clid apenas se o contato ainda não tiver um — preserva
+   * a atribuição do primeiro clique no anúncio, sem sobrescrever por sessões futuras.
+   */
+  async setCtwaClidIfMissing(id: string, ctwaClid: string) {
+    return this.prisma.contact.updateMany({
+      where: { id, ctwaClid: null },
+      data: { ctwaClid },
+    })
+  }
+
   async findById(tenantId: string, id: string) {
     return this.prisma.contact.findFirst({
       where: { id, tenantId, deletedAt: null },

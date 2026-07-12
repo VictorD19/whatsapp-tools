@@ -243,6 +243,7 @@ export class DealService {
         externalId: deal.contactId ?? undefined,
         orderId: id,
         value: deal.value != null ? Number(deal.value) : undefined,
+        ctwaClid: deal.contact?.ctwaClid ?? undefined,
       })
     }
 

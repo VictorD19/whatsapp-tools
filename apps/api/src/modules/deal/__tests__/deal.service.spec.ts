@@ -12,6 +12,7 @@ describe('DealService', () => {
   let service: DealService
   let repository: jest.Mocked<DealRepository>
   let notifications: jest.Mocked<NotificationsService>
+  let metaCapi: jest.Mocked<Pick<MetaCapiService, 'fireEvent'>>
   let mockPrisma: { user: { findMany: jest.Mock } }
 
   const tenantId = 'tenant-123'
@@ -40,7 +41,7 @@ describe('DealService', () => {
     deletedAt: null as Date | null,
     createdAt: now,
     updatedAt: now,
-    contact: { id: 'contact-1', phone: '5511999999999', name: 'Joao' as string | null, avatarUrl: null as string | null },
+    contact: { id: 'contact-1', phone: '5511999999999', name: 'Joao' as string | null, avatarUrl: null as string | null, ctwaClid: null as string | null },
     stage: mockStage,
     pipeline: mockPipeline,
     conversation: { id: 'conv-1', protocol: 'SCHA1000', status: 'OPEN' as ConversationStatus } as { id: string; protocol: string; status: ConversationStatus } | null,
@@ -103,6 +104,7 @@ describe('DealService', () => {
     service = module.get(DealService)
     repository = module.get(DealRepository)
     notifications = module.get(NotificationsService)
+    metaCapi = module.get(MetaCapiService)
   })
 
   describe('findDeals', () => {
@@ -407,6 +409,31 @@ describe('DealService', () => {
         lostAt: expect.any(Date),
         lostReason: 'Preco alto',
       }))
+    })
+
+    it('should fire Purchase event with the contact ctwaClid when moving to WON stage', async () => {
+      const dealWithClid = { ...mockDeal, contact: { ...mockDeal.contact, ctwaClid: 'ARAkLk...clid' } }
+      repository.findDealById.mockResolvedValue(dealWithClid)
+      repository.findStageById.mockResolvedValue({ ...mockFullStage, id: 'stage-won', name: 'Convertido', type: 'WON' as const, order: 6, isDefault: false })
+      repository.moveDeal.mockResolvedValue({ ...dealWithClid, stage: mockWonStage, wonAt: now })
+
+      await service.moveDeal(tenantId, 'deal-1', { stageId: 'stage-won' })
+
+      expect(metaCapi.fireEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ eventName: 'Purchase', ctwaClid: 'ARAkLk...clid' }),
+      )
+    })
+
+    it('should fire Purchase event with undefined ctwaClid when contact has none', async () => {
+      repository.findDealById.mockResolvedValue(mockDeal)
+      repository.findStageById.mockResolvedValue({ ...mockFullStage, id: 'stage-won', name: 'Convertido', type: 'WON' as const, order: 6, isDefault: false })
+      repository.moveDeal.mockResolvedValue({ ...mockDeal, stage: mockWonStage, wonAt: now })
+
+      await service.moveDeal(tenantId, 'deal-1', { stageId: 'stage-won' })
+
+      expect(metaCapi.fireEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ eventName: 'Purchase', ctwaClid: undefined }),
+      )
     })
 
     it('should throw DEAL_ALREADY_CLOSED if deal is in WON stage', async () => {

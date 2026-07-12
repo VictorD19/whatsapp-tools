@@ -17,6 +17,7 @@ export interface FireEventOptions {
   value?: number
   currency?: string
   orderId?: string
+  ctwaClid?: string
 }
 
 @Injectable()
@@ -135,6 +136,7 @@ export class MetaCapiService {
           value: opts.value,
           currency: opts.currency,
           orderId: opts.orderId,
+          ctwaClid: opts.ctwaClid,
           actionSource: 'business_messaging',
         },
         testCode,

@@ -7,6 +7,7 @@ import { MetaCapiService } from '@modules/meta-capi/meta-capi.service'
 describe('ContactsService', () => {
   let service: ContactsService
   let repository: jest.Mocked<ContactsRepository>
+  let metaCapi: jest.Mocked<Pick<MetaCapiService, 'fireEvent'>>
 
   const tenantId = 'tenant-123'
 
@@ -16,6 +17,7 @@ describe('ContactsService', () => {
     phone: '5511999999999',
     name: 'João Silva',
     avatarUrl: null as string | null,
+    ctwaClid: null as string | null,
     isSandbox: false,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -32,6 +34,7 @@ describe('ContactsService', () => {
       findByPhone: jest.fn(),
       findOrCreate: jest.fn(),
       updateAvatarUrl: jest.fn(),
+      setCtwaClidIfMissing: jest.fn(),
       findById: jest.fn(),
       findAllByTenant: jest.fn(),
       findMany: jest.fn(),
@@ -50,6 +53,7 @@ describe('ContactsService', () => {
 
     service = module.get(ContactsService)
     repository = module.get(ContactsRepository)
+    metaCapi = module.get(MetaCapiService)
   })
 
   describe('findMany', () => {
@@ -157,6 +161,38 @@ describe('ContactsService', () => {
       await expect(
         service.create(tenantId, { phone: '5511999999999' }),
       ).rejects.toMatchObject({ code: 'CONTACT_DUPLICATE' })
+    })
+
+    it('should fire Lead event with ctwaClid when contact already has one', async () => {
+      repository.findByPhone.mockResolvedValue(null)
+      repository.create.mockResolvedValue({ ...mockContact, ctwaClid: 'ARAkLk...clid' })
+
+      await service.create(tenantId, { phone: '5511999999999', name: 'João Silva' })
+
+      expect(metaCapi.fireEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ ctwaClid: 'ARAkLk...clid' }),
+      )
+    })
+
+    it('should fire Lead event with undefined ctwaClid when contact has none', async () => {
+      repository.findByPhone.mockResolvedValue(null)
+      repository.create.mockResolvedValue(mockContact)
+
+      await service.create(tenantId, { phone: '5511999999999', name: 'João Silva' })
+
+      expect(metaCapi.fireEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ ctwaClid: undefined }),
+      )
+    })
+  })
+
+  describe('setCtwaClidIfMissing', () => {
+    it('should delegate to repository', async () => {
+      repository.setCtwaClidIfMissing.mockResolvedValue({ count: 1 })
+
+      await service.setCtwaClidIfMissing('contact-1', 'ARAkLk...clid')
+
+      expect(repository.setCtwaClidIfMissing).toHaveBeenCalledWith('contact-1', 'ARAkLk...clid')
     })
   })
 

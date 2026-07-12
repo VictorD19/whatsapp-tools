@@ -184,3 +184,47 @@ export function extractQuotedStanzaId(
 
   return undefined
 }
+
+/**
+ * Extrai o ctwa_clid (Click-to-WhatsApp Click ID) de contextInfo.externalAdReplyInfo,
+ * presente na primeira mensagem de conversas originadas de anúncios Click-to-WhatsApp.
+ * Necessário para atribuir eventos do Meta CAPI a um anúncio específico no Ads Manager.
+ */
+export function extractCtwaClid(
+  message: Record<string, unknown> | undefined,
+): string | undefined {
+  if (!message) return undefined
+
+  const msg = unwrapMessage(message)
+
+  const messageTypes = [
+    'extendedTextMessage',
+    'imageMessage',
+    'videoMessage',
+    'audioMessage',
+    'documentMessage',
+    'stickerMessage',
+    'ptvMessage',
+    'conversation',
+  ]
+
+  for (const type of messageTypes) {
+    const inner = msg[type] as Record<string, unknown> | undefined
+    if (!inner || typeof inner !== 'object') continue
+
+    const contextInfo = inner.contextInfo as Record<string, unknown> | undefined
+    const externalAdReplyInfo = contextInfo?.externalAdReplyInfo as Record<string, unknown> | undefined
+    if (externalAdReplyInfo?.ctwaClid) {
+      return externalAdReplyInfo.ctwaClid as string
+    }
+  }
+
+  // Alguns payloads da Evolution API expõem contextInfo diretamente na raiz da mensagem
+  const rootContextInfo = msg.contextInfo as Record<string, unknown> | undefined
+  const rootExternalAdReplyInfo = rootContextInfo?.externalAdReplyInfo as Record<string, unknown> | undefined
+  if (rootExternalAdReplyInfo?.ctwaClid) {
+    return rootExternalAdReplyInfo.ctwaClid as string
+  }
+
+  return undefined
+}

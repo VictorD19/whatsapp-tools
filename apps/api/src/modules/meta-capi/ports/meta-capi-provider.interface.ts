@@ -12,6 +12,7 @@ export interface MetaCapiEventPayload {
   orderId?: string
   contentIds?: string[]
   actionSource?: string
+  ctwaClid?: string
 }
 
 export interface MetaCapiSendResult {

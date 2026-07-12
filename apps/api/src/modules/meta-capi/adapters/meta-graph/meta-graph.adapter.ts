@@ -28,13 +28,23 @@ export class MetaGraphAdapter implements IMetaCapiProvider {
     if (payload.externalId) userData['external_id'] = payload.externalId
     if (payload.ipAddress) userData['client_ip_address'] = payload.ipAddress
     if (payload.userAgent) userData['client_user_agent'] = payload.userAgent
+    // ctwa_clid não é hasheado — é o identificador de clique do anúncio, usado
+    // pelo Meta para atribuir o evento a uma campanha específica no Ads Manager
+    if (payload.ctwaClid) userData['ctwa_clid'] = payload.ctwaClid
+
+    const actionSource = payload.actionSource ?? 'business_messaging'
 
     const event: Record<string, unknown> = {
       event_name: payload.eventName,
       event_time: Math.floor(Date.now() / 1000),
       event_id: `${payload.eventName}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      action_source: payload.actionSource ?? 'business_messaging',
+      action_source: actionSource,
       user_data: userData,
+    }
+
+    // Obrigatório pela Conversions API for Business Messaging para eventos via WhatsApp
+    if (actionSource === 'business_messaging') {
+      event['messaging_channel'] = 'whatsapp'
     }
 
     if (payload.value !== undefined || payload.orderId || payload.contentIds) {
@@ -85,8 +95,9 @@ export class MetaGraphAdapter implements IMetaCapiProvider {
   }
 
   private hashPhone(phone: string): string {
-    const digits = phone.replace(/\D/g, '')
-    const e164 = digits.startsWith('55') ? `+${digits}` : `+55${digits}`
-    return this.hash(e164)
+    const digits = phone.replace(/\D/g, '').replace(/^0+/, '')
+    // Normalização oficial do Meta: apenas dígitos com código do país, sem "+"
+    const normalized = digits.startsWith('55') ? digits : `55${digits}`
+    return this.hash(normalized)
   }
 }
