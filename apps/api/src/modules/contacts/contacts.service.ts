@@ -45,8 +45,11 @@ export class ContactsService {
     return this.repository.updateAvatarUrl(id, avatarUrl)
   }
 
-  async setCtwaClidIfMissing(id: string, ctwaClid: string) {
-    return this.repository.setCtwaClidIfMissing(id, ctwaClid)
+  async setAdAttributionIfMissing(
+    id: string,
+    attribution: { ctwaClid: string; sourceId?: string; title?: string; sourceUrl?: string },
+  ) {
+    return this.repository.setAdAttributionIfMissing(id, attribution)
   }
 
   async findById(tenantId: string, id: string) {

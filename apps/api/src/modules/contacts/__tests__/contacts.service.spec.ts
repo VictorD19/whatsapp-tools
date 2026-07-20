@@ -34,7 +34,7 @@ describe('ContactsService', () => {
       findByPhone: jest.fn(),
       findOrCreate: jest.fn(),
       updateAvatarUrl: jest.fn(),
-      setCtwaClidIfMissing: jest.fn(),
+      setAdAttributionIfMissing: jest.fn(),
       findById: jest.fn(),
       findAllByTenant: jest.fn(),
       findMany: jest.fn(),
@@ -186,13 +186,14 @@ describe('ContactsService', () => {
     })
   })
 
-  describe('setCtwaClidIfMissing', () => {
+  describe('setAdAttributionIfMissing', () => {
     it('should delegate to repository', async () => {
-      repository.setCtwaClidIfMissing.mockResolvedValue({ count: 1 })
+      repository.setAdAttributionIfMissing.mockResolvedValue({ count: 1 })
 
-      await service.setCtwaClidIfMissing('contact-1', 'ARAkLk...clid')
+      const attribution = { ctwaClid: 'ARAkLk...clid', sourceId: 'ad-123', title: 'Promoção', sourceUrl: 'https://fb.me/ad-123' }
+      await service.setAdAttributionIfMissing('contact-1', attribution)
 
-      expect(repository.setCtwaClidIfMissing).toHaveBeenCalledWith('contact-1', 'ARAkLk...clid')
+      expect(repository.setAdAttributionIfMissing).toHaveBeenCalledWith('contact-1', attribution)
     })
   })
 

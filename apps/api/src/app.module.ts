@@ -25,6 +25,7 @@ import { MetaCapiModule } from './modules/meta-capi/meta-capi.module'
 import { HealthModule } from './modules/health/health.module'
 import { InactivityScannerModule } from './modules/inactivity-scanner/inactivity-scanner.module'
 import { ApiLogsModule } from './modules/api-logs/api-logs.module'
+import { CampaignsModule } from './modules/campaigns/campaigns.module'
 // import { CrmModule } from './modules/crm/crm.module'
 
 @Module({
@@ -53,6 +54,7 @@ import { ApiLogsModule } from './modules/api-logs/api-logs.module'
     HealthModule,
     InactivityScannerModule,
     ApiLogsModule,
+    CampaignsModule,
     // CrmModule,
   ],
 })

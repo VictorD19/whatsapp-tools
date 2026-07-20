@@ -33,13 +33,22 @@ export class ContactsRepository {
   }
 
   /**
-   * Persiste o ctwa_clid apenas se o contato ainda não tiver um — preserva
-   * a atribuição do primeiro clique no anúncio, sem sobrescrever por sessões futuras.
+   * Persiste os dados de atribuição do anúncio (ctwa_clid + ID/título/URL do criativo)
+   * apenas se o contato ainda não tiver ctwa_clid — preserva a atribuição do primeiro
+   * clique no anúncio, sem sobrescrever por sessões futuras.
    */
-  async setCtwaClidIfMissing(id: string, ctwaClid: string) {
+  async setAdAttributionIfMissing(
+    id: string,
+    attribution: { ctwaClid: string; sourceId?: string; title?: string; sourceUrl?: string },
+  ) {
     return this.prisma.contact.updateMany({
       where: { id, ctwaClid: null },
-      data: { ctwaClid },
+      data: {
+        ctwaClid: attribution.ctwaClid,
+        adSourceId: attribution.sourceId,
+        adTitle: attribution.title,
+        adSourceUrl: attribution.sourceUrl,
+      },
     })
   }
 

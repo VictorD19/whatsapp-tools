@@ -112,6 +112,7 @@
       "groups": "Groups",
       "contactLists": "Contact Lists",
       "contacts": "Contacts",
+      "campaigns": "Campaigns",
       "assistants": "Assistants",
       "crm": "CRM",
       "pipeline": "Pipeline",
@@ -621,6 +622,23 @@
       "summaryRecipients": "Recipients:",
       "summaryDelay": "Delay:",
       "estimatedTime": "Estimated time: ~{minutes} minutes"
+    }
+  },
+  "campaigns": {
+    "title": "Campaigns",
+    "subtitle": "{count} campaign identified",
+    "subtitlePlural": "{count} campaigns identified",
+    "empty": "No campaigns identified yet",
+    "emptyDescription": "Campaigns appear here when a conversation comes from a Click-to-WhatsApp ad on Meta Ads",
+    "untitled": "Untitled ad",
+    "adId": "Ad ID: {id}",
+    "table": {
+      "name": "Ad",
+      "conversations": "Conversations",
+      "converted": "Converted",
+      "value": "Value",
+      "firstConversation": "First conversation",
+      "lastConversation": "Last conversation"
     }
   },
   "contactLists": {

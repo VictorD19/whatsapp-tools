@@ -14,7 +14,7 @@ import { StorageService, STORABLE_MEDIA_TYPES } from '@modules/storage/storage.s
 import { DealService } from '@modules/deal/deal.service'
 import { SPEECH_TO_TEXT } from '@modules/ai/ai.tokens'
 import type { ISpeechToTextProvider } from '@modules/ai/ports/speech-to-text.interface'
-import { parseWhatsAppMessage, extractQuotedStanzaId, extractCtwaClid } from '../utils/message-parser'
+import { parseWhatsAppMessage, extractQuotedStanzaId, extractAdAttribution } from '../utils/message-parser'
 
 const DEFAULT_AI_WAIT_MS = 5000
 
@@ -247,12 +247,13 @@ export class InboxWebhookProcessor {
         contactName,
       )
 
-      // Captura o ctwa_clid (Click-to-WhatsApp Click ID) na primeira mensagem
-      // originada de um anúncio — necessário para atribuição no Meta Ads Manager
+      // Captura os dados de atribuição do anúncio (ctwa_clid + ID/título/URL do
+      // criativo) na primeira mensagem originada de um anúncio Click-to-WhatsApp —
+      // usado para atribuição no Meta Ads Manager e para a tela de Campanhas
       if (!fromMe && !isGroup) {
-        const ctwaClid = extractCtwaClid(message)
-        if (ctwaClid) {
-          await this.contactsService.setCtwaClidIfMissing(contact.id, ctwaClid)
+        const adAttribution = extractAdAttribution(message)
+        if (adAttribution) {
+          await this.contactsService.setAdAttributionIfMissing(contact.id, adAttribution)
           this.logger.log(
             `[CTWA] ctwa_clid capturado para contato ${contact.id}`,
             'InboxWebhookProcessor',

@@ -23,6 +23,7 @@ import {
   CreditCard,
   CalendarDays,
   ScrollText,
+  TrendingUp,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -61,6 +62,7 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
         { icon: Users, label: tNav('items.groups'), href: '/groups' },
         { icon: ClipboardList, label: tNav('items.contactLists'), href: '/contact-lists' },
         { icon: UserCircle, label: tNav('items.contacts'), href: '/contacts' },
+        { icon: TrendingUp, label: tNav('items.campaigns'), href: '/campaigns' },
       ],
     },
   ]
