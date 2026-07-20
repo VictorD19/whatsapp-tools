@@ -24,7 +24,10 @@ let refreshQueue: ((token: string) => void)[] = []
 
 async function tryRefresh(): Promise<string | null> {
   const refreshToken = getRefreshToken()
-  if (!refreshToken) return null
+  if (!refreshToken) {
+    clearSession()
+    return null
+  }
 
   if (isRefreshing) {
     // Esperar o refresh em andamento terminar
