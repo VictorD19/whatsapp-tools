@@ -10,4 +10,9 @@ export class CampaignsController {
   findAll(@CurrentTenant() tenantId: string) {
     return this.service.findAll(tenantId)
   }
+
+  @Get('funnel')
+  getFunnel(@CurrentTenant() tenantId: string) {
+    return this.service.getFunnel(tenantId)
+  }
 }

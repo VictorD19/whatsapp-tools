@@ -16,6 +16,7 @@ describe('CampaignsService', () => {
           provide: CampaignsRepository,
           useValue: {
             findAttributedConversations: jest.fn(),
+            findAttributedConversationsWithDeals: jest.fn(),
           },
         },
       ],
@@ -134,6 +135,67 @@ describe('CampaignsService', () => {
       const result = await service.findAll(tenantId)
 
       expect(result.data).toEqual([])
+    })
+  })
+
+  describe('getFunnel', () => {
+    it('should compute started/withDeal/converted stages, overall and per campaign', async () => {
+      repository.findAttributedConversationsWithDeals.mockResolvedValue([
+        {
+          id: 'conv-1',
+          createdAt: new Date('2026-07-01T10:00:00Z'),
+          contact: {
+            adSourceId: 'ad-123',
+            adTitle: 'Promoção de verão',
+            deals: [{ id: 'deal-1', wonAt: new Date('2026-07-02T10:00:00Z') }],
+          },
+        },
+        {
+          id: 'conv-2',
+          createdAt: new Date('2026-07-02T10:00:00Z'),
+          contact: {
+            adSourceId: 'ad-123',
+            adTitle: 'Promoção de verão',
+            deals: [{ id: 'deal-2', wonAt: null }],
+          },
+        },
+        {
+          id: 'conv-3',
+          createdAt: new Date('2026-07-03T10:00:00Z'),
+          contact: {
+            adSourceId: 'ad-456',
+            adTitle: 'Lançamento',
+            deals: [],
+          },
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ] as any)
+
+      const result = await service.getFunnel(tenantId)
+
+      expect(result.data.stages).toEqual([
+        { key: 'started', count: 3 },
+        { key: 'withDeal', count: 2 },
+        { key: 'converted', count: 1 },
+      ])
+
+      expect(result.data.campaigns).toEqual([
+        { adSourceId: 'ad-123', adTitle: 'Promoção de verão', started: 2, withDeal: 2, converted: 1 },
+        { adSourceId: 'ad-456', adTitle: 'Lançamento', started: 1, withDeal: 0, converted: 0 },
+      ])
+    })
+
+    it('should return zeroed stages when there are no attributed conversations', async () => {
+      repository.findAttributedConversationsWithDeals.mockResolvedValue([])
+
+      const result = await service.getFunnel(tenantId)
+
+      expect(result.data.stages).toEqual([
+        { key: 'started', count: 0 },
+        { key: 'withDeal', count: 0 },
+        { key: 'converted', count: 0 },
+      ])
+      expect(result.data.campaigns).toEqual([])
     })
   })
 })

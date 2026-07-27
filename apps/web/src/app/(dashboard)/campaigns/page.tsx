@@ -1,10 +1,12 @@
 'use client'
 
 import React from 'react'
-import { TrendingUp, MessageSquare, CheckCircle2 } from 'lucide-react'
+import Link from 'next/link'
+import { TrendingUp, MessageSquare, CheckCircle2, Filter } from 'lucide-react'
 import { PageLayout } from '@/components/layout/page-layout'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/shared/empty-state'
+import { Button } from '@/components/ui/button'
 import { useCampaigns } from '@/hooks/use-campaigns'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -21,13 +23,21 @@ export default function CampaignsPage() {
   return (
     <PageLayout breadcrumb={[{ label: tn('groups.marketing') }, { label: tn('items.campaigns') }]}>
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">{t('title')}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {campaigns.length === 1
-            ? t('subtitle', { count: campaigns.length })
-            : t('subtitlePlural', { count: campaigns.length })}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{t('title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {campaigns.length === 1
+              ? t('subtitle', { count: campaigns.length })
+              : t('subtitlePlural', { count: campaigns.length })}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/campaigns/funnel">
+            <Filter className="h-4 w-4" />
+            {t('viewFunnel')}
+          </Link>
+        </Button>
       </div>
 
       {/* Table */}

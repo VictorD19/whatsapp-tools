@@ -632,6 +632,7 @@
     "emptyDescription": "Las campañas aparecen aquí cuando una conversación llega desde un anuncio Click-to-WhatsApp en Meta Ads",
     "untitled": "Anuncio sin título",
     "adId": "ID del anuncio: {id}",
+    "viewFunnel": "Ver embudo de ventas",
     "table": {
       "name": "Anuncio",
       "conversations": "Conversaciones",
@@ -639,6 +640,29 @@
       "value": "Valor",
       "firstConversation": "Primera conversación",
       "lastConversation": "Última conversación"
+    }
+  },
+  "salesFunnel": {
+    "title": "Embudo de Ventas",
+    "subtitle": "Desde la conversación iniciada por anuncio hasta la venta convertida",
+    "backToCampaigns": "Volver a Campañas",
+    "empty": "Aún no hay datos del embudo",
+    "emptyDescription": "El embudo aparece aquí cuando lleguen conversaciones desde anuncios Click-to-WhatsApp en Meta Ads",
+    "stages": {
+      "started": "Conversaciones iniciadas",
+      "withDeal": "En negociación",
+      "converted": "Convertidas"
+    },
+    "stagesSection": "Etapas",
+    "conversionFromStart": "{percent}% del total",
+    "conversionFromPrevious": "{percent}% de la etapa anterior",
+    "campaignsSection": "Campañas",
+    "campaignsSectionDescription": "Cantidad de conversaciones por etapa en cada campaña",
+    "table": {
+      "name": "Anuncio",
+      "started": "Iniciadas",
+      "withDeal": "En negociación",
+      "converted": "Convertidas"
     }
   },
   "contactLists": {

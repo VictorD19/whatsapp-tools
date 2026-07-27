@@ -632,6 +632,7 @@
     "emptyDescription": "Campanhas aparecem aqui quando uma conversa chega a partir de um anúncio Click-to-WhatsApp no Meta Ads",
     "untitled": "Anúncio sem título",
     "adId": "ID do anúncio: {id}",
+    "viewFunnel": "Ver funil de vendas",
     "table": {
       "name": "Anúncio",
       "conversations": "Conversas",
@@ -639,6 +640,29 @@
       "value": "Valor",
       "firstConversation": "Primeira conversa",
       "lastConversation": "Última conversa"
+    }
+  },
+  "salesFunnel": {
+    "title": "Funil de Vendas",
+    "subtitle": "Da conversa iniciada por anúncio até a venda convertida",
+    "backToCampaigns": "Voltar para Campanhas",
+    "empty": "Nenhum dado de funil ainda",
+    "emptyDescription": "O funil aparece aqui quando conversas chegarem a partir de anúncios Click-to-WhatsApp no Meta Ads",
+    "stages": {
+      "started": "Conversas iniciadas",
+      "withDeal": "Em negociação",
+      "converted": "Convertidas"
+    },
+    "stagesSection": "Etapas",
+    "conversionFromStart": "{percent}% do total",
+    "conversionFromPrevious": "{percent}% da etapa anterior",
+    "campaignsSection": "Campanhas",
+    "campaignsSectionDescription": "Quantidade de conversas por etapa em cada campanha",
+    "table": {
+      "name": "Anúncio",
+      "started": "Iniciadas",
+      "withDeal": "Em negociação",
+      "converted": "Convertidas"
     }
   },
   "contactLists": {

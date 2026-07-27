@@ -1,10 +1,63 @@
 import { Injectable } from '@nestjs/common'
 import { CampaignsRepository } from './campaigns.repository'
 import type { CampaignSummary } from './entities/campaign-summary.entity'
+import type { FunnelCampaignSummary, FunnelSummary } from './entities/funnel-summary.entity'
 
 @Injectable()
 export class CampaignsService {
   constructor(private readonly repository: CampaignsRepository) {}
+
+  async getFunnel(tenantId: string): Promise<{ data: FunnelSummary }> {
+    const conversations = await this.repository.findAttributedConversationsWithDeals(tenantId)
+
+    const byAdSourceId = new Map<string, FunnelCampaignSummary>()
+    let started = 0
+    let withDeal = 0
+    let converted = 0
+
+    for (const conversation of conversations) {
+      const adSourceId = conversation.contact.adSourceId as string
+      const deals = conversation.contact.deals
+      const hasDeal = deals.length > 0
+      const hasWonDeal = deals.some((deal) => deal.wonAt !== null)
+
+      let campaign = byAdSourceId.get(adSourceId)
+      if (!campaign) {
+        campaign = {
+          adSourceId,
+          adTitle: conversation.contact.adTitle,
+          started: 0,
+          withDeal: 0,
+          converted: 0,
+        }
+        byAdSourceId.set(adSourceId, campaign)
+      }
+
+      started += 1
+      campaign.started += 1
+      if (hasDeal) {
+        withDeal += 1
+        campaign.withDeal += 1
+      }
+      if (hasWonDeal) {
+        converted += 1
+        campaign.converted += 1
+      }
+    }
+
+    const campaigns = Array.from(byAdSourceId.values()).sort((a, b) => b.started - a.started)
+
+    return {
+      data: {
+        stages: [
+          { key: 'started', count: started },
+          { key: 'withDeal', count: withDeal },
+          { key: 'converted', count: converted },
+        ],
+        campaigns,
+      },
+    }
+  }
 
   async findAll(tenantId: string) {
     const conversations = await this.repository.findAttributedConversations(tenantId)

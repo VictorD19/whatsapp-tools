@@ -37,4 +37,34 @@ export class CampaignsRepository {
       },
     })
   }
+
+  /**
+   * Mesmo universo de conversas de findAttributedConversations, mas trazendo
+   * todos os deals do contato (não só os ganhos) para o cálculo das etapas do
+   * funil (iniciada -> com negociação -> convertida).
+   */
+  async findAttributedConversationsWithDeals(tenantId: string) {
+    return this.prisma.conversation.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        isSandbox: false,
+        contact: { adSourceId: { not: null } },
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        contact: {
+          select: {
+            adSourceId: true,
+            adTitle: true,
+            deals: {
+              where: { tenantId, deletedAt: null },
+              select: { id: true, wonAt: true },
+            },
+          },
+        },
+      },
+    })
+  }
 }

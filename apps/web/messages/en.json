@@ -632,6 +632,7 @@
     "emptyDescription": "Campaigns appear here when a conversation comes from a Click-to-WhatsApp ad on Meta Ads",
     "untitled": "Untitled ad",
     "adId": "Ad ID: {id}",
+    "viewFunnel": "View sales funnel",
     "table": {
       "name": "Ad",
       "conversations": "Conversations",
@@ -639,6 +640,29 @@
       "value": "Value",
       "firstConversation": "First conversation",
       "lastConversation": "Last conversation"
+    }
+  },
+  "salesFunnel": {
+    "title": "Sales Funnel",
+    "subtitle": "From ad-initiated conversation to converted sale",
+    "backToCampaigns": "Back to Campaigns",
+    "empty": "No funnel data yet",
+    "emptyDescription": "The funnel appears here when conversations come from Click-to-WhatsApp ads on Meta Ads",
+    "stages": {
+      "started": "Conversations started",
+      "withDeal": "In negotiation",
+      "converted": "Converted"
+    },
+    "stagesSection": "Stages",
+    "conversionFromStart": "{percent}% of total",
+    "conversionFromPrevious": "{percent}% of previous stage",
+    "campaignsSection": "Campaigns",
+    "campaignsSectionDescription": "Number of conversations per stage in each campaign",
+    "table": {
+      "name": "Ad",
+      "started": "Started",
+      "withDeal": "In negotiation",
+      "converted": "Converted"
     }
   },
   "contactLists": {
