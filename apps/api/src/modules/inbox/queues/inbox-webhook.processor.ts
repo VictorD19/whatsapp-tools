@@ -1,4 +1,5 @@
 import { Inject } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { Process, Processor } from '@nestjs/bull'
 import { InjectQueue } from '@nestjs/bull'
 import { Job, Queue } from 'bull'
@@ -17,6 +18,7 @@ import type { ISpeechToTextProvider } from '@modules/ai/ports/speech-to-text.int
 import { parseWhatsAppMessage, extractQuotedStanzaId, extractAdAttribution } from '../utils/message-parser'
 
 const DEFAULT_AI_WAIT_MS = 5000
+const DEFAULT_MAX_INBOUND_MEDIA_SIZE_MB = 25
 
 /**
  * Extrai o número de telefone de um JID do WhatsApp.
@@ -40,6 +42,9 @@ interface InboxWebhookJob {
 
 @Processor(QUEUES.WEBHOOK_INBOUND)
 export class InboxWebhookProcessor {
+  /** Tamanho máximo (em bytes) de mídia inbound baixada — acima disso, o download é pulado. */
+  private readonly maxInboundMediaBytes: number
+
   constructor(
     private readonly inboxRepository: InboxRepository,
     private readonly contactsService: ContactsService,
@@ -50,11 +55,15 @@ export class InboxWebhookProcessor {
     private readonly dealService: DealService,
     private readonly gateway: InboxGateway,
     private readonly logger: LoggerService,
+    private readonly config: ConfigService,
     @InjectQueue(QUEUES.AI_RESPONSE)
     private readonly aiResponseQueue: Queue,
     @Inject(SPEECH_TO_TEXT)
     private readonly stt: ISpeechToTextProvider,
-  ) { }
+  ) {
+    const maxMb = Number(this.config.get<string>('MAX_INBOUND_MEDIA_SIZE_MB')) || DEFAULT_MAX_INBOUND_MEDIA_SIZE_MB
+    this.maxInboundMediaBytes = maxMb * 1024 * 1024
+  }
 
   @Process('inbox-webhook')
   async handleInboxWebhook(job: Job<InboxWebhookJob>) {
@@ -158,7 +167,12 @@ export class InboxWebhookProcessor {
         continue
       }
       const parsed = parseWhatsAppMessage(message)
-      const { body, type, mediaUrl } = parsed
+      const { body, type, mediaUrl, fileLength } = parsed
+
+      // Mídia acima do limite configurado nunca é baixada — evita bloquear o
+      // event loop com Buffer.from(base64) de arquivos gigantes (ex: incidente
+      // com documento de 265MB que travou a fila por 18min)
+      const isMediaTooLarge = fileLength !== undefined && fileLength > this.maxInboundMediaBytes
 
       // Log detailed trace for audio messages to diagnose reception issues
       if (type === 'AUDIO') {
@@ -172,7 +186,12 @@ export class InboxWebhookProcessor {
       // Skip for fromMe=true — outgoing audio is already saved by sendMessage; no transcription needed
       let finalBody = body
       let finalMediaUrl = mediaUrl
-      if (type === 'AUDIO' && !fromMe && key.id) {
+      if (type === 'AUDIO' && !fromMe && key.id && isMediaTooLarge) {
+        this.logger.warn(
+          `Skipping audio download for msgId=${key.id as string}: fileLength=${fileLength} exceeds limit of ${this.maxInboundMediaBytes} bytes`,
+          'InboxWebhookProcessor',
+        )
+      } else if (type === 'AUDIO' && !fromMe && key.id) {
         this.logger.log(
           `[AUDIO-TRACE] Entering audio download block for msgId=${key.id as string}`,
           'InboxWebhookProcessor',
@@ -374,6 +393,17 @@ export class InboxWebhookProcessor {
         ? pushName ?? undefined
         : undefined
 
+      // Mídia não-áudio acima do limite: marca no corpo da mensagem que o
+      // download foi pulado, em vez de tentar baixar e travar o processamento
+      if (type !== 'AUDIO' && STORABLE_MEDIA_TYPES.has(type) && isMediaTooLarge) {
+        const note = this.formatMediaTooLargeNote(fileLength as number)
+        finalBody = finalBody ? `${finalBody} ${note}` : note
+        this.logger.warn(
+          `Skipping media download for msgId=${evolutionMsgId ?? 'NONE'}: fileLength=${fileLength} exceeds limit of ${this.maxInboundMediaBytes} bytes`,
+          'InboxWebhookProcessor',
+        )
+      }
+
       // Create message
       const newMessage = await this.inboxRepository.createMessage({
         tenantId: instance.tenantId,
@@ -397,7 +427,7 @@ export class InboxWebhookProcessor {
       // Download e armazena mídia inbound no storage local
       // STICKER e tipos não suportados continuam via proxy Evolution
       // Awaited to prevent unbounded parallel buffer allocations (memory leak)
-      if (evolutionMsgId && STORABLE_MEDIA_TYPES.has(type) && type !== 'AUDIO') {
+      if (evolutionMsgId && STORABLE_MEDIA_TYPES.has(type) && type !== 'AUDIO' && !isMediaTooLarge) {
         try {
           await this.downloadAndStoreInboundMedia(
             instance,
@@ -548,6 +578,12 @@ export class InboxWebhookProcessor {
       `Reaction ${emoji ?? '(removed)'} on message ${targetMessage.id} by ${senderJid}`,
       'InboxWebhookProcessor',
     )
+  }
+
+  private formatMediaTooLargeNote(fileLength: number): string {
+    const mb = (fileLength / (1024 * 1024)).toFixed(1)
+    const limitMb = (this.maxInboundMediaBytes / (1024 * 1024)).toFixed(0)
+    return `[mídia não baixada — ${mb}MB excede o limite de ${limitMb}MB]`
   }
 
   private async downloadAndStoreInboundMedia(

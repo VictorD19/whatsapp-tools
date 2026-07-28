@@ -4,6 +4,25 @@ export interface ParsedMessage {
   body: string | null
   type: MessageType
   mediaUrl?: string
+  /** Tamanho do arquivo em bytes, quando informado pelo payload do WhatsApp. */
+  fileLength?: number
+}
+
+/**
+ * Extrai o tamanho do arquivo (`fileLength`) do payload do WhatsApp.
+ * A lib do Evolution/Baileys serializa `Long` como `{ low, high, unsigned }`
+ * em vez de um number simples — ambos os formatos precisam ser suportados.
+ */
+function extractFileLength(value: unknown): number | undefined {
+  if (typeof value === 'number') return value
+  if (value && typeof value === 'object') {
+    const long = value as { low?: number; high?: number }
+    if (typeof long.low === 'number') {
+      const high = typeof long.high === 'number' ? long.high : 0
+      return high * 0x100000000 + (long.low >>> 0)
+    }
+  }
+  return undefined
 }
 
 /**
@@ -59,6 +78,7 @@ export function parseWhatsAppMessage(
       body: (img.caption as string) ?? null,
       type: 'IMAGE',
       mediaUrl: (img.url as string) ?? (img.directPath as string) ?? undefined,
+      fileLength: extractFileLength(img.fileLength),
     }
   }
 
@@ -68,6 +88,7 @@ export function parseWhatsAppMessage(
       body: (vid.caption as string) ?? null,
       type: 'VIDEO',
       mediaUrl: (vid.url as string) ?? (vid.directPath as string) ?? undefined,
+      fileLength: extractFileLength(vid.fileLength),
     }
   }
 
@@ -77,6 +98,7 @@ export function parseWhatsAppMessage(
       body: null,
       type: 'AUDIO',
       mediaUrl: (aud.url as string) ?? (aud.directPath as string) ?? undefined,
+      fileLength: extractFileLength(aud.fileLength),
     }
   }
 
@@ -87,6 +109,7 @@ export function parseWhatsAppMessage(
       body: null,
       type: 'VIDEO',
       mediaUrl: (ptv.url as string) ?? (ptv.directPath as string) ?? undefined,
+      fileLength: extractFileLength(ptv.fileLength),
     }
   }
 
@@ -96,6 +119,7 @@ export function parseWhatsAppMessage(
       body: (doc.fileName as string) ?? null,
       type: 'DOCUMENT',
       mediaUrl: (doc.url as string) ?? (doc.directPath as string) ?? undefined,
+      fileLength: extractFileLength(doc.fileLength),
     }
   }
 
@@ -105,6 +129,7 @@ export function parseWhatsAppMessage(
       body: null,
       type: 'STICKER',
       mediaUrl: (stk.url as string) ?? (stk.directPath as string) ?? undefined,
+      fileLength: extractFileLength(stk.fileLength),
     }
   }
 
