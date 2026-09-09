@@ -230,6 +230,7 @@ make migrate
 | `JWT_REFRESH_SECRET`  | `change-me-refresh-in-production`    | Segredo do refresh token |
 | `EVOLUTION_API_KEY`   | `changeme-evolution-key`             | Chave da Evolution API |
 | `ANTHROPIC_API_KEY`   | *(vazio)*                            | Chave da API Claude (opcional, para funcionalidades de IA) |
+| `ELEVENLABS_API_KEY`  | *(vazio)*                            | Chave da ElevenLabs (opcional; habilita vozes customizadas / voice cloning nos assistentes). Conta única — as vozes de todos os tenants ficam sob ela, respeitando o limite do plano |
 | `MINIO_ACCESS_KEY`    | `minioadmin`                         | Usuário root do MinIO (object storage) |
 | `MINIO_SECRET_KEY`    | `minioadmin123`                      | Senha root do MinIO |
 | `MINIO_BUCKET`        | `whatsapp-media`                     | Nome do bucket para armazenar mídias |

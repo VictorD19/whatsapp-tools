@@ -12,6 +12,7 @@ import { StorageService } from '@modules/storage/storage.service'
 import { InboxRepository } from '@modules/inbox/inbox.repository'
 import { InboxGateway } from '@modules/inbox/inbox.gateway'
 import { AssistantsRepository } from '../assistants.repository'
+import { AssistantVoicesService } from '@modules/assistant-voices/assistant-voices.service'
 import { ConversationThreadService } from '../services/conversation-thread.service'
 import type { ILLMProvider } from '@modules/ai/ports/llm-provider.interface'
 import type { ITextToSpeechProvider } from '@modules/ai/ports/text-to-speech.interface'
@@ -25,6 +26,7 @@ export class AiResponseProcessor implements OnModuleInit {
     @InjectQueue(QUEUES.AI_RESPONSE)
     private readonly queue: Queue,
     private readonly assistantsRepository: AssistantsRepository,
+    private readonly assistantVoices: AssistantVoicesService,
     private readonly inboxRepository: InboxRepository,
     private readonly knowledgeBaseService: KnowledgeBaseService,
     private readonly aiToolsService: AiToolsService,
@@ -286,8 +288,13 @@ export class AiResponseProcessor implements OnModuleInit {
           'AiResponseProcessor',
         )
         try {
+          const resolvedVoice = await this.assistantVoices.resolveForTts(
+            tenantId,
+            assistant.voiceId,
+          )
           const ttsResult = await this.tts.synthesize(responseText, {
-            voiceId: assistant.voiceId,
+            voiceId: resolvedVoice.voiceId,
+            provider: resolvedVoice.provider,
           })
           audioBuffer = ttsResult.audioBuffer
           audioMimetype = ttsResult.mimetype

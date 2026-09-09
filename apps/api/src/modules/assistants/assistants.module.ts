@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common'
 import { BullModule } from '@nestjs/bull'
 import { QUEUES } from '@core/queue/queue.module'
 import { AiModule } from '@modules/ai/ai.module'
+import { AssistantVoicesModule } from '@modules/assistant-voices/assistant-voices.module'
 import { KnowledgeBaseModule } from '@modules/knowledge-base/knowledge-base.module'
 import { AiToolsModule } from '@modules/ai-tools/ai-tools.module'
 import { WhatsAppModule } from '@modules/whatsapp/whatsapp.module'
@@ -18,6 +19,7 @@ import { ConversationThreadService } from './services/conversation-thread.servic
 @Module({
   imports: [
     AiModule,
+    AssistantVoicesModule,
     KnowledgeBaseModule,
     AiToolsModule,
     WhatsAppModule,

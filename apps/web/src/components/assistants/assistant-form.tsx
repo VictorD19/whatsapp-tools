@@ -28,7 +28,10 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -37,6 +40,8 @@ import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '@/lib/api'
 import { VoicePreviewButton } from './voice-preview-button'
+import { VoiceManagerSheet } from './voice-manager-sheet'
+import { useAssistantVoices } from '@/hooks/use-assistant-voices'
 import { PlaygroundPanel } from './playground-panel'
 import type { Assistant, KnowledgeBase, AiTool, ApiResponse, InactivityRule } from './types'
 
@@ -91,6 +96,7 @@ interface AssistantFormProps {
 export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps) {
   const t = useTranslations('assistants')
   const tc = useTranslations('common')
+  const tVoices = useTranslations('assistantVoices')
   const router = useRouter()
 
   const [name, setName] = useState(assistant?.name ?? '')
@@ -104,6 +110,7 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
   const [isActive, setIsActive] = useState(assistant?.isActive ?? true)
   const [audioResponseMode, setAudioResponseMode] = useState<'never' | 'auto' | 'always'>(assistant?.audioResponseMode ?? 'never')
   const [voiceId, setVoiceId] = useState(assistant?.voiceId ?? 'pt-BR-FranciscaNeural')
+  const [voiceManagerOpen, setVoiceManagerOpen] = useState(false)
   const [selectedKBs, setSelectedKBs] = useState<string[]>(
     assistant?.knowledgeBases.map((kb) => kb.knowledgeBaseId) ?? [],
   )
@@ -135,6 +142,8 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
       setInactivityRules(assistant.inactivityFlowRules ?? [])
     }
   }, [assistant])
+
+  const { voices: customVoices } = useAssistantVoices()
 
   const { data: knowledgeBases = [] } = useQuery({
     queryKey: ['knowledge-bases'],
@@ -458,7 +467,18 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
               {/* Voice Selection */}
               {audioResponseMode !== 'never' && (
                 <div className="space-y-2">
-                  <Label>{t('fields.voice')}</Label>
+                  <div className="flex items-center justify-between">
+                    <Label>{t('fields.voice')}</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 text-xs text-primary"
+                      onClick={() => setVoiceManagerOpen(true)}
+                    >
+                      {tVoices('manage')}
+                    </Button>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {t('fields.voiceHint')}
                   </p>
@@ -468,11 +488,27 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {VOICE_OPTIONS.map((voice) => (
-                          <SelectItem key={voice.value} value={voice.value}>
-                            {voice.label}
-                          </SelectItem>
-                        ))}
+                        <SelectGroup>
+                          <SelectLabel>{tVoices('builtInGroup')}</SelectLabel>
+                          {VOICE_OPTIONS.map((voice) => (
+                            <SelectItem key={voice.value} value={voice.value}>
+                              {voice.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                        {customVoices.length > 0 && (
+                          <>
+                            <SelectSeparator />
+                            <SelectGroup>
+                              <SelectLabel>{tVoices('customGroup')}</SelectLabel>
+                              {customVoices.map((voice) => (
+                                <SelectItem key={voice.id} value={voice.id}>
+                                  {voice.name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <VoicePreviewButton voiceId={voiceId} />
@@ -716,6 +752,8 @@ export function AssistantForm({ assistant, saving, onSave }: AssistantFormProps)
           </Dialog>
         </TabsContent>
       </Tabs>
+
+      <VoiceManagerSheet open={voiceManagerOpen} onClose={() => setVoiceManagerOpen(false)} />
     </PageLayout>
   )
 }

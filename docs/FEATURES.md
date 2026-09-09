@@ -23,6 +23,8 @@
 - Transferência para atendente humano quando necessário
 - Configuração de personalidade, tom e instruções do assistente
 - Histórico de conversa como contexto para a IA
+- Respostas em áudio (TTS) com vozes padrão (Edge TTS)
+- Vozes customizadas por tenant via voice cloning (ElevenLabs)
 
 ### 3. Atendimento por Chat (Inbox) ✅
 - Inbox centralizado de conversas

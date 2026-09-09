@@ -70,6 +70,7 @@ model Tenant {
   notifications    Notification[]
   broadcasts       Broadcast[]
   assistants       Assistant[]
+  assistantVoices  AssistantVoice[]
   knowledgeBases   KnowledgeBase[]
   aiTools          AiTool[]
   messageReactions MessageReaction[]
@@ -729,6 +730,24 @@ model Assistant {
   tools            AssistantTool[]
   instanceDefaults Instance[]               @relation("InstanceDefaultAssistant")
   calendarEvents   CalendarEvent[]
+
+  @@index([tenantId])
+}
+
+// ── AI: Custom Voices (voice cloning) ───────────
+
+model AssistantVoice {
+  id              String    @id @default(cuid())
+  tenantId        String
+  name            String
+  provider        String    @default("elevenlabs")
+  externalVoiceId String
+  previewKey      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
 }

@@ -6,6 +6,7 @@ import { StorageService } from '@modules/storage/storage.service'
 import { AiToolsService } from '@modules/ai-tools/ai-tools.service'
 import { ToolExecutorService } from '@modules/ai-tools/definitions/tool-executor.service'
 import { KnowledgeBaseService } from '@modules/knowledge-base/knowledge-base.service'
+import { AssistantVoicesService } from '@modules/assistant-voices/assistant-voices.service'
 
 describe('AssistantsService', () => {
   let service: AssistantsService
@@ -14,6 +15,9 @@ describe('AssistantsService', () => {
   let toolExecutor: { execute: jest.Mock }
   let aiToolsService: { findAll: jest.Mock; findByIds: jest.Mock }
   let knowledgeBaseService: { searchContext: jest.Mock }
+  let assistantVoicesService: { resolveForTts: jest.Mock }
+  let tts: { synthesize: jest.Mock }
+  let storage: { download: jest.Mock; uploadRaw: jest.Mock }
 
   const tenantId = 'tenant-123'
   const now = new Date()
@@ -62,16 +66,24 @@ describe('AssistantsService', () => {
       getOrCreateSandbox: jest.fn(),
     }
 
-    const mockTts = {
+    tts = {
       synthesize: jest.fn().mockResolvedValue({
         audioBuffer: Buffer.from('fake-audio'),
         mimetype: 'audio/mpeg',
       }),
     }
+    const mockTts = tts
 
-    const mockStorage = {
+    storage = {
       download: jest.fn(),
       uploadRaw: jest.fn(),
+    }
+    const mockStorage = storage
+
+    assistantVoicesService = {
+      resolveForTts: jest
+        .fn()
+        .mockResolvedValue({ provider: 'edge', voiceId: 'pt-BR-FranciscaNeural' }),
     }
 
     llm = { chat: jest.fn(), stream: jest.fn(), embed: jest.fn() }
@@ -92,6 +104,7 @@ describe('AssistantsService', () => {
         { provide: AiToolsService, useValue: aiToolsService },
         { provide: ToolExecutorService, useValue: toolExecutor },
         { provide: KnowledgeBaseService, useValue: knowledgeBaseService },
+        { provide: AssistantVoicesService, useValue: assistantVoicesService },
       ],
     }).compile()
 
@@ -336,6 +349,52 @@ describe('AssistantsService', () => {
       ])
       // Marcador [TOOL:...] deve ser removido da resposta final
       expect(result.data.reply).not.toContain('[TOOL:CRIAR_DEAL]')
+    })
+  })
+
+  describe('previewVoice', () => {
+    it('retorna do cache do storage quando o preview já existe', async () => {
+      storage.download.mockResolvedValue({
+        buffer: Buffer.from('cached'),
+        contentType: 'audio/mpeg',
+      })
+
+      const result = await service.previewVoice(tenantId, 'pt-BR-FranciscaNeural')
+
+      expect(result.contentType).toBe('audio/mpeg')
+      expect(tts.synthesize).not.toHaveBeenCalled()
+    })
+
+    it('gera via Edge TTS para voz built-in e salva no cache', async () => {
+      storage.download.mockRejectedValue(new Error('not found'))
+
+      await service.previewVoice(tenantId, 'en-US-AriaNeural')
+
+      expect(assistantVoicesService.resolveForTts).toHaveBeenCalledWith(tenantId, 'en-US-AriaNeural')
+      expect(tts.synthesize).toHaveBeenCalledWith(
+        expect.stringContaining('Hello'),
+        { voiceId: 'pt-BR-FranciscaNeural', provider: 'edge' },
+      )
+      expect(storage.uploadRaw).toHaveBeenCalledWith(
+        'voice-previews/en-US-AriaNeural.mp3',
+        expect.any(Buffer),
+        'audio/mpeg',
+      )
+    })
+
+    it('gera via ElevenLabs quando a voz é customizada do tenant', async () => {
+      storage.download.mockRejectedValue(new Error('not found'))
+      assistantVoicesService.resolveForTts.mockResolvedValue({
+        provider: 'elevenlabs',
+        voiceId: 'el-voice-abc',
+      })
+
+      await service.previewVoice(tenantId, 'clyvoice123')
+
+      expect(tts.synthesize).toHaveBeenCalledWith(expect.any(String), {
+        voiceId: 'el-voice-abc',
+        provider: 'elevenlabs',
+      })
     })
   })
 

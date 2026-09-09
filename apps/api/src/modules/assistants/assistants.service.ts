@@ -6,6 +6,7 @@ import type { ILLMProvider, ChatMessage } from '@modules/ai/ports/llm-provider.i
 import { AiToolsService } from '@modules/ai-tools/ai-tools.service'
 import { ToolExecutorService, type ToolContext } from '@modules/ai-tools/definitions/tool-executor.service'
 import { KnowledgeBaseService } from '@modules/knowledge-base/knowledge-base.service'
+import { AssistantVoicesService } from '@modules/assistant-voices/assistant-voices.service'
 import { StorageService } from '@modules/storage/storage.service'
 import { AssistantsRepository } from './assistants.repository'
 import { AssistantPromptBuilder } from './services/assistant-prompt.builder'
@@ -35,6 +36,7 @@ export class AssistantsService {
     private readonly aiToolsService: AiToolsService,
     private readonly toolExecutor: ToolExecutorService,
     private readonly knowledgeBaseService: KnowledgeBaseService,
+    private readonly assistantVoicesService: AssistantVoicesService,
   ) {}
 
   async findAll(tenantId: string) {
@@ -158,7 +160,10 @@ export class AssistantsService {
     }
   }
 
-  async previewVoice(voiceId: string): Promise<{ buffer: Buffer; contentType: string }> {
+  async previewVoice(
+    tenantId: string,
+    voiceId: string,
+  ): Promise<{ buffer: Buffer; contentType: string }> {
     const storageKey = `voice-previews/${voiceId}.mp3`
 
     // Tenta buscar do cache (MinIO)
@@ -168,9 +173,14 @@ export class AssistantsService {
       // Não existe ainda — gera e salva
     }
 
-    const lang = voiceId.split('-').slice(0, 2).join('-')
+    const resolved = await this.assistantVoicesService.resolveForTts(tenantId, voiceId)
+    const lang =
+      resolved.provider === 'edge' ? voiceId.split('-').slice(0, 2).join('-') : 'pt-BR'
     const text = PREVIEW_TEXTS[lang] ?? PREVIEW_TEXTS['pt-BR']
-    const result = await this.tts.synthesize(text, { voiceId })
+    const result = await this.tts.synthesize(text, {
+      voiceId: resolved.voiceId,
+      provider: resolved.provider,
+    })
 
     // Salva no MinIO para próximas consultas
     await this.storage.uploadRaw(storageKey, result.audioBuffer, result.mimetype)

@@ -932,6 +932,39 @@
       "step": "Step {number}"
     }
   },
+  "assistantVoices": {
+    "title": "Custom voices",
+    "subtitle": "Clone a voice from an audio sample and use it in assistants' audio responses",
+    "manage": "Manage voices",
+    "builtInGroup": "Default voices",
+    "customGroup": "Custom voices",
+    "add": "Add voice",
+    "namePlaceholder": "e.g. Sales John",
+    "nameLabel": "Voice name",
+    "sampleLabel": "Audio sample",
+    "sampleHint": "mp3, wav, m4a, ogg or webm — up to 10 MB. Use clean speech, no noise or music.",
+    "selectFile": "Choose file",
+    "empty": "No custom voices",
+    "emptyHint": "Add an audio sample to clone your first voice.",
+    "creating": "Cloning voice...",
+    "deleting": "Deleting...",
+    "notConfigured": "Voice cloning unavailable. Configure the ElevenLabs integration.",
+    "confirm": {
+      "delete": "Delete voice",
+      "deleteDescription": "This action cannot be undone. Assistants using this voice will fall back to the default voice."
+    },
+    "success": {
+      "created": "Voice cloned successfully",
+      "deleted": "Voice removed"
+    },
+    "error": {
+      "loading": "Error loading voices",
+      "creating": "Error cloning the voice",
+      "deleting": "Error removing the voice",
+      "sampleRequired": "Select an audio file",
+      "limitReached": "Plan voice limit reached. Remove a voice to add another."
+    }
+  },
   "knowledgeBases": {
     "title": "Knowledge Bases",
     "breadcrumb": "Knowledge Bases",
