@@ -44,10 +44,11 @@ export class AssistantsController {
 
   @Post('assistants/voice-preview')
   async previewVoice(
+    @CurrentTenant() tenantId: string,
     @Body() body: { voiceId: string },
     @Res() reply: FastifyReply,
   ) {
-    const { buffer, contentType } = await this.assistantsService.previewVoice(body.voiceId)
+    const { buffer, contentType } = await this.assistantsService.previewVoice(tenantId, body.voiceId)
     reply.header('Content-Type', contentType)
     reply.header('Content-Length', buffer.length)
     reply.header('Cache-Control', 'public, max-age=86400')

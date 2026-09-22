@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
  * https://nextjs.org/blog/cve-2025-29927
  *
  * O Next.js 15.2.3+ já faz o patch internamente, mas essa camada extra
- * bloqcommita oueia tentativas que passem por proxies/CDN antes de chegar ao Next.js.
+ * bloqueia tentativas que passem por proxies/CDN antes de chegar ao Next.js.
  */
 
 const BLOCKED_INTERNAL_HEADERS = [
@@ -20,12 +20,27 @@ const BLOCKED_INTERNAL_HEADERS = [
   'x-middleware-invoke',
 ]
 
+/**
+ * Scanners automatizados sondam aplicações Next.js disparando POST com
+ * `Next-Action: x`. O runtime não encontra a action correspondente e emite
+ * "Failed to find Server Action", poluindo os logs sem nenhum efeito útil.
+ *
+ * Um id de Server Action legítimo é sempre um hash hexadecimal. Descartamos
+ * aqui qualquer valor fora desse formato, antes de chegar ao runtime.
+ */
+const VALID_SERVER_ACTION_ID = /^[0-9a-f]{16,}$/i
+
 export function middleware(request: NextRequest) {
   // Bloquear requisições com headers internos do Next.js vindos de fora
   for (const header of BLOCKED_INTERNAL_HEADERS) {
     if (request.headers.has(header)) {
       return new NextResponse(null, { status: 400 })
     }
+  }
+
+  const serverActionId = request.headers.get('next-action')
+  if (serverActionId !== null && !VALID_SERVER_ACTION_ID.test(serverActionId)) {
+    return new NextResponse(null, { status: 400 })
   }
 
   return NextResponse.next()

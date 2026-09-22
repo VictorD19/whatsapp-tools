@@ -1,3 +1,4 @@
 export const LLM_PROVIDER = 'LLM_PROVIDER'
 export const SPEECH_TO_TEXT = 'SPEECH_TO_TEXT'
 export const TEXT_TO_SPEECH = 'TEXT_TO_SPEECH'
+export const VOICE_CLONING = 'VOICE_CLONING'

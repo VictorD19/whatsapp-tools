@@ -932,6 +932,39 @@
       "step": "Etapa {number}"
     }
   },
+  "assistantVoices": {
+    "title": "Vozes customizadas",
+    "subtitle": "Clone uma voz a partir de uma amostra de áudio e use nas respostas em áudio dos assistentes",
+    "manage": "Gerenciar vozes",
+    "builtInGroup": "Vozes padrão",
+    "customGroup": "Vozes customizadas",
+    "add": "Adicionar voz",
+    "namePlaceholder": "Ex: Comercial João",
+    "nameLabel": "Nome da voz",
+    "sampleLabel": "Amostra de áudio",
+    "sampleHint": "mp3, wav, m4a, ogg ou webm — até 10 MB. Use fala limpa, sem ruído ou música.",
+    "selectFile": "Escolher arquivo",
+    "empty": "Nenhuma voz customizada",
+    "emptyHint": "Adicione uma amostra de áudio para clonar a primeira voz.",
+    "creating": "Clonando voz...",
+    "deleting": "Excluindo...",
+    "notConfigured": "Clonagem de voz indisponível. Configure a integração com a ElevenLabs.",
+    "confirm": {
+      "delete": "Excluir voz",
+      "deleteDescription": "Esta ação não pode ser desfeita. Assistentes que usam esta voz voltarão para a voz padrão."
+    },
+    "success": {
+      "created": "Voz clonada com sucesso",
+      "deleted": "Voz removida"
+    },
+    "error": {
+      "loading": "Erro ao carregar vozes",
+      "creating": "Erro ao clonar a voz",
+      "deleting": "Erro ao remover a voz",
+      "sampleRequired": "Selecione um arquivo de áudio",
+      "limitReached": "Limite de vozes do plano atingido. Remova uma voz para adicionar outra."
+    }
+  },
   "knowledgeBases": {
     "title": "Bases de Conhecimento",
     "breadcrumb": "Bases de Conhecimento",

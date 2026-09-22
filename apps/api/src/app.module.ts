@@ -18,6 +18,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { BroadcastsModule } from './modules/broadcasts/broadcasts.module'
 import { AiToolsModule } from './modules/ai-tools/ai-tools.module'
 import { AssistantsModule } from './modules/assistants/assistants.module'
+import { AssistantVoicesModule } from './modules/assistant-voices/assistant-voices.module'
 import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.module'
 import { FollowUpModule } from './modules/follow-up/follow-up.module'
 import { IntegrationsModule } from './modules/integrations/integrations.module'
@@ -47,6 +48,7 @@ import { CampaignsModule } from './modules/campaigns/campaigns.module'
     BroadcastsModule,
     AiToolsModule,
     AssistantsModule,
+    AssistantVoicesModule,
     KnowledgeBaseModule,
     FollowUpModule,
     IntegrationsModule,
