@@ -28,11 +28,13 @@ export class AiResponseProducer {
   async enqueue(data: AiResponseJobData, delayMs: number): Promise<void> {
     const jobId = `ai-response:${data.conversationId}`
 
-    // Remove job anterior se ainda estiver aguardando
+    // O Bull ignora silenciosamente um add() cujo jobId ainda exista no Redis,
+    // entao o job anterior precisa sair daqui em qualquer estado. 'active' e o
+    // unico em que remover nao e seguro: o worker esta processando.
     const existing = await this.queue.getJob(jobId)
     if (existing) {
       const state = await existing.getState()
-      if (state === 'delayed' || state === 'waiting' || state === 'completed' || state === 'failed') {
+      if (state !== 'active') {
         await existing.remove()
       }
     }
@@ -42,8 +44,9 @@ export class AiResponseProducer {
       delay: delayMs,
       attempts: 2,
       backoff: { type: 'fixed', delay: 5000 },
-      removeOnComplete: 5000,
-      removeOnFail: 3600000,
+      // Numeros aqui significam "quantos jobs manter", nao tempo.
+      removeOnComplete: true,
+      removeOnFail: 1000,
     })
   }
 }

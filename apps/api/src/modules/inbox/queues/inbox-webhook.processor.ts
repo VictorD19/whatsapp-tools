@@ -492,13 +492,22 @@ export class InboxWebhookProcessor {
           'InboxWebhookProcessor',
         )
 
+        // O jobId e fixo por conversa, entao o Bull ignora silenciosamente um add()
+        // cujo id ainda exista no Redis. Qualquer job anterior precisa sair daqui —
+        // inclusive 'completed'/'failed', senao a conversa trava apos a 1a resposta.
+        // 'active' e o unico estado em que remover nao e seguro: o worker esta rodando.
         const existingJob = await this.aiResponseQueue.getJob(jobId)
         if (existingJob) {
           const state = await existingJob.getState()
-          if (state === 'delayed' || state === 'waiting') {
+          if (state !== 'active') {
             await existingJob.remove()
             this.logger.log(
               `[AI-FLOW][1-TRIGGER] conv=${convId} — job anterior removido (state=${state}), debounce reset`,
+              'InboxWebhookProcessor',
+            )
+          } else {
+            this.logger.warn(
+              `[AI-FLOW][1-TRIGGER] conv=${convId} — job anterior ainda ativo, mensagem sera respondida no ciclo seguinte`,
               'InboxWebhookProcessor',
             )
           }
@@ -517,8 +526,10 @@ export class InboxWebhookProcessor {
             delay: DEFAULT_AI_WAIT_MS,
             attempts: 2,
             backoff: { type: 'fixed', delay: 5000 },
-            removeOnComplete: 5000,
-            removeOnFail: 3600000,
+            // Numeros aqui significam "quantos jobs manter", nao tempo. Reter o job
+            // concluido mantem o jobId ocupado e bloqueia o proximo enfileiramento.
+            removeOnComplete: true,
+            removeOnFail: 1000,
           },
         )
 
