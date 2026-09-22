@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/auth.store'
+import { authFetch } from '@/lib/api'
 
 interface Integration {
   id: string
@@ -25,9 +26,7 @@ export function useIntegrations() {
   const fetchIntegrations = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${apiUrl}/api/v1/integrations`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await authFetch(`${apiUrl}/api/v1/integrations`)
       if (!res.ok) throw new Error()
       const { data } = await res.json()
       setIntegrations(data)
@@ -44,9 +43,7 @@ export function useIntegrations() {
 
   const connectGoogle = async () => {
     try {
-      const res = await fetch(`${apiUrl}/api/v1/integrations/google/connect`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await authFetch(`${apiUrl}/api/v1/integrations/google/connect`)
       if (!res.ok) throw new Error()
       const { data } = await res.json()
 
@@ -84,9 +81,8 @@ export function useIntegrations() {
 
   const disconnect = async (id: string) => {
     try {
-      const res = await fetch(`${apiUrl}/api/v1/integrations/${id}`, {
+      const res = await authFetch(`${apiUrl}/api/v1/integrations/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
       toast.success(t('success.disconnected'))

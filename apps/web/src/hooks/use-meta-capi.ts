@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/stores/auth.store'
+import { authFetch } from '@/lib/api'
 
 export interface MetaCapiEventRules {
   Lead?: boolean
@@ -36,9 +37,7 @@ export function useMetaCapi() {
   const fetchConfig = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${apiUrl}/api/v1/meta-capi/config`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await authFetch(`${apiUrl}/api/v1/meta-capi/config`)
       if (!res.ok) throw new Error()
       const { data } = await res.json()
       setConfig(data)
@@ -62,10 +61,9 @@ export function useMetaCapi() {
   }) => {
     setSaving(true)
     try {
-      const res = await fetch(`${apiUrl}/api/v1/meta-capi/config`, {
+      const res = await authFetch(`${apiUrl}/api/v1/meta-capi/config`, {
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
@@ -83,9 +81,8 @@ export function useMetaCapi() {
 
   const remove = async () => {
     try {
-      const res = await fetch(`${apiUrl}/api/v1/meta-capi/config`, {
+      const res = await authFetch(`${apiUrl}/api/v1/meta-capi/config`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
       setConfig(null)
@@ -98,9 +95,9 @@ export function useMetaCapi() {
   const testEvent = async (eventName?: string) => {
     setTesting(true)
     try {
-      const res = await fetch(`${apiUrl}/api/v1/meta-capi/test`, {
+      const res = await authFetch(`${apiUrl}/api/v1/meta-capi/test`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eventName }),
       })
       if (!res.ok) throw new Error()

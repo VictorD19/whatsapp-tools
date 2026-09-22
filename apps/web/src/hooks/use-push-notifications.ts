@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
+import { authFetch } from '@/lib/api'
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
 
@@ -39,11 +40,10 @@ async function runSubscribe(onDone?: () => void) {
     const json = subscription.toJSON()
     if (!json.endpoint || !json.keys) return
 
-    await fetch(`${API_URL}/notifications/push-subscription`, {
+    await authFetch(`${API_URL}/notifications/push-subscription`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${getToken()}`,
       },
       body: JSON.stringify({
         endpoint: json.endpoint,

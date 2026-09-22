@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTranslations } from 'next-intl'
 import { useNotificationsStore, type NotificationPreference } from '@/stores/notifications.store'
+import { authFetch } from '@/lib/api'
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
 
@@ -105,9 +106,7 @@ export default function NotificationPreferencesPage() {
     if (!token) return
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/notifications/preferences`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await authFetch(`${API_URL}/notifications/preferences`)
       if (!res.ok) return
       const json = await res.json()
       setPreferences(json.data)
@@ -144,10 +143,9 @@ export default function NotificationPreferencesPage() {
 
       setSaving(`${type}-${field}`)
       try {
-        await fetch(`${API_URL}/notifications/preferences/${type}`, {
+        await authFetch(`${API_URL}/notifications/preferences/${type}`, {
           method: 'PUT',
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ inApp: updated.inApp, browser: updated.browser }),

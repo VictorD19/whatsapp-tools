@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useNotificationsStore, type Notification } from '@/stores/notifications.store'
 import { cn } from '@/lib/utils'
 import { formatRelativeDate } from '@/lib/formatting'
+import { authFetch } from '@/lib/api'
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
 
@@ -104,9 +105,7 @@ export default function NotificationsPage() {
       if (p === 1) setLoading(true)
       else setLoadingMore(true)
       try {
-        const res = await fetch(`${API_URL}/notifications?page=${p}&limit=20`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        const res = await authFetch(`${API_URL}/notifications?page=${p}&limit=20`)
         if (!res.ok) return
         const json = await res.json()
         if (append) {
@@ -133,9 +132,8 @@ export default function NotificationsPage() {
       const token = getToken()
       if (!token) return
       try {
-        await fetch(`${API_URL}/notifications/${id}/read`, {
+        await authFetch(`${API_URL}/notifications/${id}/read`, {
           method: 'PATCH',
-          headers: { Authorization: `Bearer ${token}` },
         })
         markAsRead(id)
       } catch {
@@ -150,9 +148,8 @@ export default function NotificationsPage() {
     if (!token) return
     setMarkingAll(true)
     try {
-      await fetch(`${API_URL}/notifications/read-all`, {
+      await authFetch(`${API_URL}/notifications/read-all`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
       })
       markAllAsRead()
     } catch {

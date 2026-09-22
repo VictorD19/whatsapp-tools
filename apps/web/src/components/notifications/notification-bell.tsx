@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useNotificationsStore, type Notification } from '@/stores/notifications.store'
 import { cn } from '@/lib/utils'
+import { authFetch } from '@/lib/api'
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
 
@@ -115,9 +116,7 @@ export function NotificationBell() {
     const token = getToken()
     if (!token) return
     try {
-      const res = await fetch(`${API_URL}/notifications?page=1&limit=20`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await authFetch(`${API_URL}/notifications?page=1&limit=20`)
       if (!res.ok) return
       const json = await res.json()
       setNotifications(json.data, json.meta)
@@ -130,9 +129,7 @@ export function NotificationBell() {
     const token = getToken()
     if (!token) return
     try {
-      const res = await fetch(`${API_URL}/notifications/preferences`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await authFetch(`${API_URL}/notifications/preferences`)
       if (!res.ok) return
       const json = await res.json()
       setPreferences(json.data)
@@ -151,9 +148,8 @@ export function NotificationBell() {
       const token = getToken()
       if (!token) return
       try {
-        await fetch(`${API_URL}/notifications/${id}/read`, {
+        await authFetch(`${API_URL}/notifications/${id}/read`, {
           method: 'PATCH',
-          headers: { Authorization: `Bearer ${token}` },
         })
         markAsRead(id)
       } catch {
@@ -167,9 +163,8 @@ export function NotificationBell() {
     const token = getToken()
     if (!token) return
     try {
-      await fetch(`${API_URL}/notifications/read-all`, {
+      await authFetch(`${API_URL}/notifications/read-all`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
       })
       markAllAsRead()
     } catch {

@@ -1,4 +1,5 @@
 import ky, { type KyInstance } from 'ky'
+import { useAuthStore } from '@/stores/auth.store'
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/api/v1/`
 
@@ -13,9 +14,10 @@ function getRefreshToken(): string | null {
 }
 
 function clearSession() {
-  localStorage.removeItem('auth_token')
-  localStorage.removeItem('refresh_token')
-  window.location.href = '/login'
+  useAuthStore.getState().clearAuth()
+  if (!window.location.pathname.startsWith('/login')) {
+    window.location.href = '/login'
+  }
 }
 
 // Flag para evitar múltiplos refreshes simultâneos
@@ -55,6 +57,11 @@ async function tryRefresh(): Promise<string | null> {
 
     localStorage.setItem('auth_token', newAccessToken)
     if (newRefreshToken) localStorage.setItem('refresh_token', newRefreshToken)
+    // Manter a store em sincronia — hooks que leem `token` dela não podem ficar com o token vencido
+    useAuthStore.setState({
+      token: newAccessToken,
+      ...(newRefreshToken ? { refreshToken: newRefreshToken } : {}),
+    })
 
     // Notificar requisições que estavam esperando
     refreshQueue.forEach((cb) => cb(newAccessToken))
@@ -112,7 +119,9 @@ export const api: KyInstance = ky.create({
             // Repetir a requisição original com o novo token
             const retryRequest = new Request(_request)
             retryRequest.headers.set('Authorization', `Bearer ${newToken}`)
-            return fetch(retryRequest)
+            const retryResponse = await fetch(retryRequest)
+            if (retryResponse.status === 401) clearSession()
+            return retryResponse
           }
         }
         return response
@@ -120,6 +129,29 @@ export const api: KyInstance = ky.create({
     ],
   },
 })
+
+/**
+ * `fetch` autenticado para chamadas que não usam o cliente `api` (URL absoluta).
+ * Injeta o token atual, tenta o refresh em caso de 401 e, se não conseguir,
+ * encerra a sessão e redireciona para /login.
+ */
+export async function authFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const withToken = (token: string | null): RequestInit => {
+    const headers = new Headers(init.headers)
+    if (token) headers.set('Authorization', `Bearer ${token}`)
+    return { ...init, headers }
+  }
+
+  const response = await fetch(input, withToken(getToken()))
+  if (response.status !== 401 || typeof window === 'undefined') return response
+
+  const newToken = await tryRefresh()
+  if (!newToken) return response
+
+  const retryResponse = await fetch(input, withToken(newToken))
+  if (retryResponse.status === 401) clearSession()
+  return retryResponse
+}
 
 export function getApiErrorCode(err: unknown): string | null {
   return (err as Error & { errorCode?: string })?.errorCode ?? null

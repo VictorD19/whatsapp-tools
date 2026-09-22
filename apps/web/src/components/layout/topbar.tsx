@@ -20,6 +20,7 @@ import { useNotificationsStore } from '@/stores/notifications.store'
 import { useNotificationsSocket } from '@/hooks/use-notifications-socket'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { getInitials } from '@/lib/utils'
+import { authFetch } from '@/lib/api'
 
 interface TopbarProps {
   onMenuClick?: () => void
@@ -41,9 +42,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
     if (!token) return
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1`
-    fetch(`${apiUrl}/notifications/unread-count`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    authFetch(`${apiUrl}/notifications/unread-count`)
       .then((r) => r.ok ? r.json() : null)
       .then((json) => { if (json?.data?.count !== undefined) setUnreadCount(json.data.count) })
       .catch(() => {})
