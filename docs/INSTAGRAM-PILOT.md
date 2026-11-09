@@ -71,7 +71,7 @@ unix://$HOME/.docker/run/docker.sock compose ...`; o inicializador detecta esse 
 
 ## Próximo teste com conta real
 
-O inicializador local força simulação. Não basta clicar em conectar para acessar
+O comando `api` continua forçando simulação. Não basta clicar em conectar para acessar
 uma conta real. Preparar um ambiente de testes próprio, sem banco ou credenciais
 de produção, URL HTTPS e aplicativo Meta apropriado. Configurar com segurança:
 
@@ -126,3 +126,54 @@ e suas relações; não remove colunas ou dados antigos. Mesmo assim, revisar a
 compatibilidade e preservar os dados novos se houver retorno.
 
 Não mudar os workflows de deploy nem promover esta branch nesta etapa.
+
+## Preparação do aplicativo separado — 09/11/2026
+
+No código do commit-base, a integração Meta existente é a Conversions API:
+`apps/api/src/modules/meta-capi`. Ela usa Pixel ID, token e regras de eventos;
+não fornece login ou permissões de Direct. O ambiente local não tinha credenciais
+Instagram. Isso não prova ausência de um aplicativo no painel Meta nem no ambiente
+interno de produção, que não foi acessado. O conector DigitalOcean consultado não
+ofereceu inspeção por SSH. O painel Meta pediu login, pendente do usuário.
+
+Preparar um aplicativo independente chamado **ZapChat Instagram Lab**, mantendo
+os aplicativos e integrações existentes intactos. No painel autenticado, conferir
+primeiro a lista de aplicativos e o produto Instagram dos candidatos. Para um
+aplicativo separado, selecionar o caso de uso de gestão de mensagens do Instagram,
+configurar Instagram Login e somente as permissões necessárias ao primeiro teste:
+`instagram_business_basic` e `instagram_business_manage_messages`.
+Usar conta profissional de testes e cadastrar os papéis/testadores exigidos pelo
+painel. Não publicar o aplicativo nem aprovar acesso de clientes nesta etapa.
+
+O laboratório agora aceita uma configuração privada separada:
+
+```sh
+node tools/instagram-lab.mjs meta-init
+# Preencher .instagram-test/meta.json em editor local protegido.
+node tools/instagram-lab.mjs meta-check
+# Somente após campos completos e endereço HTTPS de testes preparado:
+# encerrar o processo api simulado antes de ocupar novamente a porta 18001.
+node tools/instagram-lab.mjs api-meta
+```
+
+`meta-init` preserva arquivo existente e gera apenas o token de verificação local.
+O arquivo tem permissão 600 e fica ignorado pelo Git. Campos: `appId`, `appSecret`,
+`verifyToken`, `apiVersion`, `redirectUri`, `sendEnabled` (inicialmente false).
+Usar ID/segredo da configuração Instagram do aplicativo de testes conforme o
+painel, sem reutilizar token de anúncios. Nunca colar segredos no chat/Obsidian.
+
+`meta-check` lista somente campos faltantes, sem imprimir segredos. Confere
+formato, não valida credenciais com a Meta. `api-meta` recusa configuração
+incompleta e mantém o banco/Redis/JWT locais: o arquivo não pode sobrescrever
+DATABASE_URL ou outras configurações do CRM. Os quatro testes desse carregador
+passaram. Os 534 testes anteriores da API permanecem como validação do commit
+215ef2e; não houve mudança na API nesta preparação.
+
+Ainda falta disponibilizar um endpoint HTTPS para OAuth e webhook, sem expor
+painel administrativo ou credenciais. Nenhum túnel, DNS ou servidor público foi
+criado nesta etapa. Com o host confirmado, cadastrar o callback exato e webhook
+do aplicativo; conferir a assinatura `messages` e validar recebimento antes de
+alterar `sendEnabled`. Não habilitar envio real só para passar no diagnóstico.
+
+Fontes: [coleção oficial Meta Instagram API](https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api),
+painel Meta Developers (login solicitado), código local da integração Meta CAPI.

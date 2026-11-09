@@ -7,11 +7,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { randomBytes, randomUUID } from 'node:crypto'
 import { homedir } from 'node:os'
 import assert from 'node:assert/strict'
+import { metaTemplate, metaDiagnostics, metaEnvironment } from './instagram-meta-config.mjs'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const require = createRequire(join(root, 'packages/database/package.json'))
 const stateDir = join(root, '.instagram-test')
 const stateFile = join(stateDir, 'session.json')
+const metaFile = join(stateDir, 'meta.json')
 mkdirSync(stateDir, { recursive: true, mode: 0o700 })
 const state = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, 'utf8')) : {
   jwt: randomBytes(32).toString('hex'), refresh: randomBytes(32).toString('hex'),
@@ -41,7 +43,22 @@ const run = (command, args, cwd = root) => {
 }
 const prisma = args => run(process.execPath, [require.resolve('prisma/build/index.js'), ...args, '--schema', join(root, 'packages/database/prisma/schema.prisma')])
 const action = process.argv[2]
-if (action === 'init') {
+if (action === 'meta-init') {
+  if (!existsSync(metaFile)) writeFileSync(metaFile, JSON.stringify({ ...metaTemplate(), verifyToken: randomBytes(32).toString('base64url') }, null, 2), { mode: 0o600 })
+  console.log('Configuração privada preparada em .instagram-test/meta.json. Nenhuma conta foi conectada e nenhum envio foi habilitado.')
+} else if (action === 'meta-check' || action === 'api-meta') {
+  let meta
+  try { meta = JSON.parse(readFileSync(metaFile, 'utf8')) }
+  catch { console.error('Execute meta-init e preencha .instagram-test/meta.json localmente. Não envie os segredos pelo chat.'); process.exit(1) }
+  const problems = metaDiagnostics(meta)
+  if (problems.length) { console.error('Falta configurar:\n- ' + problems.join('\n- ')); process.exitCode = 1 }
+  else if (action === 'meta-check') console.log('Campos locais completos. OAuth, permissões, HTTPS e webhook ainda precisam de validação real. Envio real: ' + (meta.sendEnabled ? 'habilitado para testes' : 'desabilitado'))
+  else {
+    Object.assign(env, metaEnvironment(meta))
+    console.log('Iniciando Meta no banco local exclusivo do laboratório. Envio real: ' + (meta.sendEnabled ? 'habilitado para testes' : 'desabilitado'))
+    run(process.execPath, [join(root, 'apps/api/node_modules/@nestjs/cli/bin/nest.js'), 'start', '--watch'], join(root, 'apps/api'))
+  }
+} else if (action === 'init') {
   const docker = existsSync('/Applications/Docker.app/Contents/Resources/bin/docker') ? '/Applications/Docker.app/Contents/Resources/bin/docker' : 'docker'
   run(docker, ['--host', 'unix://' + localSocket, 'compose', '-p', 'zapchat-instagram-test', '-f', 'compose.instagram-test.yml', 'up', '-d', '--wait'])
   prisma(['generate']); prisma(['migrate', 'deploy'])
@@ -92,6 +109,6 @@ if (action === 'init') {
   assert.equal((await request(`instagram/conversations/${conversation.id}/messages`)).status, 401)
   console.log('Percurso HTTP validado: login, conta simulada, mensagem persistida, resposta, deduplicação e isolamento entre empresas. Nenhuma chamada à Meta.')
 } else {
-  console.error('Uso: node tools/instagram-lab.mjs init | api | web | smoke')
+  console.error('Uso: node tools/instagram-lab.mjs init | api | web | smoke | meta-init | meta-check | api-meta')
   process.exitCode = 1
 }
