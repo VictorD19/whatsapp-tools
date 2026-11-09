@@ -34,7 +34,7 @@ const env = { ...process.env, PATH: dirname(process.execPath) + ':' + (process.e
   NEXT_PUBLIC_API_URL: 'http://localhost:18001', NEXT_PUBLIC_WS_URL: 'http://localhost:18001', NEXT_PUBLIC_APP_URL: 'http://localhost:18080',
   NEXT_PUBLIC_APP_NAME: 'ZapChat · Instagram testes', NEXT_PUBLIC_INSTAGRAM_PILOT: 'true',
   INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'simulated', INSTAGRAM_PILOT_TENANT_IDS: 'instagram-lab',
-  INSTAGRAM_SEND_ENABLED: 'false', INSTAGRAM_APP_ID: '', INSTAGRAM_APP_SECRET: '', INSTAGRAM_VERIFY_TOKEN: '',
+  INSTAGRAM_SEND_ENABLED: 'false', INSTAGRAM_APP_ID: '', INSTAGRAM_CONFIG_ID: '', INSTAGRAM_APP_SECRET: '', INSTAGRAM_VERIFY_TOKEN: '',
   INSTAGRAM_REDIRECT_URI: '', INSTAGRAM_API_VERSION: '',
 }
 const run = (command, args, cwd = root) => {

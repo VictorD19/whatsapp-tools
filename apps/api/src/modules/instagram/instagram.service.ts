@@ -47,7 +47,7 @@ export class InstagramService {
     const account = await this.adapter.exchange(code)
     const existing = await this.db.instagramAccount.findUnique({ where: { instagramId: account.instagramId } })
     if (existing && existing.tenantId !== tenantId) throw new ConflictException('Conta Instagram indisponível para esta empresa')
-    const data = { username: account.username, mode: 'meta', active: true,
+    const data = { username: account.username, clientBusinessId: account.clientBusinessId, mode: 'meta', active: true,
       accessToken: this.crypto.encrypt(account.token), tokenExpiresAt: account.expiresAt }
     if (existing) {
       await this.db.instagramAccount.updateMany({ where: { id: existing.id, tenantId }, data })

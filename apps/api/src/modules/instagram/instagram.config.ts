@@ -18,6 +18,7 @@ export class InstagramConfig {
   }
   assertMeta(): void {
     if (this.mode !== 'meta' || !this.get('INSTAGRAM_APP_ID') || !this.get('INSTAGRAM_APP_SECRET') ||
+        !/^\d+$/.test(this.get('INSTAGRAM_CONFIG_ID')) ||
         !/^v\d+\.\d+$/.test(this.get('INSTAGRAM_API_VERSION')) ||
         !this.get('INSTAGRAM_REDIRECT_URI').startsWith('https://')) {
       throw new ServiceUnavailableException('Configure o aplicativo Meta de testes antes de conectar')

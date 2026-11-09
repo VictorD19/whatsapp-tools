@@ -93,6 +93,7 @@ model InstagramAccount {
   tenantId       String
   instagramId    String                  @unique
   username       String
+  clientBusinessId String?
   mode           String                  @default("simulated")
   accessToken    String?
   tokenExpiresAt DateTime?

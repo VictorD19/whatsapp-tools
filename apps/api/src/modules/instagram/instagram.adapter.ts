@@ -7,10 +7,10 @@ export class InstagramAdapter {
   constructor(private readonly config: InstagramConfig) {}
   authUrl(state: string): string {
     this.config.assertMeta()
-    const url = new URL('https://www.instagram.com/oauth/authorize')
+    const url = new URL('https://www.facebook.com/dialog/oauth')
     url.search = new URLSearchParams({ client_id: this.config.get('INSTAGRAM_APP_ID'),
       redirect_uri: this.config.get('INSTAGRAM_REDIRECT_URI'), response_type: 'code',
-      scope: 'instagram_business_basic,instagram_business_manage_messages', state }).toString()
+      config_id: this.config.get('INSTAGRAM_CONFIG_ID'), prompt: 'login', state }).toString()
     return url.toString()
   }
   private async request(url: string, init: RequestInit): Promise<any> {
@@ -22,29 +22,35 @@ export class InstagramAdapter {
       return body
     } catch { throw new ServiceUnavailableException('A Meta não confirmou a operação. Verifique a conexão antes de tentar novamente.') }
   }
-  async exchange(code: string): Promise<{ instagramId: string; username: string; token: string; expiresAt: Date }> {
+  async exchange(code: string): Promise<{ instagramId: string; username: string; clientBusinessId: string; token: string; expiresAt: Date | null }> {
     this.config.assertMeta()
-    const short = await this.request('https://api.instagram.com/oauth/access_token', { method: 'POST',
-      body: new URLSearchParams({ client_id: this.config.get('INSTAGRAM_APP_ID'), client_secret: this.config.get('INSTAGRAM_APP_SECRET'),
-        grant_type: 'authorization_code', redirect_uri: this.config.get('INSTAGRAM_REDIRECT_URI'), code }) })
-    if (!short.access_token) throw new ServiceUnavailableException('Autorização Instagram incompleta')
-    const query = new URLSearchParams({ grant_type: 'ig_exchange_token', client_secret: this.config.get('INSTAGRAM_APP_SECRET'), access_token: short.access_token })
-    const long = await this.request('https://graph.instagram.com/access_token?' + query, { method: 'GET' })
-    if (!long.access_token || !Number.isFinite(long.expires_in) || long.expires_in <= 0) throw new ServiceUnavailableException('Token Instagram inválido')
-    const headers = { Authorization: `Bearer ${long.access_token}` }
-    const me = await this.request(`https://graph.instagram.com/${this.config.get('INSTAGRAM_API_VERSION')}/me?fields=user_id,username`, { headers })
-    const instagramId = String(me.user_id || me.id || '')
-    if (!/^\d+$/.test(instagramId) || typeof me.username !== 'string') throw new ServiceUnavailableException('Conta Instagram inválida')
-    await this.request(`https://graph.instagram.com/${this.config.get('INSTAGRAM_API_VERSION')}/${instagramId}/subscribed_apps`, {
+    const base = `https://graph.facebook.com/${this.config.get('INSTAGRAM_API_VERSION')}`
+    const query = new URLSearchParams({ client_id: this.config.get('INSTAGRAM_APP_ID'), client_secret: this.config.get('INSTAGRAM_APP_SECRET'),
+      redirect_uri: this.config.get('INSTAGRAM_REDIRECT_URI'), code })
+    const result = await this.request(`${base}/oauth/access_token?${query}`, { method: 'GET' })
+    if (typeof result.access_token !== 'string' || !result.access_token ||
+        (result.expires_in != null && (!Number.isFinite(result.expires_in) || result.expires_in < 0))) throw new ServiceUnavailableException('Token Instagram inválido')
+    const headers = { Authorization: `Bearer ${result.access_token}` }
+    // With Unified Login, /me identifies the integration system user, not Instagram.
+    const business = await this.request(`${base}/me?fields=client_business_id`, { headers })
+    const assigned = await this.request(`${base}/me/assigned_instagram_accounts?fields=id,username&limit=2`, { headers })
+    if (!Array.isArray(assigned.data) || assigned.data.length !== 1 || assigned.paging?.next) {
+      throw new ServiceUnavailableException('Neste piloto, autorize exatamente uma conta profissional do Instagram e tente novamente')
+    }
+    const me = assigned.data[0]
+    const instagramId = String(me.id || ''), clientBusinessId = String(business.client_business_id || '')
+    if (!/^\d+$/.test(instagramId) || !/^\d+$/.test(clientBusinessId) || typeof me.username !== 'string') throw new ServiceUnavailableException('Conta Instagram inválida')
+    await this.request(`${base}/${instagramId}/subscribed_apps`, {
       method: 'POST', headers, body: new URLSearchParams({ subscribed_fields: 'messages' }),
     })
-    return { instagramId, username: me.username, token: long.access_token, expiresAt: new Date(Date.now() + long.expires_in * 1000) }
+    return { instagramId, username: me.username, clientBusinessId, token: result.access_token,
+      expiresAt: result.expires_in > 0 ? new Date(Date.now() + result.expires_in * 1000) : null }
   }
   async sendText(instagramId: string, participantId: string, token: string | null, text: string): Promise<string> {
     if (this.config.mode === 'simulated') return 'simulated-' + randomUUID()
     this.config.assertMeta()
     if (this.config.get('INSTAGRAM_SEND_ENABLED') !== 'true' || !token) throw new ServiceUnavailableException('Envio real desabilitado no piloto')
-    const result = await this.request(`https://graph.instagram.com/${this.config.get('INSTAGRAM_API_VERSION')}/${instagramId}/messages`, {
+    const result = await this.request(`https://graph.facebook.com/${this.config.get('INSTAGRAM_API_VERSION')}/${instagramId}/messages`, {
       method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ recipient: { id: participantId }, message: { text } }),
     })

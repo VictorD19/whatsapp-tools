@@ -80,7 +80,8 @@ INSTAGRAM_ENABLED=true
 INSTAGRAM_MODE=meta
 INSTAGRAM_PILOT_TENANT_IDS=<empresa de teste>
 INSTAGRAM_SEND_ENABLED=false
-INSTAGRAM_APP_ID=<aplicativo de teste>
+INSTAGRAM_APP_ID=<aplicativo Meta de teste>
+INSTAGRAM_CONFIG_ID=<configuração do login unificado>
 INSTAGRAM_APP_SECRET=<segredo no ambiente protegido>
 INSTAGRAM_VERIFY_TOKEN=<valor aleatório no ambiente protegido>
 INSTAGRAM_REDIRECT_URI=https://<host de testes>/api/v1/instagram/callback
@@ -136,12 +137,12 @@ Instagram. Isso não prova ausência de um aplicativo no painel Meta nem no ambi
 interno de produção, que não foi acessado. O conector DigitalOcean consultado não
 ofereceu inspeção por SSH. O painel Meta pediu login, pendente do usuário.
 
-Preparar um aplicativo independente chamado **ZapChat Instagram Lab**, mantendo
+Preparar um aplicativo independente chamado **ZapChat Social Lab**, mantendo
 os aplicativos e integrações existentes intactos. No painel autenticado, conferir
 primeiro a lista de aplicativos e o produto Instagram dos candidatos. Para um
 aplicativo separado, selecionar o caso de uso de gestão de mensagens do Instagram,
 configurar Instagram Login e somente as permissões necessárias ao primeiro teste:
-`instagram_business_basic` e `instagram_business_manage_messages`.
+`instagram_basic` e `instagram_manage_messages` (login unificado).
 Usar conta profissional de testes e cadastrar os papéis/testadores exigidos pelo
 painel. Não publicar o aplicativo nem aprovar acesso de clientes nesta etapa.
 
@@ -157,10 +158,10 @@ node tools/instagram-lab.mjs api-meta
 ```
 
 `meta-init` preserva arquivo existente e gera apenas o token de verificação local.
-O arquivo tem permissão 600 e fica ignorado pelo Git. Campos: `appId`, `appSecret`,
+O arquivo tem permissão 600 e fica ignorado pelo Git. Campos: `appId`, `configId`, `appSecret`,
 `verifyToken`, `apiVersion`, `redirectUri`, `sendEnabled` (inicialmente false).
-Usar ID/segredo da configuração Instagram do aplicativo de testes conforme o
-painel, sem reutilizar token de anúncios. Nunca colar segredos no chat/Obsidian.
+Usar ID/segredo do aplicativo Meta de testes para o login unificado,
+sem reutilizar token de anúncios. Nunca colar segredos no chat/Obsidian.
 
 `meta-check` lista somente campos faltantes, sem imprimir segredos. Confere
 formato, não valida credenciais com a Meta. `api-meta` recusa configuração
@@ -177,3 +178,65 @@ alterar `sendEnabled`. Não habilitar envio real só para passar no diagnóstico
 
 Fontes: [coleção oficial Meta Instagram API](https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api),
 painel Meta Developers (login solicitado), código local da integração Meta CAPI.
+
+
+## Conferência do painel Meta após login
+
+A conta autenticada mostrou sete aplicativos. O candidato Zap Flame
+(ID 2940332392928583) está em desenvolvimento e sua lista de casos de uso contém
+somente WhatsApp. Cinco outros aparecem como Conversions API Application e um
+como Novarj, de outro portfólio. Não foi comprovado que Zap Flame é o aplicativo
+usado pelo CRM em produção; não foi alterada sua configuração.
+
+O assistente de criação do aplicativo separado foi preenchido com o nome
+**ZapChat Social Lab**, caso de uso **Gerenciar mensagens e conteúdo no Instagram**,
+e sem conexão a um portfólio empresarial nesta etapa. O nome inicial com
+“Instagram” foi recusado pela regra de marca da Meta. A revisão final exige
+aceitar os Termos da Plataforma e as Políticas do Desenvolvedor. O usuário confirmou esse aceite e a criação foi concluída.
+Aplicativo: 1684815669905187; configuração: 1680712757031270. O usuário também
+autorizou o vínculo à Xtrategy Digital Marketing, confirmado pelo painel após
+a verificação de dois fatores. A configuração salva solicita somente
+instagram_basic e instagram_manage_messages. Aplicativo ainda não publicado.
+
+
+## Login unificado e endpoint temporário
+
+A Meta confirmou no painel que aplicativos novos exigem **Unified Login**.
+O adaptador foi atualizado para OAuth com config_id em facebook.com, troca de
+código e chamadas em graph.facebook.com. Descobre a conta por
+/me/assigned_instagram_accounts e preserva client_business_id, pois /me representa
+o usuário do sistema. Neste piloto deve ser autorizada exatamente uma conta.
+Token sem prazo informado ou expires_in=0 é armazenado sem vencimento; revogação
+ou erro exige nova autorização. Nova coluna clientBusinessId migrou somente no
+PostgreSQL do laboratório. API TypeScript e 538 testes passaram; sete testes dos
+auxiliares de configuração/gateway/formulário passaram. Simulação HTTP revalidada.
+
+Fonte: [guia oficial de login unificado da Meta](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-unified-login/get-started).
+
+O usuário autorizou endereço temporário Cloudflare. Gateway local 127.0.0.1:18002
+aceita apenas GET /api/v1/instagram/callback e GET/POST /api/v1/instagram/webhook;
+não encaminha Authorization/Cookie. Destino fixo local, limite de corpo de 1 MB,
+sem logs de query/body. Rotas privadas recebem 404. Cliente cloudflared oficial
+2026.10.7 baixado para pasta ignorada pelo Git. Nenhum DNS ou recurso de produção
+foi alterado. O endereço temporário atual está no arquivo privado meta.json;
+se o túnel reiniciar, conferir e atualizar callback no painel e arquivo local.
+
+```sh
+node tools/instagram-webhook-gateway.mjs
+# Em outro terminal, após autorização para tornar os callbacks acessíveis:
+.instagram-test/cloudflared tunnel --no-autoupdate --url http://127.0.0.1:18002 --protocol http2
+```
+
+Para transferir o segredo sem imprimi-lo no chat, existe formulário temporário
+somente em loopback, com origem/Host/nonce verificados, arquivo de saída 600 e
+respostas sem o valor da chave. Não usa túnel e encerra após 30 minutos:
+
+```sh
+node tools/instagram-secret-setup.mjs
+# Abrir http://localhost:18003 e salvar a chave do aplicativo de testes.
+```
+
+Fechar esse processo após salvar. Não colocar o formulário no gateway nem em
+produção. A reautenticação solicitada pela Meta deve ser concluída pelo próprio
+usuário no painel. Até a chave ser salva e a API reiniciar em api-meta, o piloto
+continua simulado. Ainda não houve conta Instagram autorizada ou envio real.

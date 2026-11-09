@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { metaTemplate, metaDiagnostics, metaEnvironment } from './instagram-meta-config.mjs'
 
-const configured = () => ({ appId: '123', appSecret: 'test-secret', verifyToken: 'x'.repeat(32),
+const configured = () => ({ appId: '123', configId: '456', appSecret: 'test-secret', verifyToken: 'x'.repeat(32),
   apiVersion: 'v99.0', redirectUri: 'https://instagram-test.example/api/v1/instagram/callback', sendEnabled: false })
 
 test('template cannot enable Meta or real sending', () => {
