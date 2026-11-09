@@ -21,7 +21,7 @@ export class InstagramService {
   }
   accounts(tenantId: string) {
     this.config.assertTenant(tenantId)
-    return this.db.instagramAccount.findMany({ where: { tenantId }, select: accountFields, orderBy: { createdAt: 'desc' } })
+    return this.db.instagramAccount.findMany({ where: { tenantId, mode: this.config.mode }, select: accountFields, orderBy: { createdAt: 'desc' } })
   }
   async simulatedAccount(tenantId: string) {
     this.config.assertSimulated(tenantId)
@@ -134,7 +134,7 @@ export class InstagramService {
       return { id: existing.id, status: existing.status }
     }
     if (!canReply(conversation.lastInboundAt, Date.now())) throw new BadRequestException('A janela de resposta de 24 horas terminou')
-    if (account.mode === 'meta' && (!account.tokenExpiresAt || account.tokenExpiresAt.getTime() <= Date.now())) throw new BadRequestException('Reconecte o Instagram: autorização expirada')
+    if (account.mode === 'meta' && (!account.accessToken || (account.tokenExpiresAt && account.tokenExpiresAt.getTime() <= Date.now()))) throw new BadRequestException('Reconecte o Instagram: autorização ausente ou expirada')
     if (account.mode === 'meta' && this.config.get('INSTAGRAM_SEND_ENABLED') !== 'true') throw new ForbiddenException('Envio real desabilitado no piloto')
     // Unique request ID plus atomic claim prevents concurrent HTTP retries sending twice.
     const message = await this.db.instagramMessage.upsert({ where: { accountId_requestId: { accountId: account.id, requestId } },
@@ -145,6 +145,8 @@ export class InstagramService {
     try {
       this.config.assertTenant(tenantId)
       const current = await this.account(tenantId, account.id)
+      if (current.mode !== this.config.mode || (current.mode === 'meta' && (!current.accessToken ||
+          (current.tokenExpiresAt && current.tokenExpiresAt.getTime() <= Date.now())))) throw new Error('connection_changed')
       if (!canReply(conversation.lastInboundAt, Date.now())) throw new Error('reply_window_closed')
       const token = current.accessToken ? this.crypto.decrypt(current.accessToken) : null
       const providerMessageId = await this.adapter.sendText(account.instagramId, conversation.participantId, token, text)

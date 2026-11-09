@@ -240,3 +240,36 @@ Fechar esse processo após salvar. Não colocar o formulário no gateway nem em
 produção. A reautenticação solicitada pela Meta deve ser concluída pelo próprio
 usuário no painel. Até a chave ser salva e a API reiniciar em api-meta, o piloto
 continua simulado. Ainda não houve conta Instagram autorizada ou envio real.
+
+
+## Uso por clientes e estado ao fim da configuração
+
+O produto final é multiempresa: um aplicativo da plataforma atende autorizações
+independentes de cada cliente. O cliente não informa sua senha ao CRM, não muda
+seu Instagram para o portfólio da Xtrategy e escolhe os próprios ativos no OAuth.
+A empresa que iniciou o fluxo é vinculada no estado de uso único; tokens e
+conversas são armazenados por tenantId. Cada autorização deste MVP aceita uma
+conta por vez; é possível repetir a conexão para outra conta autorizada.
+
+O usuário confirmou que a funcionalidade deve atender outros clientes, não só
+seu perfil. O piloto continua restrito à empresa fictícia para validação. Antes
+de oferecer a clientes sem papel no aplicativo, concluir análise da Meta,
+Advanced Access das permissões e publicação do aplicativo. Somente contas
+profissionais são elegíveis. Não convidar cada cliente como testador para
+substituir a análise do aplicativo.
+
+A chave Meta foi transferida pelo formulário local para meta.json sem exibi-la
+no chat. Formulário e transferência do verificador foram encerrados. API local
+reiniciada em modo meta; envio real permanece false. O webhook foi verificado
+e salvo no painel Meta e o campo messages ficou Assinado em v27.0. Teste público
+externo: callback sem autorização 400; login e rotas privadas 404; desafio de
+webhook correto 200 com valor exato. Nenhuma conta Instagram foi autorizada
+até este registro. OAuth abriu a seleção de ativos; não aceitar o portfólio
+de cliente selecionado automaticamente pela Meta. A escolha do @ de teste e
+o consentimento de acesso ainda dependem do usuário.
+
+Ajustes de integração: contas simuladas não aparecem no modo Meta; tokens do
+login unificado sem vencimento programado são aceitos, enquanto tokens
+explicitamente vencidos são bloqueados. Revalidar modo e token antes de enviar.
+Testes cobrem autorizações de duas empresas, tokens separados e tentativa de
+apropriação de conta de outra empresa.

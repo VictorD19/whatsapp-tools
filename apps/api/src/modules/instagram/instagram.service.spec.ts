@@ -30,6 +30,49 @@ function fixture() {
   return { service: new InstagramService(db, redis, crypto, config, adapter), db, adapter, cache, values, config, account, conversation, crypto }
 }
 describe('Instagram service', () => {
+  it('binds separate customer authorizations to their own tenants using the same app', async () => {
+    const f = fixture(); f.values.INSTAGRAM_PILOT_TENANT_IDS = 'one,two'
+    const states = new Map<string, string>()
+    f.cache.set.mockImplementation(async (key, value) => { states.set(key, value); return 'OK' })
+    f.cache.getdel.mockImplementation(async key => { const value = states.get(key); states.delete(key); return value })
+    f.db.instagramAccount.findUnique.mockResolvedValue(null)
+    f.adapter.exchange.mockImplementation(async (code: string) => ({ instagramId: code === 'first' ? '101' : '102',
+      username: code, clientBusinessId: code === 'first' ? '701' : '702', token: 'token-' + code, expiresAt: null }))
+    await f.service.connect('one', 'admin-one'); await f.service.connect('two', 'admin-two')
+    const keys = [...states.keys()]
+    expect(keys[0]).not.toBe(keys[1])
+    await f.service.callback('first', keys[0].replace('instagram:oauth:', ''))
+    await f.service.callback('second', keys[1].replace('instagram:oauth:', ''))
+    expect(f.db.instagramAccount.create.mock.calls.map(([args]: any[]) => ({ tenant: args.data.tenantId,
+      business: args.data.clientBusinessId, token: args.data.accessToken }))).toEqual([
+      { tenant: 'one', business: '701', token: 'encrypted:token-first' },
+      { tenant: 'two', business: '702', token: 'encrypted:token-second' },
+    ])
+  })
+  it('refuses to attach an account already owned by another customer', async () => {
+    const f = fixture(); f.values.INSTAGRAM_PILOT_TENANT_IDS = 'one,two'
+    f.cache.getdel.mockResolvedValue(JSON.stringify({ tenantId: 'two' }))
+    await expect(f.service.callback('code', 'a'.repeat(43))).rejects.toThrow('indisponível para esta empresa')
+    expect(f.db.instagramAccount.create).not.toHaveBeenCalled()
+    expect(f.db.instagramAccount.updateMany).not.toHaveBeenCalled()
+  })
+  it('lists only accounts for the current connection mode', async () => {
+    const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'; f.db.instagramAccount.findMany = jest.fn(async () => [])
+    await f.service.accounts('one')
+    expect(f.db.instagramAccount.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { tenantId: 'one', mode: 'meta' } }))
+  })
+  it('accepts a valid Unified Login token with no scheduled expiration', async () => {
+    const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'; f.values.INSTAGRAM_SEND_ENABLED = 'true'; f.account.mode = 'meta'
+    ;(f.account as any).accessToken = 'encrypted-token'
+    expect((await f.service.reply('one', 'c', 'text', 'request')).status).toBe('sent')
+    expect(f.adapter.sendText).toHaveBeenCalledTimes(1)
+  })
+  it('rejects an explicitly expired Meta token', async () => {
+    const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'; f.values.INSTAGRAM_SEND_ENABLED = 'true'; f.account.mode = 'meta'
+    ;(f.account as any).accessToken = 'encrypted-token'; (f.account as any).tokenExpiresAt = new Date(Date.now() - 1000)
+    await expect(f.service.reply('one', 'c', 'text', 'request')).rejects.toThrow('expirada')
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+  })
   it('does not query another tenant or allow a disabled pilot', async () => {
     const f = fixture()
     await expect(f.service.reply('other', 'c', 'text', 'request')).rejects.toThrow()

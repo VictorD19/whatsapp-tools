@@ -106,7 +106,7 @@ export default function InstagramPage() {
     {status?.enabled && <>
       <section className={panel}>
         <h2 className="font-semibold">Conexão {status.mode === 'simulated' ? 'simulada' : 'com a Meta'}</h2>
-        <p className="text-sm text-muted-foreground">{status.mode === 'simulated' ? 'Use uma conta fictícia para testar o percurso sem acessar o Instagram.' : 'Conecte uma conta profissional autorizada no aplicativo Meta de testes. O envio real precisa ser habilitado separadamente.'}</p>
+        <p className="text-sm text-muted-foreground">{status.mode === 'simulated' ? 'Use uma conta fictícia para testar o percurso sem acessar o Instagram.' : 'Cada empresa conecta sua própria conta profissional. Na Meta, você autoriza a identificação do perfil e a leitura e resposta aos Directs. Escolha somente o Instagram que deseja atender nesta empresa; a conta de anúncios é opcional e pode ficar em branco. O envio real permanece bloqueado durante esta validação.'}</p>
         <div className="flex flex-wrap items-center gap-3">
           <button className={button} disabled={busy} onClick={() => action(async () => {
             if (status.mode === 'simulated') { await apiPost('instagram/simulated-account', {}); await loadAccounts() }
