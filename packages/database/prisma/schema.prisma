@@ -80,8 +80,66 @@ model Tenant {
   calendarEvents   CalendarEvent[]
   metaPixelConfig  MetaPixelConfig?
   apiLogs          ApiLog[]
+  instagramAccounts InstagramAccount[]
+  instagramConversations InstagramConversation[]
+  instagramMessages InstagramMessage[]
 
   @@index([planId])
+}
+
+// Instagram pilot: separate tables; no changes to WhatsApp identities or sessions.
+model InstagramAccount {
+  id             String                  @id @default(cuid())
+  tenantId       String
+  instagramId    String                  @unique
+  username       String
+  mode           String                  @default("simulated")
+  accessToken    String?
+  tokenExpiresAt DateTime?
+  active         Boolean                 @default(true)
+  createdAt      DateTime                @default(now())
+  tenant         Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  conversations  InstagramConversation[]
+  messages       InstagramMessage[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, active])
+}
+
+model InstagramConversation {
+  id            String             @id @default(cuid())
+  tenantId      String
+  accountId     String
+  participantId String
+  lastInboundAt DateTime?
+  updatedAt     DateTime           @updatedAt
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  account       InstagramAccount   @relation(fields: [accountId, tenantId], references: [id, tenantId], onDelete: Restrict)
+  messages      InstagramMessage[]
+
+  @@unique([accountId, participantId])
+  @@unique([id, tenantId])
+  @@index([tenantId, updatedAt])
+}
+
+model InstagramMessage {
+  id                String                @id @default(cuid())
+  tenantId          String
+  accountId         String
+  conversationId    String
+  direction         String
+  text              String                @db.Text
+  providerMessageId String?
+  requestId         String?
+  status            String                @default("received")
+  sentAt            DateTime              @default(now())
+  tenant            Tenant                @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  account           InstagramAccount      @relation(fields: [accountId, tenantId], references: [id, tenantId], onDelete: Restrict)
+  conversation      InstagramConversation @relation(fields: [conversationId, tenantId], references: [id, tenantId], onDelete: Restrict)
+
+  @@unique([accountId, providerMessageId])
+  @@unique([accountId, requestId])
+  @@index([tenantId, conversationId, sentAt])
 }
 
 // ── User ────────────────────────────────────────

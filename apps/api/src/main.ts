@@ -32,6 +32,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ logger: false }),
+    { rawBody: process.env.INSTAGRAM_ENABLED === 'true' && process.env.NODE_ENV !== 'production' },
   )
 
   // Response compression (gzip/brotli)
@@ -79,7 +80,7 @@ async function bootstrap() {
   Sentry.setupFastifyErrorHandler(fastifyInstance)
 
   const port = process.env.PORT ?? 3001
-  await app.listen(port, '0.0.0.0')
+  await app.listen(port, process.env.HOST ?? '0.0.0.0')
 
   console.log(`🚀 API rodando em http://localhost:${port}`)
   if (process.env.NODE_ENV !== 'production') {
