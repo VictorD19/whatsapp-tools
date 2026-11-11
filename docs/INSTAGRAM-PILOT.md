@@ -302,3 +302,27 @@ O diálogo OAuth foi ajustado para os parâmetros que o painel Meta gera:
 display=popup e override_default_response_type=true. Isso abriu o login direto
 do Instagram que antes não avançava. Os sete testes do adaptador passaram após
 esse ajuste. Nova autorização é necessária após expiração do estado de dez minutos.
+
+
+## Conta real conectada — 11/11/2026
+
+Após confirmação específica do usuário, o convite de Testador do Instagram foi
+aceito: a página de convites passou a oferecer Remove no lugar de Accept.
+Docker, PostgreSQL, Redis, API, interface e gateway do laboratório foram
+reativados; nenhuma migração estava pendente. O túnel reativado nesta sessão é
+concerned-personnel-derby-extension.trycloudflare.com. Configuração privada,
+callback OAuth e webhook da Meta foram atualizados para esse host. Handshake
+HTTPS retornou 200 com desafio exato; campo messages permaneceu Assinado em v27.0.
+
+A autorização pelo Instagram foi concluída com @joaobosco.pro, portfólio do
+cliente Joao Bosco e nenhuma conta de anúncios selecionada. A tela final pediu
+identificação básica/perfil e acesso às mensagens, conforme autorizado. Callback
+retornou Instagram conectado; a API confirmou conta mode=meta, active=true, e a
+interface exibiu @joaobosco.pro · Meta. O segredo permanece em arquivo privado e
+o token autorizado é criptografado pelo serviço do CRM no banco local.
+
+**Envio real continua false.** Nenhuma mensagem foi enviada a contatos reais.
+Na confirmação inicial havia zero conversas reais armazenadas. Foi solicitado
+que o usuário envie Teste ZapChat de outra conta para validar o recebimento.
+Conexão OAuth validada; recebimento de Direct e resposta real ainda não validados
+até este registro. O histórico antigo não é importado automaticamente neste MVP.
