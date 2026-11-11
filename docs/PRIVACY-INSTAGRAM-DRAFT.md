@@ -1,6 +1,6 @@
 # Política de privacidade com Instagram — minuta para revisão
 
-Preparada em 11 de novembro de 2026. **Não publicada.** Base: política efetivamente disponível em https://sistemazapchat.com/privacy, cuja data exibida é 1 de maio de 2026. A cópia HTML consultada foi preservada neste diretório. A implementação proposta está somente na branch local do piloto.
+Preparada em 11 de novembro de 2026. **Texto publicado em https://sistemazapchat.com/privacy em 11/11/2026 às 23:59, Asia/Dubai.** Somente as duas páginas públicas foram atualizadas, após backup e testes de recuperação. A base anterior, de 1 de maio de 2026, foi preservada em HTML neste diretório. As notas operacionais abaixo não fazem parte da página pública. Ver `PRIVACY-PAGES-RELEASE.md` para publicação, retorno e pendência de sincronização GitHub.
 
 ## Pontos a confirmar antes de publicar
 
@@ -8,7 +8,7 @@ Preparada em 11 de novembro de 2026. **Não publicada.** Base: política efetiva
 - O procedimento de atendimento usa o canal existente. Nenhum e-mail de teste foi enviado; a entrega nessa caixa não foi verificada.
 - Procedimento administrativo e utilitário de exclusão preparados e ensaiados somente com dados fictícios; ver `INSTAGRAM-DATA-DELETION.md`. A política existente prevê até 30 dias após exclusão da conta. Cada pedido exige validação do solicitante, execução pelo responsável e conferência das cópias de segurança antes de confirmar eliminação total.
 - Confirmar as afirmações gerais herdadas da política (segurança, contratos de fornecedores, cookies e retenção); a leitura pública não é uma auditoria desses controles.
-- A página do ambiente de testes exibe 11/11/2026. A política pública principal permanece inalterada, com data de 01/05/2026. Rever a data de vigência quando houver publicação.
+- A política pública foi atualizada em 11/11/2026; a versão anterior de 01/05/2026 foi preservada para referência e retorno.
 - Esta versão descreve o piloto local com Cloudflare. Antes de implantar Instagram para clientes, adequar hospedagem, fornecedores, funções disponíveis e retenção ao ambiente real. A revisão do texto não representa aprovação do aplicativo pela Meta.
 
 ## Texto proposto

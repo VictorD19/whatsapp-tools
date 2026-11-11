@@ -402,3 +402,27 @@ proteção da conta. Final: 39 testes do módulo Instagram passaram, incluindo
 reentrega ignorada, evento novo aceito e indisponibilidade de Redis sem gravação;
 os dois testes do utilitário e integração PostgreSQL/Redis/CLI passaram. Esse
 registro mínimo foi descrito na política e nas instruções locais.
+
+## Páginas públicas e backup — conclusão em 12/11/2026
+
+Sob autorização específica, somente /privacy e /data-deletion foram publicados
+no sistemazapchat.com em 11/11 às 23:59 (Asia/Dubai), a partir da branch isolada
+codex/privacy-pages-2026-11-11, commit 41e3f8b. Imagem principal continua sem
+módulo Instagram. Apenas web foi recriado: API, PostgreSQL, Redis, Evolution e
+MinIO preservaram IDs e horários. Login, termos, páginas, navegação interna,
+saúde e prontidão foram conferidos pela internet. Política conferida no navegador.
+
+Antes da troca: backups manuais dos dois bancos, configuração, Redis e mídia,
+restauração isolada e contagens iguais, mídia extraída e aberta em MinIO sem rede,
+Redis carregado sem consumidores e imagem anterior testada. Cópia externa age
+v1.3.2 de 11.255.124.952 bytes teve SHA-256 e abertura integral confirmados.
+O primeiro invólucro CMS falhou na verificação local e foi substituído; os
+artefatos foram preservados após rejeição automática da exclusão sem autorização.
+
+Acesso SSH temporário autorizado por até duas horas foi revogado às 00:06 de
+12/11 (Asia/Dubai), preservando outros acessos; nova autenticação com a chave
+foi recusada. Nenhum segredo consta neste registro. Roteiro completo em
+PRIVACY-PAGES-RELEASE.md. Sincronização dos dois fontes no GitHub ainda bloqueada
+pela permissão de escrita da integração: resolver antes de próximo build/deploy
+normal para não repor páginas antigas. Branch, bundle e imagens preservados.
+Aplicativo Meta não foi publicado nem teve permissões ampliadas nesta etapa.

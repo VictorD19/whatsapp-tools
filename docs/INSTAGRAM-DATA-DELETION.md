@@ -162,8 +162,8 @@ node tools/instagram-data-deletion.integration.mjs
 ```
 
 Página de instruções local: `http://localhost:18080/data-deletion`. Política local:
-`http://localhost:18080/privacy`. Não foram publicados nem cadastrados no painel
-Meta. O túnel autorizado continua restrito ao callback e ao webhook, portanto
-essas páginas não estão acessíveis publicamente por ele. A disponibilização
-de URLs públicas será uma etapa separada; não é necessário alterar o CRM
-principal para hospedar documentos próprios do piloto.
+`http://localhost:18080/privacy`. As duas páginas foram publicadas, após backup
+e testes de recuperação, em `https://sistemazapchat.com/data-deletion` e
+`https://sistemazapchat.com/privacy`. Somente a interface foi atualizada; o
+módulo Instagram permanece no laboratório. URLs não foram cadastradas no painel
+Meta nesta publicação. O túnel autorizado continua restrito ao callback/webhook.
