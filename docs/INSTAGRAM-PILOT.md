@@ -326,3 +326,79 @@ Na confirmação inicial havia zero conversas reais armazenadas. Foi solicitado
 que o usuário envie Teste ZapChat de outra conta para validar o recebimento.
 Conexão OAuth validada; recebimento de Direct e resposta real ainda não validados
 até este registro. O histórico antigo não é importado automaticamente neste MVP.
+
+## Diagnóstico do primeiro Direct real — 11/11/2026
+
+O usuário confirmou o envio voluntário. A leitura da API Meta localizou a mensagem
+de teste de @agenciainstapush para @joaobosco.pro às 17:21:33 UTC. Ela existe na
+Meta, mas o banco do piloto continuou com zero conversas/mensagens reais; nenhum
+POST correspondente chegou ao webhook. Não registrar esse teste como aprovado.
+
+Token válido, app correto, escopos instagram_basic/instagram_manage_messages e
+assinatura messages da conta foram confirmados por consultas somente leitura.
+O evento sintético enviado pelo botão Teste da Meta chegou ao endpoint às
+17:26:30 UTC e foi tratado com sucesso; a conta fictícia foi ignorada. Isso valida
+o transporte sintético, não o recebimento de um Direct real.
+
+A documentação oficial de webhooks, atualizada em 20/10/2026, informa que o app
+precisa estar publicado/Live para receber notificações dos usuários:
+https://developers.facebook.com/documentation/instagram-platform/webhooks/setup
+O ZapChat Social Lab ainda está não publicado. A tela Publicar mantém o botão
+desabilitado e aponta URL da Política de Privacidade; em Básico essa URL está
+vazia, assim como termos, instruções de exclusão e categoria. A política atual
+no código cobre WhatsApp e identifica outro responsável, portanto não foi
+vinculada automaticamente ao novo app. Validar política e responsável antes
+de salvar ou solicitar ativação. Publicação/Live ainda depende de confirmação
+específica e não equivale a aprovação de acesso para clientes externos.
+
+Nenhuma alteração de produção ou publicação Meta foi executada. Envios reais
+permanecem desligados. Após cumprir os requisitos e obter autorização para
+Live, repetir o teste com uma nova mensagem e só então validar uma resposta.
+
+## Minuta de privacidade — 11/11/2026
+
+A política pública em https://sistemazapchat.com/privacy foi obtida por leitura
+HTTP, exibindo atualização de 01/05/2026 e conteúdo de WhatsApp, sem Instagram.
+Uma cópia foi preservada em `privacy-live-2026-11-11.html`. Preparada a minuta
+integral `PRIVACY-INSTAGRAM-DRAFT.md`, com proposta no componente local de
+privacidade. Inclui dados de conta/Direct, finalidade, Meta e Cloudflare no piloto,
+tokens criptografados, isolamento entre empresas, limitações atuais, desconexão
+e solicitação de exclusão. Não promete importação de histórico nem uso de IA.
+
+A minuta preserva os contatos existentes, pendentes de confirmação do responsável
+e do canal de atendimento. A promessa geral preexistente de exclusão em 30 dias
+precisa de procedimento operacional validado; o piloto não implementa rotina
+de exclusão de conversas. A data da página existente não foi alterada enquanto
+a proposta não for publicada. Nenhum deploy ou alteração no painel Meta ocorreu.
+
+## Procedimento operacional de exclusão preparado — 11/11/2026
+
+O usuário orientou manter os dados de contato já existentes. Política atualizada
+no laboratório, com data local de 11/11/2026, e página `/data-deletion` criada com
+instruções de solicitação, escopos, verificação de identidade e confirmação.
+O canal de privacidade foi mantido; nenhum e-mail foi enviado para testá-lo.
+
+`tools/instagram-data-deletion.mjs` prepara prévia privada e exige confirmação
+para excluir conexão completa ou conversa de participante. Usa somente banco
+e Redis fixos do laboratório, exige API parada e verifica os registros antes
+de concluir a transação. Cancela OAuth pendente da empresa na exclusão completa.
+Não revoga permissões nem exclui mensagens na Meta. Retenção e backups exigem
+conferência administrativa por pedido, conforme `INSTAGRAM-DATA-DELETION.md`.
+
+Dois testes unitários e ensaio real com PostgreSQL/Redis passaram. Inclui
+prévia alterada recusada, isolamento por empresa, exclusão por participante,
+exclusão completa e percurso CLI com plano/comprovante de permissão 600.
+Conta Meta real, tabelas WhatsApp e usuários foram preservados. Somente dados
+fictícios do ensaio foram excluídos. API reativada, envio real desligado.
+Páginas locais responderam 200 e instruções de exclusão foram conferidas no
+navegador. Nenhuma publicação Meta, deploy, push ou alteração de produção.
+As páginas ainda não têm URLs públicas acessíveis à Meta; o túnel não foi ampliado.
+
+Proteção adicional: ao excluir uma conversa, o utilitário registra no Redis
+hashes de escopo e horário, sem conteúdo, para impedir recriação por reentrega
+de evento antigo da Meta. Mensagem posterior pode iniciar nova conversa.
+Falha no Redis bloqueia persistência. Exclusão completa remove também essa
+proteção da conta. Final: 39 testes do módulo Instagram passaram, incluindo
+reentrega ignorada, evento novo aceito e indisponibilidade de Redis sem gravação;
+os dois testes do utilitário e integração PostgreSQL/Redis/CLI passaram. Esse
+registro mínimo foi descrito na política e nas instruções locais.

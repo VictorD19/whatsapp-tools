@@ -23,13 +23,30 @@ function fixture() {
     },
   }
   db.$transaction = jest.fn(async callback => callback(db))
-  const cache = { set: jest.fn(), getdel: jest.fn() }
+  const cache = { set: jest.fn(), getdel: jest.fn(), get: jest.fn(async () => null as string | null) }
   const redis: any = { getClient: () => cache }
   const crypto: any = { encrypt: jest.fn(x => 'encrypted:' + x), decrypt: jest.fn(x => x) }
   const adapter: any = { sendText: jest.fn(async () => 'provider-mid'), authUrl: jest.fn(() => 'https://www.instagram.com/oauth/authorize'), exchange: jest.fn(async () => ({ instagramId: '123', username: 'test', token: 'sensitive', expiresAt: new Date(Date.now() + 10000) })) }
   return { service: new InstagramService(db, redis, crypto, config, adapter), db, adapter, cache, values, config, account, conversation, crypto }
 }
 describe('Instagram service', () => {
+  it('ignores redelivery of erased messages but accepts a new message after deletion', async () => {
+    const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'; f.account.mode = 'meta'
+    const cutoff = Date.now() - 1000
+    f.cache.get.mockResolvedValue(String(cutoff))
+    const deliver = async (timestamp: number) => {
+      const body = { object: 'instagram', entry: [{ id: '123', messaging: [{ sender: { id: '456' }, recipient: { id: '123' }, timestamp, message: { mid: String(timestamp), text: 'test' } }] }] }
+      const raw = Buffer.from(JSON.stringify(body))
+      return f.service.webhook(raw, 'sha256=' + createHmac('sha256', 'secret').update(raw).digest('hex'), body)
+    }
+    await deliver(cutoff)
+    expect(f.db.instagramMessage.createMany).not.toHaveBeenCalled()
+    await deliver(cutoff + 1)
+    expect(f.db.instagramMessage.createMany).toHaveBeenCalledTimes(1)
+    f.cache.get.mockRejectedValueOnce(new Error('redis unavailable'))
+    await expect(deliver(cutoff + 2)).rejects.toThrow()
+    expect(f.db.instagramMessage.createMany).toHaveBeenCalledTimes(1)
+  })
   it('binds separate customer authorizations to their own tenants using the same app', async () => {
     const f = fixture(); f.values.INSTAGRAM_PILOT_TENANT_IDS = 'one,two'
     const states = new Map<string, string>()

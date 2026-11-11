@@ -5,7 +5,7 @@ import { AesCryptoService } from '@shared/crypto/aes-crypto.service'
 import { randomBytes, randomInt, randomUUID } from 'crypto'
 import { InstagramConfig } from './instagram.config'
 import { InstagramAdapter } from './instagram.adapter'
-import { canReply, IncomingDirect, incomingDirects, signatureMatches } from './instagram.policy'
+import { canReply, deletionCutoffKey, IncomingDirect, incomingDirects, signatureMatches } from './instagram.policy'
 
 const accountFields = { id: true, instagramId: true, username: true, mode: true, active: true, tokenExpiresAt: true } as const
 
@@ -81,6 +81,14 @@ export class InstagramService {
     return { received: true }
   }
   private async persistIncoming(account: { id: string; tenantId: string }, event: IncomingDirect) {
+    // Do not recreate erased conversations when Meta retries an old notification.
+    // Redis failure must fail the request so the provider can retry safely later.
+    const cutoff = await this.redis.getClient().get(deletionCutoffKey(account.tenantId, account.id, event.participantId))
+    if (cutoff != null) {
+      const timestamp = Number(cutoff)
+      if (!Number.isFinite(timestamp) || timestamp <= 0) throw new Error('invalid_deletion_cutoff')
+      if (event.at.getTime() <= timestamp) return null
+    }
     // Commit before acknowledging the webhook. Provider retries remain safe after a crash.
     return this.db.$transaction(async tx => {
       const conversation = await tx.instagramConversation.upsert({ where: { accountId_participantId: { accountId: account.id, participantId: event.participantId } },

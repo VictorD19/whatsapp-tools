@@ -1,6 +1,13 @@
-import { createHmac, timingSafeEqual } from 'crypto'
+import { createHash, createHmac, timingSafeEqual } from 'crypto'
 
 export const REPLY_WINDOW = 24 * 60 * 60 * 1000
+
+// Shared format with the offline lab deletion tool. No raw provider identifiers.
+export function deletionCutoffKey(tenantId: string, accountId: string, participantId: string): string {
+  const scope = tenantId + '\0' + accountId
+  const hash = (value: string) => createHash('sha256').update(value).digest('hex')
+  return `instagram:deleted-before:${hash(scope)}:${hash(scope + '\0' + participantId)}`
+}
 
 export function signatureMatches(raw: Buffer, signature: string | undefined, secret: string): boolean {
   if (!secret || typeof signature !== 'string' || !/^sha256=[a-f0-9]{64}$/.test(signature)) return false
