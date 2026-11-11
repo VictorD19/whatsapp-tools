@@ -273,3 +273,32 @@ login unificado sem vencimento programado são aceitos, enquanto tokens
 explicitamente vencidos são bloqueados. Revalidar modo e token antes de enviar.
 Testes cobrem autorizações de duas empresas, tokens separados e tentativa de
 apropriação de conta de outra empresa.
+
+
+## Retomada em 11/11/2026
+
+Login direto do Instagram chegou a reconhecer @joaobosco.pro, cujo uso e acesso
+aos Directs o usuário confirmou explicitamente. A Meta respondeu App not active
+por estar em desenvolvimento; não houve callback/token real salvo. Cadastro de
+testador por nome retornava Invalid id. O identificador profissional confirmado
+pelo MCP Meta Ads é 17841400699000476. Usar esse identificador no formulário de
+Testador do Instagram do assistente de geração de tokens criou o convite correto:
+a tabela de funções confirmou joaobosco.pro / Testador do Instagram / Pendente.
+Não cadastrar qualquer ID sem confirmar o username correspondente.
+
+Após recarregar Apps e sites no Instagram da conta correta, a aba Tester Invites
+apareceu com ZapChat Social Lab-IG. O aceite exige os Termos da Plataforma,
+Políticas do Desenvolvedor e confirmação do vínculo como testador; foi pedida
+confirmação específica ao usuário. Ainda pendente nesse registro. Isso vale para
+o piloto, não substitui a análise para clientes da plataforma.
+
+O túnel anterior expirou durante a pausa e foi renovado sob autorização já dada.
+Novo host: mag-gave-terminal-succeed.trycloudflare.com. Configuração privada,
+API local e callback no painel atualizados. API/interface locais responderam 200.
+Webhook passou pela atualização no painel; conferir a assinatura messages antes
+de enviar uma mensagem voluntária de teste. Envios reais continuam desligados.
+
+O diálogo OAuth foi ajustado para os parâmetros que o painel Meta gera:
+display=popup e override_default_response_type=true. Isso abriu o login direto
+do Instagram que antes não avançava. Os sete testes do adaptador passaram após
+esse ajuste. Nova autorização é necessária após expiração do estado de dez minutos.

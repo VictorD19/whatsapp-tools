@@ -10,7 +10,7 @@ export class InstagramAdapter {
     const url = new URL('https://www.facebook.com/dialog/oauth')
     url.search = new URLSearchParams({ client_id: this.config.get('INSTAGRAM_APP_ID'),
       redirect_uri: this.config.get('INSTAGRAM_REDIRECT_URI'), response_type: 'code',
-      config_id: this.config.get('INSTAGRAM_CONFIG_ID'), prompt: 'login', state }).toString()
+      config_id: this.config.get('INSTAGRAM_CONFIG_ID'), display: 'popup', override_default_response_type: 'true', prompt: 'login', state }).toString()
     return url.toString()
   }
   private async request(url: string, init: RequestInit): Promise<any> {
