@@ -426,3 +426,44 @@ PRIVACY-PAGES-RELEASE.md. Sincronização dos dois fontes no GitHub ainda bloque
 pela permissão de escrita da integração: resolver antes de próximo build/deploy
 normal para não repor páginas antigas. Branch, bundle e imagens preservados.
 Aplicativo Meta não foi publicado nem teve permissões ampliadas nesta etapa.
+
+## Ativação do aplicativo separado — 12/11/2026
+
+Após confirmação específica do usuário, o botão Publicar foi acionado no app
+ZapChat Social Lab (1684815669905187). A Meta confirmou "Seu app foi publicado
+com sucesso" e passou a mostrar Publicado. Isso ativa o aplicativo Meta separado;
+não publica o módulo no CRM principal nem comprova liberação para outros clientes.
+
+URLs legais salvas no painel: https://sistemazapchat.com/privacy,
+https://sistemazapchat.com/terms e https://sistemazapchat.com/data-deletion.
+O túnel anterior deixou de resolver DNS. Novo endereço do laboratório:
+https://single-susan-athletes-strength.trycloudflare.com, limitado pelo gateway
+a callback OAuth e webhook. Callback registrado e API local reiniciada, com
+banco/Redis próprios preservados. Nenhuma alteração em produção nesta rodada.
+
+A assinatura do aplicativo foi atualizada e relida: objeto instagram, apenas
+messages v27.0. Verificação HTTPS retornou 200 com desafio exato. O evento
+sintético enviado pelo painel Meta chegou à API em 12/11 às 15:14:56 Asia/Dubai
+e recebeu resposta de sucesso, sem criar conversa para a conta fictícia.
+
+O token autorizado foi conferido por leitura: válido, SYSTEM_USER, app correto,
+escopos instagram_basic, instagram_manage_messages e public_profile. A consulta
+subscribed_apps da conta retorna subscribed_fields sem identificador do app,
+mesmo pedindo id/name; não interpretar ausência desse identificador como ausência
+de inscrição. POST idempotente de messages após a ativação retornou success:true;
+GET posterior confirmou o campo. Não foram alteradas inscrições de outros apps.
+
+O usuário enviou dois novos Directs de teste. A leitura da Meta confirmou ambos,
+às 11:10:39 e 11:16:12 UTC (15:10 e 15:16 Asia/Dubai). Ainda não chegaram como
+eventos reais ao piloto: zero conversas/mensagens na conta Meta local na última
+consulta. Conversas simuladas antigas no mesmo laboratório não contam como
+recebimento real. Não importar/injetar as mensagens para simular aprovação.
+
+O usuário confirmou no celular que Permitir acesso às mensagens está ativado.
+Foi iniciada renovação OAuth da mesma conta após a ativação do app; a Meta
+exibiu novamente aceite dos Termos na tela Log in as joaobosco.pro. Solicitada
+confirmação específica antes de continuar. Recebimento e resposta reais seguem
+pendentes; realSendingEnabled permanece false.
+
+GitHub: PRs 117 (duas páginas) e 118 (piloto), ambos em rascunho; testes da API e
+Docker Build passaram nos dois. Sem merge/auto-merge, sem novo Deploy.
