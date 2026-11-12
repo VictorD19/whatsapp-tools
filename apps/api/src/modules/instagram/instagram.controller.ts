@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common'
 import { RawBodyRequest } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
@@ -34,7 +34,7 @@ export class InstagramController {
   }
   @Get('webhook') @Public()
   verify(@Query() query: Record<string, string>, @Res() res: FastifyReply) { return res.type('text/plain').send(this.service.verify(query)) }
-  @Post('webhook') @Public()
+  @Post('webhook') @HttpCode(200) @Public()
   webhook(@Req() request: RawBodyRequest<FastifyRequest>, @Body() body: unknown) {
     return this.service.webhook(request.rawBody || Buffer.alloc(0), request.headers['x-hub-signature-256'] as string | undefined, body)
   }

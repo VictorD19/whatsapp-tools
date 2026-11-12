@@ -30,14 +30,26 @@ export function incomingDirects(payload: unknown, now: number): IncomingDirect[]
   if (body?.object !== 'instagram' || !Array.isArray(body.entry)) return []
   const result: IncomingDirect[] = []
   for (const entry of body.entry.slice(0, 100)) {
-    for (const event of (Array.isArray(entry.messaging) ? entry.messaging : []).slice(0, 100)) {
-      if (event.message?.is_echo || event.message?.is_deleted || event.message?.is_unsupported) continue
+    if (!entry || typeof entry !== 'object') continue
+    // Unified Login also delivers messages inside entry.changes[].value.
+    // Apply the same account, recipient and message checks to both envelopes.
+    const messaging = Array.isArray(entry.messaging) ? entry.messaging.slice(0, 100) : []
+    const changes = Array.isArray(entry.changes) ? entry.changes.slice(0, 100)
+      .filter((change: any) => change?.field === 'messages').map((change: any) => change.value) : []
+    for (const event of [...messaging, ...changes].slice(0, 100)) {
+      if (!event || typeof event !== 'object' || event.message?.is_echo || event.message?.is_deleted || event.message?.is_unsupported) continue
       const accountId = String(entry.id ?? ''), participantId = String(event.sender?.id ?? '')
       const recipientId = String(event.recipient?.id ?? '')
-      const messageId = event.message?.mid, text = event.message?.text, timestamp = event.timestamp
+      const messageId = event.message?.mid, text = event.message?.text
+      // Meta's signed sample uses decimal seconds as a string; Messenger's
+      // envelope uses milliseconds. Reject other coercions and invalid dates.
+      const rawTimestamp = typeof event.timestamp === 'string' && /^\d{10,13}$/.test(event.timestamp)
+        ? Number(event.timestamp) : event.timestamp
+      const timestamp = typeof rawTimestamp === 'number' && rawTimestamp >= 1_000_000_000 && rawTimestamp < 10_000_000_000
+        ? rawTimestamp * 1000 : rawTimestamp
       if (!/^\d+$/.test(accountId) || !/^\d+$/.test(participantId) || accountId === participantId || recipientId !== accountId) continue
       if (typeof messageId !== 'string' || !messageId || messageId.length > 512 || typeof text !== 'string' || !text.trim()) continue
-      if (!Number.isFinite(timestamp) || timestamp <= 0 || timestamp > now + 300_000) continue
+      if (typeof timestamp !== 'number' || !Number.isSafeInteger(timestamp) || timestamp <= 0 || timestamp > now + 300_000) continue
       result.push({ accountId, participantId, messageId, text: text.slice(0, 10000), at: new Date(Math.min(timestamp, now)) })
     }
   }

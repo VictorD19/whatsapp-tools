@@ -9,8 +9,9 @@ Branch local: `codex/instagram-test-2026-11-09`.
 Atualizado em 12/11/2026: piloto local com conta Meta real @joaobosco.pro, OAuth
 renovado com sucesso após ativação do app separado ZapChat Social Lab. Token
 válido, criptografado no banco local; envio real desligado. Webhook HTTPS verificado
-e evento sintético Meta recebido. Dois Directs reais existem na Meta, mas ainda
-não foram recebidos/persistidos no piloto. Novo teste após renovação solicitado;
+e evento sintético Meta recebido. Três Directs reais existem na Meta, mas ainda
+não foram recebidos/persistidos no piloto. Receptor corrigido para HTTP 200 e
+envelopes changes/messages; 44 testes passaram. Novo teste 15 solicitado;
 não declarar recebimento ou resposta reais aprovados antes da confirmação.
 
 Implementados Direct de texto, conversas persistidas, respostas manuais, paginação
@@ -487,3 +488,13 @@ Callback exibiu Instagram conectado. A credencial foi atualizada no banco local
 e a Meta confirmou token válido do app correto com os mesmos escopos.
 Envio real permaneceu desligado. Solicitada nova mensagem voluntária de teste
 após a renovação; recebimento real ainda pendente neste registro.
+
+## Correção do receptor e retomada — 12/11/2026
+
+Ver `INSTAGRAM-WEBHOOK-DIAGNOSIS-2026-11-12.md`: teste 14 chegou à Meta mas não
+ao piloto; diagnóstico privado identificou envelope changes/messages e HTTP 201
+no exemplo enviado pela Meta. Corrigidos suporte ao envelope e resposta HTTP 200,
+mantendo HMAC/isolamento. 44 testes passaram. Após a pausa, serviços locais e
+túnel foram reativados; novo host adoption-longer-headquarters-inspection.trycloudflare.com.
+Novo evento sintético da Meta recebeu HTTP 200 às 20:10:59 Asia/Dubai. Solicitação
+do teste real 15 ainda pendente. Nenhuma publicação do módulo em produção.

@@ -28,6 +28,26 @@ describe('Instagram pilot policy', () => {
   it('normalizes a real-shaped direct event', () => {
     expect(incomingDirects(payload(), now)).toEqual([{ accountId: '123', participantId: '456', messageId: 'mid-1', text: 'Olá', at: new Date(now) }])
   })
+  it.each([String(now), String(now / 1000), now / 1000])('normalizes a Unified Login change with timestamp %s', timestamp => {
+    const value = payload({ timestamp }).entry[0].messaging[0]
+    const body = { object: 'instagram', entry: [{ id: '123', changes: [{ field: 'messages', value }] }] }
+    expect(incomingDirects(body, now)).toEqual([{ accountId: '123', participantId: '456', messageId: 'mid-1', text: 'Olá', at: new Date(now) }])
+  })
+  it('does not treat unrelated changes or mismatched recipients as Directs', () => {
+    const value = payload().entry[0].messaging[0]
+    expect(incomingDirects({ object: 'instagram', entry: [{ id: '123', changes: [{ field: 'comments', value }] }] }, now)).toEqual([])
+    expect(incomingDirects({ object: 'instagram', entry: [{ id: '999', changes: [{ field: 'messages', value }] }] }, now)).toEqual([])
+    for (const flag of ['is_echo', 'is_deleted', 'is_unsupported']) {
+      expect(incomingDirects({ object: 'instagram', entry: [{ id: '123', changes: [{ field: 'messages', value: { ...value, message: { ...value.message, [flag]: true } } }] }] }, now)).toEqual([])
+    }
+  })
+  it('ignores malformed change envelopes and unsafe timestamp coercions', () => {
+    expect(incomingDirects({ object: 'instagram', entry: [null, { id: '123', changes: [null, { field: 'messages', value: null }] }] }, now)).toEqual([])
+    for (const timestamp of [null, true, [], {}, '1e12', ' 1794247200000 ', now + 0.5, String((now + 301000) / 1000)]) {
+      const value = payload({ timestamp }).entry[0].messaging[0]
+      expect(incomingDirects({ object: 'instagram', entry: [{ id: '123', changes: [{ field: 'messages', value }] }] }, now)).toEqual([])
+    }
+  })
   it('ignores echoed/deleted/unsupported messages', () => {
     for (const flag of ['is_echo', 'is_deleted', 'is_unsupported']) expect(incomingDirects(payload({ message: { mid: 'x', text: 'text', [flag]: true } }), now)).toEqual([])
   })
