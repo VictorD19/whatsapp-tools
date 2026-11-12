@@ -6,18 +6,23 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
-Primeira etapa implementada: conta simulada, Direct de texto, conversas persistidas,
-respostas manuais, paginação de mensagens e isolamento por empresa. A tela usa os
-componentes/cores do CRM. Existe adaptador OAuth/webhook/envio Meta, ainda sem
-validação com conta real. Nenhuma alteração foi aplicada ao servidor de produção.
+Atualizado em 12/11/2026: piloto local com conta Meta real @joaobosco.pro, OAuth
+renovado com sucesso após ativação do app separado ZapChat Social Lab. Token
+válido, criptografado no banco local; envio real desligado. Webhook HTTPS verificado
+e evento sintético Meta recebido. Dois Directs reais existem na Meta, mas ainda
+não foram recebidos/persistidos no piloto. Novo teste após renovação solicitado;
+não declarar recebimento ou resposta reais aprovados antes da confirmação.
+
+Implementados Direct de texto, conversas persistidas, respostas manuais, paginação
+e isolamento por empresa, com simulação validada e componentes/cores do CRM.
 E-mail, IA, comentários, funis, anexos e importação do histórico ficam para etapas
 posteriores. A lista mostra até 50 conversas recentes; atualização é manual.
 
-A criação da branch remota pelo MCP retornou HTTP 403, `Resource not accessible
-by integration`, embora o usuário tenha permissão de escrita no repositório.
-O Git local também não tem credencial para push. É necessário liberar escrita
-da integração neste repositório ou autenticar o Git antes de publicar a branch.
-Não enviar tokens ou senhas pelo chat. Nenhum push, PR, merge ou deploy ocorreu.
+Branch remota preservada e PR 118 em rascunho no repositório original do Victor,
+via GitHub CLI autorizado pelo usuário; o MCP permanece com 403. PR 117 contém
+somente as duas páginas legais já publicadas separadamente. Sem merge/auto-merge
+ou novo deploy nesta rodada; o módulo Instagram não está no CRM principal.
+Consultar os registros datados abaixo para distinguir resultados de cada etapa.
 
 ## Executar localmente
 
@@ -467,3 +472,18 @@ pendentes; realSendingEnabled permanece false.
 
 GitHub: PRs 117 (duas páginas) e 118 (piloto), ambos em rascunho; testes da API e
 Docker Build passaram nos dois. Sem merge/auto-merge, sem novo Deploy.
+
+## Renovação concluída após expiração — 12/11/2026
+
+O primeiro retorno levou de 15:24:50 a 15:47:10 Asia/Dubai, além dos 600 segundos
+de validade do estado OAuth. Retornou erro genérico; a credencial anterior no
+banco foi preservada, comprovada por comparação privada de hash do ciphertext.
+Não foi ampliado o prazo nem contornada a validação de estado de uso único.
+
+Após autorização do usuário, novo pedido iniciado às 15:49:09 e concluído às
+15:50:54 Asia/Dubai (11:50:54 UTC). Mesmos ativos: portfólio Joao Bosco e
+@joaobosco.pro, sem conta de anúncios; mesmas permissões de perfil e mensagens.
+Callback exibiu Instagram conectado. A credencial foi atualizada no banco local
+e a Meta confirmou token válido do app correto com os mesmos escopos.
+Envio real permaneceu desligado. Solicitada nova mensagem voluntária de teste
+após a renovação; recebimento real ainda pendente neste registro.
