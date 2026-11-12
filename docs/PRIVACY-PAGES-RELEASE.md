@@ -150,7 +150,15 @@ prontidão `ready` e navegação interna Next passaram. A política nova também
 conferida no navegador. A chave SSH temporária foi removida sem alterar as
 demais entradas; uma nova autenticação com ela foi recusada.
 
-**Pendência antes de outro deploy:** a integração GitHub continua sem escrita
+**Atualização em 12/11/2026:** após login oficial do usuário no GitHub CLI, as
+branches foram enviadas ao repositório original. PR das duas páginas:
+https://github.com/VictorD19/whatsapp-tools/pull/117, em rascunho e com somente os
+dois arquivos confirmados. Piloto separado no PR 118. Nenhum merge/deploy.
+O acesso compartilhado funciona pelo Git; não é necessário novo convite do Victor.
+Ainda é preciso coordenar a integração da fonte em master antes de novo deploy
+normal. O registro abaixo descreve o bloqueio do conector durante a publicação.
+
+**Pendência identificada durante a publicação:** a integração GitHub continua sem escrita
 (403), e o Git do servidor não tem autenticação de push. A branch/bundle e a
 imagem estão preservados localmente e no servidor, mas a fonte ainda precisa
 ser consolidada no GitHub. Um build/pull normal da versão antiga pode substituir
