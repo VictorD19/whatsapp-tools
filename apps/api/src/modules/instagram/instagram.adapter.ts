@@ -1,6 +1,7 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common'
 import { randomUUID } from 'crypto'
 import { InstagramConfig } from './instagram.config'
+import { IncomingDirect, incomingDirects } from './instagram.policy'
 
 @Injectable()
 export class InstagramAdapter {
@@ -56,5 +57,27 @@ export class InstagramAdapter {
     })
     if (typeof result.message_id !== 'string') throw new ServiceUnavailableException('Envio sem confirmação da Meta')
     return result.message_id
+  }
+  async readRecentIncoming(instagramId: string, token: string, since: number): Promise<IncomingDirect[]> {
+    this.config.assertMeta()
+    const base = `https://graph.facebook.com/${this.config.get('INSTAGRAM_API_VERSION')}`
+    const headers = { Authorization: `Bearer ${token}` }
+    const threads = await this.request(`${base}/${encodeURIComponent(instagramId)}/conversations?platform=instagram&fields=id,updated_time&limit=3`, { method: 'GET', headers })
+    if (!Array.isArray(threads.data)) throw new ServiceUnavailableException('Resposta de conversas inválida da Meta')
+    const events: IncomingDirect[] = []
+    for (const thread of threads.data.slice(0, 3)) {
+      if (typeof thread?.id !== 'string' || !thread.id || thread.id.length > 1024) continue
+      const updated = Date.parse(thread.updated_time)
+      if (Number.isFinite(updated) && updated < since) continue
+      const result = await this.request(`${base}/${encodeURIComponent(thread.id)}/messages?fields=id,message,from,to,created_time&limit=20`, { method: 'GET', headers })
+      if (!Array.isArray(result.data)) throw new ServiceUnavailableException('Resposta de mensagens inválida da Meta')
+      const messaging = result.data.slice(0, 20).filter((m: any) =>
+        Array.isArray(m?.to?.data) && m.to.data.some((p: any) => String(p?.id) === instagramId))
+        .map((m: any) => ({ sender: m.from, recipient: { id: instagramId }, timestamp: Date.parse(m.created_time),
+          message: { mid: m.id, text: m.message } }))
+      events.push(...incomingDirects({ object: 'instagram', entry: [{ id: instagramId, messaging }] }, Date.now())
+        .filter(event => event.at.getTime() >= since))
+    }
+    return events
   }
 }

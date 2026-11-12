@@ -8,11 +8,13 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 Atualizado em 12/11/2026: piloto local com conta Meta real @joaobosco.pro, OAuth
 renovado com sucesso após ativação do app separado ZapChat Social Lab. Token
-válido, criptografado no banco local; envio real desligado. Webhook HTTPS verificado
-e evento sintético Meta recebido. Três Directs reais existem na Meta, mas ainda
-não foram recebidos/persistidos no piloto. Receptor corrigido para HTTP 200 e
-envelopes changes/messages; 44 testes passaram. Novo teste 15 solicitado;
-não declarar recebimento ou resposta reais aprovados antes da confirmação.
+válido, criptografado no banco local; envio real desligado. Directs reais obtidos
+pela API oficial já aparecem em Conversas: cinco mensagens da conversa de teste,
+incluindo Teste ZapChat 15, com identificador da Meta e uma cópia confirmados.
+Sincronização automática a cada 90 segundos enquanto a aba está aberta/visível.
+48 testes passaram. Ver `INSTAGRAM-REAL-SYNC-2026-11-12.md` para escopo e limites.
+Webhook HTTPS e evento sintético foram verificados, mas a entrega de um webhook
+real continua pendente. Resposta real também não foi validada nem habilitada.
 
 Implementados Direct de texto, conversas persistidas, respostas manuais, paginação
 e isolamento por empresa, com simulação validada e componentes/cores do CRM.
@@ -498,3 +500,14 @@ mantendo HMAC/isolamento. 44 testes passaram. Após a pausa, serviços locais e
 túnel foram reativados; novo host adoption-longer-headquarters-inspection.trycloudflare.com.
 Novo evento sintético da Meta recebeu HTTP 200 às 20:10:59 Asia/Dubai. Solicitação
 do teste real 15 ainda pendente. Nenhuma publicação do módulo em produção.
+
+## Directs reais exibidos por sincronização da API — 12/11/2026
+
+O teste 15 chegou à Meta às 20:43:02 Asia/Dubai, sem webhook real no gateway.
+Foi implementada sincronização limitada pela API oficial na conexão do piloto,
+com token existente, persistência/deduplicação e atualização periódica da aba.
+O teste 15 foi confirmado no banco às 20:52, junto às outras mensagens da mesma
+conversa. Todas apareceram na tela. Às 20:57:40, a verificação confirmou o mesmo
+identificador retornado pela Meta e uma única cópia armazenada. Envio desligado.
+48 testes passaram. Isso valida a sincronização real via API; não valida a
+entrega contínua de webhooks nem uma implantação para todos os clientes.

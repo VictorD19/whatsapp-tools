@@ -6,7 +6,7 @@ import { createHmac } from 'crypto'
 function fixture() {
   const values: Record<string, string> = { NODE_ENV: 'test', INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'simulated', INSTAGRAM_PILOT_TENANT_IDS: 'one', INSTAGRAM_APP_SECRET: 'secret' }
   const config = new InstagramConfig(({ get: (key: string, fallback: string) => values[key] ?? fallback } as unknown as ConfigService))
-  const account = { id: 'a', tenantId: 'one', instagramId: '123', mode: 'simulated', active: true, accessToken: null, tokenExpiresAt: null }
+  const account = { id: 'a', tenantId: 'one', instagramId: '123', mode: 'simulated', active: true, accessToken: null, tokenExpiresAt: null, createdAt: new Date(Date.now() - 3600000) }
   const conversation = { id: 'c', tenantId: 'one', accountId: 'a', participantId: '456', lastInboundAt: new Date() }
   let message: any = null
   const db: any = {
@@ -30,6 +30,31 @@ function fixture() {
   return { service: new InstagramService(db, redis, crypto, config, adapter), db, adapter, cache, values, config, account, conversation, crypto }
 }
 describe('Instagram service', () => {
+  it('syncs through the guarded persistence path without sending and respects the shared cooldown', async () => {
+    const f = fixture(); Object.assign(f.values, { INSTAGRAM_MODE: 'meta', INSTAGRAM_APP_ID: '123', INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback' })
+    f.account.mode = 'meta'; (f.account as any).accessToken = 'encrypted-token'
+    const read = jest.fn(async () => [{ accountId: '123', participantId: '456', messageId: 'provider-id', text: 'text', at: new Date() }])
+    ;(f.adapter as any).readRecentIncoming = read
+    f.cache.set.mockResolvedValueOnce('OK').mockResolvedValueOnce(null)
+    expect(await f.service.sync('one', 'a')).toMatchObject({ synchronized: true, processed: 1 })
+    expect(read).toHaveBeenCalledWith('123', 'encrypted-token', f.account.createdAt.getTime())
+    expect(f.cache.get).toHaveBeenCalled()
+    expect(f.db.instagramMessage.createMany).toHaveBeenCalledWith(expect.objectContaining({ skipDuplicates: true }))
+    expect(await f.service.sync('one', 'a')).toMatchObject({ synchronized: false })
+    expect(read).toHaveBeenCalledTimes(1)
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+    await expect(f.service.sync('other', 'a')).rejects.toThrow()
+    expect(read).toHaveBeenCalledTimes(1)
+  })
+  it('discards an in-flight synchronization if its connection was revoked', async () => {
+    const f = fixture(); Object.assign(f.values, { INSTAGRAM_MODE: 'meta', INSTAGRAM_APP_ID: '123', INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback' })
+    f.account.mode = 'meta'; (f.account as any).accessToken = 'encrypted-token'
+    ;(f.adapter as any).readRecentIncoming = jest.fn(async () => [{ accountId: '123', participantId: '456', messageId: 'provider-id', text: 'text', at: new Date() }])
+    f.cache.set.mockResolvedValue('OK')
+    f.db.instagramAccount.findFirst.mockResolvedValueOnce(f.account).mockResolvedValueOnce(null)
+    expect(await f.service.sync('one', 'a')).toMatchObject({ synchronized: false, processed: 0 })
+    expect(f.db.instagramMessage.createMany).not.toHaveBeenCalled()
+  })
   it('ignores redelivery of erased messages but accepts a new message after deletion', async () => {
     const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'; f.account.mode = 'meta'
     const cutoff = Date.now() - 1000

@@ -7,6 +7,34 @@ describe('Instagram Meta transport', () => {
   afterEach(() => { global.fetch = originalFetch })
   const values = () => ({ NODE_ENV: 'test', INSTAGRAM_MODE: 'meta', INSTAGRAM_APP_ID: '123', INSTAGRAM_APP_SECRET: 'secret',
     INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback', INSTAGRAM_SEND_ENABLED: 'true' })
+  it('synchronizes only recent inbound text addressed to the authorized account', async () => {
+    const at = Date.now() - 1000, since = at - 60000
+    const incoming = { id: 'provider-id', message: 'real provider text', from: { id: '456' }, to: { data: [{ id: '123' }] }, created_time: new Date(at).toISOString() }
+    const bodies = [{ data: [{ id: 'thread/one', updated_time: new Date(at).toISOString() }, { id: 'old-thread', updated_time: new Date(since - 1000).toISOString() }] },
+      { data: [incoming, { ...incoming, id: 'outgoing', from: { id: '123' }, to: { data: [{ id: '456' }] } },
+        { ...incoming, id: 'foreign', to: { data: [{ id: '999' }] } }, { ...incoming, id: 'history', created_time: new Date(since - 1).toISOString() },
+        { ...incoming, id: 'attachment', message: undefined }] }]
+    const fetch = jest.fn(async () => ({ ok: true, json: async () => bodies.shift() }))
+    global.fetch = fetch as any
+    const adapter = new InstagramAdapter(new InstagramConfig(new ConfigService(values())))
+    expect(await adapter.readRecentIncoming('123', 'private-token', since)).toEqual([
+      { accountId: '123', participantId: '456', messageId: 'provider-id', text: 'real provider text', at: new Date(at) },
+    ])
+    expect(fetch).toHaveBeenCalledTimes(2)
+    for (const [url, options] of fetch.mock.calls as any) {
+      expect(new URL(url).hostname).toBe('graph.facebook.com')
+      expect(url).not.toContain('private-token')
+      expect(options).toMatchObject({ method: 'GET', headers: { Authorization: 'Bearer private-token' } })
+    }
+    expect((fetch.mock.calls as any)[1][0]).toContain('/thread%2Fone/messages?')
+  })
+  it('bounds provider reads even when Meta returns more threads than requested', async () => {
+    const fetch = jest.fn(async (url: string) => ({ ok: true, json: async () => url.includes('/conversations?')
+      ? { data: Array.from({ length: 10 }, (_, i) => ({ id: 'thread-' + i })) } : { data: [] } }))
+    global.fetch = fetch as any
+    await new InstagramAdapter(new InstagramConfig(new ConfigService(values()))).readRecentIncoming('123', 'token', 0)
+    expect(fetch).toHaveBeenCalledTimes(4)
+  })
   it('sends only to the fixed Instagram host using a bearer header', async () => {
     const fetch = jest.fn(async () => ({ ok: true, json: async () => ({ message_id: 'mid' }) }))
     global.fetch = fetch as any

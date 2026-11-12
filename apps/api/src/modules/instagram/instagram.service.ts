@@ -64,6 +64,30 @@ export class InstagramService {
     await this.db.instagramAccount.updateMany({ where: { id: accountId, tenantId }, data: { active: false, accessToken: null } })
     return { disconnected: true }
   }
+  async sync(tenantId: string, accountId: string) {
+    this.config.assertTenant(tenantId)
+    this.config.assertMeta()
+    const account = await this.account(tenantId, accountId)
+    if (account.mode !== 'meta' || !account.accessToken ||
+      (account.tokenExpiresAt && account.tokenExpiresAt.getTime() <= Date.now())) throw new BadRequestException('Reconecte o Instagram antes de sincronizar')
+    // Bounded pilot polling: at most four provider reads every 90 seconds.
+    // A shared Redis cooldown prevents concurrent tabs or repeated clicks from
+    // multiplying provider traffic. Failed reads also respect this cooldown.
+    const acquired = await this.redis.getClient().set(`instagram:sync:${account.id}`, randomUUID(), 'EX', 90, 'NX')
+    if (acquired !== 'OK') return { synchronized: false, processed: 0, retryAfterSeconds: 90 }
+    const since = Math.max(account.createdAt.getTime(), Date.now() - 86400000)
+    const events = await this.adapter.readRecentIncoming(account.instagramId, this.crypto.decrypt(account.accessToken), since)
+    const stillConnected = await this.db.instagramAccount.findFirst({ where: { id: account.id, tenantId, active: true,
+      mode: 'meta', accessToken: account.accessToken }, select: { id: true } })
+    if (!stillConnected) return { synchronized: false, processed: 0, retryAfterSeconds: 90 }
+    let processed = 0
+    for (const event of events) {
+      if (event.accountId !== account.instagramId) continue
+      await this.persistIncoming(account, event)
+      processed++
+    }
+    return { synchronized: true, processed, retryAfterSeconds: 90 }
+  }
   verify(query: Record<string, string>) {
     this.config.assertEnabled()
     const expected = this.config.get('INSTAGRAM_VERIFY_TOKEN')

@@ -26,6 +26,7 @@ export default function InstagramPage() {
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(false)
   const selected = useRef('')
+  const activeAccount = useRef('')
   const attempt = useRef<{ conversationId: string; text: string; id: string } | null>(null)
   const account = accounts.find(a => a.id === accountId)
   const conversation = conversations.find(c => c.id === conversationId)
@@ -42,6 +43,22 @@ export default function InstagramPage() {
     const result = await apiGet<{ data: Conversation[] }>(`instagram/accounts/${encodeURIComponent(id)}/conversations`)
     return result.data
   }, [])
+  const syncInbox = useCallback(async () => {
+    if (!accountId) return
+    let syncError: unknown
+    try { if (status?.mode === 'meta') await apiPost(`instagram/accounts/${encodeURIComponent(accountId)}/sync`, {}) }
+    catch (err) { syncError = err }
+    const data = await loadConversations(accountId)
+    if (activeAccount.current !== accountId) return
+    setConversations(data)
+    setConversationId(previous => data.some(c => c.id === previous) ? previous : data[0]?.id || '')
+    const id = selected.current
+    if (id && data.some(c => c.id === id)) {
+      const result = await apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(id)}/messages`)
+      if (activeAccount.current === accountId && selected.current === id) { setMessages([...result.data].reverse()); setHasMore(result.data.length === 50) }
+    }
+    if (syncError) throw syncError
+  }, [accountId, status?.mode, loadConversations])
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -57,12 +74,32 @@ export default function InstagramPage() {
   }, [loadAccounts])
   useEffect(() => {
     let cancelled = false
+    activeAccount.current = accountId
     setConversations([]); setConversationId(''); setMessages([]); selected.current = ''
-    if (accountId) loadConversations(accountId).then(data => {
-      if (!cancelled) { setConversations(data); setConversationId(data[0]?.id || '') }
-    }).catch(() => { if (!cancelled) setError('Não foi possível carregar as conversas.') })
+    const show = (data: Conversation[]) => {
+      if (cancelled) return
+      setConversations(data)
+      setConversationId(previous => data.some(c => c.id === previous) ? previous : data[0]?.id || '')
+    }
+    if (accountId) (async () => {
+      // Saved conversations stay immediately available while Meta is syncing.
+      show(await loadConversations(accountId))
+      if (status?.mode === 'meta') {
+        try { await apiPost(`instagram/accounts/${encodeURIComponent(accountId)}/sync`, {}) }
+        catch { if (!cancelled) setError('Não foi possível sincronizar com o Instagram. As conversas já salvas continuam disponíveis.') }
+        show(await loadConversations(accountId))
+      }
+    })().catch(() => { if (!cancelled) setError('Não foi possível carregar as conversas.') })
     return () => { cancelled = true }
-  }, [accountId, loadConversations])
+  }, [accountId, status?.mode, loadConversations])
+  useEffect(() => {
+    if (!accountId || status?.mode !== 'meta') return
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      void syncInbox().catch(() => setError('Não foi possível atualizar a conexão com o Instagram. Tente novamente em instantes.'))
+    }, 90000)
+    return () => window.clearInterval(timer)
+  }, [accountId, status?.mode, syncInbox])
   useEffect(() => {
     let cancelled = false
     selected.current = conversationId
@@ -121,7 +158,7 @@ export default function InstagramPage() {
         const data = await loadConversations(accountId); setConversations(data); const id = data[0]?.id || ''; setConversationId(id); if (selected.current === id) await refreshMessages(id)
       }) }}><label className="grow text-sm">Mensagem do contato<input className={field} value={incoming} onChange={e => setIncoming(e.target.value)} maxLength={1000} required /></label><button className={button} disabled={busy}>Receber mensagem fictícia</button></form></section>}
       <section className="grid gap-4 md:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className={panel}><h2 className="font-semibold">Conversas</h2><button className={button} disabled={!accountId || busy} onClick={() => action(async () => { const data = await loadConversations(accountId); setConversations(data); if (conversationId) await refreshMessages(conversationId) })}>Atualizar</button><p className="text-xs text-muted-foreground">Até 50 conversas recentes neste piloto.</p>{!conversations.length && <p className="text-sm">Nenhuma mensagem recebida.</p>}{conversations.map(c => <button className={`${button} block w-full text-left ${conversationId === c.id ? 'bg-muted' : ''}`} key={c.id} onClick={() => setConversationId(c.id)}>Contato {c.participantId}<span className="block text-xs text-muted-foreground">Direct do Instagram</span></button>)}</aside>
+        <aside className={panel}><h2 className="font-semibold">Conversas</h2><button className={button} disabled={!accountId || busy} onClick={() => action(syncInbox)}>Atualizar</button><p className="text-xs text-muted-foreground">Até 50 conversas recentes neste piloto.</p>{status.mode === 'meta' && <p className="text-xs text-muted-foreground">Sincronização direta com o Instagram a cada 90 segundos enquanto esta aba estiver aberta: até 3 conversas recentes, com mensagens após a conexão nas últimas 24 horas.</p>}{!conversations.length && <p className="text-sm">Nenhuma mensagem recebida.</p>}{conversations.map(c => <button className={`${button} block w-full text-left ${conversationId === c.id ? 'bg-muted' : ''}`} key={c.id} onClick={() => setConversationId(c.id)}>Contato {c.participantId}<span className="block text-xs text-muted-foreground">Direct do Instagram</span></button>)}</aside>
         <div className={panel}><h2 className="font-semibold">{conversation ? `Contato ${conversation.participantId}` : 'Selecione uma conversa'}</h2>
           {hasMore && <button className={button} disabled={busy} onClick={() => action(async () => { const id = conversationId; const result = await apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(id)}/messages?before=${encodeURIComponent(messages[0].id)}`); if (selected.current === id) { setMessages(previous => [...result.data].reverse().concat(previous)); setHasMore(result.data.length === 50) } })}>Mensagens anteriores</button>}
           <div className="max-h-96 min-h-40 space-y-3 overflow-y-auto" aria-live="polite">{messages.map(m => <div key={m.id} className={`max-w-[90%] whitespace-pre-wrap rounded-lg p-3 text-sm ${m.direction === 'out' ? 'ml-auto bg-primary text-primary-foreground' : 'bg-muted'}`}>{m.text}<span className="mt-2 block text-xs opacity-75">{m.direction === 'in' ? 'Contato' : 'Atendente'} · {new Date(m.sentAt).toLocaleString('pt-BR')} · {m.status === 'received' ? 'Recebida' : m.status === 'sent' ? 'Enviada' : 'Sem confirmação final'}</span></div>)}</div>
