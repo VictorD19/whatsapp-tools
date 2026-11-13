@@ -1,5 +1,32 @@
 # Webhook com endereço fixo — 13/11/2026
 
+## Verificação posterior e reinscrição
+
+O commit de implementação 866593a passou em Tests e Docker Build no GitHub
+(run 43461148949). Uma observação local de 290 segundos terminou às 20:22:47
+Asia/Dubai sem entrega assinada para a conta e sem conversa marcada como recebida
+por webhook. Isso não mede toda a atividade da conta na Meta.
+
+O painel confirmou joaobosco.pro (17841400699000476) com assinatura do webhook
+“Ativado”. O depurador específico por Página da configuração antiga não está
+disponível no fluxo unificado exibido. O campo messaging_handover foi aceito no
+nível do app, mas recusado pela inscrição da conta com erro 100 de parâmetro não
+suportado (trace AeoWU7TdEBypnE4WV5TfiAQ). A tentativa parou antes de solicitar
+controle de qualquer conversa. O campo temporário foi removido: somente messages
+e standby permaneceram. Não usar esse erro esperado como prova de falha da Meta.
+
+Às 20:30:25–20:30:30, somente a inscrição do próprio app foi removida e recriada
+para eliminar possível associação antiga. DELETE e POST retornaram success:true;
+GET posterior confirmou messages e standby. Token, conexão local e inscrições
+dos outros apps preservados. Não houve envio de Direct nem alteração de controle.
+
+Foi preparado no Instagram um autoteste de @joaobosco.pro para si mesmo, sem
+destinatário externo. A revisão automática recusou o clique em Enviar por exigir
+autorização específica para uma nova mensagem real. O texto permaneceu como
+rascunho e foi solicitada autorização ao usuário. Não declarar esse teste enviado
+ou concluído antes de confirmação. Uma leitura ampla da caixa de entrada também
+foi recusada; a inspeção foi restrita ao cabeçalho e ao campo do próprio rascunho.
+
 ## Atualização posterior: acesso liberado e canal de espera
 
 O usuário entrou pelo Facebook no Chrome. Foi possível abrir Encaminhamento da
