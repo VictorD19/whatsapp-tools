@@ -6,6 +6,14 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
+Atualização de 13/11/2026: callback e webhook usam o endereço fixo
+`https://instagram-lab.sistemazapchat.com`, com túnel nomeado e rotas restritas.
+Amostra assinada da própria Meta recebeu HTTP 200 com a aba de Conversas fechada.
+Direct real por webhook ainda não confirmado. A Meta bloqueou as configurações
+do portfólio para a sessão atual do Instagram; aguarda entrada pelo Facebook com
+controle total para conferir o encaminhamento. Ver
+`INSTAGRAM-WEBHOOK-FIXED-HOST-2026-11-13.md`. CRM principal intacto.
+
 Atualizado em 12/11/2026: piloto local com conta Meta real @joaobosco.pro, OAuth
 renovado com sucesso após ativação do app separado ZapChat Social Lab. Token
 válido, criptografado no banco local; envio real desligado. Directs reais obtidos
