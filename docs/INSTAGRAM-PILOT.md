@@ -6,6 +6,15 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
+Atualização posterior de 13/11: acesso pelo Facebook liberado no Chrome. Foram
+assinados e tratados messages e standby, com leitura passiva e resposta bloqueada
+para conversas controladas por outro app. Não se mudou app padrão ou controle dos
+outros serviços. 52 testes e integração PostgreSQL local passaram. A amostra
+assinada de standby da Meta recebeu 200 com a tela fechada; Direct real pelo
+webhook ainda não confirmado. Consultas automáticas à Meta foram retiradas após
+limite código 4: a tela consulta apenas dados locais a cada três segundos;
+sincronização externa agora é manual. Detalhes no registro do endereço fixo.
+
 Atualização de 13/11/2026: callback e webhook usam o endereço fixo
 `https://instagram-lab.sistemazapchat.com`, com túnel nomeado e rotas restritas.
 Amostra assinada da própria Meta recebeu HTTP 200 com a aba de Conversas fechada.

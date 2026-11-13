@@ -42,7 +42,7 @@ export class InstagramAdapter {
     const instagramId = String(me.id || ''), clientBusinessId = String(business.client_business_id || '')
     if (!/^\d+$/.test(instagramId) || !/^\d+$/.test(clientBusinessId) || typeof me.username !== 'string') throw new ServiceUnavailableException('Conta Instagram inválida')
     await this.request(`${base}/${instagramId}/subscribed_apps`, {
-      method: 'POST', headers, body: new URLSearchParams({ subscribed_fields: 'messages' }),
+      method: 'POST', headers, body: new URLSearchParams({ subscribed_fields: 'messages,standby' }),
     })
     return { instagramId, username: me.username, clientBusinessId, token: result.access_token,
       expiresAt: result.expires_in > 0 ? new Date(Date.now() + result.expires_in * 1000) : null }

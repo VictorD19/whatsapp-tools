@@ -113,6 +113,8 @@ model InstagramConversation {
   accountId     String
   participantId String
   lastInboundAt DateTime?
+  lastWebhookChannel String        @default("unknown")
+  lastWebhookMessageAt DateTime?
   updatedAt     DateTime           @updatedAt
   tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   account       InstagramAccount   @relation(fields: [accountId, tenantId], references: [id, tenantId], onDelete: Restrict)

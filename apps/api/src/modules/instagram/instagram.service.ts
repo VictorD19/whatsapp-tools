@@ -100,11 +100,11 @@ export class InstagramService {
     for (const event of incomingDirects(payload, Date.now())) {
       const account = await this.db.instagramAccount.findUnique({ where: { instagramId: event.accountId } })
       if (!account?.active || account.mode !== 'meta' || !this.config.allowed(account.tenantId)) continue
-      await this.persistIncoming(account, event)
+      await this.persistIncoming(account, event, event.standby ? 'standby' : 'messaging')
     }
     return { received: true }
   }
-  private async persistIncoming(account: { id: string; tenantId: string }, event: IncomingDirect) {
+  private async persistIncoming(account: { id: string; tenantId: string }, event: IncomingDirect, channel?: 'messaging' | 'standby') {
     // Do not recreate erased conversations when Meta retries an old notification.
     // Redis failure must fail the request so the provider can retry safely later.
     const cutoff = await this.redis.getClient().get(deletionCutoffKey(account.tenantId, account.id, event.participantId))
@@ -121,6 +121,12 @@ export class InstagramService {
         conversationId: conversation.id, direction: 'in', text: event.text, providerMessageId: event.messageId, sentAt: event.at }], skipDuplicates: true })
       if (created.count) await tx.instagramConversation.updateMany({ where: { id: conversation.id, tenantId: account.tenantId,
         OR: [{ lastInboundAt: null }, { lastInboundAt: { lt: event.at } }] }, data: { lastInboundAt: event.at } })
+      // Keep provider delivery state separate from API history. Polling must not
+      // grant ownership, and late/repeated events must not clear a passive state.
+      if (channel) await tx.instagramConversation.updateMany({ where: { id: conversation.id, tenantId: account.tenantId,
+        OR: [{ lastWebhookMessageAt: null }, { lastWebhookMessageAt: { lt: event.at } },
+          ...(channel === 'standby' ? [{ lastWebhookMessageAt: event.at, lastWebhookChannel: { not: 'standby' } }] : [])] },
+        data: { lastWebhookChannel: channel, lastWebhookMessageAt: event.at } })
       return conversation
     })
   }
@@ -134,7 +140,7 @@ export class InstagramService {
   conversations(tenantId: string, accountId: string) {
     this.config.assertTenant(tenantId)
     return this.db.instagramConversation.findMany({ where: { tenantId, accountId }, take: 50, orderBy: { updatedAt: 'desc' },
-      select: { id: true, participantId: true, lastInboundAt: true, updatedAt: true } })
+      select: { id: true, participantId: true, lastInboundAt: true, lastWebhookChannel: true, updatedAt: true } })
   }
   async messages(tenantId: string, conversationId: string, before?: string) {
     this.config.assertTenant(tenantId)
@@ -165,6 +171,7 @@ export class InstagramService {
       if (existing.conversationId !== conversationId || existing.text !== text) throw new ConflictException('Identificador já utilizado para outra mensagem')
       return { id: existing.id, status: existing.status }
     }
+    if (conversation.lastWebhookChannel === 'standby') throw new ForbiddenException('Conversa recebida em espera: somente leitura enquanto outro aplicativo tem o controle')
     if (!canReply(conversation.lastInboundAt, Date.now())) throw new BadRequestException('A janela de resposta de 24 horas terminou')
     if (account.mode === 'meta' && (!account.accessToken || (account.tokenExpiresAt && account.tokenExpiresAt.getTime() <= Date.now()))) throw new BadRequestException('Reconecte o Instagram: autorização ausente ou expirada')
     if (account.mode === 'meta' && this.config.get('INSTAGRAM_SEND_ENABLED') !== 'true') throw new ForbiddenException('Envio real desabilitado no piloto')
@@ -177,6 +184,8 @@ export class InstagramService {
     try {
       this.config.assertTenant(tenantId)
       const current = await this.account(tenantId, account.id)
+      const currentConversation = await this.conversation(tenantId, conversationId)
+      if (currentConversation.lastWebhookChannel === 'standby') throw new Error('passive_conversation')
       if (current.mode !== this.config.mode || (current.mode === 'meta' && (!current.accessToken ||
           (current.tokenExpiresAt && current.tokenExpiresAt.getTime() <= Date.now())))) throw new Error('connection_changed')
       if (!canReply(conversation.lastInboundAt, Date.now())) throw new Error('reply_window_closed')

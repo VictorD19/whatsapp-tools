@@ -1,5 +1,52 @@
 # Webhook com endereço fixo — 13/11/2026
 
+## Atualização posterior: acesso liberado e canal de espera
+
+O usuário entrou pelo Facebook no Chrome. Foi possível abrir Encaminhamento da
+conversa no portfólio Joao Bosco, selecionar @joaobosco.pro e consultar cinco apps:
+Metricool, Marketing Master, Manychat, ZapChat Social Lab e metricool-IG.
+Em Gerenciar ZapChat Social Lab, “Acesse todas as conversas” já estava ligado e
+“Assuma o controle das conversas” desligado. Nenhum desses controles foi alterado.
+O bloqueio da sessão Instagram descrito abaixo não impede mais essa inspeção.
+
+A integração só assinava/tratava messages. Foi acrescentado standby no app e na
+conta, com confirmação e releitura pela API às 20:06:34 Asia/Dubai. Novas conexões
+também assinam ambos. O parser aceita entry.standby e changes/standby com as
+mesmas validações de HMAC, destinatário, remetente, eco e data. Não assumir que
+essa lacuna era a única causa da ausência de eventos reais.
+
+Mensagens passivas são gravadas, mas não autorizam resposta: a conversa preserva
+o canal e a data do último evento de webhook. API de histórico não pode limpar
+esse estado; eventos antigos não tomam precedência; empates privilegiam leitura
+passiva. Resposta é bloqueada na interface e no servidor, inclusive se o canal
+mudar antes do envio. Não foi escolhido outro app padrão, tomado controle de
+conversa nem modificada uma configuração de Manychat ou dos outros aplicativos.
+
+Migration 20261113160500_instagram_standby aplicada somente a instagram_lab em
+127.0.0.1:15432: dois campos na tabela InstagramConversation. Nenhuma tabela do
+WhatsApp ou banco de produção alterado. 52 testes do módulo passaram; teste com
+PostgreSQL local e serviço compilado validou bloqueio de resposta, ordem dos
+eventos, empate conservador, deduplicação e rollback integral dos dados fictícios.
+Ferramenta reproduzível: tools/instagram-standby.integration.mjs; sem chamadas Meta.
+
+Às 20:12:59, a amostra assinada de standby enviada pela própria Meta recebeu
+HTTP 200 com a aba de Conversas em about:blank. Seu valor é vazio e foi ignorado;
+isso não prova persistência de um Direct real, validada apenas com dados locais
+fictícios nessa rodada. **Ainda não há Direct real confirmado pelo webhook.**
+
+Uma leitura posterior da atividade Meta retornou HTTP 403/código 4 (limite de
+chamadas). A consulta não concluiu; não inferir que não houve atividade. Foram
+retiradas as consultas automáticas à Meta na abertura e a cada 90 segundos.
+A tela agora atualiza somente o banco local a cada três segundos enquanto visível;
+Sincronizar com Instagram é uma ação manual e limitada pelo cooldown existente.
+O receptor permanece independente da aba. Não há worker de polling disfarçado
+de webhook, e mensagens não foram fabricadas no perfil real.
+
+Checagem TypeScript global da interface retornou erros em e2e/plans.spec.ts,
+next.config.ts, telas administrativas e componentes fora desta alteração; não
+apontou erro no arquivo Instagram. Não declarar type-check global aprovado.
+Interface local recompilou; checks remotos da nova revisão devem ser conferidos.
+
 ## Correção aplicada no piloto
 
 O túnel temporário continuava ligado, mas recusava reconexões com

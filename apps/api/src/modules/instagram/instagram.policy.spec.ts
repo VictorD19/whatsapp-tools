@@ -28,6 +28,14 @@ describe('Instagram pilot policy', () => {
   it('normalizes a real-shaped direct event', () => {
     expect(incomingDirects(payload(), now)).toEqual([{ accountId: '123', participantId: '456', messageId: 'mid-1', text: 'Olá', at: new Date(now) }])
   })
+  it('marks standby deliveries as passive and applies the same recipient and echo checks', () => {
+    const event = payload().entry[0].messaging[0]
+    const expected = { accountId: '123', participantId: '456', messageId: 'mid-1', text: 'Olá', at: new Date(now), standby: true }
+    expect(incomingDirects({ object: 'instagram', entry: [{ id: '123', standby: [event] }] }, now)).toEqual([expected])
+    expect(incomingDirects({ object: 'instagram', entry: [{ id: '123', changes: [{ field: 'standby', value: event }] }] }, now)).toEqual([expected])
+    expect(incomingDirects({ object: 'instagram', entry: [{ id: '999', standby: [event] }] }, now)).toEqual([])
+    expect(incomingDirects({ object: 'instagram', entry: [{ id: '123', standby: [{ ...event, message: { ...event.message, is_echo: true } }] }] }, now)).toEqual([])
+  })
   it.each([String(now), String(now / 1000), now / 1000])('normalizes a Unified Login change with timestamp %s', timestamp => {
     const value = payload({ timestamp }).entry[0].messaging[0]
     const body = { object: 'instagram', entry: [{ id: '123', changes: [{ field: 'messages', value }] }] }

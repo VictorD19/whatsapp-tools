@@ -7,7 +7,7 @@ function fixture() {
   const values: Record<string, string> = { NODE_ENV: 'test', INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'simulated', INSTAGRAM_PILOT_TENANT_IDS: 'one', INSTAGRAM_APP_SECRET: 'secret' }
   const config = new InstagramConfig(({ get: (key: string, fallback: string) => values[key] ?? fallback } as unknown as ConfigService))
   const account = { id: 'a', tenantId: 'one', instagramId: '123', mode: 'simulated', active: true, accessToken: null, tokenExpiresAt: null, createdAt: new Date(Date.now() - 3600000) }
-  const conversation = { id: 'c', tenantId: 'one', accountId: 'a', participantId: '456', lastInboundAt: new Date() }
+  const conversation = { id: 'c', tenantId: 'one', accountId: 'a', participantId: '456', lastInboundAt: new Date(), lastWebhookChannel: 'unknown', lastWebhookMessageAt: null }
   let message: any = null
   const db: any = {
     instagramAccount: { findFirst: jest.fn(async ({ where }) => where.tenantId === account.tenantId && where.id === account.id ? account : null), findUnique: jest.fn(async () => account), create: jest.fn(async () => ({ id: 'a' })), updateMany: jest.fn() },
@@ -30,6 +30,31 @@ function fixture() {
   return { service: new InstagramService(db, redis, crypto, config, adapter), db, adapter, cache, values, config, account, conversation, crypto }
 }
 describe('Instagram service', () => {
+  it('never sends a response to a passive conversation even with real sending enabled', async () => {
+    const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'; f.values.INSTAGRAM_SEND_ENABLED = 'true'
+    f.account.mode = 'meta'; (f.account as any).accessToken = 'encrypted-token'; f.conversation.lastWebhookChannel = 'standby'
+    await expect(f.service.reply('one', 'c', 'text', 'request')).rejects.toThrow('somente leitura')
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+    expect(f.db.instagramMessage.upsert).not.toHaveBeenCalled()
+  })
+  it('rechecks passive delivery before transport when control changes during a reply', async () => {
+    const f = fixture()
+    f.db.instagramConversation.findFirst.mockResolvedValueOnce({ ...f.conversation }).mockResolvedValueOnce({ ...f.conversation, lastWebhookChannel: 'standby' })
+    expect(await f.service.reply('one', 'c', 'text', 'request')).toMatchObject({ status: 'unknown' })
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+  })
+  it('stores passive channel state separately from deduplication and inbound time', async () => {
+    const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'; f.account.mode = 'meta'
+    const at = Date.now(), body = { object: 'instagram', entry: [{ id: '123', standby: [{ sender: { id: '456' }, recipient: { id: '123' }, timestamp: at, message: { mid: 'in-standby', text: 'hello' } }] }] }
+    const raw = Buffer.from(JSON.stringify(body)), signature = 'sha256=' + createHmac('sha256', 'secret').update(raw).digest('hex')
+    f.db.instagramMessage.createMany.mockResolvedValue({ count: 0 })
+    await f.service.webhook(raw, signature, body)
+    expect(f.db.instagramConversation.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ tenantId: 'one' }),
+      data: { lastWebhookChannel: 'standby', lastWebhookMessageAt: new Date(at) },
+    }))
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+  })
   it('syncs through the guarded persistence path without sending and respects the shared cooldown', async () => {
     const f = fixture(); Object.assign(f.values, { INSTAGRAM_MODE: 'meta', INSTAGRAM_APP_ID: '123', INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback' })
     f.account.mode = 'meta'; (f.account as any).accessToken = 'encrypted-token'
@@ -43,6 +68,7 @@ describe('Instagram service', () => {
     expect(await f.service.sync('one', 'a')).toMatchObject({ synchronized: false })
     expect(read).toHaveBeenCalledTimes(1)
     expect(f.adapter.sendText).not.toHaveBeenCalled()
+    expect(f.db.instagramConversation.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ lastWebhookChannel: expect.any(String) }) }))
     await expect(f.service.sync('other', 'a')).rejects.toThrow()
     expect(read).toHaveBeenCalledTimes(1)
   })
@@ -169,7 +195,7 @@ describe('Instagram service', () => {
     const raw = Buffer.from(JSON.stringify(body)), signature = 'sha256=' + createHmac('sha256', 'secret').update(raw).digest('hex')
     f.db.instagramMessage.createMany.mockResolvedValue({ count: 0 })
     await f.service.webhook(raw, signature, body)
-    expect(f.db.instagramConversation.updateMany).not.toHaveBeenCalled()
+    expect(f.db.instagramConversation.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ lastInboundAt: expect.any(Date) }) }))
   })
   it('uses opaque expiring OAuth state and rejects replay', async () => {
     const f = fixture()
