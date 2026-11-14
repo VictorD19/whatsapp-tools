@@ -1,4 +1,20 @@
-# Diagnóstico para suporte Meta — rascunho, não enviado
+# Diagnóstico enviado ao suporte Meta — 14/11/2026
+
+Atendimento criado em 14/11/2026 às 10:09 Asia/Dubai, após autorização específica
+do usuário para o envio e aceitação dos Meta AI Terms. O formulário foi marcado
+como confidencial antes de enviar. A página final confirmou o título, o app
+ZapChat Social Lab e status Open.
+
+Protocolo: **2256928134873004**.
+URL: https://developers.facebook.com/support/bugs/2256928134873004/
+Categoria exibida no atendimento: Platform Technical Integrations.
+Empresa: Xtrategy Digital Marketing. Sem anexos, tokens ou mensagens de clientes.
+Nenhuma resposta do suporte foi observada nesta confirmação. Não criar relato
+duplicado; continuar neste protocolo quando houver retorno.
+
+O texto abaixo é o diagnóstico preparado; seu conteúdo foi enviado em inglês
+nos campos de reprodução e informações adicionais. O nome do arquivo conserva
+DRAFT para preservar os links existentes.
 
 Data: 14/11/2026. Objetivo: identificar por que as notificações reais de Direct
 não são observadas no callback, embora amostras assinadas do painel cheguem.
@@ -64,8 +80,8 @@ apresentado como falha de entrega.
 4. Há configuração de encaminhamento obrigatória além de Acesse todas as
    conversas para receber standby sem assumir controle dos outros aplicativos?
 
-Não solicitar que o usuário compartilhe tokens ou senhas. Este rascunho precisa
-de autorização antes de ser enviado a terceiros.
+Não solicitar que o usuário compartilhe tokens ou senhas. O envio ao suporte foi
+autorizado e concluído no protocolo acima. Novos destinatários exigem escopo próprio.
 
 ## Referências oficiais consultadas
 

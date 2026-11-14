@@ -1,5 +1,18 @@
 # Webhook com endereço fixo — 13/11/2026
 
+## Atendimento Meta aberto — 14/11/2026
+
+Diagnóstico enviado uma única vez após autorização do usuário para o contato e
+aceitação explícita dos Meta AI Terms. Formulário marcado como confidencial.
+Protocolo [2256928134873004](https://developers.facebook.com/support/bugs/2256928134873004/), status Open na página final,
+criado às 10:09 Asia/Dubai. Categoria Platform Technical Integrations.
+Nenhum token, segredo, conteúdo de clientes ou anexo enviado. Abertura do
+atendimento não confirma correção da entrega real. Aguardar diagnóstico nesse
+protocolo; não criar duplicata nem pedir nova mensagem manual.
+
+Validação remota do commit acb56de concluída: Tests e Docker Build aprovados
+no run 43563398847. Sem deploy ou mudança no CRM principal.
+
 ## Resultado de 14/11/2026
 
 O usuário autorizou uma única mensagem de @joaobosco.pro para a própria conta.

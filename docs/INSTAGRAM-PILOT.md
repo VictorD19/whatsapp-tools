@@ -6,6 +6,11 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
+14/11, 10:09 Asia/Dubai: relato confidencial enviado à Meta após autorização;
+protocolo [2256928134873004](https://developers.facebook.com/support/bugs/2256928134873004/),
+status Open. Recebimento de Direct real por webhook continua sem confirmação.
+CI de acb56de aprovado (Tests e Docker Build); nenhuma publicação em produção.
+
 Atualização de 14/11: único autoteste para a própria conta autorizado e enviado;
 a API confirmou a existência da mensagem, mas não foi observado webhook real.
 Corrigida resposta 500 na verificação GET inválida (agora 403); verificação válida
