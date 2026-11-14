@@ -6,6 +6,14 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
+Preparação posterior da análise Meta: configuração básica e verificação empresarial
+concluídas (100% na interface), com ícone transparente aceito, categoria e política.
+Pacote em `instagram-meta-review/README.md`, baseado em leitura remota do CRM
+principal e comparação do ChatbotX. Justificativas, instruções e roteiro prontos;
+solicitação ainda não enviada. Faltam dados legais/declarações confirmados, acesso
+isolado do avaliador e caminhos de demonstração completos, incluindo mensagens
+canceladas. Nenhuma nova mensagem solicitada ou enviada, nenhum deploy em produção.
+
 **14/11, resposta Meta às 12:20 Asia/Dubai:** o suporte atribuiu a ausência de
 eventos reais ao Standard Access: remetentes sem função no app não disparam
 messages/standby. Confirmou configuração do receptor/assinaturas e dispensou

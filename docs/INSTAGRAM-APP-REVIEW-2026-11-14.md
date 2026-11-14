@@ -1,5 +1,29 @@
 # Liberação do recebimento real — 14/11/2026
 
+## Preparação posterior com dados do CRM principal
+
+Pacote consolidado em [instagram-meta-review/README.md](instagram-meta-review/README.md):
+justificativas em inglês, instruções do avaliador, roteiro, matriz de evidências
+GitHub e campos de dados pendentes. A leitura remota do MCP confirmou master em
+755f310a206953d4436efb99da00c88b0672c0e5. Privacidade/termos fornecem contatos, mas
+não razão social ou país. A consulta do cadastro Xtrategy na Meta exigiu 2FA;
+nenhuma tentativa de contornar ou preencher fatos desconhecidos.
+
+**Configurações básicas passaram de 50% para 100%:** a Meta aceitou o ícone PNG
+transparente 1024x1024 baseado no favicon existente, categoria Negócio e Páginas
+e política. Verificação empresarial também em 100%. A seleção de categoria da
+etapa anterior só persistiu nesta conclusão. A tentativa JPEG foi recusada por
+fundo branco e não foi tratada como salvamento bem-sucedido.
+
+O guia Meta para apps de outras empresas também pede demonstração de mensagens
+canceladas. A comparação com ChatbotX identificou deleteIncomingMessage, enquanto
+o parser do piloto ignora is_deleted sem limpar texto já armazenado. Essa lacuna,
+o acesso externo isolado e a demonstração final são pendências de desenvolvimento,
+não motivos para pedir ao usuário que repita suas mensagens de teste. Não houve
+alteração funcional de código nesta preparação nem envio do pedido.
+
+As seções abaixo preservam o estado anterior à conclusão das configurações básicas.
+
 ## Causa informada pelo suporte
 
 O chamado confidencial [2256928134873004](https://developers.facebook.com/support/bugs/2256928134873004/)
