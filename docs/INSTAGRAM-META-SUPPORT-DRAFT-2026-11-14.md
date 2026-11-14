@@ -1,5 +1,34 @@
 # Diagnóstico enviado ao suporte Meta — 14/11/2026
 
+## Encaminhamento autorizado, mas recusado pela Meta — 14/11/2026
+
+Após o usuário restaurar a sessão Facebook do Chrome Joao, foi possível abrir
+Configurar no encaminhamento de @joaobosco.pro. A Meta exigiu selecionar um app
+padrão e avisou que o encaminhamento poderia ser incompatível com a configuração
+atual. ZapChat Social Lab apareceu na lista. A seleção foi preparada sem salvar,
+e o usuário autorizou explicitamente aplicar a mudança, ciente do possível
+impacto nos outros aplicativos de sua conta.
+
+A tentativa de confirmação terminou no aviso **“Falha ao configurar
+encaminhamento de conversas.”** Não houve confirmação de persistência do app
+padrão. Não afirmar que a configuração antiga foi preservada nem que o novo
+padrão foi aplicado sem uma releitura conclusiva. Após recarregar, a verificação
+foi interrompida por mudança de janela no Chrome. Não repetir mutações às cegas.
+
+O chamado confidencial 2256928134873004 continuava Open, sem resposta da Meta.
+Um único complemento técnico com a falha exata foi enviado e confirmado como
+comentário de Joao Bosco às **10:44 Asia/Dubai**. Sem credenciais, anexos ou
+conteúdo de clientes. A falha da tela não foi demonstrada como causa única da
+não entrega de Directs; o suporte foi solicitado a investigar elegibilidade,
+permissões e incompatibilidade de encaminhamento.
+
+Checagem de leitura às 10:29 Asia/Dubai: BISU válido para o app correto,
+instagram_basic/instagram_manage_messages/public_profile; assinatura da conta
+messages/standby; endpoint público sem token retorna 403. Nenhum novo POST real
+no diário do gateway. Nenhum Direct adicional enviado, nenhuma resposta de
+cliente habilitada, nenhum outro app removido, nenhum request_thread_control
+executado e nenhuma modificação no CRM principal.
+
 Atendimento criado em 14/11/2026 às 10:09 Asia/Dubai, após autorização específica
 do usuário para o envio e aceitação dos Meta AI Terms. O formulário foi marcado
 como confidencial antes de enviar. A página final confirmou o título, o app

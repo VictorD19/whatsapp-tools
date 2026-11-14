@@ -6,6 +6,12 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
+14/11, 10:44 Asia/Dubai: a tentativa autorizada de configurar ZapChat Social Lab
+como app padrão terminou com “Falha ao configurar encaminhamento de conversas.”
+Persistência não confirmada; falha registrada como complemento no chamado Meta
+2256928134873004, ainda Open e sem resposta. Direct real por webhook continua
+sem confirmação; CRM principal preservado. Não repetir mutações às cegas.
+
 14/11, 10:09 Asia/Dubai: relato confidencial enviado à Meta após autorização;
 protocolo [2256928134873004](https://developers.facebook.com/support/bugs/2256928134873004/),
 status Open. Recebimento de Direct real por webhook continua sem confirmação.
