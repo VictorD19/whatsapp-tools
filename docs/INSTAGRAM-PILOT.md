@@ -6,6 +6,14 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
+Atualização de 14/11: único autoteste para a própria conta autorizado e enviado;
+a API confirmou a existência da mensagem, mas não foi observado webhook real.
+Corrigida resposta 500 na verificação GET inválida (agora 403); verificação válida
+mantém challenge exato/200. Campo diagnóstico removido explicitamente por DELETE.
+App publicado e funções de administrador/testador confirmadas. Registro detalhado
+em `INSTAGRAM-WEBHOOK-FIXED-HOST-2026-11-13.md`; diagnóstico para suporte preparado,
+ainda não enviado. CRM principal preservado; envio a clientes desligado.
+
 Atualização posterior de 13/11: acesso pelo Facebook liberado no Chrome. Foram
 assinados e tratados messages e standby, com leitura passiva e resposta bloqueada
 para conversas controladas por outro app. Não se mudou app padrão ou controle dos

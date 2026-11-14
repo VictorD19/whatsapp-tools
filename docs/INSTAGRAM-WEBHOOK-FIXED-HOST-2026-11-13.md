@@ -1,5 +1,52 @@
 # Webhook com endereço fixo — 13/11/2026
 
+## Resultado de 14/11/2026
+
+O usuário autorizou uma única mensagem de @joaobosco.pro para a própria conta.
+Ela foi enviada uma vez, às aproximadamente 09:37 Asia/Dubai (05:37 UTC).
+A interface mostrou a mensagem e limpou o campo; uma leitura posterior de
+metadados pela API oficial confirmou uma mensagem da conta para si mesma após
+05:36:44 UTC. O texto autorizado conservou a data de 13/11; não usar essa data
+interna como horário real do envio. Nenhum envio adicional foi feito.
+
+Até a leitura do registro nesta rodada, não houve POST assinado com o ID da conta
+real. O autoteste confirma o envio, mas não confirma recebimento por webhook nem
+isola sua causa: uma conversa consigo mesmo pode ter regras próprias de eco.
+Uma consulta limitada a cinco conversas/vinte mensagens, sem conteúdo dos
+Directs, não encontrou mensagem recebida de terceiros na janela de 13/11 entre
+16:30:30 e 16:45:00 UTC. Não afirmar que houve atividade natural nessa janela;
+esta consulta limitada também não demonstra ausência em toda a conta.
+
+Corrigido um defeito independente: a rota GET definia text/plain antes da
+validação. Quando o token era inválido, o filtro global tentava serializar um
+objeto nesse formato e retornava 500. A rota agora valida primeiro. Pelo endereço
+público, verificação inválida retornou 403, válida retornou 200 com challenge
+exato e envelope vazio assinado retornou 200 (05:36:43 UTC). Essa falha do GET
+inválido não foi demonstrada como causa da ausência de POSTs reais. Foram
+acrescentados dois testes HTTP com Fastify/compressão/filtro reais; os 54 testes
+do módulo passaram, incluindo challenge com zeros à esquerda e JSON 403.
+
+Correção do registro anterior: POST de fields no nível do app é aditivo e não
+removeu messaging_handover ontem. Em 14/11 foi executado DELETE com object=instagram
+e fields=[messaging_handover]; releitura confirmou apenas messages e standby.
+A inscrição da conta também contém esses dois campos. Nenhum controle de conversa
+foi tomado; não houve mudança de permissões dos outros aplicativos.
+
+O painel atualizado mostrou o app Publicado, Joao Bosco Administrador,
+joaobosco.pro Testador do Instagram sem convite pendente e instagram_manage_messages
+Pronto para teste. Isso não equivale a Advanced Access aprovado. A documentação
+atual de Unified Login distingue testes com funções no app de clientes externos.
+O fluxo usa BISU, graph.facebook.com e IG/subscribed_apps, como documentado.
+Não trocar para Page token/Instagram Login por suposição.
+
+O envio do CRM continua desligado. O host fixo depende do computador acordado;
+fechar a aba não derruba o receptor, mas desligar/suspender o computador interrompe
+seu serviço. Não declarar hospedagem permanente nem entrega real resolvida.
+
+Diagnóstico para revisão antes de contato externo:
+[INSTAGRAM-META-SUPPORT-DRAFT-2026-11-14.md](INSTAGRAM-META-SUPPORT-DRAFT-2026-11-14.md).
+Não enviado ao suporte; requer autorização do usuário para esse contato.
+
 ## Verificação posterior e reinscrição
 
 O commit de implementação 866593a passou em Tests e Docker Build no GitHub
@@ -12,8 +59,8 @@ O painel confirmou joaobosco.pro (17841400699000476) com assinatura do webhook
 disponível no fluxo unificado exibido. O campo messaging_handover foi aceito no
 nível do app, mas recusado pela inscrição da conta com erro 100 de parâmetro não
 suportado (trace AeoWU7TdEBypnE4WV5TfiAQ). A tentativa parou antes de solicitar
-controle de qualquer conversa. O campo temporário foi removido: somente messages
-e standby permaneceram. Não usar esse erro esperado como prova de falha da Meta.
+controle de qualquer conversa. A intenção era remover o campo temporário; a remoção efetiva por DELETE foi
+confirmada em 14/11, conforme a correção acima. Não usar esse erro esperado como prova de falha da Meta.
 
 Às 20:30:25–20:30:30, somente a inscrição do próprio app foi removida e recriada
 para eliminar possível associação antiga. DELETE e POST retornaram success:true;
