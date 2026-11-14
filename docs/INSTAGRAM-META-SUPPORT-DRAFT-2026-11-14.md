@@ -1,5 +1,11 @@
 # Diagnóstico enviado ao suporte Meta — 14/11/2026
 
+**Resposta recebida às 12:20 Asia/Dubai, status Closed:** Meta atribui a ausência
+de eventos reais ao Standard Access e remetentes sem função no app. Confirma
+assinaturas/receptor e não exige novas mudanças de routing. Rascunho de análise
+1690021079384646 criado, ainda não enviado; detalhes e pendências em
+`INSTAGRAM-APP-REVIEW-2026-11-14.md`. Estados Open abaixo são registros anteriores.
+
 ## Encaminhamento autorizado, mas recusado pela Meta — 14/11/2026
 
 Após o usuário restaurar a sessão Facebook do Chrome Joao, foi possível abrir

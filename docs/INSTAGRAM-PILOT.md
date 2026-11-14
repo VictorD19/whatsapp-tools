@@ -6,6 +6,19 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
+**14/11, resposta Meta às 12:20 Asia/Dubai:** o suporte atribuiu a ausência de
+eventos reais ao Standard Access: remetentes sem função no app não disparam
+messages/standby. Confirmou configuração do receptor/assinaturas e dispensou
+novas mudanças de routing. Chamado agora Closed. Criado rascunho de Advanced
+Access 1690021079384646, somente instagram_basic e instagram_manage_messages;
+não enviado. Ver `INSTAGRAM-APP-REVIEW-2026-11-14.md` para justificativas e pendências
+concretas (ícone, plataforma/acesso externo, vídeo real e declarações de dados).
+Recebimento real ainda não validado; contingência de cinco minutos permanece
+provisória. CRM principal preservado, envios desligados, sem novos pedidos de mensagens.
+
+Os registros abaixo são cronológicos e seus estados Open/sem resposta refletem
+os horários anteriores à resposta de 12:20.
+
 Investigação posterior de 14/11: a própria Página confirma ausência de app padrão
 e não oferece ZapChat Social Lab no seletor, embora o Business Suite o liste.
 Zero-config deve permitir messages; portanto não atribuir toda a falha ao padrão.

@@ -1,5 +1,15 @@
 # Investigação do encaminhamento e contingência — 14/11/2026
 
+## Atualização posterior: causa informada pela Meta
+
+Às 12:20 Asia/Dubai o suporte respondeu e encerrou o chamado: o acesso Standard
+restringe eventos a interações com usuários que têm função no app; a conta
+receptora ser testadora não libera remetentes comuns. O suporte confirmou a
+configuração de messages/standby e Access all conversations, sem necessidade de
+novas mudanças de routing. Preparado rascunho de Advanced Access, não enviado.
+Ver `INSTAGRAM-APP-REVIEW-2026-11-14.md`. O restante registra as verificações
+anteriores à resposta, sem constituir prova de recebimento real.
+
 ## Conclusões verificadas
 
 A ausência de app padrão não é, sozinha, uma explicação suficiente para a ausência
