@@ -20,7 +20,9 @@ export class LoggingInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(() => {
         const ms = Date.now() - start
-        this.logger.log(`${method} ${url} — ${ms}ms`, 'HTTP')
+        // OAuth callbacks and webhook verification contain credentials in query parameters.
+        const path = String(url).split('?')[0]
+        this.logger.log(`${method} ${path} — ${ms}ms`, 'HTTP')
       }),
     )
   }

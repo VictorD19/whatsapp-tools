@@ -52,6 +52,8 @@ function useNavGroups(role: string, isSuperAdmin: boolean): NavGroup[] {
       label: tNav('groups.service'),
       items: [
         { icon: Inbox, label: tNav('items.inbox'), href: '/inbox' },
+        ...(process.env.NEXT_PUBLIC_INSTAGRAM_PILOT === 'true' && role === 'admin'
+          ? [{ icon: Inbox, label: 'Instagram · testes', href: '/instagram' }] : []),
         { icon: Briefcase, label: tNav('items.crm'), href: '/crm' },
       ],
     },
