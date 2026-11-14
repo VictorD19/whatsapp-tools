@@ -6,6 +6,17 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
+Investigação posterior de 14/11: a própria Página confirma ausência de app padrão
+e não oferece ZapChat Social Lab no seletor, embora o Business Suite o liste.
+Zero-config deve permitir messages; portanto não atribuir toda a falha ao padrão.
+Sem bloqueio observado na Cloudflare, API em 1% e mensagem natural às 10:28
+confirmada somente por metadados, sem webhook correspondente. Contingência local
+por API preparada a cada cinco minutos, restrita à conta e com envio false;
+10 testes passaram. Ciclos com a aba fechada terminaram sem erro e zero textos
+processados. A Meta classifica o evento natural recente como is_unsupported:true;
+isso explica esse filtro, mas não toda a ausência de webhooks.
+Ver `INSTAGRAM-ROUTING-INVESTIGATION-2026-11-14.md`. Webhook real ainda pendente.
+
 14/11, 10:44 Asia/Dubai: a tentativa autorizada de configurar ZapChat Social Lab
 como app padrão terminou com “Falha ao configurar encaminhamento de conversas.”
 Persistência não confirmada; falha registrada como complemento no chamado Meta
