@@ -1,4 +1,4 @@
-// Separate local reviewer instance; no tunnels, Meta credentials or production config.
+// Separate reviewer instance. Meta configuration is optional and private; no production config.
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -6,6 +6,7 @@ import { homedir } from 'node:os'
 import { randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, cpSync, symlinkSync, openSync } from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'
+import { metaEnvironment } from './instagram-meta-config.mjs'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const dir = join(root, '.instagram-test/reviewer')
@@ -34,6 +35,12 @@ const env = { PATH: dirname(process.execPath) + ':' + (process.env.PATH || ''), 
   NEXT_PUBLIC_INSTAGRAM_REVIEW_FIXTURES: 'true',
   NEXT_PUBLIC_API_URL: 'http://localhost:18011', NEXT_PUBLIC_WS_URL: 'http://localhost:18011', NEXT_PUBLIC_APP_URL: 'http://localhost:18090',
   NEXT_TELEMETRY_DISABLED: '1', REVIEW_DB_PASSWORD: state.db,
+}
+const metaFile = join(dir, 'meta.json')
+const meta = existsSync(metaFile) ? JSON.parse(readFileSync(metaFile, 'utf8')) : null
+if (meta) {
+  if (meta.sendEnabled !== false || meta.redirectUri !== 'https://instagram-review.sistemazapchat.com/api/v1/instagram/callback') throw Error('Reviewer Meta configuration must keep sending disabled and use the reviewer callback')
+  Object.assign(env, metaEnvironment(meta), { CORS_ORIGINS: env.CORS_ORIGINS + ',https://instagram-review.sistemazapchat.com,http://localhost:18012,http://127.0.0.1:18012' })
 }
 const run = (cmd, args, cwd = dir) => {
   const result = spawnSync(cmd, args, { cwd, env, stdio: 'inherit' })
@@ -69,16 +76,16 @@ class ReviewModule{}; Module({imports:[CoreModule,AuthModule,InstagramModule]})(
 await app.register(require('@fastify/helmet'));app.setGlobalPrefix('api/v1');app.enableCors({origin:process.env.CORS_ORIGINS.split(','),credentials:true});await app.listen(18011,'127.0.0.1');})();
 `, { mode: 0o600 })
   console.log('Separate reviewer DB, Redis, API copy and web copy prepared. No Meta account or production data copied. Credentials remain in the private session file.')
-} else if (action === 'start' || action === 'start-web') {
+} else if (action === 'start' || action === 'start-web' || action === 'start-api') {
   // Start once; refuse a duplicate instance rather than killing an existing service.
-  for (const port of action === 'start-web' ? [18090] : [18011, 18090]) {
+  for (const port of action === 'start-web' ? [18090] : action === 'start-api' ? [18011] : [18011, 18090]) {
     const { createServer } = await import('node:net')
     await new Promise((resolve, reject) => { const s = createServer(); s.once('error', reject); s.listen(port, '127.0.0.1', () => s.close(resolve)) })
   }
   for (const [name, args, cwd] of [
     ['api', [join(dir, 'bootstrap.cjs')], dir],
     ['web', [join(root, 'apps/web/node_modules/next/dist/bin/next'), 'dev', '--webpack', '--hostname', '127.0.0.1', '--port', '18090'], join(dir, 'web')],
-  ].filter(([name]) => action !== 'start-web' || name === 'web')) {
+  ].filter(([name]) => (action !== 'start-web' || name === 'web') && (action !== 'start-api' || name === 'api'))) {
     const log = openSync(join(dir, name + '.log'), 'a', 0o600)
     const child = spawn(process.execPath, args, { cwd, env: { ...env, NODE_PATH: join(root, 'apps/api/node_modules') }, detached: true, stdio: ['ignore', log, log] })
     child.unref(); writeFileSync(join(dir, name + '.pid'), String(child.pid), { mode: 0o600 })
@@ -90,6 +97,6 @@ await app.register(require('@fastify/helmet'));app.setGlobalPrefix('api/v1');app
     console.log(JSON.stringify({ database: 'instagram_review@127.0.0.1:25432', redis: '127.0.0.1:26379',
       users: await db.user.count(), tenants: await db.tenant.count(), accounts: await db.instagramAccount.count(),
       accountsWithTokens: await db.instagramAccount.count({ where: { accessToken: { not: null } } }),
-      mode: 'simulated', realSendingEnabled: false, publicAccess: false }))
+      mode: meta ? 'meta' : 'simulated', realSendingEnabled: false, publicAccess: existsSync(join(dir, 'public-access.json')) }))
   } finally { await db.$disconnect() }
-} else throw Error('Use prepare, start or status')
+} else throw Error('Use prepare, start, start-web, start-api or status')

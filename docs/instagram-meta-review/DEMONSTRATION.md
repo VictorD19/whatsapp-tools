@@ -1,5 +1,9 @@
 # Demonstração e preparação técnica
 
+Estado posterior: [acesso externo e OAuth real](../INSTAGRAM-REVIEW-EXTERNAL-2026-11-15.md).
+Website/callback e conexão real do avaliador foram validados. Webhook nesse banco,
+resposta real e vídeo completo continuam pendentes. O roteiro abaixo é histórico.
+
 Atualização de 15/11: a lacuna de is_deleted abaixo foi corrigida no piloto e
 verificada em PostgreSQL/HTTP/navegador. Foi criada instância local independente,
 sem tokens Meta, e gravada prévia com dados fictícios. Detalhes em

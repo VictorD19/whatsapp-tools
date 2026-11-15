@@ -1,5 +1,9 @@
 # Cancelamentos e instância do avaliador — 15/11/2026
 
+Estado posterior: [publicação externa e OAuth real](INSTAGRAM-REVIEW-EXTERNAL-2026-11-15.md).
+Este documento registra a etapa local anterior; seus limites de DNS/callback
+foram atualizados no registro posterior, sem alteração do CRM principal.
+
 ## Entrega desta etapa
 
 Implementação restrita à branch de testes. Nenhum deploy, migração ou alteração

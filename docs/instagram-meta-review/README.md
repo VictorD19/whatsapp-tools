@@ -3,6 +3,11 @@
 Aplicativo **ZapChat Social Lab** — 1684815669905187. Rascunho **1690021079384646**.
 Preparado em 14/11/2026. **Não enviado e ainda não apto à submissão.**
 
+**Estado mais recente:** [acesso externo e OAuth de 15/11](../INSTAGRAM-REVIEW-EXTERNAL-2026-11-15.md).
+Website e callback do avaliador publicados e salvos na Meta; OAuth real concluído
+e conexão temporária do proprietário removida somente dessa cópia. O vídeo final,
+o webhook do avaliador e a hospedagem contínua ainda não estão concluídos.
+
 **Atualização de 15/11:** cancelamentos implementados e validados; instância local
 independente do avaliador criada, sem tokens Meta, com dados fictícios. Prévia
 gravada em `assets/reviewer-demo-20261115.mp4`. Ver
@@ -53,10 +58,9 @@ Solicitar a permissão não comprova seu uso integral nem assegura aprovação.
    nos últimos 12 meses e quais processos já são adotados. Não há essa informação
    no código, nas páginas legais nem nas notas do projeto. Não marcar Não ou
    declarar processos existentes por ausência de um registro no GitHub.
-3. Autorizar, quando a configuração estiver pronta para revisão, o acesso externo
-   autenticado de um avaliador a uma instância separada, sem dados de clientes.
-   O túnel atual permanece limitado a callback/webhook. A proposta é usar uma
-   cópia de testes, banco e conta exclusivos; não compartilhar o login local atual.
+3. O acesso externo separado foi autorizado e preparado. Verificar a disponibilidade
+   contínua e manter a cópia sem tokens/conversas do proprietário antes de fornecer
+   sua credencial exclusiva nos campos privados da análise.
 4. Revisar as concordâncias e o envio final quando o pacote estiver completo.
    Nenhuma concordância ou declaração foi aceita em nome do responsável.
 

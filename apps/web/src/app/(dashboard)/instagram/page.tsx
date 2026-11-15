@@ -160,7 +160,7 @@ export default function InstagramPage() {
   if (loading) return <div className="p-8" role="status">Carregando Instagram…</div>
   return <div className="mx-auto max-w-6xl space-y-6 p-6">
     <header><p className="text-sm text-muted-foreground">AMBIENTE DE TESTES</p><h1 className="text-2xl font-semibold">Instagram</h1><p className="mt-2 text-muted-foreground">Primeira etapa: receber mensagens do Direct e responder manualmente. Seus atendimentos WhatsApp ficam separados.</p></header>
-    {process.env.NEXT_PUBLIC_INSTAGRAM_REVIEW_FIXTURES === 'true' && <p role="note" className="rounded-lg border p-4">Demonstração local · mensagens fictícias. Este ambiente não comprova entrega real de webhooks da Meta.</p>}
+    {process.env.NEXT_PUBLIC_INSTAGRAM_REVIEW_FIXTURES === 'true' && <p role="note" className="rounded-lg border p-4">{status?.mode === 'meta' ? 'Ambiente de avaliação isolado. Envio real e respostas de IA desabilitados.' : 'Demonstração local · mensagens fictícias. Este ambiente não comprova entrega real de webhooks da Meta.'}</p>}
     {error && <div className="rounded-lg border border-red-300 p-4" role="alert">{error}</div>}
     {notice && <div className="rounded-lg border p-4" role="status">{notice}</div>}
     {status?.enabled && <>

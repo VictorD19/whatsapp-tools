@@ -1,5 +1,12 @@
 # Reviewer material — draft, not submitted
 
+15 November update: the isolated Website is available at
+https://instagram-review.sistemazapchat.com/login and its OAuth callback was
+verified with the owner's account. The temporary owner connection was then removed
+from this separate database. Dedicated credentials have not been shared. Continuous
+hosting, reviewer webhook delivery and the complete real-flow video remain pending;
+do not submit this draft as complete. See ../INSTAGRAM-REVIEW-EXTERNAL-2026-11-15.md.
+
 ## instagram_basic — use description
 
 ZapChat Social Lab is an isolated pilot for an Instagram Direct inbox in
@@ -37,7 +44,8 @@ Instagram account after signing into the CRM; it is not the CRM sign-in mechanis
 Select the corresponding non-Facebook service-login option in the reviewer form.
 
 1. Open the separate, authenticated pilot Website URL supplied in the private
-   reviewer-access fields. This URL is pending deployment and verification.
+   reviewer-access fields: https://instagram-review.sistemazapchat.com/login.
+   Confirm continuous availability before submission.
 2. Sign in using the dedicated service-review account supplied in those fields.
    These credentials must not be the owner's existing local pilot login.
 3. Open Instagram, then Conexão. Choose the Instagram connection button.
