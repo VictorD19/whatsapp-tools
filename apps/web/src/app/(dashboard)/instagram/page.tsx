@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { apiGet, apiPost, apiDelete } from '@/lib/api'
 
 type Account = { id: string; username: string; mode: string; active: boolean; tokenExpiresAt: string | null }
-type Conversation = { id: string; participantId: string; lastInboundAt: string | null; lastWebhookChannel?: string }
+type Conversation = { id: string; participantId: string; lastInboundAt: string | null; lastWebhookChannel?: string; updatedAt: string }
 type Message = { id: string; direction: string; text: string; status: string; sentAt: string }
 type Status = { enabled: boolean; mode: 'simulated' | 'meta'; testOnly: boolean; realSendingEnabled: boolean }
 const panel = 'rounded-xl border bg-card p-5 space-y-4'
@@ -28,6 +28,8 @@ export default function InstagramPage() {
   const selected = useRef('')
   const activeAccount = useRef('')
   const refreshing = useRef(false)
+  const inboxRevision = useRef<string | null>(null)
+  const messageEpoch = useRef(0)
   const attempt = useRef<{ conversationId: string; text: string; id: string } | null>(null)
   const account = accounts.find(a => a.id === accountId)
   const conversation = conversations.find(c => c.id === conversationId)
@@ -54,14 +56,22 @@ export default function InstagramPage() {
       setConversationId(previous => data.some(c => c.id === previous) ? previous : data[0]?.id || '')
       const id = selected.current
       if (id && data.some(c => c.id === id)) {
+        const revision = data.find(c => c.id === id)!.updatedAt
+        const changed = inboxRevision.current !== revision
+        if (changed) { messageEpoch.current++; setMessages([]); setHasMore(false) }
         const result = await apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(id)}/messages`)
         if (activeAccount.current === accountId && selected.current === id) {
+          inboxRevision.current = revision
           setMessages(previous => {
             if (!result.data.length) return []
+            // Discard older cached pages after a mutation: they may still contain
+            // text removed by an unsend outside the newest 50-message page.
+            if (changed) return [...result.data].reverse()
             const byId = new Map(previous.map(message => [message.id, message]))
             for (const message of result.data) byId.set(message.id, message)
             return [...byId.values()].sort((a, b) => a.sentAt.localeCompare(b.sentAt) || a.id.localeCompare(b.id))
           })
+          if (changed) setHasMore(result.data.length === 50)
         }
       }
     } finally { refreshing.current = false }
@@ -112,9 +122,12 @@ export default function InstagramPage() {
   useEffect(() => {
     let cancelled = false
     selected.current = conversationId
+    messageEpoch.current++
+    inboxRevision.current = null
+    const epoch = messageEpoch.current
     setMessages([]); setText(''); attempt.current = null; setHasMore(false)
     if (conversationId) apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(conversationId)}/messages`).then(result => {
-      if (!cancelled) { setMessages([...result.data].reverse()); setHasMore(result.data.length === 50) }
+      if (!cancelled && epoch === messageEpoch.current) { setMessages([...result.data].reverse()); setHasMore(result.data.length === 50) }
     }).catch(() => { if (!cancelled) setError('Não foi possível carregar as mensagens.') })
     return () => { cancelled = true }
   }, [conversationId])
@@ -147,6 +160,7 @@ export default function InstagramPage() {
   if (loading) return <div className="p-8" role="status">Carregando Instagram…</div>
   return <div className="mx-auto max-w-6xl space-y-6 p-6">
     <header><p className="text-sm text-muted-foreground">AMBIENTE DE TESTES</p><h1 className="text-2xl font-semibold">Instagram</h1><p className="mt-2 text-muted-foreground">Primeira etapa: receber mensagens do Direct e responder manualmente. Seus atendimentos WhatsApp ficam separados.</p></header>
+    {process.env.NEXT_PUBLIC_INSTAGRAM_REVIEW_FIXTURES === 'true' && <p role="note" className="rounded-lg border p-4">Demonstração local · mensagens fictícias. Este ambiente não comprova entrega real de webhooks da Meta.</p>}
     {error && <div className="rounded-lg border border-red-300 p-4" role="alert">{error}</div>}
     {notice && <div className="rounded-lg border p-4" role="status">{notice}</div>}
     {status?.enabled && <>
@@ -170,8 +184,8 @@ export default function InstagramPage() {
         <aside className={panel}><h2 className="font-semibold">Conversas</h2><button className={button} disabled={!accountId || busy} onClick={() => action(refreshInbox)}>Atualizar</button>{status.mode === 'meta' && <button className={button} disabled={!accountId || busy} onClick={() => action(syncInbox)}>Sincronizar com Instagram</button>}<p className="text-xs text-muted-foreground">Até 50 conversas recentes neste piloto.</p>{status.mode === 'meta' && <p className="text-xs text-muted-foreground">O receptor de webhook funciona com esta aba fechada. Aqui, as conversas salvas atualizam a cada 3 segundos. Sincronizar com Instagram consulta manualmente até 3 conversas recentes, após a conexão e nas últimas 24 horas.</p>}{!conversations.length && <p className="text-sm">Nenhuma mensagem recebida.</p>}{conversations.map(c => <button className={`${button} block w-full text-left ${conversationId === c.id ? 'bg-muted' : ''}`} key={c.id} onClick={() => setConversationId(c.id)}>Contato {c.participantId}<span className="block text-xs text-muted-foreground">Direct do Instagram</span></button>)}</aside>
         <div className={panel}><h2 className="font-semibold">{conversation ? `Contato ${conversation.participantId}` : 'Selecione uma conversa'}</h2>
           {conversation?.lastWebhookChannel === 'standby' && <p className="text-sm text-muted-foreground">Recebida pelo canal de espera. Somente leitura enquanto outro aplicativo controla a conversa.</p>}
-          {hasMore && <button className={button} disabled={busy} onClick={() => action(async () => { const id = conversationId; const result = await apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(id)}/messages?before=${encodeURIComponent(messages[0].id)}`); if (selected.current === id) { setMessages(previous => [...result.data].reverse().concat(previous)); setHasMore(result.data.length === 50) } })}>Mensagens anteriores</button>}
-          <div className="max-h-96 min-h-40 space-y-3 overflow-y-auto" aria-live="polite">{messages.map(m => <div key={m.id} className={`max-w-[90%] whitespace-pre-wrap rounded-lg p-3 text-sm ${m.direction === 'out' ? 'ml-auto bg-primary text-primary-foreground' : 'bg-muted'}`}>{m.text}<span className="mt-2 block text-xs opacity-75">{m.direction === 'in' ? 'Contato' : 'Atendente'} · {new Date(m.sentAt).toLocaleString('pt-BR')} · {m.status === 'received' ? 'Recebida' : m.status === 'sent' ? 'Enviada' : 'Sem confirmação final'}</span></div>)}</div>
+          {hasMore && <button className={button} disabled={busy} onClick={() => action(async () => { const id = conversationId, epoch = messageEpoch.current; const result = await apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(id)}/messages?before=${encodeURIComponent(messages[0].id)}`); if (selected.current === id && epoch === messageEpoch.current) { setMessages(previous => [...result.data].reverse().concat(previous)); setHasMore(result.data.length === 50) } })}>Mensagens anteriores</button>}
+          <div className="max-h-96 min-h-40 space-y-3 overflow-y-auto" aria-live="polite">{messages.map(m => <div key={m.id} className={`max-w-[90%] whitespace-pre-wrap rounded-lg p-3 text-sm ${m.direction === 'out' ? 'ml-auto bg-primary text-primary-foreground' : 'bg-muted'}`}>{m.status === 'unsent' ? 'Mensagem cancelada pelo remetente' : m.text}<span className="mt-2 block text-xs opacity-75">{m.direction === 'in' ? 'Contato' : 'Atendente'} · {new Date(m.sentAt).toLocaleString('pt-BR')} · {m.status === 'unsent' ? 'Cancelada' : m.status === 'received' ? 'Recebida' : m.status === 'sent' ? 'Enviada' : 'Sem confirmação final'}</span>{status.mode === 'simulated' && m.direction === 'in' && m.status !== 'unsent' && <button className="mt-2 block underline" disabled={busy} onClick={() => action(async () => { await apiPost(`instagram/messages/${encodeURIComponent(m.id)}/simulate-cancellation`, {}); await refreshInbox() })}>Simular cancelamento</button>}</div>)}</div>
           <form className="space-y-3" onSubmit={send}><label className="block text-sm">Sua resposta<textarea className={field} value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={1000} required disabled={!conversation || conversation.lastWebhookChannel === 'standby' || busy || uncertain} /></label><button className={button} disabled={!conversation || conversation.lastWebhookChannel === 'standby' || busy || uncertain || !withinWindow || (status.mode === 'meta' && !status.realSendingEnabled)}>{busy ? 'Processando…' : status.mode === 'simulated' ? 'Responder na simulação' : 'Enviar resposta'}</button><p className="text-xs text-muted-foreground">{uncertain ? 'Existe um envio pendente ou incerto. Verifique antes de enviar novamente.' : !withinWindow ? 'Uma mensagem recente do contato é necessária para responder na janela de 24 horas.' : status.mode === 'simulated' ? 'Nenhuma chamada à Meta neste modo.' : 'Envios respeitam a janela de 24 horas desde a última mensagem recebida.'}</p></form>
         </div>
       </section>

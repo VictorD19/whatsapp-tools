@@ -26,6 +26,10 @@ export class InstagramController {
     return this.service.simulate(tenantId, body.accountId, body.participantId, body.text, body.messageId)
   }
   @Get('connect') connect(@CurrentTenant() tenantId: string, @CurrentUser() user: { id: string }) { return this.service.connect(tenantId, user.id) }
+  @Post('messages/:messageId/simulate-cancellation')
+  simulateCancellation(@CurrentTenant() tenantId: string, @Param('messageId') messageId: string) {
+    return this.service.simulateCancellation(tenantId, messageId)
+  }
   @Get('callback') @Public()
   async callback(@Query('code') code: string, @Query('state') state: string, @Res() res: FastifyReply) {
     // No dynamic redirect destinations, authorization code, token or provider error in the response.

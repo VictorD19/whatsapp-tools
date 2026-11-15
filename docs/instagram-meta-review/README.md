@@ -3,6 +3,12 @@
 Aplicativo **ZapChat Social Lab** — 1684815669905187. Rascunho **1690021079384646**.
 Preparado em 14/11/2026. **Não enviado e ainda não apto à submissão.**
 
+**Atualização de 15/11:** cancelamentos implementados e validados; instância local
+independente do avaliador criada, sem tokens Meta, com dados fictícios. Prévia
+gravada em `assets/reviewer-demo-20261115.mp4`. Ver
+[entrega técnica](../INSTAGRAM-REVIEW-TECHNICAL-2026-11-15.md) para testes e limites.
+Isso não conclui Website externo, OAuth real ou vídeo final da análise Meta.
+
 ## Material preparado
 
 - [Evidências do CRM principal e ChatbotX](EVIDENCE.md): fontes com revisões fixadas,

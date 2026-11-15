@@ -1,7 +1,7 @@
 import { createHmac } from 'crypto'
 import { ConfigService } from '@nestjs/config'
 import { InstagramConfig } from './instagram.config'
-import { canReply, incomingDirects, REPLY_WINDOW, signatureMatches } from './instagram.policy'
+import { canReply, deletedDirects, incomingDirects, REPLY_WINDOW, signatureMatches } from './instagram.policy'
 
 const now = Date.parse('2026-11-09T18:00:00Z')
 function payload(change: any = {}) {
@@ -9,6 +9,21 @@ function payload(change: any = {}) {
     message: { mid: 'mid-1', text: 'Olá' }, ...change }] }] }
 }
 describe('Instagram pilot policy', () => {
+  it('accepts textless cancellations across messaging, standby and Unified envelopes', () => {
+    const event = payload({ message: { mid: 'removed', is_deleted: true } }).entry[0].messaging[0]
+    for (const entry of [{ messaging: [event] }, { standby: [event] }, { changes: [{ field: 'messages', value: event }] }]) {
+      expect(deletedDirects({ object: 'instagram', entry: [{ id: '123', ...entry }] }, now)).toEqual([
+        { accountId: '123', participantId: '456', messageId: 'removed', direction: 'in', at: new Date(now) },
+      ])
+    }
+  })
+  it('validates cancellation direction and does not accept an unrelated account or invalid timestamp', () => {
+    const body = payload({ sender: { id: '123' }, recipient: { id: '456' }, message: { mid: 'out', is_deleted: true, is_echo: true } })
+    expect(deletedDirects(body, now)[0]).toMatchObject({ direction: 'out', participantId: '456' })
+    expect(deletedDirects({ ...body, entry: [{ ...body.entry[0], id: '999' }] }, now)).toEqual([])
+    for (const timestamp of [null, true, '1e12', now + 300001]) expect(deletedDirects(payload({ timestamp, message: { mid: 'x', is_deleted: true } }), now)).toEqual([])
+    expect(deletedDirects(payload({ message: { mid: 'x', is_deleted: 'true' } }), now)).toEqual([])
+  })
   it('verifies the exact raw bytes with HMAC SHA256', () => {
     const raw = Buffer.from('{"message":"Olá"}')
     const signature = 'sha256=' + createHmac('sha256', 'test-secret').update(raw).digest('hex')

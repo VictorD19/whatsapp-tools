@@ -30,6 +30,27 @@ function fixture() {
   return { service: new InstagramService(db, redis, crypto, config, adapter), db, adapter, cache, values, config, account, conversation, crypto }
 }
 describe('Instagram service', () => {
+  it('does not expose simulated cancellation in Meta mode or to a different tenant', async () => {
+    const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'
+    await expect(f.service.simulateCancellation('one', 'message')).rejects.toThrow()
+    f.values.INSTAGRAM_MODE = 'simulated'
+    await expect(f.service.simulateCancellation('another', 'message')).rejects.toThrow()
+    expect(f.db.$transaction).not.toHaveBeenCalled()
+  })
+  it('requires a signature before applying scoped, text-free cancellation tombstones', async () => {
+    const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'; f.account.mode = 'meta'
+    const body = { object: 'instagram', entry: [{ id: '123', messaging: [{ sender: { id: '456' }, recipient: { id: '123' },
+      timestamp: Date.now(), message: { mid: 'cancelled', is_deleted: true } }] }] }
+    const raw = Buffer.from(JSON.stringify(body))
+    await expect(f.service.webhook(raw, undefined, body)).rejects.toThrow()
+    expect(f.db.$transaction).not.toHaveBeenCalled()
+    await f.service.webhook(raw, 'sha256=' + createHmac('sha256', 'secret').update(raw).digest('hex'), body)
+    expect(f.db.instagramMessage.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({ text: '', status: 'unsent', tenantId: 'one', accountId: 'a' })] }))
+    expect(f.db.instagramMessage.updateMany).toHaveBeenCalledWith({ where: { tenantId: 'one', accountId: 'a', conversationId: 'c',
+      direction: 'in', providerMessageId: 'cancelled', status: { not: 'unsent' } }, data: { text: '', status: 'unsent' } })
+    expect(f.db.instagramConversation.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ lastInboundAt: expect.anything() }) }))
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+  })
   it('never sends a response to a passive conversation even with real sending enabled', async () => {
     const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'; f.values.INSTAGRAM_SEND_ENABLED = 'true'
     f.account.mode = 'meta'; (f.account as any).accessToken = 'encrypted-token'; f.conversation.lastWebhookChannel = 'standby'

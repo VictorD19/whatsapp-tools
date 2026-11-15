@@ -1,5 +1,12 @@
 # Demonstração e preparação técnica
 
+Atualização de 15/11: a lacuna de is_deleted abaixo foi corrigida no piloto e
+verificada em PostgreSQL/HTTP/navegador. Foi criada instância local independente,
+sem tokens Meta, e gravada prévia com dados fictícios. Detalhes em
+`../INSTAGRAM-REVIEW-TECHNICAL-2026-11-15.md`. As tabelas abaixo registram o roteiro
+original; OAuth real, acesso externo, resposta real e exclusão pelo operador
+continuam pendentes. O vídeo sintético não substitui a demonstração final Meta.
+
 ## Roteiro de gravação preparado
 
 Gravar a versão efetiva submetida, com interface e instruções consistentes.

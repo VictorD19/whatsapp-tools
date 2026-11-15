@@ -26,6 +26,42 @@ export interface IncomingDirect {
   standby?: true
 }
 
+export interface DeletedDirect {
+  accountId: string; participantId: string; messageId: string; at: Date; direction: 'in' | 'out'
+}
+
+// Cancellation notifications have no text. Never interpret their arrival as a
+// new inbound message, ownership change, or a new 24-hour reply window.
+export function deletedDirects(payload: unknown, now: number): DeletedDirect[] {
+  const body = payload as any
+  if (body?.object !== 'instagram' || !Array.isArray(body.entry)) return []
+  const result: DeletedDirect[] = []
+  for (const entry of body.entry.slice(0, 100)) {
+    if (!entry || typeof entry !== 'object') continue
+    const events = [
+      ...(Array.isArray(entry.messaging) ? entry.messaging.slice(0, 100) : []),
+      ...(Array.isArray(entry.standby) ? entry.standby.slice(0, 100) : []),
+      ...(Array.isArray(entry.changes) ? entry.changes.slice(0, 100)
+        .filter((c: any) => ['messages', 'standby'].includes(c?.field)).map((c: any) => c.value) : []),
+    ].slice(0, 100)
+    for (const event of events) {
+      if (event?.message?.is_deleted !== true) continue
+      const accountId = String(entry.id ?? ''), sender = String(event.sender?.id ?? ''), recipient = String(event.recipient?.id ?? '')
+      if (![accountId, sender, recipient].every(id => /^\d+$/.test(id)) || sender === recipient) continue
+      if (sender !== accountId && recipient !== accountId) continue
+      const direction = sender === accountId ? 'out' : 'in'
+      const participantId = direction === 'out' ? recipient : sender
+      const messageId = event.message.mid
+      const raw = typeof event.timestamp === 'string' && /^\d{10,13}$/.test(event.timestamp) ? Number(event.timestamp) : event.timestamp
+      const timestamp = typeof raw === 'number' && raw >= 1_000_000_000 && raw < 10_000_000_000 ? raw * 1000 : raw
+      if (typeof messageId !== 'string' || !messageId || messageId.length > 512 ||
+        typeof timestamp !== 'number' || !Number.isSafeInteger(timestamp) || timestamp <= 0 || timestamp > now + 300_000) continue
+      result.push({ accountId, participantId, messageId, direction, at: new Date(Math.min(timestamp, now)) })
+    }
+  }
+  return result
+}
+
 export function incomingDirects(payload: unknown, now: number): IncomingDirect[] {
   const body = payload as any
   if (body?.object !== 'instagram' || !Array.isArray(body.entry)) return []

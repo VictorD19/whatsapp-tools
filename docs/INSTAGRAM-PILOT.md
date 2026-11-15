@@ -6,6 +6,14 @@ Branch local: `codex/instagram-test-2026-11-09`.
 
 ## Estado
 
+**15/11: cancelamentos corrigidos no piloto e ambiente local do avaliador pronto.**
+Texto removido, marcador contra recriação, UI sem manter páginas antigas em cache.
+59 testes Jest, build API, integração PostgreSQL e HTTP/navegador passaram nos
+escopos descritos em `INSTAGRAM-REVIEW-TECHNICAL-2026-11-15.md`. Vídeo de prévia com
+dados fictícios produzido; não é prova de webhook real. Avaliação usa banco,
+Redis, credenciais e código separados, sem tokens Meta e sem acesso público.
+Sem deploy ou alteração no CRM principal; nenhum novo Direct solicitado/enviado.
+
 Preparação posterior da análise Meta: configuração básica e verificação empresarial
 concluídas (100% na interface), com ícone transparente aceito, categoria e política.
 Pacote em `instagram-meta-review/README.md`, baseado em leitura remota do CRM

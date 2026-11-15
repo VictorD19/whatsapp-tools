@@ -5,7 +5,7 @@ import { AesCryptoService } from '@shared/crypto/aes-crypto.service'
 import { randomBytes, randomInt, randomUUID } from 'crypto'
 import { InstagramConfig } from './instagram.config'
 import { InstagramAdapter } from './instagram.adapter'
-import { canReply, deletionCutoffKey, IncomingDirect, incomingDirects, signatureMatches } from './instagram.policy'
+import { canReply, deletionCutoffKey, DeletedDirect, deletedDirects, IncomingDirect, incomingDirects, signatureMatches } from './instagram.policy'
 
 const accountFields = { id: true, instagramId: true, username: true, mode: true, active: true, tokenExpiresAt: true } as const
 
@@ -97,12 +97,44 @@ export class InstagramService {
   async webhook(raw: Buffer, signature: string | undefined, payload: unknown) {
     this.config.assertEnabled()
     if (this.config.mode !== 'meta' || !signatureMatches(raw, signature, this.config.get('INSTAGRAM_APP_SECRET'))) throw new ForbiddenException('Assinatura inválida')
+    // Process tombstones first even if Meta batches the original and cancellation
+    // together. A subsequent history sync must not restore cancelled content.
+    for (const event of deletedDirects(payload, Date.now())) {
+      const account = await this.db.instagramAccount.findUnique({ where: { instagramId: event.accountId } })
+      if (!account?.active || account.mode !== 'meta' || !this.config.allowed(account.tenantId)) continue
+      await this.persistCancellation(account, event)
+    }
     for (const event of incomingDirects(payload, Date.now())) {
       const account = await this.db.instagramAccount.findUnique({ where: { instagramId: event.accountId } })
       if (!account?.active || account.mode !== 'meta' || !this.config.allowed(account.tenantId)) continue
       await this.persistIncoming(account, event, event.standby ? 'standby' : 'messaging')
     }
     return { received: true }
+  }
+  private async persistCancellation(account: { id: string; tenantId: string }, event: DeletedDirect) {
+    const cutoff = await this.redis.getClient().get(deletionCutoffKey(account.tenantId, account.id, event.participantId))
+    if (cutoff != null) {
+      const timestamp = Number(cutoff)
+      if (!Number.isFinite(timestamp) || timestamp <= 0) throw new Error('invalid_deletion_cutoff')
+      if (event.at.getTime() <= timestamp) return
+    }
+    await this.db.$transaction(async tx => {
+      const conversation = await tx.instagramConversation.upsert({
+        where: { accountId_participantId: { accountId: account.id, participantId: event.participantId } },
+        create: { accountId: account.id, tenantId: account.tenantId, participantId: event.participantId }, update: {},
+      })
+      // The unique account/message key serializes a concurrent original insert.
+      // Keep only an empty tombstone, including when cancellation arrives first.
+      const created = await tx.instagramMessage.createMany({ data: [{ tenantId: account.tenantId, accountId: account.id,
+        conversationId: conversation.id, direction: event.direction, providerMessageId: event.messageId,
+        text: '', status: 'unsent', sentAt: event.at }], skipDuplicates: true })
+      const removed = await tx.instagramMessage.updateMany({ where: { tenantId: account.tenantId, accountId: account.id,
+        conversationId: conversation.id, direction: event.direction, providerMessageId: event.messageId,
+        status: { not: 'unsent' } }, data: { text: '', status: 'unsent' } })
+      if (created.count || removed.count) await tx.instagramConversation.updateMany({
+        where: { id: conversation.id, tenantId: account.tenantId }, data: { updatedAt: new Date() },
+      })
+    })
   }
   private async persistIncoming(account: { id: string; tenantId: string }, event: IncomingDirect, channel?: 'messaging' | 'standby') {
     // Do not recreate erased conversations when Meta retries an old notification.
@@ -136,6 +168,17 @@ export class InstagramService {
     if (account.mode !== 'simulated') throw new BadRequestException('Escolha uma conta simulada')
     return this.persistIncoming(account, { accountId: account.instagramId, participantId, text,
       messageId: messageId || 'simulated-' + randomUUID(), at: new Date() })
+  }
+  async simulateCancellation(tenantId: string, messageId: string) {
+    this.config.assertSimulated(tenantId)
+    const message = await this.db.instagramMessage.findFirst({ where: { id: messageId, tenantId, direction: 'in' } })
+    if (!message?.providerMessageId) throw new NotFoundException('Mensagem de teste indisponível')
+    const account = await this.account(tenantId, message.accountId)
+    if (account.mode !== 'simulated') throw new BadRequestException('Escolha uma conta simulada')
+    const conversation = await this.conversation(tenantId, message.conversationId)
+    await this.persistCancellation(account, { accountId: account.instagramId, participantId: conversation.participantId,
+      messageId: message.providerMessageId, direction: 'in', at: new Date() })
+    return { cancelled: true }
   }
   conversations(tenantId: string, accountId: string) {
     this.config.assertTenant(tenantId)
