@@ -7,6 +7,9 @@ Preparado em 14/11/2026. **Não enviado e ainda não apto à submissão.**
 Website e callback do avaliador publicados e salvos na Meta; OAuth real concluído
 e conexão temporária do proprietário removida somente dessa cópia. O vídeo final,
 o webhook do avaliador e a hospedagem contínua ainda não estão concluídos.
+**Repetição posterior do OAuth falhou:** troca de código200 e identidade empresarial
+403/Graph code4. Não considerar a conexão repetível validada. Original do laboratório
+responde200; CI de0f03417 passou. Detalhes no registro externo acima.
 
 **Atualização de 15/11:** cancelamentos implementados e validados; instância local
 independente do avaliador criada, sem tokens Meta, com dados fictícios. Prévia

@@ -1,5 +1,31 @@
 # Avaliação externa do Instagram — 15/11/2026
 
+## Diagnóstico posterior à primeira conexão
+
+CI43682910478 passou em Tests e Docker Build para0f03417.
+A primeira autorização e sua limpeza abaixo foram concluídas. Porém, na repetição
+para gravar, novas conexões retornaram erro: troca do código por token HTTP200,
+seguida de GET /me?fields=client_business_id HTTP403, Graph error code4.
+Essa conexão repetida **não está aprovada como funcional**. O código4 é associado
+a limite de chamadas; não confundir essa recusa com o bloqueio de Advanced Access
+dos webhooks, nem afirmar que mudar DNS ou publicar no CRM principal a resolveria.
+
+Comparação somente de metadados, usando a conexão original do laboratório sem
+copiar seu token: identidade empresarial200 e lista de contas200 com uma conta.
+Nenhuma conversa consultada nessa comparação. O original permanece conectado.
+
+Diagnóstico temporário somente no bootstrap do avaliador registrou operação,
+HTTP e código numérico, sem URL, senha, código OAuth, token ou texto de mensagens.
+Nenhum token novo de conexão malsucedida foi salvo no banco do avaliador.
+Novas autorizações foram interrompidas após identificar a recusa.
+
+A captura continua parcial; não submetê-la como vídeo de fluxo completo. Durante
+a gravação, uma senha preenchida foi recusada pela Meta e o usuário corrigiu
+diretamente o login, com captura parada. Um ensaio sem o parâmetro opcional prompt
+reutilizou a sessão Facebook sem pedir senha, mas teve a mesma recusa403/code4.
+O gerador de URLs do produto não foi alterado por esse ensaio. Referência:
+https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-unified-login/get-started.
+
 ## Resultado confirmado
 
 Website: https://instagram-review.sistemazapchat.com/login.
@@ -72,6 +98,7 @@ incluída no job existente de testes, verifica rotas permitidas/proibidas, recus
 upstream diferente, Host não autorizado, Origin externo e redirecionamento inicial.
 Login HTTPS validado pelo navegador; API sem sessão retorna401; cadastro e docs
 retornam404. OAuth retornou sucesso e conta correta, depois desconectada localmente.
+As autorizações posteriores falharam conforme o diagnóstico no início deste arquivo.
 Build compilado da Web externa concluído. Não se declara TypeScript global da Web
 aprovado: permanecem erros preexistentes fora desta entrega.
 
