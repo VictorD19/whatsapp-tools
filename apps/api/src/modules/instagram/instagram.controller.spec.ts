@@ -41,4 +41,24 @@ describe('Instagram webhook verification over HTTP', () => {
     expect(response.headers['content-type']).toContain('text/plain')
     expect(response.body).toBe('000123')
   })
+  it('acknowledges a retained OAuth grant with UTF-8 HTTP202 and no credentials', async () => {
+    const service = app.get(InstagramService)
+    const callback = jest.spyOn(service, 'callback').mockResolvedValueOnce({ pending: true, retryAfterSeconds: 300 })
+    try {
+      const response = await app.inject({ method: 'GET', url: '/instagram/callback?code=private-code&state=private-state' })
+      expect(response.statusCode).toBe(202)
+      expect(response.headers['content-type']).toContain('charset=utf-8')
+      expect(response.headers['cache-control']).toBe('no-store')
+      expect(response.body).toContain('automaticamente')
+      expect(response.body).not.toMatch(/private-code|private-state/)
+    } finally { callback.mockRestore() }
+  })
+  it('does not expose provider errors on a failed OAuth callback', async () => {
+    const callback = jest.spyOn(app.get(InstagramService), 'callback').mockRejectedValueOnce(new Error('private-provider-error'))
+    try {
+      const response = await app.inject({ method: 'GET', url: '/instagram/callback?code=private-code&state=private-state' })
+      expect(response.statusCode).toBe(400)
+      expect(response.body).not.toMatch(/private-code|private-state|private-provider-error/)
+    } finally { callback.mockRestore() }
+  })
 })

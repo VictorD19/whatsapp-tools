@@ -3,6 +3,10 @@
 ## Estado desta entrega
 
 75 testes Jest passaram. Build API, Web externa e imagem Docker exclusiva passaram.
+Verificação posterior elevou o total para77 testes, incluindo HTTP202 com UTF-8,
+cache desabilitado e ausência de códigos/erros privados no callback. CI43710462996
+concluiu Tests e Docker Build com sucesso parae58ecb0. Os dois testes adicionais
+não mudam o código de execução já validado nesse commit.
 O login Facebook pela sessão existente concluiu uma nova autorização real de
 @joaobosco.pro no endereço do avaliador. Nenhuma senha nova solicitada nesta
 autorização, anúncio selecionado, conversa importada ou mensagem enviada.
