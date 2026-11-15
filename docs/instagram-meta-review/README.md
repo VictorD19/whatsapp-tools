@@ -3,6 +3,13 @@
 Aplicativo **ZapChat Social Lab** — 1684815669905187. Rascunho **1690021079384646**.
 Preparado em 14/11/2026. **Não enviado e ainda não apto à submissão.**
 
+**Atualização posterior:** [recuperação OAuth e hospedagem](../INSTAGRAM-HOSTING-AND-OAUTH-RECOVERY-2026-11-15.md).
+Nova autorização real concluiu no fluxo atualizado. Retomada criptografada foi
+implementada para falhas transitórias;75 testes e integração Redis real passaram.
+Pacote Linux e restauração de backup fictício foram verificados. Contratação de
+servidor, webhook real e vídeo completo ainda não concluídos. Os erros de nova
+autorização descritos abaixo são o diagnóstico anterior à correção deste fluxo.
+
 **Estado mais recente:** [acesso externo e OAuth de 15/11](../INSTAGRAM-REVIEW-EXTERNAL-2026-11-15.md).
 Website e callback do avaliador publicados e salvos na Meta; OAuth real concluído
 e conexão temporária do proprietário removida somente dessa cópia. O vídeo final,

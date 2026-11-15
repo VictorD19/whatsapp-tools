@@ -8,7 +8,9 @@ export function reviewRoute(method, path) {
   if (path.includes('..') || /[%\\\x00]|\.map$/i.test(path)) return null
   if (method === 'POST' && ['/api/v1/auth/login', '/api/v1/auth/refresh'].includes(path)) return 'api'
   if (path.startsWith('/api/')) {
-    if (method === 'GET' && /^\/api\/v1\/instagram\/(status|accounts|connect|callback|webhook)$/.test(path)) return 'api'
+    if (method === 'GET' && /^\/api\/v1\/instagram\/(status|accounts|connect|connection|callback|webhook)$/.test(path)) return 'api'
+    if (method === 'POST' && path === '/api/v1/instagram/connection/retry') return 'api'
+    if (method === 'DELETE' && path === '/api/v1/instagram/connection') return 'api'
     if (method === 'POST' && path === '/api/v1/instagram/webhook') return 'api'
     if (method === 'GET' && /^\/api\/v1\/instagram\/(accounts\/[\w-]+\/conversations|conversations\/[\w-]+\/messages)$/.test(path)) return 'api'
     if (method === 'POST' && /^\/api\/v1\/instagram\/(simulated-account|simulate-inbound|messages\/[\w-]+\/simulate-cancellation)$/.test(path)) return 'api'
@@ -66,5 +68,6 @@ export function createReviewGateway({ api = 'http://127.0.0.1:18011', web = 'htt
   })
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  createReviewGateway().listen(18012, '127.0.0.1', () => console.log('Reviewer gateway ready on loopback18012; no tunnel enabled by this process.'))
+  const bind = process.env.INSTAGRAM_REVIEW_CONTAINER === 'true' ? '0.0.0.0' : '127.0.0.1'
+  createReviewGateway().listen(18012, bind, () => console.log('Reviewer gateway ready; fixed reviewer upstreams only. No tunnel enabled by this process.'))
 }

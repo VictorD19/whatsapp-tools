@@ -25,7 +25,12 @@ export class InstagramController {
     @Body(new ZodValidationPipe(simulationSchema)) body: z.infer<typeof simulationSchema>) {
     return this.service.simulate(tenantId, body.accountId, body.participantId, body.text, body.messageId)
   }
-  @Get('connect') connect(@CurrentTenant() tenantId: string, @CurrentUser() user: { id: string }) { return this.service.connect(tenantId, user.id) }
+  @Get('connect') connect(@CurrentTenant() tenantId: string, @CurrentUser() user: { id: string }, @Query('login') login?: string) {
+    return this.service.connect(tenantId, user.id, login === 'facebook')
+  }
+  @Get('connection') connection(@CurrentTenant() tenantId: string, @CurrentUser() user: { id: string }) { return this.service.connectionProgress(tenantId, user.id) }
+  @Post('connection/retry') retryConnection(@CurrentTenant() tenantId: string, @CurrentUser() user: { id: string }) { return this.service.retryConnection(tenantId, user.id) }
+  @Delete('connection') cancelConnection(@CurrentTenant() tenantId: string, @CurrentUser() user: { id: string }) { return this.service.cancelConnection(tenantId, user.id) }
   @Post('messages/:messageId/simulate-cancellation')
   simulateCancellation(@CurrentTenant() tenantId: string, @Param('messageId') messageId: string) {
     return this.service.simulateCancellation(tenantId, messageId)
@@ -33,8 +38,12 @@ export class InstagramController {
   @Get('callback') @Public()
   async callback(@Query('code') code: string, @Query('state') state: string, @Res() res: FastifyReply) {
     // No dynamic redirect destinations, authorization code, token or provider error in the response.
-    try { await this.service.callback(code, state); return res.type('text/plain').send('Instagram conectado. Feche esta janela e atualize a aba de testes.') }
-    catch { return res.status(400).type('text/plain').send('Não foi possível conectar. Inicie uma nova autorização na aba Instagram de testes.') }
+    res.type('text/plain; charset=utf-8').header('Cache-Control', 'no-store').header('Referrer-Policy', 'no-referrer')
+    try {
+      const result = await this.service.callback(code, state)
+      return result.pending ? res.status(202).send('Autorização recebida. A Meta limitou uma consulta; o piloto retomará a configuração automaticamente. Volte à aba Instagram para acompanhar, sem autorizar novamente.')
+        : res.send('Instagram conectado. Feche esta janela e atualize a aba de testes.')
+    } catch { return res.status(400).send('Não foi possível conectar. Volte à aba Instagram e confira o estado da conexão antes de iniciar outra autorização.') }
   }
   @Get('webhook') @Public()
   verify(@Query() query: Record<string, string>, @Res() res: FastifyReply) {

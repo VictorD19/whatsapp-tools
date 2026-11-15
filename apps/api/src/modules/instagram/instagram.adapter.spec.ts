@@ -65,6 +65,21 @@ describe('Instagram Meta transport', () => {
     expect(url.searchParams.get('state')).toBe('opaque-state')
     expect(url.searchParams.has('scope')).toBe(false)
     expect(url.searchParams.has('client_secret')).toBe(false)
+    expect(url.searchParams.get('prompt')).toBe('login')
+    const facebook = new URL(new InstagramAdapter(new InstagramConfig(new ConfigService(values()))).authUrl('opaque-state', true))
+    expect(facebook.searchParams.has('prompt')).toBe(false)
+    expect(facebook.searchParams.get('config_id')).toBe('456')
+  })
+  it.each([4, 17, 32, 613, 80004])('classifies Meta throttling code %s without leaking provider text', async code => {
+    global.fetch = jest.fn(async () => ({ ok: false, status: 403, headers: new Headers({ 'retry-after': '600' }),
+      json: async () => ({ error: { code, message: 'private-provider-token' } }) })) as any
+    const adapter = new InstagramAdapter(new InstagramConfig(new ConfigService(values())))
+    await expect(adapter.completeConnection({ token: 'private-provider-token', expiresAt: null })).rejects.toMatchObject({ retryable: true, retryAfterSeconds: 600 })
+  })
+  it('keeps a permanent permission denial separate from a quota error', async () => {
+    global.fetch = jest.fn(async () => ({ ok: false, status: 403, headers: new Headers(), json: async () => ({ error: { code: 200 } }) })) as any
+    await expect(new InstagramAdapter(new InstagramConfig(new ConfigService(values()))).completeConnection({ token: 'private-provider-token', expiresAt: null }))
+      .rejects.toMatchObject({ retryable: false })
   })
   it('discovers the shared Instagram account, stores the business ID and subscribes with the system-user token', async () => {
     const bodies = [{ access_token: 'private-token', expires_in: 0 }, { id: 'system-user', client_business_id: '789' },

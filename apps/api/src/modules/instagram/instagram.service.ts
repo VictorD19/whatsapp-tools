@@ -4,16 +4,32 @@ import { RedisService } from '@core/redis/redis.service'
 import { AesCryptoService } from '@shared/crypto/aes-crypto.service'
 import { randomBytes, randomInt, randomUUID } from 'crypto'
 import { InstagramConfig } from './instagram.config'
-import { InstagramAdapter } from './instagram.adapter'
+import { InstagramAdapter, InstagramConnection } from './instagram.adapter'
+import { InstagramConnectionManager } from './instagram.connection'
 import { canReply, deletionCutoffKey, DeletedDirect, deletedDirects, IncomingDirect, incomingDirects, signatureMatches } from './instagram.policy'
 
 const accountFields = { id: true, instagramId: true, username: true, mode: true, active: true, tokenExpiresAt: true } as const
 
 @Injectable()
 export class InstagramService {
+  private connectionTimer?: ReturnType<typeof setInterval>
   constructor(private readonly db: PrismaService, private readonly redis: RedisService,
     private readonly crypto: AesCryptoService, private readonly config: InstagramConfig,
     private readonly adapter: InstagramAdapter) {}
+
+  private connections() { return new InstagramConnectionManager(this.redis, this.crypto, this.config, this.adapter,
+    (tenantId, account) => this.persistConnection(tenantId, account),
+    async (tenantId, userId) => !!await this.db.user.findFirst({ where: { id: userId, tenantId, deletedAt: null,
+      tenant: { deletedAt: null }, OR: [{ role: 'admin' }, { isSuperAdmin: true }] }, select: { id: true } })) }
+  onModuleInit() {
+    if (!this.config.enabled() || this.config.mode !== 'meta') return
+    this.connectionTimer = setInterval(() => { void this.connections().processDue().catch(() => {}) }, 30_000)
+    this.connectionTimer.unref()
+  }
+  onModuleDestroy() { if (this.connectionTimer) clearInterval(this.connectionTimer) }
+  connectionProgress(tenantId: string, userId: string) { return this.connections().progress(tenantId, userId) }
+  retryConnection(tenantId: string, userId: string) { return this.connections().resume(tenantId, userId) }
+  cancelConnection(tenantId: string, userId: string) { return this.connections().cancel(tenantId, userId) }
 
   status(tenantId: string) {
     return { enabled: this.config.allowed(tenantId), mode: this.config.mode, testOnly: true,
@@ -29,10 +45,12 @@ export class InstagramService {
     if (existing) return existing
     return this.db.instagramAccount.create({ data: { tenantId, instagramId: '990' + randomInt(100000000, 999999999), username: 'instagram_teste', mode: 'simulated' }, select: accountFields })
   }
-  async connect(tenantId: string, userId: string) {
+  async connect(tenantId: string, userId: string, useFacebookSession = false) {
     this.config.assertTenant(tenantId)
+    const progress = await this.connectionProgress(tenantId, userId)
+    if (progress.state === 'waiting') return { pending: true, retryAfterSeconds: progress.retryAfterSeconds }
     const state = randomBytes(32).toString('base64url')
-    const url = this.adapter.authUrl(state)
+    const url = this.adapter.authUrl(state, useFacebookSession)
     await this.redis.getClient().set(`instagram:oauth:${state}`, JSON.stringify({ tenantId, userId }), 'EX', 600, 'NX')
     return { url }
   }
@@ -42,9 +60,12 @@ export class InstagramService {
     // Single use, including when provider exchange fails. No tenant identifiers or verifier in the URL.
     const raw = await this.redis.getClient().getdel(`instagram:oauth:${state}`)
     if (!raw) throw new BadRequestException('Autorização expirada ou já utilizada')
-    const { tenantId } = JSON.parse(raw) as { tenantId: string }
+    const { tenantId, userId } = JSON.parse(raw) as { tenantId: string; userId: string }
     this.config.assertTenant(tenantId)
-    const account = await this.adapter.exchange(code)
+    if (!userId || typeof userId !== 'string') throw new BadRequestException('Autorização inválida')
+    return this.connections().authorize(tenantId, userId, code)
+  }
+  private async persistConnection(tenantId: string, account: InstagramConnection) {
     const existing = await this.db.instagramAccount.findUnique({ where: { instagramId: account.instagramId } })
     if (existing && existing.tenantId !== tenantId) throw new ConflictException('Conta Instagram indisponível para esta empresa')
     const data = { username: account.username, clientBusinessId: account.clientBusinessId, mode: 'meta', active: true,

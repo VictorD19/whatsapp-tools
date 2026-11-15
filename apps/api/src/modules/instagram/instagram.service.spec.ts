@@ -10,6 +10,7 @@ function fixture() {
   const conversation = { id: 'c', tenantId: 'one', accountId: 'a', participantId: '456', lastInboundAt: new Date(), lastWebhookChannel: 'unknown', lastWebhookMessageAt: null }
   let message: any = null
   const db: any = {
+    user: { findFirst: jest.fn(async () => ({ id: 'admin' })) },
     instagramAccount: { findFirst: jest.fn(async ({ where }) => where.tenantId === account.tenantId && where.id === account.id ? account : null), findUnique: jest.fn(async () => account), create: jest.fn(async () => ({ id: 'a' })), updateMany: jest.fn() },
     instagramConversation: { findFirst: jest.fn(async ({ where }) => where.tenantId === conversation.tenantId && where.id === conversation.id ? conversation : null), upsert: jest.fn(async () => conversation), updateMany: jest.fn(async () => ({ count: 1 })) },
     instagramMessage: {
@@ -23,10 +24,18 @@ function fixture() {
     },
   }
   db.$transaction = jest.fn(async callback => callback(db))
-  const cache = { set: jest.fn(), getdel: jest.fn(), get: jest.fn(async () => null as string | null) }
+  const stored = new Map<string, string>()
+  const cache = { set: jest.fn(async (key, value, ...args) => { if (args.includes('NX') && stored.has(key)) return null; stored.set(key, value); return 'OK' }),
+    getdel: jest.fn(async key => { const value = stored.get(key); stored.delete(key); return value ?? null }), get: jest.fn(async key => stored.get(key) ?? null),
+    del: jest.fn(async key => stored.delete(key)), eval: jest.fn(async (script, _count, key, ...args) => {
+      if (script.startsWith('-- store pending') || script.startsWith('-- reschedule pending')) { await cache.set(key, args[1]); return 1 }
+      if (await cache.get(key) === args[0]) { await cache.del(key); return 1 } return 0
+    }), zadd: jest.fn(), zrem: jest.fn() }
   const redis: any = { getClient: () => cache }
-  const crypto: any = { encrypt: jest.fn(x => 'encrypted:' + x), decrypt: jest.fn(x => x) }
+  const crypto: any = { encrypt: jest.fn(x => 'encrypted:' + x), decrypt: jest.fn(x => x.startsWith('encrypted:') ? x.slice(10) : x) }
   const adapter: any = { sendText: jest.fn(async () => 'provider-mid'), authUrl: jest.fn(() => 'https://www.instagram.com/oauth/authorize'), exchange: jest.fn(async () => ({ instagramId: '123', username: 'test', token: 'sensitive', expiresAt: new Date(Date.now() + 10000) })) }
+  adapter.exchangeToken = jest.fn(async code => ({ token: code, expiresAt: null }))
+  adapter.completeConnection = jest.fn(async authorization => ({ instagramId: '123', username: 'test', clientBusinessId: '789', ...authorization }))
   return { service: new InstagramService(db, redis, crypto, config, adapter), db, adapter, cache, values, config, account, conversation, crypto }
 }
 describe('Instagram service', () => {
@@ -121,12 +130,14 @@ describe('Instagram service', () => {
   })
   it('binds separate customer authorizations to their own tenants using the same app', async () => {
     const f = fixture(); f.values.INSTAGRAM_PILOT_TENANT_IDS = 'one,two'
+    Object.assign(f.values, { INSTAGRAM_MODE: 'meta', INSTAGRAM_APP_ID: '123', INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback' })
     const states = new Map<string, string>()
     f.cache.set.mockImplementation(async (key, value) => { states.set(key, value); return 'OK' })
-    f.cache.getdel.mockImplementation(async key => { const value = states.get(key); states.delete(key); return value })
+    f.cache.get.mockImplementation(async key => states.get(key) ?? null)
+    f.cache.getdel.mockImplementation(async key => { const value = states.get(key); states.delete(key); return value ?? null })
     f.db.instagramAccount.findUnique.mockResolvedValue(null)
-    f.adapter.exchange.mockImplementation(async (code: string) => ({ instagramId: code === 'first' ? '101' : '102',
-      username: code, clientBusinessId: code === 'first' ? '701' : '702', token: 'token-' + code, expiresAt: null }))
+    f.adapter.completeConnection.mockImplementation(async ({ token }: { token: string }) => ({ instagramId: token === 'first' ? '101' : '102',
+      username: token, clientBusinessId: token === 'first' ? '701' : '702', token: 'token-' + token, expiresAt: null }))
     await f.service.connect('one', 'admin-one'); await f.service.connect('two', 'admin-two')
     const keys = [...states.keys()]
     expect(keys[0]).not.toBe(keys[1])
@@ -140,7 +151,8 @@ describe('Instagram service', () => {
   })
   it('refuses to attach an account already owned by another customer', async () => {
     const f = fixture(); f.values.INSTAGRAM_PILOT_TENANT_IDS = 'one,two'
-    f.cache.getdel.mockResolvedValue(JSON.stringify({ tenantId: 'two' }))
+    Object.assign(f.values, { INSTAGRAM_MODE: 'meta', INSTAGRAM_APP_ID: '123', INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback' })
+    f.cache.getdel.mockResolvedValue(JSON.stringify({ tenantId: 'two', userId: 'admin-two' }))
     await expect(f.service.callback('code', 'a'.repeat(43))).rejects.toThrow('indisponível para esta empresa')
     expect(f.db.instagramAccount.create).not.toHaveBeenCalled()
     expect(f.db.instagramAccount.updateMany).not.toHaveBeenCalled()
@@ -220,18 +232,20 @@ describe('Instagram service', () => {
   })
   it('uses opaque expiring OAuth state and rejects replay', async () => {
     const f = fixture()
+    Object.assign(f.values, { INSTAGRAM_MODE: 'meta', INSTAGRAM_APP_ID: '123', INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback' })
     await f.service.connect('one', 'admin')
     expect(f.cache.set).toHaveBeenCalledWith(expect.stringMatching(/^instagram:oauth:[\w-]{43}$/), JSON.stringify({ tenantId: 'one', userId: 'admin' }), 'EX', 600, 'NX')
-    f.cache.getdel.mockResolvedValueOnce(JSON.stringify({ tenantId: 'one' })).mockResolvedValueOnce(null)
+    f.cache.getdel.mockResolvedValueOnce(JSON.stringify({ tenantId: 'one', userId: 'admin' })).mockResolvedValueOnce(null)
     f.db.instagramAccount.findUnique.mockResolvedValue(null)
     await f.service.callback('code', 'a'.repeat(43))
-    expect(f.crypto.encrypt).toHaveBeenCalledWith('sensitive')
+    expect(f.crypto.encrypt).toHaveBeenCalledWith('code')
     expect(f.db.instagramAccount.create).toHaveBeenCalledWith(expect.objectContaining({ select: expect.not.objectContaining({ accessToken: true }) }))
     await expect(f.service.callback('code', 'a'.repeat(43))).rejects.toThrow()
-    expect(f.adapter.exchange).toHaveBeenCalledTimes(1)
+    expect(f.adapter.exchangeToken).toHaveBeenCalledTimes(1)
   })
   it('never updates an account concurrently claimed by another tenant', async () => {
-    const f = fixture(); f.cache.getdel.mockResolvedValue(JSON.stringify({ tenantId: 'one' }))
+    const f = fixture(); f.cache.getdel.mockResolvedValue(JSON.stringify({ tenantId: 'one', userId: 'admin' }))
+    Object.assign(f.values, { INSTAGRAM_MODE: 'meta', INSTAGRAM_APP_ID: '123', INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback' })
     f.db.instagramAccount.findUnique.mockResolvedValue(null)
     f.db.instagramAccount.create.mockRejectedValue(new Error('unique conflict'))
     await expect(f.service.callback('code', 'a'.repeat(43))).rejects.toThrow()

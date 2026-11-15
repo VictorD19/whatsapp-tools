@@ -3,27 +3,43 @@ import { randomUUID } from 'crypto'
 import { InstagramConfig } from './instagram.config'
 import { IncomingDirect, incomingDirects } from './instagram.policy'
 
+export type InstagramToken = { token: string; expiresAt: Date | null }
+export type InstagramConnection = InstagramToken & { instagramId: string; username: string; clientBusinessId: string }
+// Only normalized diagnostics leave the transport. Never expose a provider body or URL.
+export class InstagramTransportError extends ServiceUnavailableException {
+  constructor(readonly retryable: boolean, readonly retryAfterSeconds = 300) {
+    super(retryable ? 'A Meta está temporariamente indisponível. A autorização será retomada sem novo login.' : 'A Meta não confirmou a operação. Verifique a conexão antes de tentar novamente.')
+  }
+}
+
 @Injectable()
 export class InstagramAdapter {
   constructor(private readonly config: InstagramConfig) {}
-  authUrl(state: string): string {
+  authUrl(state: string, useFacebookSession = false): string {
     this.config.assertMeta()
     const url = new URL('https://www.facebook.com/dialog/oauth')
     url.search = new URLSearchParams({ client_id: this.config.get('INSTAGRAM_APP_ID'),
       redirect_uri: this.config.get('INSTAGRAM_REDIRECT_URI'), response_type: 'code',
-      config_id: this.config.get('INSTAGRAM_CONFIG_ID'), display: 'popup', override_default_response_type: 'true', prompt: 'login', state }).toString()
+      config_id: this.config.get('INSTAGRAM_CONFIG_ID'), display: 'popup', override_default_response_type: 'true', state }).toString()
+    if (!useFacebookSession) url.searchParams.set('prompt', 'login')
     return url.toString()
   }
   private async request(url: string, init: RequestInit): Promise<any> {
     try {
       const response = await fetch(url, { ...init, signal: AbortSignal.timeout(15000), redirect: 'error' })
-      if (!response.ok) throw new Error('provider_error')
       const body = await response.json() as any
-      if (body.error) throw new Error('provider_error')
+      if (!response.ok || body.error) {
+        const retryable = response.status === 429 || response.status >= 500 || [4, 17, 32, 613, 80004].includes(body.error?.code)
+        const retryAfter = Number(response.headers?.get('retry-after'))
+        throw new InstagramTransportError(retryable, Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(3600, Math.max(60, retryAfter)) : 300)
+      }
       return body
-    } catch { throw new ServiceUnavailableException('A Meta não confirmou a operação. Verifique a conexão antes de tentar novamente.') }
+    } catch (error) {
+      if (error instanceof InstagramTransportError) throw error
+      throw new InstagramTransportError(true)
+    }
   }
-  async exchange(code: string): Promise<{ instagramId: string; username: string; clientBusinessId: string; token: string; expiresAt: Date | null }> {
+  async exchangeToken(code: string): Promise<InstagramToken> {
     this.config.assertMeta()
     const base = `https://graph.facebook.com/${this.config.get('INSTAGRAM_API_VERSION')}`
     const query = new URLSearchParams({ client_id: this.config.get('INSTAGRAM_APP_ID'), client_secret: this.config.get('INSTAGRAM_APP_SECRET'),
@@ -31,7 +47,12 @@ export class InstagramAdapter {
     const result = await this.request(`${base}/oauth/access_token?${query}`, { method: 'GET' })
     if (typeof result.access_token !== 'string' || !result.access_token ||
         (result.expires_in != null && (!Number.isFinite(result.expires_in) || result.expires_in < 0))) throw new ServiceUnavailableException('Token Instagram inválido')
-    const headers = { Authorization: `Bearer ${result.access_token}` }
+    return { token: result.access_token, expiresAt: result.expires_in > 0 ? new Date(Date.now() + result.expires_in * 1000) : null }
+  }
+  async completeConnection(authorization: InstagramToken): Promise<InstagramConnection> {
+    this.config.assertMeta()
+    const base = `https://graph.facebook.com/${this.config.get('INSTAGRAM_API_VERSION')}`
+    const headers = { Authorization: `Bearer ${authorization.token}` }
     // With Unified Login, /me identifies the integration system user, not Instagram.
     const business = await this.request(`${base}/me?fields=client_business_id`, { headers })
     const assigned = await this.request(`${base}/me/assigned_instagram_accounts?fields=id,username&limit=2`, { headers })
@@ -44,8 +65,10 @@ export class InstagramAdapter {
     await this.request(`${base}/${instagramId}/subscribed_apps`, {
       method: 'POST', headers, body: new URLSearchParams({ subscribed_fields: 'messages,standby' }),
     })
-    return { instagramId, username: me.username, clientBusinessId, token: result.access_token,
-      expiresAt: result.expires_in > 0 ? new Date(Date.now() + result.expires_in * 1000) : null }
+    return { instagramId, username: me.username, clientBusinessId, ...authorization }
+  }
+  async exchange(code: string): Promise<InstagramConnection> {
+    return this.completeConnection(await this.exchangeToken(code))
   }
   async sendText(instagramId: string, participantId: string, token: string | null, text: string): Promise<string> {
     if (this.config.mode === 'simulated') return 'simulated-' + randomUUID()

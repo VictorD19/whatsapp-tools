@@ -7,12 +7,14 @@ type Account = { id: string; username: string; mode: string; active: boolean; to
 type Conversation = { id: string; participantId: string; lastInboundAt: string | null; lastWebhookChannel?: string; updatedAt: string }
 type Message = { id: string; direction: string; text: string; status: string; sentAt: string }
 type Status = { enabled: boolean; mode: 'simulated' | 'meta'; testOnly: boolean; realSendingEnabled: boolean }
+type ConnectionProgress = { state: 'none' | 'waiting'; retryAfterSeconds: number }
 const panel = 'rounded-xl border bg-card p-5 space-y-4'
 const button = 'rounded-md border px-4 py-2 text-sm disabled:opacity-40'
 const field = 'w-full rounded-md border bg-background px-3 py-2 text-sm'
 
 export default function InstagramPage() {
   const [status, setStatus] = useState<Status | null>(null)
+  const [connectionProgress, setConnectionProgress] = useState<ConnectionProgress>({ state: 'none', retryAfterSeconds: 0 })
   const [accounts, setAccounts] = useState<Account[]>([])
   const [accountId, setAccountId] = useState('')
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -42,6 +44,16 @@ export default function InstagramPage() {
     setAccounts(result.data)
     setAccountId(previous => result.data.some(a => a.id === previous && a.active) ? previous : result.data.find(a => a.active)?.id || '')
   }, [])
+  const refreshConnection = useCallback(async () => {
+    const result = await apiGet<{ data: ConnectionProgress }>('instagram/connection')
+    setConnectionProgress(result.data)
+    if (result.data.state === 'none') await loadAccounts()
+  }, [loadAccounts])
+  const startConnection = async (useFacebookSession = false) => {
+    const result = await apiGet<{ data: { url?: string; pending?: boolean } }>(`instagram/connect${useFacebookSession ? '?login=facebook' : ''}`)
+    if (result.data.pending) { await refreshConnection(); return }
+    if (result.data.url) window.location.assign(result.data.url)
+  }
   const loadConversations = useCallback(async (id: string) => {
     const result = await apiGet<{ data: Conversation[] }>(`instagram/accounts/${encodeURIComponent(id)}/conversations`)
     return result.data
@@ -97,6 +109,21 @@ export default function InstagramPage() {
     })()
     return () => { cancelled = true }
   }, [loadAccounts])
+  useEffect(() => {
+    if (!status?.enabled || status.mode !== 'meta') return
+    let cancelled = false
+    const refresh = async () => {
+      try {
+        const result = await apiGet<{ data: ConnectionProgress }>('instagram/connection')
+        if (cancelled) return
+        setConnectionProgress(result.data)
+        if (result.data.state === 'none') await loadAccounts()
+      } catch { if (!cancelled) setError('Não foi possível consultar a conexão em processamento.') }
+    }
+    void refresh()
+    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') void refresh() }, 10_000)
+    return () => { cancelled = true; window.clearInterval(timer) }
+  }, [status?.enabled, status?.mode, loadAccounts])
   useEffect(() => {
     let cancelled = false
     activeAccount.current = accountId
@@ -168,13 +195,20 @@ export default function InstagramPage() {
         <h2 className="font-semibold">Conexão {status.mode === 'simulated' ? 'simulada' : 'com a Meta'}</h2>
         <p className="text-sm text-muted-foreground">{status.mode === 'simulated' ? 'Use uma conta fictícia para testar o percurso sem acessar o Instagram.' : 'Cada empresa conecta sua própria conta profissional. Na Meta, você autoriza a identificação do perfil e a leitura e resposta aos Directs. Escolha somente o Instagram que deseja atender nesta empresa; a conta de anúncios é opcional e pode ficar em branco. O envio real permanece bloqueado durante esta validação.'}</p>
         <div className="flex flex-wrap items-center gap-3">
-          <button className={button} disabled={busy} onClick={() => action(async () => {
+          <button className={button} disabled={busy || connectionProgress.state === 'waiting'} onClick={() => action(async () => {
             if (status.mode === 'simulated') { await apiPost('instagram/simulated-account', {}); await loadAccounts() }
-            else { const result = await apiGet<{ data: { url: string } }>('instagram/connect'); window.location.assign(result.data.url) }
+            else { await startConnection() }
           })}>{status.mode === 'simulated' ? 'Criar conta de teste' : 'Conectar Instagram'}</button>
+          {status.mode === 'meta' && <button className={button} disabled={busy || connectionProgress.state === 'waiting'} onClick={() => action(() => startConnection(true))}>Continuar com Facebook</button>}
           <label className="text-sm">Conta<select className={field} value={accountId} disabled={busy} onChange={e => setAccountId(e.target.value)}><option value="">Escolha uma conta</option>{accounts.filter(a => a.active).map(a => <option key={a.id} value={a.id}>@{a.username} · {a.mode === 'simulated' ? 'simulação' : 'Meta'}</option>)}</select></label>
           {account && <button className={button} disabled={busy} onClick={() => action(async () => { await apiDelete(`instagram/accounts/${encodeURIComponent(account.id)}`); await loadAccounts() })}>Desconectar neste ambiente</button>}
         </div>
+        {connectionProgress.state === 'waiting' && <div role="status" className="rounded-lg border p-4 space-y-3">
+          <p>Autorização recebida. A Meta limitou uma consulta; a configuração será retomada automaticamente, mesmo com esta aba fechada. Você não precisa fazer login novamente.</p>
+          <p className="text-sm">Próxima tentativa em aproximadamente {Math.max(1, Math.ceil(connectionProgress.retryAfterSeconds / 60))} minuto(s). A autorização temporária expira em até uma hora.</p>
+          <button className={button} disabled={busy || connectionProgress.retryAfterSeconds > 0} onClick={() => action(async () => { await apiPost('instagram/connection/retry', {}); await refreshConnection() })}>Retomar configuração</button>
+          <button className={button} disabled={busy} onClick={() => action(async () => { await apiDelete('instagram/connection'); await refreshConnection() })}>Cancelar autorização pendente</button>
+        </div>}
       </section>
       {status.mode === 'simulated' && account && <section className={panel}><h2 className="font-semibold">Simular mensagem recebida</h2><form className="flex flex-wrap gap-3" onSubmit={e => { e.preventDefault(); action(async () => {
         await apiPost('instagram/simulate-inbound', { accountId, participantId: '123456789', text: incoming })
