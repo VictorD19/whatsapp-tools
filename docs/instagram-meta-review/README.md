@@ -3,6 +3,15 @@
 Aplicativo **ZapChat Social Lab** — 1684815669905187. Rascunho **1690021079384646**.
 Preparado em 14/11/2026. **Não enviado e ainda não apto à submissão.**
 
+**Instalação concluída em 16/11:** [piloto no servidor existente](../INSTAGRAM-SHARED-SERVER-DEPLOYMENT-2026-11-16.md).
+O endereço do avaliador e o webhook Meta já atendem pelo servidor SistemaZapChat,
+sem depender deste computador. O responsável mantém a conexão de @joaobosco.pro
+em sua empresa de testes. O usuário `meta-review@example.com` pertence a outra
+empresa, sem conta ou conversa do proprietário; fornecer somente esse acesso
+nos campos privados quando o pacote de análise estiver concluído. Envios seguem
+desligados. Direct real, acesso avançado, declarações e vídeo real ainda pendentes.
+Os estados anteriores abaixo foram superados quanto à hospedagem e separação.
+
 **Direção vigente, 16/11:** [piloto para integração ao CRM](../INSTAGRAM-PILOT-INTEGRATION-SCOPE-2026-11-16.md).
 O usuário recusou contratação de outro servidor/plano. Preparar serviços de teste
 isolados no SistemaZapChat existente, sem alterações nos serviços principais.

@@ -1,5 +1,10 @@
 # Instagram: piloto para incorporação ao ZapChat — 16/11/2026
 
+> **Instalação concluída posteriormente nesta data:** piloto no servidor existente,
+> URL e webhook transferidos, avaliador separado e backups do piloto restaurados.
+> Consulte o [registro de instalação e limites atuais](INSTAGRAM-SHARED-SERVER-DEPLOYMENT-2026-11-16.md).
+> A seção de preparação abaixo registra a situação anterior à instalação.
+
 ## Decisão do responsável
 
 O piloto é uma etapa de desenvolvimento do CRM principal, destinado aos seus

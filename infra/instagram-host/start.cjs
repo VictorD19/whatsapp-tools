@@ -5,6 +5,7 @@ const { spawn, spawnSync } = require('node:child_process')
 async function main() {
   const shared = process.env.INSTAGRAM_PILOT_SHARED_HOST === 'true'
   const config = JSON.parse(readFileSync('/run/secrets/pilot_runtime', 'utf8'))
+  const separateReviewer = typeof config.reviewerLoginPassword === 'string' && config.reviewerLoginPassword.length >= 24
   const dbUrl = new URL(config.databaseUrl)
   if (config.version !== 1 || dbUrl.protocol !== 'postgresql:' || dbUrl.hostname !== 'postgres' || dbUrl.port !== '5432' || dbUrl.pathname !== '/instagram_review' || dbUrl.username !== 'instagram_review' ||
       config.meta.redirectUri !== 'https://instagram-review.sistemazapchat.com/api/v1/instagram/callback' || config.meta.sendEnabled !== false ||
@@ -16,7 +17,7 @@ async function main() {
     // A compiled pilot instance, never AppModule or the production enable flag.
     NODE_ENV: 'test', DATABASE_URL: config.databaseUrl, REDIS_URL: 'redis://redis:6379/0',
     JWT_SECRET: config.jwt, JWT_REFRESH_SECRET: config.refresh, ENCRYPTION_KEY: config.encryption,
-    INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'meta', INSTAGRAM_PILOT_TENANT_IDS: 'instagram-review', INSTAGRAM_SEND_ENABLED: 'false',
+    INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'meta', INSTAGRAM_PILOT_TENANT_IDS: separateReviewer ? 'instagram-review,instagram-meta-review' : 'instagram-review', INSTAGRAM_SEND_ENABLED: 'false',
     INSTAGRAM_APP_ID: config.meta.appId, INSTAGRAM_APP_SECRET: config.meta.appSecret, INSTAGRAM_CONFIG_ID: config.meta.configId,
     INSTAGRAM_VERIFY_TOKEN: config.meta.verifyToken, INSTAGRAM_API_VERSION: config.meta.apiVersion, INSTAGRAM_REDIRECT_URI: config.meta.redirectUri,
     INSTAGRAM_REVIEW_CONTAINER: 'true', CORS_ORIGINS: 'https://instagram-review.sistemazapchat.com', NEXT_TELEMETRY_DISABLED: '1',
@@ -32,6 +33,15 @@ async function main() {
     if (!await db.user.findUnique({ where: { email: 'instagram-review@example.com' } })) await db.user.create({ data: {
       tenantId: 'instagram-review', email: 'instagram-review@example.com', name: 'Avaliador Instagram', role: 'admin',
       password: await requireApi('bcryptjs').hash(config.loginPassword, 12) } })
+    if (separateReviewer) {
+      await db.tenant.upsert({ where: { id: 'instagram-meta-review' }, update: {}, create: {
+        id: 'instagram-meta-review', slug: 'instagram-meta-review', name: 'Avaliação Meta · ambiente separado', planId: plan.id } })
+      const reviewer = await db.user.findUnique({ where: { email: 'meta-review@example.com' } })
+      if (reviewer && (reviewer.tenantId !== 'instagram-meta-review' || reviewer.isSuperAdmin)) throw Error('Unexpected reviewer ownership')
+      if (!reviewer) await db.user.create({ data: {
+        tenantId: 'instagram-meta-review', email: 'meta-review@example.com', name: 'Avaliador Meta', role: 'admin',
+        password: await requireApi('bcryptjs').hash(config.reviewerLoginPassword, 12) } })
+    }
   } finally { await db.$disconnect() }
   const children = [], stop = () => { for (const child of children) child.kill('SIGTERM') }
   process.on('SIGTERM', () => { stop(); setTimeout(() => process.exit(0), 2000).unref() })

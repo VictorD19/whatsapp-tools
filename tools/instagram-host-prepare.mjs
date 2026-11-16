@@ -17,7 +17,7 @@ if (metaDiagnostics(meta).length || meta.sendEnabled !== false || meta.redirectU
 mkdirSync(dir, { recursive: true, mode: 0o700 })
 const password = secret()
 const runtime = { version: 1, fixture: fixtures, databaseUrl: `postgresql://instagram_review:${password}@postgres:5432/instagram_review?schema=public`,
-  jwt: secret(), refresh: secret(), encryption: randomBytes(16).toString('hex'), backupKey: secret(), loginPassword: secret(), meta }
+  jwt: secret(), refresh: secret(), encryption: randomBytes(16).toString('hex'), backupKey: secret(), loginPassword: secret(), reviewerLoginPassword: secret(), meta }
 writeFileSync(resolve(dir, 'runtime.json'), JSON.stringify(runtime), { mode: 0o600 })
 writeFileSync(resolve(dir, 'db-password'), password, { mode: 0o600 })
 // Empty until a NEW dedicated tunnel is created. Never reuse the original tunnel token.

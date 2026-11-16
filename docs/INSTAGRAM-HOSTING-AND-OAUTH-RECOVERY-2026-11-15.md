@@ -6,6 +6,9 @@
 > O destino é um ambiente isolado no servidor SistemaZapChat existente e,
 > após validação e aprovações, a incorporação ao CRM principal.
 > Consulte [escopo vigente](INSTAGRAM-PILOT-INTEGRATION-SCOPE-2026-11-16.md).
+> **Instalação concluída em 16/11:** [entrega no servidor existente](INSTAGRAM-SHARED-SERVER-DEPLOYMENT-2026-11-16.md).
+> O endereço público e o webhook estão no servidor; o acesso administrativo
+> temporário já foi removido. O Direct real continua pendente de validação.
 
 ## Estado desta entrega
 
