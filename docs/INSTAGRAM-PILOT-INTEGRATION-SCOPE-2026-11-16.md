@@ -18,6 +18,33 @@ Esses limites precisam ser validados sob execução; não provam capacidade para
 20 ou 50 clientes. A imagem de instalação deve ser construída fora do Droplet,
 para Linux amd64. Não executar o instalador antigo de servidor novo nesse host.
 
+### Pacote validado nesta preparação
+
+Imagem Linux amd64 `zapchat-instagram-pilot:shared-20261116` construída fora do
+servidor; arquivo de transferência SHA-256
+`f321099321150de9d602c2514dfd438a15a132e158137a377aec449ed1aafee1`.
+Branch de testes preservada no GitHub, commit inicial desta entrega `2896940`.
+77 testes Jest passaram. O perfil compartilhado iniciou localmente sob seus
+limites: três serviços saudáveis, sem OOM ou reinícios, aproximadamente 375 MiB
+de uso no app no instante observado. Isso não representa ensaio de carga.
+
+Onze verificações HTTP locais passaram: página de login; exigência de autenticação;
+envio desligado; contas vazias; bloqueios de cadastro, resposta, importação e
+origem estrangeira; desafio de webhook; evento vazio assinado; rejeição de evento
+sem assinatura. Nenhuma chamada à Meta ou mensagem enviada. O verificador foi
+ajustado para o envelope `{data: ...}` já usado pela API; não houve defeito de login.
+Backup AES-GCM da base fictícia foi restaurado numa base temporária distinta,
+com um usuário recuperado. Não confundir essa prova sintética com Direct real.
+
+O instalador específico `infra/instagram-host/install-shared.sh` confere host,
+ID do Droplet, diretório, imagem amd64 já presente, recursos livres e ausência
+de uma instalação anterior. Não instala pacotes do sistema, não compila imagens,
+não muda firewall e não reinicia serviços principais. Registra IDs e horários
+de início dos seis serviços `wt-*` antes e depois; em falha para apenas o piloto.
+Se faltar uma dependência ou capacidade mínima, interrompe antes da instalação.
+Uma nova autorização de acesso administrativo por até duas horas foi solicitada;
+nenhuma chave nova foi habilitada, instalação remota ou mudança DNS executada.
+
 A inspeção de leitura encontrou 1.934 MiB de memória disponível, 640 MiB de swap
 em uso e aproximadamente 15 GiB de disco livre de 77 GiB. É uma observação
 pontual, não uma garantia de capacidade. Preservar os seis serviços `wt-*`.
