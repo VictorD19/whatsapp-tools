@@ -1,5 +1,16 @@
 # Demonstração e preparação técnica
 
+**Estado vigente de 16/11:** [instalação no servidor existente](../INSTAGRAM-SHARED-SERVER-DEPLOYMENT-2026-11-16.md).
+Website estável, webhook Meta registrado no servidor, acesso externo do avaliador
+e separação da conta do proprietário foram concluídos. Cancelamentos foram
+implementados e testados anteriormente. Ainda faltam vídeo do fluxo real, prova
+de Direct real, análise avançada e declarações factuais. Envios e importação pelo
+gateway do avaliador permanecem bloqueados; não gravar esses controles como
+funcionais. A interface ainda exibe o botão de sincronização e deve ser alinhada
+ao acesso restrito antes da gravação/submissão. As cinco áreas marcadas Prévia
+continuam simulações. As tabelas antigas abaixo são histórico e não indicam
+novamente pendência de contratar ou hospedar outro servidor.
+
 Estado posterior: [acesso externo e OAuth real](../INSTAGRAM-REVIEW-EXTERNAL-2026-11-15.md).
 Website/callback e conexão real do avaliador foram validados. Webhook nesse banco,
 resposta real e vídeo completo continuam pendentes. O roteiro abaixo é histórico.

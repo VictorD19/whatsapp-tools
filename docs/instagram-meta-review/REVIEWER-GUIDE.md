@@ -1,5 +1,16 @@
 # Reviewer material — draft, not submitted
 
+**16 November current state:** continuously hosted on the existing SistemaZapChat
+server. The dedicated `meta-review@example.com` login belongs to the separate
+`instagram-meta-review` tenant, has no owner connection or conversations and is
+not a superadministrator. The owner's authorized connection is in another tenant.
+Only the review login may be issued in the private review form when the package
+is ready; no credential has been shared. Website, login, tenant separation and
+the active Meta webhook endpoint were verified. Real Direct delivery, Advanced
+Access and the complete real-flow video are still unproven/pending. Historical
+states below are superseded regarding hosting and reviewer isolation. See
+../INSTAGRAM-SHARED-SERVER-DEPLOYMENT-2026-11-16.md.
+
 15 November update: the isolated Website is available at
 https://instagram-review.sistemazapchat.com/login and its OAuth callback was
 verified with the owner's account. The temporary owner connection was then removed
@@ -19,8 +30,8 @@ content publishing, comment management, insights or Human Agent access.
 
 ## instagram_manage_messages — use description
 
-The pilot uses this permission to retrieve eligible Direct conversations and
-display received message text and participant/message identifiers with timestamps
+The pilot uses this permission to display eligible received Direct conversations,
+message text and participant/message identifiers with timestamps
 in its Conversations interface. The business explicitly chooses its own account
 through Meta authorization. Access tokens are encrypted before storage. Webhook
 signatures and account/recipient identifiers are validated. Data is scoped to the
@@ -30,14 +41,17 @@ Advanced Access is requested for eligible interactions involving people without
 app roles, as explained by Meta Support in case 2256928134873004. Production CRM
 is not part of this pilot deployment. At this preparation stage real outbound
 replies and AI replies are disabled, and real-user webhook delivery has not yet
-been demonstrated. The five-minute history reconciliation is a temporary
-contingency and is not presented as real-time webhook delivery.
+been demonstrated. The old local laboratory's five-minute history reconciliation
+is a temporary contingency, is not installed in the hosted reviewer and is not
+presented as real-time webhook delivery. Manual history import and real replies
+are blocked by the reviewer gateway; do not demonstrate those paths as available.
 
 This description must be revised to match the completed, demonstrable feature
-before submission. In particular, do not claim sender-unsend handling, real reply
-or deletion through the inbox UI until those paths are implemented and verified.
+before submission. Sender-unsend handling has been implemented and verified with
+fixtures, not a demonstrated real sender event. Do not claim real replies or
+operator deletion through the inbox UI until those paths are implemented and verified.
 
-## Reviewer access — instructions prepared, URL/account not issued
+## Reviewer access — separate URL/account prepared, credentials not issued
 
 The service uses its own email/password login. Meta Unified Login connects an
 Instagram account after signing into the CRM; it is not the CRM sign-in mechanism.
@@ -47,7 +61,9 @@ Select the corresponding non-Facebook service-login option in the reviewer form.
    reviewer-access fields: https://instagram-review.sistemazapchat.com/login.
    Confirm continuous availability before submission.
 2. Sign in using the dedicated service-review account supplied in those fields.
-   These credentials must not be the owner's existing local pilot login.
+   Its email is `meta-review@example.com`. Its password must only be supplied in
+   the private review fields, not in this document. Do not use the owner's
+   `instagram-review@example.com` login or its authorized Instagram connection.
 3. Open Instagram, then Conexão. Choose the Instagram connection button.
 4. Complete Meta Unified Login using your own eligible Meta account and select
    exactly one professional Instagram account and its business portfolio.
