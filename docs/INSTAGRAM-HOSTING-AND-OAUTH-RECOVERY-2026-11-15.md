@@ -1,5 +1,12 @@
 # Recuperação OAuth e hospedagem isolada — 15/11/2026
 
+> **Decisão substituída em 16/11/2026:** o usuário recusou novo servidor,
+> plano ou aumento contratado para o piloto. A proposta de custo e a sequência
+> de provisionamento abaixo são apenas histórico; não devem ser executadas.
+> O destino é um ambiente isolado no servidor SistemaZapChat existente e,
+> após validação e aprovações, a incorporação ao CRM principal.
+> Consulte [escopo vigente](INSTAGRAM-PILOT-INTEGRATION-SCOPE-2026-11-16.md).
+
 ## Estado desta entrega
 
 75 testes Jest passaram. Build API, Web externa e imagem Docker exclusiva passaram.

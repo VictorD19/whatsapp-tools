@@ -2,6 +2,12 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { apiGet, apiPost, apiDelete } from '@/lib/api'
+import dynamic from 'next/dynamic'
+import { instagramSections, InstagramSection, InstagramPreviewSection, isInstagramSection } from '@/components/instagram/sections'
+
+const InstagramPrototypePreview = dynamic(() => import('@/components/instagram/InstagramPrototypePreview'), {
+  ssr: false, loading: () => <p role="status">Abrindo a prévia do protótipo…</p>,
+})
 
 type Account = { id: string; username: string; mode: string; active: boolean; tokenExpiresAt: string | null }
 type Conversation = { id: string; participantId: string; lastInboundAt: string | null; lastWebhookChannel?: string; updatedAt: string }
@@ -13,6 +19,21 @@ const button = 'rounded-md border px-4 py-2 text-sm disabled:opacity-40'
 const field = 'w-full rounded-md border bg-background px-3 py-2 text-sm'
 
 export default function InstagramPage() {
+  const [section, setSection] = useState<InstagramSection>('conversas')
+  const [previewSection, setPreviewSection] = useState<InstagramPreviewSection>('automacoes')
+  const [previewOpened, setPreviewOpened] = useState(false)
+  const navigateSection = useCallback((next: InstagramSection) => {
+    setSection(next)
+    if (instagramSections.find(item => item.id === next)?.preview) {
+      setPreviewOpened(true); setPreviewSection(next as InstagramPreviewSection)
+    }
+    window.history.replaceState(null, '', `#${next}`)
+  }, [])
+  useEffect(() => {
+    const change = () => { const value = window.location.hash.slice(1); if (isInstagramSection(value)) navigateSection(value) }
+    change(); window.addEventListener('hashchange', change)
+    return () => window.removeEventListener('hashchange', change)
+  }, [navigateSection])
   const [status, setStatus] = useState<Status | null>(null)
   const [connectionProgress, setConnectionProgress] = useState<ConnectionProgress>({ state: 'none', retryAfterSeconds: 0 })
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -191,7 +212,21 @@ export default function InstagramPage() {
     {error && <div className="rounded-lg border border-red-300 p-4" role="alert">{error}</div>}
     {notice && <div className="rounded-lg border p-4" role="status">{notice}</div>}
     {status?.enabled && <>
-      <section className={panel}>
+      <nav role="tablist" aria-label="Seções do Instagram" className="flex flex-wrap gap-2 border-b pb-4">
+        {instagramSections.map((item, index) => <button key={item.id} role="tab" id={`instagram-tab-${item.id}`}
+          aria-label={item.preview ? `${item.label} — prévia` : item.label}
+          aria-selected={section === item.id} aria-controls="instagram-section" tabIndex={section === item.id ? 0 : -1}
+          className={`${button} ${section === item.id ? 'bg-primary text-primary-foreground' : 'bg-card'}`}
+          onClick={() => navigateSection(item.id)} onKeyDown={event => {
+            const next = event.key === 'ArrowRight' ? (index + 1) % instagramSections.length : event.key === 'ArrowLeft' ? (index + instagramSections.length - 1) % instagramSections.length
+              : event.key === 'Home' ? 0 : event.key === 'End' ? instagramSections.length - 1 : -1
+            if (next < 0) return
+            event.preventDefault(); navigateSection(instagramSections[next].id)
+            document.getElementById(`instagram-tab-${instagramSections[next].id}`)?.focus()
+          }}>{item.label}{item.preview && <span className="ml-2 text-xs opacity-75">Prévia</span>}</button>)}
+      </nav>
+      <div id="instagram-section" role="tabpanel" aria-labelledby={`instagram-tab-${section}`} className="space-y-6">
+      {section === 'conexao' && <section className={panel}>
         <h2 className="font-semibold">Conexão {status.mode === 'simulated' ? 'simulada' : 'com a Meta'}</h2>
         <p className="text-sm text-muted-foreground">{status.mode === 'simulated' ? 'Use uma conta fictícia para testar o percurso sem acessar o Instagram.' : 'Cada empresa conecta sua própria conta profissional. Na Meta, você autoriza a identificação do perfil e a leitura e resposta aos Directs. Escolha somente o Instagram que deseja atender nesta empresa; a conta de anúncios é opcional e pode ficar em branco. O envio real permanece bloqueado durante esta validação.'}</p>
         <div className="flex flex-wrap items-center gap-3">
@@ -209,11 +244,13 @@ export default function InstagramPage() {
           <button className={button} disabled={busy || connectionProgress.retryAfterSeconds > 0} onClick={() => action(async () => { await apiPost('instagram/connection/retry', {}); await refreshConnection() })}>Retomar configuração</button>
           <button className={button} disabled={busy} onClick={() => action(async () => { await apiDelete('instagram/connection'); await refreshConnection() })}>Cancelar autorização pendente</button>
         </div>}
-      </section>
-      {status.mode === 'simulated' && account && <section className={panel}><h2 className="font-semibold">Simular mensagem recebida</h2><form className="flex flex-wrap gap-3" onSubmit={e => { e.preventDefault(); action(async () => {
+      </section>}
+      {section === 'simulador' && status.mode === 'simulated' && account && <section className={panel}><h2 className="font-semibold">Laboratório do piloto · mensagem fictícia</h2><form className="flex flex-wrap gap-3" onSubmit={e => { e.preventDefault(); action(async () => {
         await apiPost('instagram/simulate-inbound', { accountId, participantId: '123456789', text: incoming })
         const data = await loadConversations(accountId); setConversations(data); const id = data[0]?.id || ''; setConversationId(id); if (selected.current === id) await refreshMessages(id)
       }) }}><label className="grow text-sm">Mensagem do contato<input className={field} value={incoming} onChange={e => setIncoming(e.target.value)} maxLength={1000} required /></label><button className={button} disabled={busy}>Receber mensagem fictícia</button></form></section>}
+      {section === 'conversas' && <>
+      <p className="text-sm text-muted-foreground">{account ? `Conta selecionada: @${account.username}.` : 'Nenhuma conta selecionada. Abra Conexão para conectar seu Instagram.'}</p>
       <section className="grid gap-4 md:grid-cols-[260px_minmax(0,1fr)]">
         <aside className={panel}><h2 className="font-semibold">Conversas</h2><button className={button} disabled={!accountId || busy} onClick={() => action(refreshInbox)}>Atualizar</button>{status.mode === 'meta' && <button className={button} disabled={!accountId || busy} onClick={() => action(syncInbox)}>Sincronizar com Instagram</button>}<p className="text-xs text-muted-foreground">Até 50 conversas recentes neste piloto.</p>{status.mode === 'meta' && <p className="text-xs text-muted-foreground">O receptor de webhook funciona com esta aba fechada. Aqui, as conversas salvas atualizam a cada 3 segundos. Sincronizar com Instagram consulta manualmente até 3 conversas recentes, após a conexão e nas últimas 24 horas.</p>}{!conversations.length && <p className="text-sm">Nenhuma mensagem recebida.</p>}{conversations.map(c => <button className={`${button} block w-full text-left ${conversationId === c.id ? 'bg-muted' : ''}`} key={c.id} onClick={() => setConversationId(c.id)}>Contato {c.participantId}<span className="block text-xs text-muted-foreground">Direct do Instagram</span></button>)}</aside>
         <div className={panel}><h2 className="font-semibold">{conversation ? `Contato ${conversation.participantId}` : 'Selecione uma conversa'}</h2>
@@ -222,8 +259,12 @@ export default function InstagramPage() {
           <div className="max-h-96 min-h-40 space-y-3 overflow-y-auto" aria-live="polite">{messages.map(m => <div key={m.id} className={`max-w-[90%] whitespace-pre-wrap rounded-lg p-3 text-sm ${m.direction === 'out' ? 'ml-auto bg-primary text-primary-foreground' : 'bg-muted'}`}>{m.status === 'unsent' ? 'Mensagem cancelada pelo remetente' : m.text}<span className="mt-2 block text-xs opacity-75">{m.direction === 'in' ? 'Contato' : 'Atendente'} · {new Date(m.sentAt).toLocaleString('pt-BR')} · {m.status === 'unsent' ? 'Cancelada' : m.status === 'received' ? 'Recebida' : m.status === 'sent' ? 'Enviada' : 'Sem confirmação final'}</span>{status.mode === 'simulated' && m.direction === 'in' && m.status !== 'unsent' && <button className="mt-2 block underline" disabled={busy} onClick={() => action(async () => { await apiPost(`instagram/messages/${encodeURIComponent(m.id)}/simulate-cancellation`, {}); await refreshInbox() })}>Simular cancelamento</button>}</div>)}</div>
           <form className="space-y-3" onSubmit={send}><label className="block text-sm">Sua resposta<textarea className={field} value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={1000} required disabled={!conversation || conversation.lastWebhookChannel === 'standby' || busy || uncertain} /></label><button className={button} disabled={!conversation || conversation.lastWebhookChannel === 'standby' || busy || uncertain || !withinWindow || (status.mode === 'meta' && !status.realSendingEnabled)}>{busy ? 'Processando…' : status.mode === 'simulated' ? 'Responder na simulação' : 'Enviar resposta'}</button><p className="text-xs text-muted-foreground">{uncertain ? 'Existe um envio pendente ou incerto. Verifique antes de enviar novamente.' : !withinWindow ? 'Uma mensagem recente do contato é necessária para responder na janela de 24 horas.' : status.mode === 'simulated' ? 'Nenhuma chamada à Meta neste modo.' : 'Envios respeitam a janela de 24 horas desde a última mensagem recebida.'}</p></form>
         </div>
-      </section>
-      <p className="text-sm text-muted-foreground">IA, comentários, automações e importação do histórico serão adicionados depois de validar este percurso. Este piloto não está habilitado em produção.</p>
+      </section></>}
+      {previewOpened && <div hidden={!instagramSections.find(item => item.id === section)?.preview}>
+        <InstagramPrototypePreview section={previewSection} onNavigate={navigateSection} />
+      </div>}
+      </div>
+      <p className="text-sm text-muted-foreground">As abas marcadas como Prévia recuperam o protótipo interativo. A integração real de automações, IA, menus e métricas ainda está em desenvolvimento. Este piloto não está habilitado no CRM principal.</p>
     </>}
   </div>
 }

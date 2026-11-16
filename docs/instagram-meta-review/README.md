@@ -3,6 +3,17 @@
 Aplicativo **ZapChat Social Lab** — 1684815669905187. Rascunho **1690021079384646**.
 Preparado em 14/11/2026. **Não enviado e ainda não apto à submissão.**
 
+**Direção vigente, 16/11:** [piloto para integração ao CRM](../INSTAGRAM-PILOT-INTEGRATION-SCOPE-2026-11-16.md).
+O usuário recusou contratação de outro servidor/plano. Preparar serviços de teste
+isolados no SistemaZapChat existente, sem alterações nos serviços principais.
+O perfil de instalação compartilhada está em preparação, ainda não instalado.
+As sete áreas do protótipo foram recuperadas na interface; cinco são prévias
+simuladas, claramente identificadas, e ainda exigem integração real. OAuth real
+de @joaobosco.pro voltou a concluir no avaliador; essa cópia contém a conexão
+do proprietário e não deve ter sua credencial entregue à Meta nesse estado.
+O webhook real e a aprovação de acesso avançado continuam pendentes. Os estados
+anteriores abaixo permanecem como histórico, não como descrição atual do token.
+
 **Atualização posterior:** [recuperação OAuth e hospedagem](../INSTAGRAM-HOSTING-AND-OAUTH-RECOVERY-2026-11-15.md).
 Nova autorização real concluiu no fluxo atualizado. Retomada criptografada foi
 implementada para falhas transitórias;75 testes e integração Redis real passaram.

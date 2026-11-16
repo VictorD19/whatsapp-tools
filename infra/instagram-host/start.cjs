@@ -3,6 +3,7 @@ const { createRequire } = require('node:module')
 const { spawn, spawnSync } = require('node:child_process')
 
 async function main() {
+  const shared = process.env.INSTAGRAM_PILOT_SHARED_HOST === 'true'
   const config = JSON.parse(readFileSync('/run/secrets/pilot_runtime', 'utf8'))
   const dbUrl = new URL(config.databaseUrl)
   if (config.version !== 1 || dbUrl.protocol !== 'postgresql:' || dbUrl.hostname !== 'postgres' || dbUrl.port !== '5432' || dbUrl.pathname !== '/instagram_review' || dbUrl.username !== 'instagram_review' ||
@@ -18,7 +19,8 @@ async function main() {
     INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'meta', INSTAGRAM_PILOT_TENANT_IDS: 'instagram-review', INSTAGRAM_SEND_ENABLED: 'false',
     INSTAGRAM_APP_ID: config.meta.appId, INSTAGRAM_APP_SECRET: config.meta.appSecret, INSTAGRAM_CONFIG_ID: config.meta.configId,
     INSTAGRAM_VERIFY_TOKEN: config.meta.verifyToken, INSTAGRAM_API_VERSION: config.meta.apiVersion, INSTAGRAM_REDIRECT_URI: config.meta.redirectUri,
-    INSTAGRAM_REVIEW_CONTAINER: 'true', CORS_ORIGINS: 'https://instagram-review.sistemazapchat.com', NEXT_TELEMETRY_DISABLED: '1' }
+    INSTAGRAM_REVIEW_CONTAINER: 'true', CORS_ORIGINS: 'https://instagram-review.sistemazapchat.com', NEXT_TELEMETRY_DISABLED: '1',
+    ...(shared ? { NODE_OPTIONS: '--max-old-space-size=160' } : {}) }
   if (process.getuid() === 0) { process.setgid(1000); process.setuid(1000) }
   const requireApi = createRequire('/app/apps/api/package.json')
   const migration = spawnSync(process.execPath, [requireApi.resolve('prisma/build/index.js'), 'migrate', 'deploy', '--schema', '/app/packages/database/prisma/schema.prisma'], { env: base, stdio: 'inherit' })
@@ -36,8 +38,8 @@ async function main() {
   process.on('SIGINT', () => { stop(); process.exit(0) })
   for (const [path, env] of [
     ['/app/infra/instagram-host/bootstrap.cjs', base],
-    ['/app/web/apps/web/server.js', { PATH: base.PATH, HOME: '/tmp', NODE_ENV: 'production', PORT: '18091', HOSTNAME: '127.0.0.1', NEXT_TELEMETRY_DISABLED: '1' }],
-    ['/app/tools/instagram-review-gateway.mjs', { PATH: base.PATH, INSTAGRAM_REVIEW_CONTAINER: 'true' }],
+    ['/app/web/apps/web/server.js', { PATH: base.PATH, HOME: '/tmp', NODE_ENV: 'production', PORT: '18091', HOSTNAME: '127.0.0.1', NEXT_TELEMETRY_DISABLED: '1', ...(shared ? { NODE_OPTIONS: '--max-old-space-size=128' } : {}) }],
+    ['/app/tools/instagram-review-gateway.mjs', { PATH: base.PATH, INSTAGRAM_REVIEW_CONTAINER: 'true', ...(shared ? { NODE_OPTIONS: '--max-old-space-size=64' } : {}) }],
   ]) {
     const child = spawn(process.execPath, [path], { env, stdio: 'inherit' }); children.push(child)
     child.once('exit', () => { stop(); process.exit(1) })
