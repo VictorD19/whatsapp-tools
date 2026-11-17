@@ -48,6 +48,25 @@ recuperação, sem limpar erros de outras ações. Build Web passou. Teste local
 queda/retomada da API confirmou o aviso e sua remoção automática sem recarregar.
 Esses ajustes ainda não foram publicados no servidor nesta data.
 
+O token foi revalidado por leitura na Meta: aplicativo correto e permissões
+instagram_basic, instagram_manage_messages e public_profile. A conta mantém
+messages e standby. O endpoint de inscrição retornou os campos, sem ID do app;
+a associação ao aplicativo foi conferida pelo debug do token, não inferida da
+ausência desse ID no retorno.
+
+Quatro mensagens antigas de teste foram localizadas no laboratório legado.
+Somente “Teste ZapChat 15” foi consultada novamente na Graph API nesta preparação:
+HTTP 200, conteúdo e remetente conferidos com o teste original. Uma cópia foi
+preparada apenas no banco local de avaliação, com data original e origem history.
+Não foi copiada para o servidor nem declarada como evento recebido pelo webhook.
+A interface identifica explicitamente essa origem. Essa evidência demonstra
+leitura de dados reais; não encerra a prova de recebimento em tempo real.
+
+A captura experimental do navegador produziu somente um frame; não é um vídeo
+da análise. Foi interrompida e não registrou o login da Meta. A autenticação
+pessoal ainda é necessária na nova aba Facebook visível. Não reutilizar o frame
+único ou a prévia de 15/11 como se fossem a gravação final.
+
 ## Dependências restantes
 
 1. Sessão pessoal do administrador para consultar o rascunho 1690021079384646 e

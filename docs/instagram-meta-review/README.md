@@ -1,48 +1,47 @@
 # Pacote de preparação da análise Meta
 
 Aplicativo **ZapChat Social Lab** — 1684815669905187. Rascunho **1690021079384646**.
-Preparado em 14/11/2026. **Não enviado e ainda não apto à submissão.**
+Estado em **17/11/2026: não enviado e ainda não apto à submissão**.
 
-**Instalação concluída em 16/11:** [piloto no servidor existente](../INSTAGRAM-SHARED-SERVER-DEPLOYMENT-2026-11-16.md).
-O endereço do avaliador e o webhook Meta já atendem pelo servidor SistemaZapChat,
-sem depender deste computador. O responsável mantém a conexão de @joaobosco.pro
-em sua empresa de testes. O usuário `meta-review@example.com` pertence a outra
-empresa, sem conta ou conversa do proprietário; fornecer somente esse acesso
-nos campos privados quando o pacote de análise estiver concluído. Envios seguem
-desligados. Direct real, acesso avançado, declarações e vídeo real ainda pendentes.
-Os estados anteriores abaixo foram superados quanto à hospedagem e separação.
+## Estado atual
 
-**Direção vigente, 16/11:** [piloto para integração ao CRM](../INSTAGRAM-PILOT-INTEGRATION-SCOPE-2026-11-16.md).
-O usuário recusou contratação de outro servidor/plano. Preparar serviços de teste
-isolados no SistemaZapChat existente, sem alterações nos serviços principais.
-O perfil de instalação compartilhada está em preparação, ainda não instalado.
-As sete áreas do protótipo foram recuperadas na interface; cinco são prévias
-simuladas, claramente identificadas, e ainda exigem integração real. OAuth real
-de @joaobosco.pro voltou a concluir no avaliador; essa cópia contém a conexão
-do proprietário e não deve ter sua credencial entregue à Meta nesse estado.
-O webhook real e a aprovação de acesso avançado continuam pendentes. Os estados
-anteriores abaixo permanecem como histórico, não como descrição atual do token.
+- Piloto hospedado no servidor SistemaZapChat existente desde 16/11, com endereço
+  e webhook independentes deste computador. Nenhum plano contratado ou serviço
+  do CRM principal reiniciado. [Instalação, backup e reversão](../INSTAGRAM-SHARED-SERVER-DEPLOYMENT-2026-11-16.md).
+- Conta @joaobosco.pro conectada na empresa do responsável. Avaliador
+  `meta-review@example.com` em empresa distinta, sem acesso à conta/conversas do
+  responsável. Senhas somente nos arquivos privados; nenhuma entregue à Meta.
+- Onze verificações públicas passaram novamente em 17/11. Webhook ativo com
+  messages e standby; token válido, associado ao app correto, com instagram_basic,
+  instagram_manage_messages e public_profile. Nenhum envio real habilitado.
+- Uma mensagem antiga “Teste ZapChat 15” foi relida com sucesso na Meta e preparada
+  somente na cópia local, identificada como histórico. Isso comprova leitura de
+  dados reais, não chegada pelo webhook. Nenhuma nova mensagem foi solicitada.
+- A revisão R3 alinha a interface aos bloqueios do avaliador e recupera avisos
+  temporários automaticamente. Build e teste local de queda/retomada passaram.
+  Ainda aguarda autorização de acesso temporário para publicação só no piloto;
+  o acesso de 16/11 foi removido e não foi reativado silenciosamente.
+- Automações, Assistente IA, Menus do Direct, Resultados e Laboratório continuam
+  prévias, fora da demonstração de funcionalidades efetivas à Meta.
+- O Facebook pessoal pediu nova autenticação; uma nova aba visível foi aberta
+  para o responsável. A sessão da Página não substitui a do administrador.
 
-**Atualização posterior:** [recuperação OAuth e hospedagem](../INSTAGRAM-HOSTING-AND-OAUTH-RECOVERY-2026-11-15.md).
-Nova autorização real concluiu no fluxo atualizado. Retomada criptografada foi
-implementada para falhas transitórias;75 testes e integração Redis real passaram.
-Pacote Linux e restauração de backup fictício foram verificados. Contratação de
-servidor, webhook real e vídeo completo ainda não concluídos. Os erros de nova
-autorização descritos abaixo são o diagnóstico anterior à correção deste fluxo.
+## Pendências para submeter
 
-**Estado mais recente:** [acesso externo e OAuth de 15/11](../INSTAGRAM-REVIEW-EXTERNAL-2026-11-15.md).
-Website e callback do avaliador publicados e salvos na Meta; OAuth real concluído
-e conexão temporária do proprietário removida somente dessa cópia. O vídeo final,
-o webhook do avaliador e a hospedagem contínua ainda não estão concluídos.
-**Repetição posterior do OAuth falhou:** troca de código200 e identidade empresarial
-403/Graph code4. Não considerar a conexão repetível validada. Original do laboratório
-responde200; CI de0f03417 passou. Detalhes no registro externo acima.
+1. Acessar o rascunho com a sessão pessoal e consultar o cadastro legal do
+   controlador. Confirmar declarações factuais sem fonte no código.
+2. Publicar a revisão de interface somente no piloto, após validar seu backup.
+3. Gravar o fluxo real completo de login, autorização e uso dos dados de cada
+   permissão. A captura experimental de um frame e os vídeos sintéticos antigos
+   não são uma gravação final.
+4. Comprovar Direct real e concluir o acesso avançado. Teste assinado vazio,
+   histórico importado e painel publicado não são confirmação de webhook real.
+5. Revisar o pacote e obter a confirmação aplicável para concordâncias e envio
+   final. Não aceitar termos ou preencher fatos desconhecidos por suposição.
 
-**Atualização de 15/11:** cancelamentos implementados e validados; instância local
-independente do avaliador criada, sem tokens Meta, com dados fictícios. Prévia
-gravada em `assets/reviewer-demo-20261115.mp4`. Ver
-[entrega técnica](../INSTAGRAM-REVIEW-TECHNICAL-2026-11-15.md) para testes e limites.
-Isso não conclui Website externo, OAuth real ou vídeo final da análise Meta.
+[Roteiro e evidências de 17/11](RECORDING-PLAN-2026-11-17.md).
+Os registros de 14–16/11 nos documentos vinculados são históricos; usar o estado
+acima quando divergirem sobre hospedagem, conexão ou separação do avaliador.
 
 ## Material preparado
 
@@ -88,9 +87,9 @@ Solicitar a permissão não comprova seu uso integral nem assegura aprovação.
    nos últimos 12 meses e quais processos já são adotados. Não há essa informação
    no código, nas páginas legais nem nas notas do projeto. Não marcar Não ou
    declarar processos existentes por ausência de um registro no GitHub.
-3. O acesso externo separado foi autorizado e preparado. Verificar a disponibilidade
-   contínua e manter a cópia sem tokens/conversas do proprietário antes de fornecer
-   sua credencial exclusiva nos campos privados da análise.
+3. O acesso externo separado está hospedado e foi verificado. Fornecer somente
+   a credencial de meta-review@example.com nos campos privados da análise,
+   quando o pacote estiver completo. O proprietário usa outra empresa no piloto.
 4. Revisar as concordâncias e o envio final quando o pacote estiver completo.
    Nenhuma concordância ou declaração foi aceita em nome do responsável.
 
