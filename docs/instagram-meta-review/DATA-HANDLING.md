@@ -33,13 +33,13 @@ topologia efetiva acima antes da submissão; não reutilizar a descrição antig
 armazenamento somente local. Conferir o cadastro legal do proprietário na Meta,
 sem substituir a identidade do controlador pelo e-mail do antigo desenvolvedor.
 
-## Campos que continuam sem comprovação
+## Declarações e estado de preenchimento
 
 | Pergunta Meta | Resultado da busca | Ação necessária |
 | --- | --- | --- |
 | Pessoa/entidade controladora | XTRATEGY DIGITAL MARKETING (FZE), documento empresarial e contexto do responsável | Preenchido no rascunho em 17/11; revisar antes do envio |
 | País do controlador | Emirados Árabes Unidos, Sharjah; documento e confirmação do responsável | Preenchido no rascunho em 17/11 |
-| Entrega por segurança nacional nos últimos 12 meses | Responsável confirmou em 17/11 que não houve entrega | Não salvo no rascunho; confirmação do responsável, não inferência do Git |
+| Entrega por segurança nacional nos últimos 12 meses | Responsável confirmou em 17/11 que não houve entrega | Resposta “Não” salva no rascunho; confirmação do responsável, não inferência do Git |
 | Processos aplicados a pedidos de autoridades | Responsável confirmou em 17/11 que ainda não estão formalizados | Nenhuma das opções acima salva no rascunho; minuta abaixo segue não adotada |
 
 ## Procedimento proposto, ainda não adotado nem declarado à Meta

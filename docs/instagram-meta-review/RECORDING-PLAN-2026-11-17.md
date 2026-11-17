@@ -40,7 +40,10 @@ O endpoint público passou novamente nas onze verificações e a assinatura Meta
 continua ativa no servidor, com messages e standby. Isso não prova Direct real.
 A sessão pessoal do Facebook foi recuperada. Instruções técnicas foram salvas
 no rascunho 1690021079384646. A consulta do cadastro empresarial redirecionou
-para uma solicitação de acesso pendente; identidade legal continua sem confirmação.
+para uma solicitação de acesso pendente. Depois, razão social e país foram
+localizados em documento empresarial compartilhado e preenchidos. O responsável
+confirmou ausência de entrega por segurança nacional e procedimentos ainda não
+formalizados; respostas salvas. Falta concluir os operadores e países.
 
 Na branch, a interface restrita foi alinhada ao gateway: botão de importar histórico
 ocultado, campo de resposta bloqueado quando o envio real está desligado e texto
@@ -75,8 +78,8 @@ pessoal foi concluída; a gravação completa continua pendente. Não reutilizar
 
 1. Sessão pessoal do administrador para consultar o rascunho 1690021079384646 e
    o cadastro legal do portfólio Xtrategy. Não usar a sessão da Página como substituta.
-2. Confirmar controlador/país e declarações factuais sem fonte no código. Não
-   inventar histórico de atendimento a autoridades ou práticas não adotadas.
+2. Declarações do responsável preenchidas; concluir a lista dos operadores e
+   seus países de processamento/acesso, com fonte aplicável ao serviço.
 3. Manter a separação do avaliador na revisão R3 já publicada; concluir o fluxo
    reproduzível antes da entrega de credenciais à Meta.
 4. Capturar a autorização real e o uso dos dados. Um painel sem mensagens ou um

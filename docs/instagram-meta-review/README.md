@@ -32,8 +32,8 @@ Estado em **17/11/2026: não enviado e ainda não apto à submissão**.
 
 ## Pendências para submeter
 
-1. Acessar o rascunho com a sessão pessoal e consultar o cadastro legal do
-   controlador. Confirmar declarações factuais sem fonte no código.
+1. Declarações do responsável já preenchidas; completar os operadores e seus
+   países de processamento/acesso com fonte aplicável ao serviço.
 2. Revisão de interface publicada e validada; concluir o percurso reproduzível
    de avaliação antes de liberar credenciais ou apresentar o pacote como pronto.
 3. Gravar o fluxo real completo de login, autorização e uso dos dados de cada
@@ -94,7 +94,7 @@ Solicitar a permissão não comprova seu uso integral nem assegura aprovação.
    a credencial de meta-review@example.com nos campos privados da análise,
    quando o pacote estiver completo. O proprietário usa outra empresa no piloto.
 4. Revisar as concordâncias e o envio final quando o pacote estiver completo.
-   Nenhuma concordância ou declaração foi aceita em nome do responsável.
+   Nenhuma concordância final foi aceita e o rascunho não foi submetido.
 
 **Não é necessário pedir novas mensagens ao usuário nesta preparação.** A gravação,
 o ambiente externo e os ajustes técnicos de demonstração são tarefas do projeto,
