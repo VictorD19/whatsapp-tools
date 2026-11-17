@@ -1,0 +1,61 @@
+# Gravação real da análise Meta — 17/11/2026
+
+Estado: roteiro pronto; gravação final ainda não produzida. Não enviar uma montagem
+de fixtures, mensagens importadas ou histórico como evidência de webhook real.
+
+## Critérios oficiais conferidos
+
+A Meta pede o percurso completo de entrada no serviço, autorização dos recursos
+Meta e uso dos dados de cada permissão solicitada. Se a interface estiver em
+português, usar legendas em inglês. A documentação recomenda gravação legível,
+idealmente em 1080p, com largura de até 1440, sem áudio e sem outras janelas.
+Fonte: [Screen Recordings](https://developers.facebook.com/docs/app-review/submission-guide/screen-recordings/).
+
+O avaliador precisa reproduzir o percurso e testar as permissões. O pacote não
+deve ser submetido enquanto não permitir isso. Permissões não aprovadas ficam
+limitadas aos usuários com função adequada; isso não é resolvido alterando o
+CRM principal. Fonte: [App Review Introduction](https://developers.facebook.com/docs/resp-plat-initiatives/app-review/introduction).
+
+## Sequência de captura
+
+| Trecho | Tela real | Legenda em inglês |
+| --- | --- | --- |
+| Entrada | Login do serviço no endereço público do piloto | Sign in to the isolated ZapChat pilot. This is a service account, separate from Meta authorization. |
+| Escopo | Instagram, suas abas e restrições explícitas | This review covers the Instagram connection and received Direct inbox. Preview sections are not submitted as working integrations. |
+| Conexão | Conexão → Continuar com Facebook/Conectar Instagram | Connect one professional Instagram account using Meta business login. |
+| Autorização | Seleção real de perfil/portfólio e permissões mínimas | Grant account identification and Instagram messaging access. No advertising account is required. |
+| Perfil | Retorno OAuth e username confirmado pelo provedor | The authorized Instagram identity is stored for this business only. Tokens are encrypted before storage. |
+| Dados | Conversas e mensagem efetivamente disponíveis pela integração | Received messages are associated with the authorized account and authenticated business. |
+| Webhook | Evento real confirmado, se disponível | Show a provider-originated event and its persisted message without claiming history import is live webhook delivery. |
+| Encerramento | Instruções de desconexão e página pública de exclusão | Disconnecting clears the stored connection token. Data deletion follows the published request procedure. |
+
+Ocultar senhas, códigos OAuth, tokens e dados de clientes. Se houver senha/2FA,
+interromper a captura e retomar após a autenticação, com indicação honesta do
+intervalo. Não desconectar a conta atual nem enviar Directs para produzir uma cena
+sem autorização específica. Não pedir novas mensagens de teste ao usuário.
+
+## Preparação técnica desta data
+
+O endpoint público passou novamente nas onze verificações e a assinatura Meta
+continua ativa no servidor, com messages e standby. Isso não prova Direct real.
+A sessão do Facebook na aba do desenvolvedor expirou; o login de Joao Bosco
+foi deixado pronto para o proprietário concluir diretamente.
+
+Na branch, a interface restrita foi alinhada ao gateway: botão de importar histórico
+ocultado, campo de resposta bloqueado quando o envio real está desligado e texto
+coerente com essa etapa. Avisos transitórios de conexão agora desaparecem após
+recuperação, sem limpar erros de outras ações. Build Web passou. Teste local de
+queda/retomada da API confirmou o aviso e sua remoção automática sem recarregar.
+Esses ajustes ainda não foram publicados no servidor nesta data.
+
+## Dependências restantes
+
+1. Sessão pessoal do administrador para consultar o rascunho 1690021079384646 e
+   o cadastro legal do portfólio Xtrategy. Não usar a sessão da Página como substituta.
+2. Confirmar controlador/país e declarações factuais sem fonte no código. Não
+   inventar histórico de atendimento a autoridades ou práticas não adotadas.
+3. Publicar os ajustes somente no piloto, mantendo a separação do avaliador.
+4. Capturar a autorização real e o uso dos dados. Um painel sem mensagens ou um
+   evento vazio assinado não conclui a prova de instagram_manage_messages.
+5. Revisar o pacote completo e obter a confirmação necessária para concordâncias
+   e submissão final. Nenhuma submissão foi executada nesta preparação.

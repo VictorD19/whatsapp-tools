@@ -5,18 +5,28 @@
 - Portfólio proprietário verificado: Xtrategy Digital Marketing.
 - Contatos públicos: privacidade@sistemazapchat.com e contato@sistemazapchat.com.
 - E-mail do responsável citado nas páginas existentes: bertramvictor8@gmail.com.
-- Cloudflare intermedeia HTTPS/OAuth/webhook do piloto; dados persistem no banco
-  local separado. Postgres/Redis são componentes locais, não operadores jurídicos
-  externos por serem softwares. A Meta fornece autenticação e dados da plataforma.
+- Cloudflare intermedeia HTTPS/OAuth/webhook do piloto; desde 16/11 os dados
+  persistem em banco exclusivo no Droplet SistemaZapChat existente na DigitalOcean,
+  região nyc1. O piloto hospedado não depende do computador do proprietário.
+  Postgres/Redis são componentes desse ambiente, não operadores jurídicos
+  independentes por serem softwares. A Meta fornece autenticação e dados da plataforma.
 - O serviço do piloto cifra tokens com AES-256-GCM; não declarar que todos os
   textos das conversas estejam cifrados em repouso por essa mesma implementação.
 - Não há encaminhamento de Directs a fornecedores de IA neste escopo.
+- O backup do banco do piloto é cifrado com AES-GCM; sua restauração foi testada
+  e uma cópia cifrada foi verificada fora do servidor. Isso não é uma declaração
+  de que o banco inteiro do CRM principal esteja cifrado ou tenha backup validado.
+- Responsável e avaliador usam empresas distintas no piloto. O avaliador não
+  lista a conexão do responsável nem lê suas conversas. Credenciais de avaliação
+  só devem ser entregues nos campos privados da análise, quando o pacote estiver apto.
 - O procedimento de exclusão existente exige validação do solicitante e conferência
   de histórico/cópias. Desconectar não equivale a apagar ou revogar na Meta.
 
 Razões sociais de fornecedores devem ser as entidades contratuais aplicáveis,
-não inferidas automaticamente do nome comercial. A topologia de uma futura
-instância externa precisa ser refletida no formulário antes da submissão.
+não inferidas automaticamente do nome comercial. Atualizar o formulário para a
+topologia efetiva acima antes da submissão; não reutilizar a descrição antiga de
+armazenamento somente local. Conferir o cadastro legal do proprietário na Meta,
+sem substituir a identidade do controlador pelo e-mail do antigo desenvolvedor.
 
 ## Campos que continuam sem comprovação
 
