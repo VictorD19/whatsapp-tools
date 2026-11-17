@@ -38,15 +38,19 @@ sem autorização específica. Não pedir novas mensagens de teste ao usuário.
 
 O endpoint público passou novamente nas onze verificações e a assinatura Meta
 continua ativa no servidor, com messages e standby. Isso não prova Direct real.
-A sessão do Facebook na aba do desenvolvedor expirou; o login de Joao Bosco
-foi deixado pronto para o proprietário concluir diretamente.
+A sessão pessoal do Facebook foi recuperada. Instruções técnicas foram salvas
+no rascunho 1690021079384646. A consulta do cadastro empresarial redirecionou
+para uma solicitação de acesso pendente; identidade legal continua sem confirmação.
 
 Na branch, a interface restrita foi alinhada ao gateway: botão de importar histórico
 ocultado, campo de resposta bloqueado quando o envio real está desligado e texto
 coerente com essa etapa. Avisos transitórios de conexão agora desaparecem após
 recuperação, sem limpar erros de outras ações. Build Web passou. Teste local de
 queda/retomada da API confirmou o aviso e sua remoção automática sem recarregar.
-Esses ajustes ainda não foram publicados no servidor nesta data.
+Esses ajustes foram publicados somente no piloto como shared-20261117-r3.
+Onze verificações externas e seis de isolamento passaram. Backup restaurado
+antes e depois; os seis serviços principais não reiniciaram. Acesso SSH removido
+às 15:23 UTC, com autenticação posterior recusada.
 
 O token foi revalidado por leitura na Meta: aplicativo correto e permissões
 instagram_basic, instagram_manage_messages e public_profile. A conta mantém
@@ -64,7 +68,7 @@ leitura de dados reais; não encerra a prova de recebimento em tempo real.
 
 A captura experimental do navegador produziu somente um frame; não é um vídeo
 da análise. Foi interrompida e não registrou o login da Meta. A autenticação
-pessoal ainda é necessária na nova aba Facebook visível. Não reutilizar o frame
+pessoal foi concluída; a gravação completa continua pendente. Não reutilizar o frame
 único ou a prévia de 15/11 como se fossem a gravação final.
 
 ## Dependências restantes
@@ -73,7 +77,8 @@ pessoal ainda é necessária na nova aba Facebook visível. Não reutilizar o fr
    o cadastro legal do portfólio Xtrategy. Não usar a sessão da Página como substituta.
 2. Confirmar controlador/país e declarações factuais sem fonte no código. Não
    inventar histórico de atendimento a autoridades ou práticas não adotadas.
-3. Publicar os ajustes somente no piloto, mantendo a separação do avaliador.
+3. Manter a separação do avaliador na revisão R3 já publicada; concluir o fluxo
+   reproduzível antes da entrega de credenciais à Meta.
 4. Capturar a autorização real e o uso dos dados. Um painel sem mensagens ou um
    evento vazio assinado não conclui a prova de instagram_manage_messages.
 5. Revisar o pacote completo e obter a confirmação necessária para concordâncias

@@ -3,6 +3,11 @@
 ## Fatos disponíveis para preencher sem suposições
 
 - Portfólio proprietário verificado: Xtrategy Digital Marketing.
+- Razão social localizada no documento empresarial compartilhado em Carimbo
+  Xtrategy: XTRATEGY DIGITAL MARKETING (FZE), Sharjah, Emirados Árabes Unidos.
+  O responsável confirmou empresa nos Emirados em 17/11; razão social e país
+  preenchidos no rascunho Meta, sem envio final. Não confundir com o país do
+  antigo desenvolvedor. O documento financeiro não será anexado à revisão.
 - Contatos públicos: privacidade@sistemazapchat.com e contato@sistemazapchat.com.
 - E-mail do responsável citado nas páginas existentes: bertramvictor8@gmail.com.
 - Cloudflare intermedeia HTTPS/OAuth/webhook do piloto; desde 16/11 os dados
@@ -32,10 +37,10 @@ sem substituir a identidade do controlador pelo e-mail do antigo desenvolvedor.
 
 | Pergunta Meta | Resultado da busca | Ação necessária |
 | --- | --- | --- |
-| Pessoa/entidade controladora | Apenas nome comercial do portfólio e e-mail do antigo responsável | Consultar cadastro legal após 2FA e confirmar quem controla o novo app |
-| País do controlador | Termos invocam lei brasileira; isso não comprova sede | Ler cadastro/confirmar país; não preencher pelo fuso do computador |
-| Entrega por segurança nacional nos últimos 12 meses | Nenhum registro localizado | Confirmação factual do responsável; ausência no Git não significa Não |
-| Processos aplicados a pedidos de autoridades | Política genérica menciona obrigação legal | Confirmar processos já praticados; não marcar os quatro automaticamente |
+| Pessoa/entidade controladora | XTRATEGY DIGITAL MARKETING (FZE), documento empresarial e contexto do responsável | Preenchido no rascunho em 17/11; revisar antes do envio |
+| País do controlador | Emirados Árabes Unidos, Sharjah; documento e confirmação do responsável | Preenchido no rascunho em 17/11 |
+| Entrega por segurança nacional nos últimos 12 meses | Responsável confirmou em 17/11 que não houve entrega | Não salvo no rascunho; confirmação do responsável, não inferência do Git |
+| Processos aplicados a pedidos de autoridades | Responsável confirmou em 17/11 que ainda não estão formalizados | Nenhuma das opções acima salva no rascunho; minuta abaixo segue não adotada |
 
 ## Procedimento proposto, ainda não adotado nem declarado à Meta
 
@@ -56,3 +61,18 @@ afirmação de que o processo já existe ou foi aplicado nos últimos 12 meses.*
 A adoção/revisão dessa minuta cabe ao responsável. Só marcar no formulário os
 processos que ele confirmar como efetivamente implementados. Não é necessário
 enviar documentos pessoais ou pedidos confidenciais no chat para responder.
+
+## Operadores: cadastro ainda incompleto
+
+A Meta exige países de processamento e acesso remoto de cada operador. A região
+nyc1 confirma armazenamento nos EUA, mas não limita por si os acessos de suporte.
+Não preencher só EUA ou todos os países por suposição. Conferir a lista aplicável
+ao serviço e à contratação antes de concluir esse cadastro.
+
+- [DigitalOcean: termos](https://www.digitalocean.com/legal/terms-of-service-agreement)
+  identificam DigitalOcean, LLC como parte contratante.
+- [DigitalOcean: subprocessadores](https://www.digitalocean.com/trust/subprocessors).
+- [Cloudflare: subprocessadores](https://www.cloudflare.com/gdpr/subprocessors/cloudflare-services/).
+
+Fontes consultadas em 17/11/2026; não tratá-las como lista de serviços usados
+pelo piloto. Só declarar fornecedores que efetivamente recebem esses dados.

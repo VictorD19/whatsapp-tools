@@ -35,7 +35,10 @@ if args.override:
 env = {**os.environ, 'PILOT_PRIVATE_DIR': str(args.private_dir.resolve()), 'PILOT_RELEASE': args.release}
 
 def postgres(*arguments, data=None):
-    result = subprocess.run(command + ['exec', '-T', 'postgres', *arguments], input=data, stdout=subprocess.PIPE,
+    # Read-only commands must not drain a caller's shell script from inherited stdin.
+    # Restore alone receives the explicitly supplied dump bytes.
+    pipe = {'stdin': subprocess.DEVNULL} if data is None else {'input': data}
+    result = subprocess.run(command + ['exec', '-T', 'postgres', *arguments], **pipe, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, env=env, check=False)
     if result.returncode:
         # Database errors can include SQL data; keep them out of shared logs.

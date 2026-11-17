@@ -19,18 +19,23 @@ Estado em **17/11/2026: não enviado e ainda não apto à submissão**.
   dados reais, não chegada pelo webhook. Nenhuma nova mensagem foi solicitada.
 - A revisão R3 alinha a interface aos bloqueios do avaliador e recupera avisos
   temporários automaticamente. Build e teste local de queda/retomada passaram.
-  Ainda aguarda autorização de acesso temporário para publicação só no piloto;
-  o acesso de 16/11 foi removido e não foi reativado silenciosamente.
+  Publicada somente no piloto em 17/11, após backup restaurado com dois usuários.
+  Os seis serviços principais mantiveram IDs e horários de início. O acesso
+  temporário autorizado foi removido às 15:23 UTC; nova conexão foi recusada.
 - Automações, Assistente IA, Menus do Direct, Resultados e Laboratório continuam
   prévias, fora da demonstração de funcionalidades efetivas à Meta.
-- O Facebook pessoal pediu nova autenticação; uma nova aba visível foi aberta
-  para o responsável. A sessão da Página não substitui a do administrador.
+- Sessão pessoal do Facebook recuperada; instruções técnicas salvas no rascunho.
+  O cadastro empresarial continua redirecionando para acesso pendente, impedindo
+  verificar o cadastro por esse caminho. Razão social e país foram posteriormente
+  localizados em documento empresarial compartilhado; campos preenchidos.
+  Nenhuma declaração desconhecida sobre autoridades foi preenchida.
 
 ## Pendências para submeter
 
 1. Acessar o rascunho com a sessão pessoal e consultar o cadastro legal do
    controlador. Confirmar declarações factuais sem fonte no código.
-2. Publicar a revisão de interface somente no piloto, após validar seu backup.
+2. Revisão de interface publicada e validada; concluir o percurso reproduzível
+   de avaliação antes de liberar credenciais ou apresentar o pacote como pronto.
 3. Gravar o fluxo real completo de login, autorização e uso dos dados de cada
    permissão. A captura experimental de um frame e os vídeos sintéticos antigos
    não são uma gravação final.
@@ -78,15 +83,13 @@ Solicitar a permissão não comprova seu uso integral nem assegura aprovação.
 
 ## O que ainda depende do responsável
 
-1. Nome legal e país de quem controla os dados deste app. O cadastro do portfólio
-   Xtrategy existe, mas a consulta de detalhes pediu autenticação de dois fatores.
-   O responsável pode concluir isso diretamente na Meta para permitir a leitura;
-   não deve enviar códigos, senha, documento ou token pelo chat. Se o controlador
-   for diferente da empresa do portfólio, é preciso informar essa diferença.
-2. Histórico real de fornecimento de dados a autoridades por segurança nacional
-   nos últimos 12 meses e quais processos já são adotados. Não há essa informação
-   no código, nas páginas legais nem nas notas do projeto. Não marcar Não ou
-   declarar processos existentes por ausência de um registro no GitHub.
+1. Razão social e país localizados: XTRATEGY DIGITAL MARKETING (FZE), Sharjah,
+   Emirados Árabes Unidos. Preenchidos no rascunho com base no documento
+   empresarial compartilhado e contexto confirmado pelo responsável em 17/11.
+2. Declarações confirmadas pelo responsável em 17/11: não houve fornecimento a
+   autoridades por segurança nacional nos últimos 12 meses; os procedimentos
+   apresentados ainda não estão formalizados. Respostas salvas no rascunho.
+   Completar a relação de operadores e seus países de processamento/acesso.
 3. O acesso externo separado está hospedado e foi verificado. Fornecer somente
    a credencial de meta-review@example.com nos campos privados da análise,
    quando o pacote estiver completo. O proprietário usa outra empresa no piloto.
@@ -108,3 +111,5 @@ e verificar um serviço externo autenticado de avaliação.
 Não enviar vídeos com credenciais, códigos OAuth, tokens, mensagens ou nomes de
 clientes. Nenhuma conversa real foi exportada para este pacote. Não alterar o CRM
 principal, seus termos ou sua infraestrutura para preencher lacunas da revisão.
+
+[Atualização instalada em 17/11, backup e revogação](../INSTAGRAM-PILOT-UPDATE-2026-11-17.md).
