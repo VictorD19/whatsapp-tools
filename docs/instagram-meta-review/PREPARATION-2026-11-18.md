@@ -39,6 +39,10 @@ considerar vídeo anexado apenas pela barra em 100%. A sessão mostra Joao Bosco
 como Administrador do app; não foi comprovado que falte essa função. Não alterar
 funções, permissões ou cookies para contornar. As tentativas automáticas foram
 interrompidas recarregando o painel. Vídeos locais e diagnóstico preservados.
+Um ZIP com as mesmas gravações foi tentado pelo controle oficial de documentação
+de apoio; a barra também chegou a 100%, mas o anexo não permaneceu após
+recarregar/reabrir. Não considerar esse pacote anexado. Não houve mudança de
+funções, cookies, permissões ou tentativa de contornar a autorização do serviço.
 
 ## Critério oficial que impede chamar o pacote de pronto
 
@@ -82,3 +86,11 @@ O detalhe dos países e os recibos ficam nos registros locais privados. Não
 copiar tokens, credenciais, respostas brutas de OAuth ou o documento financeiro
 para a revisão. Só entregar a credencial do tenant exclusivo de avaliação no
 campo privado da Meta, quando o percurso estiver pronto e a entrega autorizada.
+
+## Encerramento da preparação local
+
+API, Web e gateway locais de avaliação usados nas gravações foram encerrados
+após conferir PID/caminho. Bases e frames originais preservados. O piloto público
+continua no servidor existente; acesso administrativo não foi reativado. Código
+do retorno seguro salvo na branch de testes em 53ec43e, PR118 em rascunho.
+Conferência HTTP local: cinco testes aprovados; não foi feita nova implantação.

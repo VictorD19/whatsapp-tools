@@ -1,3 +1,15 @@
+**18 November current state:** provider data saved; actual authorization and
+separately labeled historical-read recordings exported. Direct video upload
+returned HTTP400 NotAuthorizedError despite the visible app-administrator role.
+The supporting ZIP also did not persist after reloading. Files are preserved
+locally, not attached successfully. Descriptions/instructions are saved as an
+incomplete draft; no permitted-use agreement or final submission was accepted.
+The specific Instagram inbox review guide still requires the same submitted
+pilot to demonstrate receipt, reply, operator deletion and unsent processing.
+See [verified preparation and blockers](PREPARATION-2026-11-18.md). Older states
+below are historical where they differ. Do not treat the local history video as
+the completed hosted inbox demonstration.
+
 # Reviewer material — draft, not submitted
 
 **16 November current state:** continuously hosted on the existing SistemaZapChat
