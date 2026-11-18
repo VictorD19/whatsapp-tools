@@ -58,6 +58,11 @@ export function createReviewGateway({ api = 'http://127.0.0.1:18011', web = 'htt
       if (result.length > 10 * 1024 * 1024) return deny(502)
       const output = { 'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
         'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }
+      // The pilot opens OAuth in the same tab. Return to a fixed, same-origin
+      // panel only after success; never forward the code/state or a return URL.
+      if (req.method === 'GET' && url.pathname === '/api/v1/instagram/callback' && response.status === 200) {
+        res.writeHead(303, { ...output, Location: '/instagram#conexao' }); return res.end()
+      }
       if (response.headers.has('location')) {
         const location = response.headers.get('location')
         if (!location.startsWith('/') || location.startsWith('//')) return deny(502)

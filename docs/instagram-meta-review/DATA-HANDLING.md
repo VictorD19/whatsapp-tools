@@ -62,7 +62,11 @@ A adoção/revisão dessa minuta cabe ao responsável. Só marcar no formulário
 processos que ele confirmar como efetivamente implementados. Não é necessário
 enviar documentos pessoais ou pedidos confidenciais no chat para responder.
 
-## Operadores: cadastro ainda incompleto
+## Operadores: cadastro concluído no rascunho em 18/11
+
+DigitalOcean, LLC e Cloudflare, Inc. salvos como serviços de TI/nuvem. A etapa
+Tratamento de dados passou a 100%. O detalhe e os limites estão em
+[preparação de 18/11](PREPARATION-2026-11-18.md).
 
 A Meta exige países de processamento e acesso remoto de cada operador. A região
 nyc1 confirma armazenamento nos EUA, mas não limita por si os acessos de suporte.

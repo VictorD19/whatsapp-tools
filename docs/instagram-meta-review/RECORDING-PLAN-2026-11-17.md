@@ -1,3 +1,5 @@
+> Estado posterior: [gravações reais de 18/11 e requisitos restantes](PREPARATION-2026-11-18.md). Este roteiro registra a preparação de 17/11.
+
 # Gravação real da análise Meta — 17/11/2026
 
 Estado: roteiro pronto; gravação final ainda não produzida. Não enviar uma montagem

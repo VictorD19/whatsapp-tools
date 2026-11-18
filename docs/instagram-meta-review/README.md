@@ -1,7 +1,10 @@
 # Pacote de preparação da análise Meta
 
 Aplicativo **ZapChat Social Lab** — 1684815669905187. Rascunho **1690021079384646**.
-Estado em **17/11/2026: não enviado e ainda não apto à submissão**.
+Estado em **18/11/2026: não enviado e ainda não apto à submissão**.
+
+[Estado vigente: provedores, gravações reais e bloqueios restantes](PREPARATION-2026-11-18.md).
+Os itens de 17/11 abaixo são históricos quando divergirem deste registro.
 
 ## Estado atual
 

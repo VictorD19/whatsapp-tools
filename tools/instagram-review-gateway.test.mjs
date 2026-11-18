@@ -37,3 +37,34 @@ test('rejects hostile hosts, foreign origins and restricted routes before contac
     assert.equal(await status('/', { Host: 'instagram-review.sistemazapchat.com' }), 302)
   } finally { await new Promise(resolve => gateway.close(resolve)) }
 })
+test('returns successful OAuth to the fixed pilot panel without leaking grant parameters; retains pending/errors', async () => {
+  const originalFetch = globalThis.fetch
+  let upstreamStatus = 200
+  globalThis.fetch = async () => new Response('Safe upstream status', { status: upstreamStatus, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  const gateway = createReviewGateway()
+  await new Promise(resolve => gateway.listen(0, '127.0.0.1', resolve))
+  const port = gateway.address().port
+  const call = () => new Promise((resolve, reject) => {
+    const req = request({ host: '127.0.0.1', port, path: '/api/v1/instagram/callback?code=private-code&state=private-state&return=https://untrusted.example', headers: { Host: 'instagram-review.sistemazapchat.com' } }, res => {
+      let body = ''; res.on('data', chunk => { body += chunk }); res.once('end', () => resolve({ status: res.statusCode, headers: res.headers, body }))
+    }); req.once('error', reject); req.end()
+  })
+  try {
+    const success = await call()
+    assert.equal(success.status, 303)
+    assert.equal(success.headers.location, '/instagram#conexao')
+    assert.equal(success.headers['referrer-policy'], 'no-referrer')
+    assert.equal(success.headers['cache-control'], 'no-store')
+    assert.doesNotMatch(JSON.stringify(success), /private-code|private-state|untrusted/)
+    for (const status of [202, 400]) {
+      upstreamStatus = status
+      const retained = await call()
+      assert.equal(retained.status, status)
+      assert.equal(retained.headers.location, undefined)
+      assert.equal(retained.body, 'Safe upstream status')
+    }
+  } finally {
+    globalThis.fetch = originalFetch
+    await new Promise(resolve => gateway.close(resolve))
+  }
+})
