@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { apiGet, apiPost, apiDelete } from '@/lib/api'
 import dynamic from 'next/dynamic'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { instagramSections, InstagramSection, InstagramPreviewSection, isInstagramSection } from '@/components/instagram/sections'
 
 const InstagramPrototypePreview = dynamic(() => import('@/components/instagram/InstagramPrototypePreview'), {
@@ -42,6 +43,7 @@ export default function InstagramPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [conversationId, setConversationId] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
+  const [deleteTarget, setDeleteTarget] = useState<Message | null>(null)
   const [text, setText] = useState('')
   const [incoming, setIncoming] = useState('Olá! Gostaria de saber mais.')
   const [error, setError] = useState('')
@@ -95,8 +97,9 @@ export default function InstagramPage() {
         const revision = data.find(c => c.id === id)!.updatedAt
         const changed = inboxRevision.current !== revision
         if (changed) { messageEpoch.current++; setMessages([]); setHasMore(false) }
+        const epoch = messageEpoch.current
         const result = await apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(id)}/messages`)
-        if (activeAccount.current === accountId && selected.current === id) {
+        if (activeAccount.current === accountId && selected.current === id && messageEpoch.current === epoch) {
           inboxRevision.current = revision
           setMessages(previous => {
             if (!result.data.length) return []
@@ -180,7 +183,7 @@ export default function InstagramPage() {
     messageEpoch.current++
     inboxRevision.current = null
     const epoch = messageEpoch.current
-    setMessages([]); setText(''); attempt.current = null; setHasMore(false)
+    setMessages([]); setText(''); attempt.current = null; setHasMore(false); setDeleteTarget(null)
     if (conversationId) apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(conversationId)}/messages`).then(result => {
       if (!cancelled && epoch === messageEpoch.current) { setMessages([...result.data].reverse()); setHasMore(result.data.length === 50) }
     }).catch(() => { if (!cancelled) setError('Não foi possível carregar as mensagens.') })
@@ -193,8 +196,24 @@ export default function InstagramPage() {
     finally { setBusy(false) }
   }
   async function refreshMessages(id: string) {
+    const epoch = messageEpoch.current
     const result = await apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(id)}/messages`)
-    if (selected.current === id) { setMessages([...result.data].reverse()); setHasMore(result.data.length === 50) }
+    if (selected.current === id && messageEpoch.current === epoch) { setMessages([...result.data].reverse()); setHasMore(result.data.length === 50) }
+  }
+  async function confirmDelete() {
+    const target = deleteTarget, id = conversationId
+    if (!target || !id) return
+    await action(async () => {
+      await apiDelete(`instagram/messages/${encodeURIComponent(target.id)}`)
+      if (selected.current === id) {
+        // Invalidate reads started before deletion, including older-page loads.
+        // They must never put the erased message text back into the inbox.
+        messageEpoch.current++; inboxRevision.current = null
+        setMessages(previous => previous.map(message => message.id === target.id ? { ...message, text: '', status: 'deleted' } : message))
+        setNotice('Conteúdo excluído desta base do CRM. A cópia no Instagram não foi alterada.')
+      }
+      setDeleteTarget(null)
+    })
   }
   async function send(event: FormEvent) {
     event.preventDefault()
@@ -264,7 +283,12 @@ export default function InstagramPage() {
           {conversation?.lastWebhookChannel === 'standby' && <p className="text-sm text-muted-foreground">Recebida pelo canal de espera. Somente leitura enquanto outro aplicativo controla a conversa.</p>}
           {conversation?.lastWebhookChannel === 'history' && <p role="note" className="rounded-lg border p-3 text-sm">Histórico consultado na Meta. Este registro não comprova recebimento por webhook.</p>}
           {hasMore && <button className={button} disabled={busy} onClick={() => action(async () => { const id = conversationId, epoch = messageEpoch.current; const result = await apiGet<{ data: Message[] }>(`instagram/conversations/${encodeURIComponent(id)}/messages?before=${encodeURIComponent(messages[0].id)}`); if (selected.current === id && epoch === messageEpoch.current) { setMessages(previous => [...result.data].reverse().concat(previous)); setHasMore(result.data.length === 50) } })}>Mensagens anteriores</button>}
-          <div className="max-h-96 min-h-40 space-y-3 overflow-y-auto" aria-live="polite">{messages.map(m => <div key={m.id} className={`max-w-[90%] whitespace-pre-wrap rounded-lg p-3 text-sm ${m.direction === 'out' ? 'ml-auto bg-primary text-primary-foreground' : 'bg-muted'}`}>{m.status === 'unsent' ? 'Mensagem cancelada pelo remetente' : m.text}<span className="mt-2 block text-xs opacity-75">{m.direction === 'in' ? 'Contato' : 'Atendente'} · {new Date(m.sentAt).toLocaleString('pt-BR')} · {m.status === 'unsent' ? 'Cancelada' : m.status === 'received' ? 'Recebida' : m.status === 'sent' ? 'Enviada' : 'Sem confirmação final'}</span>{status.mode === 'simulated' && m.direction === 'in' && m.status !== 'unsent' && <button className="mt-2 block underline" disabled={busy} onClick={() => action(async () => { await apiPost(`instagram/messages/${encodeURIComponent(m.id)}/simulate-cancellation`, {}); await refreshInbox() })}>Simular cancelamento</button>}</div>)}</div>
+          <div className="max-h-96 min-h-40 space-y-3 overflow-y-auto" aria-live="polite">{messages.map(m => <div key={m.id} className={`max-w-[90%] whitespace-pre-wrap rounded-lg p-3 text-sm ${m.direction === 'out' ? 'ml-auto bg-primary text-primary-foreground' : 'bg-muted'}`}>
+            {m.status === 'deleted' ? 'Mensagem excluída do CRM' : m.status === 'unsent' ? 'Mensagem cancelada pelo remetente' : m.text}
+            <span className="mt-2 block text-xs opacity-75">{m.direction === 'in' ? 'Contato' : 'Atendente'} · {new Date(m.sentAt).toLocaleString('pt-BR')} · {m.status === 'deleted' ? 'Excluída do CRM' : m.status === 'unsent' ? 'Cancelada' : m.status === 'received' ? 'Recebida' : m.status === 'sent' ? 'Enviada' : 'Sem confirmação final'}</span>
+            {['received', 'sent'].includes(m.status) && <button className="mt-2 block underline" disabled={busy} onClick={() => setDeleteTarget(m)}>Excluir do CRM</button>}
+            {status.mode === 'simulated' && m.direction === 'in' && !['unsent', 'deleted'].includes(m.status) && <button className="mt-2 block underline" disabled={busy} onClick={() => action(async () => { await apiPost(`instagram/messages/${encodeURIComponent(m.id)}/simulate-cancellation`, {}); await refreshInbox() })}>Simular cancelamento</button>}
+          </div>)}</div>
           <form className="space-y-3" onSubmit={send}><label className="block text-sm">Sua resposta<textarea className={field} value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={1000} required disabled={!conversation || conversation.lastWebhookChannel === 'standby' || busy || uncertain || (status.mode === 'meta' && !status.realSendingEnabled)} /></label><button className={button} disabled={!conversation || conversation.lastWebhookChannel === 'standby' || busy || uncertain || !withinWindow || (status.mode === 'meta' && !status.realSendingEnabled)}>{busy ? 'Processando…' : status.mode === 'simulated' ? 'Responder na simulação' : 'Enviar resposta'}</button><p className="text-xs text-muted-foreground">{uncertain ? 'Existe um envio pendente ou incerto. Verifique antes de enviar novamente.' : status.mode === 'meta' && !status.realSendingEnabled ? 'Envios reais desativados nesta etapa de avaliação.' : !withinWindow ? 'Uma mensagem recente do contato é necessária para responder na janela de 24 horas.' : status.mode === 'simulated' ? 'Nenhuma chamada à Meta neste modo.' : 'Envios respeitam a janela de 24 horas desde a última mensagem recebida.'}</p></form>
         </div>
       </section></>}
@@ -274,5 +298,11 @@ export default function InstagramPage() {
       </div>
       <p className="text-sm text-muted-foreground">As abas marcadas como Prévia recuperam o protótipo interativo. A integração real de automações, IA, menus e métricas ainda está em desenvolvimento. Este piloto não está habilitado no CRM principal.</p>
     </>}
+    <Dialog open={!!deleteTarget} onOpenChange={open => { if (!open && !busy) setDeleteTarget(null) }}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Excluir esta mensagem do CRM?</DialogTitle><DialogDescription>O conteúdo será removido desta base e não poderá ser recuperado pela conversa. A cópia no Instagram permanece. Cópias de segurança seguem o procedimento de exclusão de dados.</DialogDescription></DialogHeader>
+        <DialogFooter><button className={button} disabled={busy} autoFocus onClick={() => setDeleteTarget(null)}>Manter mensagem</button><button className={button} disabled={busy} onClick={() => void confirmDelete()}>{busy ? 'Excluindo…' : 'Confirmar exclusão do CRM'}</button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 }

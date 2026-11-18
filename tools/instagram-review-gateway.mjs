@@ -15,6 +15,7 @@ export function reviewRoute(method, path) {
     if (method === 'GET' && /^\/api\/v1\/instagram\/(accounts\/[\w-]+\/conversations|conversations\/[\w-]+\/messages)$/.test(path)) return 'api'
     if (method === 'POST' && /^\/api\/v1\/instagram\/(simulated-account|simulate-inbound|messages\/[\w-]+\/simulate-cancellation)$/.test(path)) return 'api'
     if (method === 'DELETE' && /^\/api\/v1\/instagram\/accounts\/[\w-]+$/.test(path)) return 'api'
+    if (method === 'DELETE' && /^\/api\/v1\/instagram\/messages\/[\w-]+$/.test(path)) return 'api'
     return null // No registration, administration, arbitrary proxy, sync or real replies.
   }
   if (['GET', 'HEAD'].includes(method) && (['/', '/inbox', '/login', '/instagram', '/privacy', '/terms', '/data-deletion', '/favicon.ico', '/favicon.svg', '/favicon-32x32.png', '/favicon-96x96.png', '/apple-touch-icon.png'].includes(path) || (path.startsWith('/_next/static/') && path.split('/').every(segment => /^[a-zA-Z0-9_.()[\]@~-]*$/.test(segment))))) return 'web'

@@ -1,14 +1,11 @@
-**18 November current state:** provider data saved; actual authorization and
-separately labeled historical-read recordings exported. Direct video upload
-returned HTTP400 NotAuthorizedError despite the visible app-administrator role.
-The supporting ZIP also did not persist after reloading. Files are preserved
-locally, not attached successfully. Descriptions/instructions are saved as an
-incomplete draft; no permitted-use agreement or final submission was accepted.
-The specific Instagram inbox review guide still requires the same submitted
-pilot to demonstrate receipt, reply, operator deletion and unsent processing.
-See [verified preparation and blockers](PREPARATION-2026-11-18.md). Older states
-below are historical where they differ. Do not treat the local history video as
-the completed hosted inbox demonstration.
+**18 November current state:** the authorization video is now persisted under
+instagram_basic, confirmed by reopening the draft after the user's Chrome upload.
+Earlier IAB uploads and the supporting ZIP had failed. The basic permitted-use
+checkbox was already checked after the user's manual action; the agent did not
+check it or submit the review. Receipt/reply/deletion/unsent in the same hosted
+version still require demonstration. Operator deletion is implemented and verified
+locally with synthetic fixtures, not deployed or presented as a real Meta event.
+See [verified preparation and blockers](PREPARATION-2026-11-18.md).
 
 # Reviewer material — draft, not submitted
 
@@ -60,8 +57,8 @@ are blocked by the reviewer gateway; do not demonstrate those paths as available
 
 This description must be revised to match the completed, demonstrable feature
 before submission. Sender-unsend handling has been implemented and verified with
-fixtures, not a demonstrated real sender event. Do not claim real replies or
-operator deletion through the inbox UI until those paths are implemented and verified.
+fixtures, not a demonstrated real sender event. Operator deletion is implemented and verified only in the local branch. Do not
+claim it is deployed or that real replies have been demonstrated.
 
 ## Reviewer access — separate URL/account prepared, credentials not issued
 

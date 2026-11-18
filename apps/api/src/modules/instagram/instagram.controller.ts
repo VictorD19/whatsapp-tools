@@ -55,6 +55,7 @@ export class InstagramController {
     return this.service.webhook(request.rawBody || Buffer.alloc(0), request.headers['x-hub-signature-256'] as string | undefined, body)
   }
   @Delete('accounts/:id') disconnect(@CurrentTenant() tenantId: string, @Param('id') id: string) { return this.service.disconnect(tenantId, id) }
+  @Delete('messages/:id') deleteMessage(@CurrentTenant() tenantId: string, @Param('id') id: string) { return this.service.deleteMessage(tenantId, id) }
   @Post('accounts/:id/sync') @HttpCode(200)
   sync(@CurrentTenant() tenantId: string, @Param('id') id: string) { return this.service.sync(tenantId, id) }
   @Get('accounts/:id/conversations') conversations(@CurrentTenant() tenantId: string, @Param('id') id: string) { return this.service.conversations(tenantId, id) }

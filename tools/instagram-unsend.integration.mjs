@@ -20,7 +20,7 @@ let sends = 0;
 try {
  await assert.rejects(db.$transaction(async tx => {
  const account=await tx.instagramAccount.create({data:{id:fixtureId,tenantId:'instagram-other',instagramId:'991'+Date.now(),username:'__synthetic_unsend__',mode:'meta',accessToken:'fixture-only'}});
- const config=new InstagramConfig(new ConfigService({NODE_ENV:'test',INSTAGRAM_ENABLED:'true',INSTAGRAM_MODE:'meta',INSTAGRAM_PILOT_TENANT_IDS:'instagram-other',INSTAGRAM_APP_SECRET:'synthetic-secret'}));
+ const config=new InstagramConfig(new ConfigService({NODE_ENV:'test',INSTAGRAM_ENABLED:'true',INSTAGRAM_MODE:'meta',INSTAGRAM_PILOT_TENANT_IDS:'instagram-other,instagram-review',INSTAGRAM_APP_SECRET:'synthetic-secret'}));
  const models={instagramAccount:tx.instagramAccount,instagramConversation:tx.instagramConversation,instagramMessage:tx.instagramMessage,$transaction:fn=>fn(tx)};
  const service=new InstagramService(models,{getClient:()=>({get:async()=>null})},{},config,{sendText:async()=>{sends++;throw Error('Forbidden transport')}});
  const at=Date.now()-10000;
@@ -38,8 +38,23 @@ try {
  await assert.rejects(deliver([event('unsigned',true)],'messaging',false));assert.equal(await tx.instagramMessage.count({where:{accountId:account.id,providerMessageId:'unsigned'}}),0);
  const outgoing=await tx.instagramMessage.create({data:{tenantId:account.tenantId,accountId:account.id,conversationId:first.conversationId,direction:'out',text:'Synthetic outgoing',providerMessageId:'outgoing',status:'sent'}});
  await deliver([event('outgoing',true,'999123',true)]);assert.equal((await row('outgoing')).text,'');assert.equal((await row('outgoing')).status,'unsent');
+ await deliver([event('operator')]);const operatorMessage=await row('operator');
+ await assert.rejects(service.deleteMessage('instagram-review',operatorMessage.id));assert.equal((await row('operator')).text,'Synthetic removable text');
+ const replyWindowBefore=(await conv()).lastInboundAt.getTime();
+ assert.deepEqual(await service.deleteMessage(account.tenantId,operatorMessage.id),{deleted:true});
+ assert.equal((await row('operator')).text,'');assert.equal((await row('operator')).status,'deleted');
+ assert.deepEqual(await service.deleteMessage(account.tenantId,operatorMessage.id),{deleted:true});
+ await deliver([event('operator')]);await deliver([event('operator',true)]);
+ await service.persistIncoming(account,{accountId:account.instagramId,participantId:'999123',messageId:'operator',text:'History must not restore an operator deletion',at:new Date(at)});
+ assert.equal((await row('operator')).text,'');assert.equal((await row('operator')).status,'deleted');
+ assert.equal((await conv()).lastInboundAt.getTime(),replyWindowBefore);
+ for(const status of ['pending','sending','unknown']){
+  const uncertain=await tx.instagramMessage.create({data:{tenantId:account.tenantId,accountId:account.id,conversationId:first.conversationId,direction:'out',text:'Synthetic unconfirmed attempt',status}});
+  await assert.rejects(service.deleteMessage(account.tenantId,uncertain.id));
+  assert.equal((await tx.instagramMessage.findUniqueOrThrow({where:{id:uncertain.id}})).text,'Synthetic unconfirmed attempt');
+ }
  assert.equal(sends,0);throw rollback;
  },{timeout:15000}),e=>e===rollback);
  assert.equal(await db.instagramAccount.count({where:{id:fixtureId}}),0);
- console.log('PostgreSQL unsend verified: text erased; cancellation-first, batch, replay/history, passive events, outgoing, participant isolation, invalid signatures, unchanged reply window, idempotence; full rollback; zero Meta calls.');
+ console.log('PostgreSQL unsend/operator deletion verified: content erased; cancellation-first, batch, replay/history, passive events, outgoing, tenant/participant isolation, invalid signatures, unchanged reply window, idempotence, uncertain-send preservation; full rollback; zero Meta calls.');
 } finally {await db.$disconnect()}

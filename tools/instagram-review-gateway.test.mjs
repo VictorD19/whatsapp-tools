@@ -11,10 +11,13 @@ test('exposes only the reviewer website and intended Instagram/auth routes', () 
   assert.equal(reviewRoute('GET', '/api/v1/instagram/connection'), 'api')
   assert.equal(reviewRoute('POST', '/api/v1/instagram/connection/retry'), 'api')
   assert.equal(reviewRoute('DELETE', '/api/v1/instagram/connection'), 'api')
+  assert.equal(reviewRoute('DELETE', '/api/v1/instagram/messages/own-message'), 'api')
   assert.equal(reviewRoute('POST', '/api/v1/instagram/webhook'), 'api')
 })
 test('blocks registration, administration, debugging, source maps, replies and history pulls', () => {
   for (const [m,p] of [['POST','/api/v1/auth/register'],['POST','/api/v1/instagram/conversations/x/reply'],['POST','/api/v1/instagram/accounts/x/sync'],['GET','/api/docs'],['GET','/api/v1/admin/tenants'],['GET','/.env'],['GET','/_next/static/secret.js.map'],['GET','/__nextjs_source-map'],['GET','/_next/static/../server'],['GET','/api/v1/instagram/accounts/x%2Fadmin/conversations']]) assert.equal(reviewRoute(m,p),null)
+  assert.equal(reviewRoute('DELETE', '/api/v1/instagram/messages/own%2Fother'), null)
+  assert.equal(reviewRoute('DELETE', '/api/v1/instagram/messages'), null)
 })
 test('refuses a different local or production upstream', () => {
   assert.throws(()=>createReviewGateway({api:'https://sistemazapchat.com'}))

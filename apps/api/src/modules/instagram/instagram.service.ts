@@ -151,7 +151,7 @@ export class InstagramService {
         text: '', status: 'unsent', sentAt: event.at }], skipDuplicates: true })
       const removed = await tx.instagramMessage.updateMany({ where: { tenantId: account.tenantId, accountId: account.id,
         conversationId: conversation.id, direction: event.direction, providerMessageId: event.messageId,
-        status: { not: 'unsent' } }, data: { text: '', status: 'unsent' } })
+        status: { notIn: ['unsent', 'deleted'] } }, data: { text: '', status: 'unsent' } })
       if (created.count || removed.count) await tx.instagramConversation.updateMany({
         where: { id: conversation.id, tenantId: account.tenantId }, data: { updatedAt: new Date() },
       })
@@ -214,6 +214,29 @@ export class InstagramService {
     return this.db.instagramMessage.findMany({ where: { tenantId, conversationId }, take: 50,
       ...(cursor ? { cursor, skip: 1 } : {}), orderBy: [{ sentAt: 'desc' }, { id: 'desc' }],
       select: { id: true, direction: true, text: true, status: true, sentAt: true, requestId: true } })
+  }
+  async deleteMessage(tenantId: string, messageId: string) {
+    this.config.assertTenant(tenantId)
+    return this.db.$transaction(async tx => {
+      const message = await tx.instagramMessage.findFirst({ where: { id: messageId, tenantId } })
+      if (!message) throw new NotFoundException('Mensagem Instagram indisponível')
+      const account = await tx.instagramAccount.findFirst({ where: { id: message.accountId, tenantId, active: true, mode: this.config.mode } })
+      if (!account) throw new NotFoundException('Conta Instagram indisponível')
+      if (message.status === 'deleted') return { deleted: true }
+      // Preserve uncertain send attempts for reconciliation; erasing them could
+      // remove the information needed to prevent a duplicate outbound send.
+      if (!['received', 'sent', 'unsent'].includes(message.status)) throw new ConflictException('Confira o envio sem confirmação antes de excluir esta mensagem')
+      const removed = await tx.instagramMessage.updateMany({
+        where: { id: messageId, tenantId, accountId: message.accountId, conversationId: message.conversationId,
+          status: { in: ['received', 'sent', 'unsent'] } },
+        data: { text: '', status: 'deleted' },
+      })
+      if (!removed.count) throw new ConflictException('A mensagem mudou. Atualize a conversa antes de excluir')
+      // Retain the unique provider/request IDs as an empty tombstone so late
+      // webhooks/history and HTTP retries cannot recreate the erased content.
+      await tx.instagramConversation.updateMany({ where: { id: message.conversationId, tenantId, accountId: message.accountId }, data: { updatedAt: new Date() } })
+      return { deleted: true }
+    })
   }
   private async account(tenantId: string, id: string) {
     const account = await this.db.instagramAccount.findFirst({ where: { id, tenantId, active: true } })

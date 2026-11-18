@@ -1,3 +1,8 @@
+Atualização de 18/11: vídeo de autorização confirmado como anexo persistido em
+instagram_basic após upload manual pelo Chrome. Exclusão de mensagens preparada
+e validada localmente; ainda não publicada. A revisão completa de mensagens não
+está pronta para envio. [Estado verificado](PREPARATION-2026-11-18.md).
+
 # Pacote de preparação da análise Meta
 
 Aplicativo **ZapChat Social Lab** — 1684815669905187. Rascunho **1690021079384646**.

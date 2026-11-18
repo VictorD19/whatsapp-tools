@@ -27,10 +27,20 @@ Estado: preparação avançou; pedido 1690021079384646 não enviado e ainda não
   contínua do desktop. Arquivos em output/instagram-meta-review-20261118, fora do Git.
 - Justificativas de instagram_basic e instagram_manage_messages salvas no
   rascunho com os limites explícitos. Testes API de instagram_basic: Concluída
-  no painel. Concordâncias de uso permitido não marcadas; senha do avaliador não
+  no painel. Na preparação automática, concordâncias de uso permitido não foram marcadas; senha do avaliador não
   transmitida. Nenhuma aceitação de termos ou envio final executado.
 
-## Upload rejeitado: causa observada
+## Upload: resolvido para instagram_basic
+
+Após envio manual pelo Chrome, reabrir o mesmo pedido na sessão do avaliador
+confirmou o link “Visualizar screencast carregado” em instagram_basic, associado
+ao vídeo 3013972138947842. O anexo persistiu; a falha de transporte anterior não
+impede mais esse vídeo. Não concluir que todos os anexos foram enviados.
+A concordância de instagram_basic apareceu marcada após a ação manual do usuário;
+o agente não a marcou nem enviou a análise. Evidência visual local preservada
+em output/instagram-meta-review-20261118/meta-video-saved-20261118.png.
+
+### Falhas anteriores, preservadas como diagnóstico
 
 A interface chegou a 100% de transferência, mas o POST ao serviço rupload da Meta
 retornou HTTP400, NotAuthorizedError, User not authorized to perform this request,
@@ -54,7 +64,8 @@ https://developers.facebook.com/documentation/business-messaging/instagram-messa
 A autorização foi demonstrada. A leitura histórica suplementar está em outra
 cópia e não substitui esse fluxo. No hospedado, respostas/importação estão
 bloqueadas e não há recebimento real por webhook confirmado. Exclusão pelo
-operador não tem demonstração/controle equivalente no inbox. O tratamento de
+operador foi implementada e verificada localmente, mas ainda não publicada nem
+demonstrada no ambiente hospedado. O tratamento de
 cancelamento foi implementado/testado em etapas anteriores, mas ainda falta
 sua demonstração no fluxo real submetido. Não marcar conformidade nem enviar
 como se esses pontos estivessem validados.
@@ -94,3 +105,25 @@ após conferir PID/caminho. Bases e frames originais preservados. O piloto públ
 continua no servidor existente; acesso administrativo não foi reativado. Código
 do retorno seguro salvo na branch de testes em 53ec43e, PR118 em rascunho.
 Conferência HTTP local: cinco testes aprovados; não foi feita nova implantação.
+
+## Exclusão pelo operador — preparada na branch, não publicada
+
+- DELETE autenticado e limitado ao administrador, tenant, conta ativa e modo do
+  piloto. Remove texto e mantém somente registro vazio com IDs para impedir
+  restauração por reentrega/histórico e duplicação de envios. Não apaga no Instagram.
+- Envios pendentes/sem confirmação preservados para reconciliação.
+- Interface solicita confirmação; cancelar mantém o conteúdo. Leituras antigas
+  em andamento são invalidadas para não reexibir o texto removido.
+- 82 testes Instagram passaram, API e Web de avaliação compilaram; cinco testes
+  HTTP do gateway passaram. PostgreSQL verificou exclusão/cancelamento, repetição,
+  histórico, isolamento e preservação de envios incertos, com rollback total.
+- Verificação no navegador com conta/mensagens fictícias: cancelar, excluir,
+  simular cancelamento e recarregar. Conteúdo permaneceu removido. Nenhuma
+  chamada Meta, mensagem real excluída ou acesso ao servidor principal.
+- HTTP local: sem autenticação 401, agente 403, outro tenant habilitado 404,
+  repetição pelo administrador 200; textos excluído/cancelado vazios no retorno.
+- Esse QA não é demonstração de mensagens reais para a Meta. A liberação do
+  fluxo de resposta e sua demonstração hospedada continuam pendentes.
+
+Os processos locais deste QA foram encerrados e somente os dois tenants/usuários
+fictícios criados para ele foram removidos. Recibos e capturas privados preservados.

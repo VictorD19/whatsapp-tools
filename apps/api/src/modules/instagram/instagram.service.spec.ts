@@ -11,13 +11,15 @@ function fixture() {
   let message: any = null
   const db: any = {
     user: { findFirst: jest.fn(async () => ({ id: 'admin' })) },
-    instagramAccount: { findFirst: jest.fn(async ({ where }) => where.tenantId === account.tenantId && where.id === account.id ? account : null), findUnique: jest.fn(async () => account), create: jest.fn(async () => ({ id: 'a' })), updateMany: jest.fn() },
+    instagramAccount: { findFirst: jest.fn(async ({ where }) => where.tenantId === account.tenantId && where.id === account.id && (where.active === undefined || where.active === account.active) && (!where.mode || where.mode === account.mode) ? account : null), findUnique: jest.fn(async () => account), create: jest.fn(async () => ({ id: 'a' })), updateMany: jest.fn() },
     instagramConversation: { findFirst: jest.fn(async ({ where }) => where.tenantId === conversation.tenantId && where.id === conversation.id ? conversation : null), upsert: jest.fn(async () => conversation), updateMany: jest.fn(async () => ({ count: 1 })) },
     instagramMessage: {
+      findFirst: jest.fn(async ({ where }) => message && where.id === message.id && where.tenantId === message.tenantId ? { ...message } : null),
       findUnique: jest.fn(async () => message),
       upsert: jest.fn(async ({ create }) => { message ||= { ...create, id: 'm' }; return { ...message } }),
       updateMany: jest.fn(async ({ where, data }) => {
-        if (!message || (where.status && message.status !== where.status)) return { count: 0 }
+        if (!message || (typeof where.status === 'string' && message.status !== where.status) ||
+          where.status?.notIn?.includes(message.status) || (where.status?.in && !where.status.in.includes(message.status))) return { count: 0 }
         Object.assign(message, data); return { count: 1 }
       }),
       createMany: jest.fn(async () => ({ count: 1 })),
@@ -39,6 +41,50 @@ function fixture() {
   return { service: new InstagramService(db, redis, crypto, config, adapter), db, adapter, cache, values, config, account, conversation, crypto }
 }
 describe('Instagram service', () => {
+  it('erases message text locally, retains deduplication IDs and makes deletion idempotent without a provider call', async () => {
+    const f = fixture()
+    await f.service.reply('one', 'c', 'Synthetic removable text', 'request')
+    f.adapter.sendText.mockClear()
+    const before = f.conversation.lastInboundAt
+    expect(await f.service.deleteMessage('one', 'm')).toEqual({ deleted: true })
+    expect(await f.db.instagramMessage.findFirst({ where: { id: 'm', tenantId: 'one' } })).toMatchObject({
+      text: '', status: 'deleted', providerMessageId: 'provider-mid', requestId: 'request', conversationId: 'c',
+    })
+    expect(await f.service.deleteMessage('one', 'm')).toEqual({ deleted: true })
+    await expect(f.service.reply('one', 'c', 'Synthetic removable text', 'request')).rejects.toThrow('Identificador')
+    expect(f.conversation.lastInboundAt).toEqual(before)
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+  })
+  it('does not erase another tenant’s message even when both tenants are enabled', async () => {
+    const f = fixture(); f.values.INSTAGRAM_PILOT_TENANT_IDS = 'one,two'
+    await f.service.reply('one', 'c', 'Synthetic private text', 'request')
+    f.db.instagramMessage.updateMany.mockClear()
+    await expect(f.service.deleteMessage('two', 'm')).rejects.toThrow('indisponível')
+    expect(f.db.instagramMessage.updateMany).not.toHaveBeenCalled()
+    expect((await f.db.instagramMessage.findFirst({ where: { id: 'm', tenantId: 'one' } })).text).toBe('Synthetic private text')
+  })
+  it('keeps uncertain outgoing attempts available for reconciliation', async () => {
+    const f = fixture(); f.adapter.sendText.mockRejectedValue(new Error('uncertain transport'))
+    await f.service.reply('one', 'c', 'Uncertain attempt', 'request')
+    f.db.instagramMessage.updateMany.mockClear()
+    await expect(f.service.deleteMessage('one', 'm')).rejects.toThrow('sem confirmação')
+    expect(f.db.instagramMessage.updateMany).not.toHaveBeenCalled()
+    expect((await f.db.instagramMessage.findFirst({ where: { id: 'm', tenantId: 'one' } })).text).toBe('Uncertain attempt')
+  })
+  it('fails closed if message state changes during operator deletion', async () => {
+    const f = fixture(); await f.service.reply('one', 'c', 'Synthetic text', 'request')
+    f.db.instagramMessage.updateMany.mockResolvedValueOnce({ count: 0 })
+    await expect(f.service.deleteMessage('one', 'm')).rejects.toThrow('mensagem mudou')
+    expect((await f.db.instagramMessage.findFirst({ where: { id: 'm', tenantId: 'one' } })).text).toBe('Synthetic text')
+  })
+  it('refuses an inactive or different-mode account when deleting a message', async () => {
+    const f = fixture(); await f.service.reply('one', 'c', 'Synthetic text', 'request')
+    f.account.active = false
+    await expect(f.service.deleteMessage('one', 'm')).rejects.toThrow('indisponível')
+    f.account.active = true; f.values.INSTAGRAM_MODE = 'meta'
+    await expect(f.service.deleteMessage('one', 'm')).rejects.toThrow('indisponível')
+    expect((await f.db.instagramMessage.findFirst({ where: { id: 'm', tenantId: 'one' } })).text).toBe('Synthetic text')
+  })
   it('does not expose simulated cancellation in Meta mode or to a different tenant', async () => {
     const f = fixture(); f.values.INSTAGRAM_MODE = 'meta'
     await expect(f.service.simulateCancellation('one', 'message')).rejects.toThrow()
@@ -56,7 +102,7 @@ describe('Instagram service', () => {
     await f.service.webhook(raw, 'sha256=' + createHmac('sha256', 'secret').update(raw).digest('hex'), body)
     expect(f.db.instagramMessage.createMany).toHaveBeenCalledWith(expect.objectContaining({ data: [expect.objectContaining({ text: '', status: 'unsent', tenantId: 'one', accountId: 'a' })] }))
     expect(f.db.instagramMessage.updateMany).toHaveBeenCalledWith({ where: { tenantId: 'one', accountId: 'a', conversationId: 'c',
-      direction: 'in', providerMessageId: 'cancelled', status: { not: 'unsent' } }, data: { text: '', status: 'unsent' } })
+      direction: 'in', providerMessageId: 'cancelled', status: { notIn: ['unsent', 'deleted'] } }, data: { text: '', status: 'unsent' } })
     expect(f.db.instagramConversation.updateMany).not.toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ lastInboundAt: expect.anything() }) }))
     expect(f.adapter.sendText).not.toHaveBeenCalled()
   })
