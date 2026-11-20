@@ -4,7 +4,8 @@ import { InstagramService } from './instagram.service'
 import { createHmac } from 'crypto'
 
 function fixture() {
-  const values: Record<string, string> = { NODE_ENV: 'test', INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'simulated', INSTAGRAM_PILOT_TENANT_IDS: 'one', INSTAGRAM_APP_SECRET: 'secret' }
+  const values: Record<string, string> = { NODE_ENV: 'test', INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'simulated', INSTAGRAM_PILOT_TENANT_IDS: 'one', INSTAGRAM_APP_SECRET: 'secret',
+    INSTAGRAM_CONTROLLED_REPLY_SCOPE: JSON.stringify({ tenantId: 'one', instagramId: '123', participantId: '456' }) }
   const config = new InstagramConfig(({ get: (key: string, fallback: string) => values[key] ?? fallback } as unknown as ConfigService))
   const account = { id: 'a', tenantId: 'one', instagramId: '123', mode: 'simulated', active: true, accessToken: null, tokenExpiresAt: null, createdAt: new Date(Date.now() - 3600000) }
   const conversation = { id: 'c', tenantId: 'one', accountId: 'a', participantId: '456', lastInboundAt: new Date(), lastWebhookChannel: 'unknown', lastWebhookMessageAt: null }
@@ -41,6 +42,38 @@ function fixture() {
   return { service: new InstagramService(db, redis, crypto, config, adapter), db, adapter, cache, values, config, account, conversation, crypto }
 }
 describe('Instagram service', () => {
+  const controlled = () => {
+    const f = fixture()
+    Object.assign(f.values, { INSTAGRAM_MODE: 'meta', INSTAGRAM_SEND_ENABLED: 'true',
+      INSTAGRAM_CONTROLLED_REPLY_SCOPE: JSON.stringify({ tenantId: 'one', instagramId: '123', participantId: '456' }) })
+    f.account.mode = 'meta'; (f.account as any).accessToken = 'encrypted-token'
+    return f
+  }
+  it('allows the controlled reply but refuses another participant before creating an outgoing attempt', async () => {
+    const f = controlled()
+    expect(await f.service.reply('one', 'c', 'Controlled reply', 'request')).toMatchObject({ status: 'sent' })
+    const other = controlled(); other.conversation.participantId = '789'
+    await expect(other.service.reply('one', 'c', 'Do not send', 'other')).rejects.toThrow('esta conversa')
+    expect(other.db.instagramMessage.upsert).not.toHaveBeenCalled()
+    expect(other.adapter.sendText).not.toHaveBeenCalled()
+  })
+  it('rechecks a controlled scope revoked during the send claim without calling Meta', async () => {
+    const f = controlled(), original = f.db.instagramMessage.upsert.getMockImplementation()
+    f.db.instagramMessage.upsert.mockImplementationOnce(async (args: any) => {
+      const message = await original(args)
+      f.values.INSTAGRAM_CONTROLLED_REPLY_SCOPE = '{}'
+      return message
+    })
+    expect(await f.service.reply('one', 'c', 'Do not send', 'request')).toMatchObject({ status: 'unknown' })
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+  })
+  it('uses the refreshed reply window rather than a stale conversation snapshot', async () => {
+    const f = controlled()
+    f.db.instagramConversation.findFirst.mockResolvedValueOnce({ ...f.conversation })
+      .mockResolvedValueOnce({ ...f.conversation, lastInboundAt: new Date(Date.now() - 25 * 3600000) })
+    expect(await f.service.reply('one', 'c', 'Do not send', 'request')).toMatchObject({ status: 'unknown' })
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+  })
   it('erases message text locally, retains deduplication IDs and makes deletion idempotent without a provider call', async () => {
     const f = fixture()
     await f.service.reply('one', 'c', 'Synthetic removable text', 'request')

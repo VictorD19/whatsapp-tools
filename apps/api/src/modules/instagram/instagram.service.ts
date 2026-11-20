@@ -33,7 +33,7 @@ export class InstagramService {
 
   status(tenantId: string) {
     return { enabled: this.config.allowed(tenantId), mode: this.config.mode, testOnly: true,
-      realSendingEnabled: this.config.allowed(tenantId) && this.config.mode === 'meta' && this.config.get('INSTAGRAM_SEND_ENABLED') === 'true' }
+      realSendingEnabled: this.config.realSendingAllowed(tenantId) }
   }
   accounts(tenantId: string) {
     this.config.assertTenant(tenantId)
@@ -261,7 +261,7 @@ export class InstagramService {
     if (conversation.lastWebhookChannel === 'standby') throw new ForbiddenException('Conversa recebida em espera: somente leitura enquanto outro aplicativo tem o controle')
     if (!canReply(conversation.lastInboundAt, Date.now())) throw new BadRequestException('A janela de resposta de 24 horas terminou')
     if (account.mode === 'meta' && (!account.accessToken || (account.tokenExpiresAt && account.tokenExpiresAt.getTime() <= Date.now()))) throw new BadRequestException('Reconecte o Instagram: autorização ausente ou expirada')
-    if (account.mode === 'meta' && this.config.get('INSTAGRAM_SEND_ENABLED') !== 'true') throw new ForbiddenException('Envio real desabilitado no piloto')
+    if (account.mode === 'meta' && !this.config.replyTargetAllowed(tenantId, account.instagramId, conversation.participantId)) throw new ForbiddenException('Envio real desabilitado para esta conversa no piloto')
     // Unique request ID plus atomic claim prevents concurrent HTTP retries sending twice.
     const message = await this.db.instagramMessage.upsert({ where: { accountId_requestId: { accountId: account.id, requestId } },
       create: { tenantId, accountId: account.id, conversationId, direction: 'out', text, requestId, status: 'pending' }, update: {} })
@@ -275,9 +275,10 @@ export class InstagramService {
       if (currentConversation.lastWebhookChannel === 'standby') throw new Error('passive_conversation')
       if (current.mode !== this.config.mode || (current.mode === 'meta' && (!current.accessToken ||
           (current.tokenExpiresAt && current.tokenExpiresAt.getTime() <= Date.now())))) throw new Error('connection_changed')
-      if (!canReply(conversation.lastInboundAt, Date.now())) throw new Error('reply_window_closed')
+      if (!canReply(currentConversation.lastInboundAt, Date.now())) throw new Error('reply_window_closed')
+      if (current.mode === 'meta' && !this.config.replyTargetAllowed(tenantId, current.instagramId, currentConversation.participantId)) throw new Error('reply_target_disabled')
       const token = current.accessToken ? this.crypto.decrypt(current.accessToken) : null
-      const providerMessageId = await this.adapter.sendText(account.instagramId, conversation.participantId, token, text)
+      const providerMessageId = await this.adapter.sendText(current.instagramId, currentConversation.participantId, token, text)
       await this.db.instagramMessage.updateMany({ where: { id: message.id, tenantId }, data: { providerMessageId, status: 'sent' } })
       return { id: message.id, status: 'sent' }
     } catch {

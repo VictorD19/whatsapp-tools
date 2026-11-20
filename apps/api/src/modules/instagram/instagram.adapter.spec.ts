@@ -6,7 +6,8 @@ describe('Instagram Meta transport', () => {
   const originalFetch = global.fetch
   afterEach(() => { global.fetch = originalFetch })
   const values = () => ({ NODE_ENV: 'test', INSTAGRAM_MODE: 'meta', INSTAGRAM_APP_ID: '123', INSTAGRAM_APP_SECRET: 'secret',
-    INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback', INSTAGRAM_SEND_ENABLED: 'true' })
+    INSTAGRAM_CONFIG_ID: '456', INSTAGRAM_API_VERSION: 'v99.0', INSTAGRAM_REDIRECT_URI: 'https://test.example/callback', INSTAGRAM_SEND_ENABLED: 'true',
+    INSTAGRAM_CONTROLLED_REPLY_SCOPE: JSON.stringify({ tenantId: 'one', instagramId: '123', participantId: '456' }) })
   it('synchronizes only recent inbound text addressed to the authorized account', async () => {
     const at = Date.now() - 1000, since = at - 60000
     const incoming = { id: 'provider-id', message: 'real provider text', from: { id: '456' }, to: { data: [{ id: '123' }] }, created_time: new Date(at).toISOString() }
@@ -51,6 +52,16 @@ describe('Instagram Meta transport', () => {
     await expect(new InstagramAdapter(new InstagramConfig(new ConfigService(disabled))).sendText('123', '456', 'token', 'text')).rejects.toThrow()
     const result = await new InstagramAdapter(new InstagramConfig(new ConfigService({ ...values(), INSTAGRAM_MODE: 'simulated' }))).sendText('123', '456', null, 'text')
     expect(result.startsWith('simulated-')).toBe(true)
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+  it('blocks a different account or recipient and malformed controlled scope before any Meta call', async () => {
+    global.fetch = jest.fn() as any
+    const scoped = { ...values(), INSTAGRAM_CONTROLLED_REPLY_SCOPE: JSON.stringify({ tenantId: 'one', instagramId: '123', participantId: '456' }) }
+    const adapter = new InstagramAdapter(new InstagramConfig(new ConfigService(scoped)))
+    await expect(adapter.sendText('123', '789', 'token', 'text')).rejects.toThrow('destinatário')
+    await expect(adapter.sendText('789', '456', 'token', 'text')).rejects.toThrow('destinatário')
+    const malformed = new InstagramAdapter(new InstagramConfig(new ConfigService({ ...scoped, INSTAGRAM_CONTROLLED_REPLY_SCOPE: '{}' })))
+    await expect(malformed.sendText('123', '456', 'token', 'text')).rejects.toThrow()
     expect(global.fetch).not.toHaveBeenCalled()
   })
   it('does not include provider errors or credentials in application exceptions', async () => {
