@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
         </div>
 
         <h1 className="text-3xl font-bold tracking-tight mb-2">Política de Privacidade</h1>
-        <p className="text-sm text-muted-foreground mb-10">Última atualização: 1 de maio de 2026</p>
+        <p className="text-sm text-muted-foreground mb-10">Última atualização: 11 de novembro de 2026</p>
 
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-8">
           <section>
@@ -31,8 +31,8 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc pl-6 space-y-1">
               <li><strong>Dados de cadastro:</strong> nome, e-mail, telefone e senha (armazenada de forma criptografada).</li>
-              <li><strong>Dados de uso:</strong> mensagens enviadas e recebidas via WhatsApp, interações com contatos e conversas.</li>
-              <li><strong>Dados de integração:</strong> tokens de acesso a serviços terceiros (Google Calendar, WhatsApp Business) armazenados de forma criptografada.</li>
+              <li><strong>Dados de uso:</strong> mensagens enviadas e recebidas via WhatsApp e, quando a integração opcional estiver disponível e for autorizada, mensagens do Instagram Direct, interações com contatos e conversas.</li>
+              <li><strong>Dados de integração:</strong> tokens de acesso a serviços terceiros (Google Calendar, WhatsApp Business e Instagram) armazenados de forma criptografada.</li>
               <li><strong>Dados técnicos:</strong> endereço IP, tipo de navegador, sistema operacional e logs de acesso.</li>
             </ul>
           </section>
@@ -43,6 +43,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc pl-6 space-y-1">
               <li>Fornecer, manter e melhorar a plataforma SistemaZapChat.</li>
               <li>Processar mensagens e automatizar fluxos de atendimento via WhatsApp.</li>
+              <li>Receber, organizar e permitir o atendimento de mensagens do Instagram Direct quando essa integração for autorizada, conforme a seção 10.</li>
               <li>Integrar com serviços solicitados pelo usuário (Google Calendar, assistentes de IA).</li>
               <li>Garantir a segurança e integridade da plataforma.</li>
               <li>Enviar notificações relevantes sobre o serviço.</li>
@@ -55,7 +56,7 @@ export default function PrivacyPolicyPage() {
             <p>Não vendemos, alugamos ou compartilhamos seus dados pessoais com terceiros para fins de marketing. Podemos compartilhar informações apenas nas seguintes situações:</p>
             <ul className="list-disc pl-6 space-y-1">
               <li><strong>Provedores de serviço:</strong> empresas que auxiliam na operação da plataforma (hospedagem, processamento de pagamentos), sob contrato de confidencialidade.</li>
-              <li><strong>Integrações autorizadas:</strong> dados compartilhados com serviços conectados pelo próprio usuário (Google Calendar, APIs de IA).</li>
+              <li><strong>Integrações autorizadas:</strong> dados compartilhados com serviços conectados pelo próprio usuário (Google Calendar, APIs de IA e Meta/Instagram), conforme a finalidade e as permissões da integração. O piloto de Instagram descrito na seção 10 não encaminha Directs a serviços de IA.</li>
               <li><strong>Obrigação legal:</strong> quando exigido por lei, ordem judicial ou solicitação de autoridade competente.</li>
               <li><strong>Proteção de direitos:</strong> para proteger os direitos, a segurança ou a propriedade do SistemaZapChat ou de terceiros.</li>
             </ul>
@@ -132,6 +133,55 @@ export default function PrivacyPolicyPage() {
               <li><strong>E-mail:</strong> <a href="mailto:privacidade@sistemazapchat.com" className="text-primary hover:underline">privacidade@sistemazapchat.com</a></li>
               <li><strong>Responsável pelo tratamento:</strong> bertramvictor8@gmail.com</li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold">10. Integração opcional com o Instagram</h2>
+            <p>
+              A integração com o Instagram está em fase de piloto, disponível apenas para contas de teste autorizadas.
+              A conexão é opcional e depende da autorização de uma pessoa com permissão para administrar a conta
+              profissional. A autenticação ocorre na Meta; não solicitamos a senha do Instagram no CRM.
+            </p>
+            <p>
+              Tratamos o identificador e o nome de usuário da conta profissional conectada, o identificador do
+              portfólio empresarial informado pela Meta e os dados de autorização necessários à conexão.
+              Para organizar o atendimento, tratamos o texto das mensagens recebidas e das respostas enviadas
+              pelo CRM, os identificadores dos participantes e das mensagens, datas e horários e o estado do envio.
+              Esses dados são usados para exibir as conversas e permitir o atendimento pela empresa responsável
+              pela conta conectada, dentro das permissões e regras da Meta.
+            </p>
+            <p>
+              Nesta fase, a integração atende mensagens de texto e não importa automaticamente o histórico anterior.
+              Respostas por inteligência artificial, automações de comentários e tratamento de anexos não fazem parte
+              deste piloto. A conexão não concede acesso às conversas a outras empresas clientes do CRM.
+            </p>
+            <p>
+              A Meta participa da autenticação e da transmissão das mensagens. No piloto, os dados são armazenados
+              em ambiente de testes separado do CRM principal, e a Cloudflare intermedeia a conexão HTTPS usada
+              para receber as autorizações e notificações de mensagens. Os tokens de acesso são armazenados
+              criptografados; isso não significa que o conteúdo das conversas receba a mesma criptografia em repouso.
+            </p>
+            <p>
+              Ao desconectar a conta no CRM, desativamos a conexão e removemos o token armazenado nesse ambiente.
+              Essa ação não exclui automaticamente as conversas já armazenadas nem revoga, por si só, a autorização
+              na Meta. Você também pode remover a autorização nas configurações de aplicativos e integrações da Meta/Instagram.
+              Para solicitar a exclusão dos dados do Instagram armazenados pelo CRM, utilize o contato de privacidade
+              da seção 9, informando a empresa e a conta conectada. Não envie senhas ou tokens. A desconexão ou a
+              exclusão no CRM não apaga as mensagens existentes no próprio Instagram.
+            </p>
+            <p>
+              Consulte o <Link href="/data-deletion" className="text-primary hover:underline">procedimento de exclusão de dados do Instagram</Link>
+              {' '}para conhecer os dados necessários ao pedido, as opções de exclusão e a confirmação do atendimento.
+            </p>
+            <p>
+              Na exclusão de uma conversa, mantemos apenas o registro técnico mínimo necessário para impedir sua
+              recriação por notificações antigas: identificadores transformados em hash e a data da exclusão,
+              sem o conteúdo das mensagens. Esse registro é removido na exclusão completa da conexão.
+            </p>
+            <p>
+              Antes de disponibilizar novas funções ou ampliar o piloto para clientes, atualizaremos esta descrição
+              para refletir os dados tratados, os serviços envolvidos e as condições de funcionamento da integração.
+            </p>
           </section>
         </div>
 

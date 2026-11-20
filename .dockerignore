@@ -37,3 +37,6 @@ coverage/
 .env.*.local
 .playwright-mcp
 rules/
+.instagram-test/
+**/.env
+**/.env.*

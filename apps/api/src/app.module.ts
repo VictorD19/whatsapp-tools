@@ -27,6 +27,7 @@ import { HealthModule } from './modules/health/health.module'
 import { InactivityScannerModule } from './modules/inactivity-scanner/inactivity-scanner.module'
 import { ApiLogsModule } from './modules/api-logs/api-logs.module'
 import { CampaignsModule } from './modules/campaigns/campaigns.module'
+import { InstagramModule } from './modules/instagram/instagram.module'
 // import { CrmModule } from './modules/crm/crm.module'
 
 @Module({
@@ -57,6 +58,7 @@ import { CampaignsModule } from './modules/campaigns/campaigns.module'
     InactivityScannerModule,
     ApiLogsModule,
     CampaignsModule,
+    ...(process.env.INSTAGRAM_ENABLED === 'true' && process.env.NODE_ENV !== 'production' ? [InstagramModule] : []),
     // CrmModule,
   ],
 })
