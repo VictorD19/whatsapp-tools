@@ -1,3 +1,7 @@
+Atualização em 20/11: R4 publicada e validada no piloto; este registro mantém a
+preparação histórica. Consulte o
+[estado publicado](../INSTAGRAM-PILOT-R4-PUBLISHED-2026-11-20.md).
+
 # Cadastro e gravações — 18/11/2026
 
 Estado: preparação avançou; pedido 1690021079384646 não enviado e ainda não apto

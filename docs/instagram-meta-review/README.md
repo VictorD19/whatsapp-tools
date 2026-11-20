@@ -1,3 +1,10 @@
+Atualização de 20/11: **R4 publicada e validada somente no piloto**, com backups
+restaurados antes/depois, cópia criptografada local e chave temporária removida.
+CRM principal preservado. A análise de mensagens ainda não está pronta: faltam
+recebimento/resposta/cancelamento reais demonstrados no ambiente hospedado.
+[Publicação e evidências atuais](../INSTAGRAM-PILOT-R4-PUBLISHED-2026-11-20.md).
+As atualizações anteriores abaixo são históricas.
+
 Atualização de 18/11: vídeo de autorização confirmado como anexo persistido em
 instagram_basic após upload manual pelo Chrome. Exclusão de mensagens preparada
 e validada localmente; ainda não publicada. A revisão completa de mensagens não

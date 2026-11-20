@@ -1,3 +1,10 @@
+**20 November:** R4 is hosted and verified. OAuth success returns to the fixed
+Connection panel; operator deletion is deployed. Backups were restored and
+temporary administrative access removed. Real receipt/reply/unsent demonstration
+remains incomplete; this draft has not been submitted and no reviewer password
+has been transmitted. See [current publication record](../INSTAGRAM-PILOT-R4-PUBLISHED-2026-11-20.md).
+Earlier preparation notices below are historical where they differ.
+
 **18 November current state:** the authorization video is now persisted under
 instagram_basic, confirmed by reopening the draft after the user's Chrome upload.
 Earlier IAB uploads and the supporting ZIP had failed. The basic permitted-use

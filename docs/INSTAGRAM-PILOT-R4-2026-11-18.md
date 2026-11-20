@@ -1,3 +1,7 @@
+Atualização em 20/11: a publicação foi concluída. O estado “aguardando acesso”
+abaixo registra a preparação de 18/11. Consulte o
+[recibo da publicação e os limites atuais](INSTAGRAM-PILOT-R4-PUBLISHED-2026-11-20.md).
+
 # Piloto R4 — pacote validado, publicação aguardando acesso
 
 Estado em 18/11/2026: **não publicado**. O acesso temporário anterior foi removido
