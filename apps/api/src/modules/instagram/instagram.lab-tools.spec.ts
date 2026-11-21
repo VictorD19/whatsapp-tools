@@ -12,7 +12,7 @@ describe('Instagram lab reconciliation safety suite', () => {
   })
   it('restricts the external reviewer gateway to its isolated services and allowed routes', () => {
     const root = resolve(__dirname, '../../../../..')
-    execFileSync(process.execPath, ['--test', resolve(root, 'tools/instagram-review-gateway.test.mjs')], {
+    execFileSync(process.execPath, ['--test', resolve(root, 'tools/instagram-review-gateway.test.mjs'), resolve(root, 'tools/instagram-host-reply-policy.test.mjs')], {
       cwd: root, encoding: 'utf8', timeout: 10_000,
     })
   })

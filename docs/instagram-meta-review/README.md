@@ -1,3 +1,9 @@
+Atualização de 21/11: instruções do avaliador e roteiro consolidados; proteção de
+resposta controlada do host/gateway preparada na branch, ainda não publicada.
+Convite do remetente continua pendente; recebimento real e vídeo completo não
+comprovados. **Análise ainda não pronta para envio.**
+[Estado vigente](PREPARATION-2026-11-21.md). Registros anteriores abaixo são históricos.
+
 Atualização de 20/11: **R4 publicada e validada somente no piloto**, com backups
 restaurados antes/depois, cópia criptografada local e chave temporária removida.
 CRM principal preservado. A análise de mensagens ainda não está pronta: faltam

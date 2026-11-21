@@ -1,8 +1,9 @@
 // HTTPS terminates at Cloudflare. Only the isolated reviewer instance is reachable.
 import { createServer } from 'node:http'
 import { pathToFileURL } from 'node:url'
+import replyPolicy from '../infra/instagram-host/reply-policy.cjs'
 
-export function reviewRoute(method, path) {
+export function reviewRoute(method, path, controlledReplies = false) {
   if (/%2f|%5c/i.test(path)) return null
   try { path = decodeURIComponent(path) } catch { return null }
   if (path.includes('..') || /[%\\\x00]|\.map$/i.test(path)) return null
@@ -12,18 +13,25 @@ export function reviewRoute(method, path) {
     if (method === 'POST' && path === '/api/v1/instagram/connection/retry') return 'api'
     if (method === 'DELETE' && path === '/api/v1/instagram/connection') return 'api'
     if (method === 'POST' && path === '/api/v1/instagram/webhook') return 'api'
+    if (controlledReplies === true && method === 'POST' && /^\/api\/v1\/instagram\/conversations\/[\w-]+\/reply$/.test(path)) return 'api'
     if (method === 'GET' && /^\/api\/v1\/instagram\/(accounts\/[\w-]+\/conversations|conversations\/[\w-]+\/messages)$/.test(path)) return 'api'
     if (method === 'POST' && /^\/api\/v1\/instagram\/(simulated-account|simulate-inbound|messages\/[\w-]+\/simulate-cancellation)$/.test(path)) return 'api'
     if (method === 'DELETE' && /^\/api\/v1\/instagram\/accounts\/[\w-]+$/.test(path)) return 'api'
     if (method === 'DELETE' && /^\/api\/v1\/instagram\/messages\/[\w-]+$/.test(path)) return 'api'
-    return null // No registration, administration, arbitrary proxy, sync or real replies.
+    return null // No registration, administration, arbitrary proxy or sync; replies require explicit opt-in above.
   }
   if (['GET', 'HEAD'].includes(method) && (['/', '/inbox', '/login', '/instagram', '/privacy', '/terms', '/data-deletion', '/favicon.ico', '/favicon.svg', '/favicon-32x32.png', '/favicon-96x96.png', '/apple-touch-icon.png'].includes(path) || (path.startsWith('/_next/static/') && path.split('/').every(segment => /^[a-zA-Z0-9_.()[\]@~-]*$/.test(segment))))) return 'web'
   return null
 }
 
-export function createReviewGateway({ api = 'http://127.0.0.1:18011', web = 'http://127.0.0.1:18091' } = {}) {
+export function createReviewGateway({ api = 'http://127.0.0.1:18011', web = 'http://127.0.0.1:18091', replyEnvironment = {} } = {}) {
   if (api !== 'http://127.0.0.1:18011' || web !== 'http://127.0.0.1:18091') throw Error('Reviewer upstreams are fixed')
+  let controlledReplies = false
+  if (replyEnvironment.INSTAGRAM_SEND_ENABLED === 'true') {
+    replyPolicy.controlledReplyEnvironment({ sendEnabled: true,
+      controlledReplyScope: JSON.parse(replyEnvironment.INSTAGRAM_CONTROLLED_REPLY_SCOPE || 'null') })
+    controlledReplies = true
+  }
   const attempts = new Map()
   const hosts = new Set(['instagram-review.sistemazapchat.com', 'localhost:18012', '127.0.0.1:18012'])
   return createServer(async (req, res) => {
@@ -31,7 +39,7 @@ export function createReviewGateway({ api = 'http://127.0.0.1:18011', web = 'htt
     try {
       if (!hosts.has(req.headers.host)) return deny(404)
       const url = new URL(req.url, 'http://localhost')
-      const target = reviewRoute(req.method, url.pathname)
+      const target = reviewRoute(req.method, url.pathname, controlledReplies)
       if (!target) return deny(404)
       if (['GET', 'HEAD'].includes(req.method) && ['/', '/inbox'].includes(url.pathname)) {
         res.writeHead(302, { Location: url.pathname === '/' ? '/login' : '/instagram', 'Cache-Control': 'no-store' }); return res.end()
@@ -75,5 +83,5 @@ export function createReviewGateway({ api = 'http://127.0.0.1:18011', web = 'htt
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const bind = process.env.INSTAGRAM_REVIEW_CONTAINER === 'true' ? '0.0.0.0' : '127.0.0.1'
-  createReviewGateway().listen(18012, bind, () => console.log('Reviewer gateway ready; fixed reviewer upstreams only. No tunnel enabled by this process.'))
+  createReviewGateway({ replyEnvironment: process.env }).listen(18012, bind, () => console.log('Reviewer gateway ready; fixed reviewer upstreams only. No tunnel enabled by this process.'))
 }

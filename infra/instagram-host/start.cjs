@@ -1,14 +1,16 @@
 const { readFileSync } = require('node:fs')
 const { createRequire } = require('node:module')
 const { spawn, spawnSync } = require('node:child_process')
+const { controlledReplyEnvironment } = require('./reply-policy.cjs')
 
 async function main() {
   const shared = process.env.INSTAGRAM_PILOT_SHARED_HOST === 'true'
   const config = JSON.parse(readFileSync('/run/secrets/pilot_runtime', 'utf8'))
+  const replyEnvironment = controlledReplyEnvironment(config.meta)
   const separateReviewer = typeof config.reviewerLoginPassword === 'string' && config.reviewerLoginPassword.length >= 24
   const dbUrl = new URL(config.databaseUrl)
   if (config.version !== 1 || dbUrl.protocol !== 'postgresql:' || dbUrl.hostname !== 'postgres' || dbUrl.port !== '5432' || dbUrl.pathname !== '/instagram_review' || dbUrl.username !== 'instagram_review' ||
-      config.meta.redirectUri !== 'https://instagram-review.sistemazapchat.com/api/v1/instagram/callback' || config.meta.sendEnabled !== false ||
+      config.meta.redirectUri !== 'https://instagram-review.sistemazapchat.com/api/v1/instagram/callback' ||
       !/^\d+$/.test(config.meta.appId) || !/^\d+$/.test(config.meta.configId) || !/^v\d+\.\d+$/.test(config.meta.apiVersion) ||
       typeof config.meta.appSecret !== 'string' || !config.meta.appSecret ||
       [[config.meta.verifyToken, 32], [config.jwt, 48], [config.refresh, 48], [config.loginPassword, 24]].some(([value, length]) => typeof value !== 'string' || value.length < length) ||
@@ -17,7 +19,7 @@ async function main() {
     // A compiled pilot instance, never AppModule or the production enable flag.
     NODE_ENV: 'test', DATABASE_URL: config.databaseUrl, REDIS_URL: 'redis://redis:6379/0',
     JWT_SECRET: config.jwt, JWT_REFRESH_SECRET: config.refresh, ENCRYPTION_KEY: config.encryption,
-    INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'meta', INSTAGRAM_PILOT_TENANT_IDS: separateReviewer ? 'instagram-review,instagram-meta-review' : 'instagram-review', INSTAGRAM_SEND_ENABLED: 'false',
+    INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'meta', INSTAGRAM_PILOT_TENANT_IDS: separateReviewer ? 'instagram-review,instagram-meta-review' : 'instagram-review', ...replyEnvironment,
     INSTAGRAM_APP_ID: config.meta.appId, INSTAGRAM_APP_SECRET: config.meta.appSecret, INSTAGRAM_CONFIG_ID: config.meta.configId,
     INSTAGRAM_VERIFY_TOKEN: config.meta.verifyToken, INSTAGRAM_API_VERSION: config.meta.apiVersion, INSTAGRAM_REDIRECT_URI: config.meta.redirectUri,
     INSTAGRAM_REVIEW_CONTAINER: 'true', CORS_ORIGINS: 'https://instagram-review.sistemazapchat.com', NEXT_TELEMETRY_DISABLED: '1',
@@ -49,7 +51,7 @@ async function main() {
   for (const [path, env] of [
     ['/app/infra/instagram-host/bootstrap.cjs', base],
     ['/app/web/apps/web/server.js', { PATH: base.PATH, HOME: '/tmp', NODE_ENV: 'production', PORT: '18091', HOSTNAME: '127.0.0.1', NEXT_TELEMETRY_DISABLED: '1', ...(shared ? { NODE_OPTIONS: '--max-old-space-size=128' } : {}) }],
-    ['/app/tools/instagram-review-gateway.mjs', { PATH: base.PATH, INSTAGRAM_REVIEW_CONTAINER: 'true', ...(shared ? { NODE_OPTIONS: '--max-old-space-size=64' } : {}) }],
+    ['/app/tools/instagram-review-gateway.mjs', { PATH: base.PATH, INSTAGRAM_REVIEW_CONTAINER: 'true', ...replyEnvironment, ...(shared ? { NODE_OPTIONS: '--max-old-space-size=64' } : {}) }],
   ]) {
     const child = spawn(process.execPath, [path], { env, stdio: 'inherit' }); children.push(child)
     child.once('exit', () => { stop(); process.exit(1) })

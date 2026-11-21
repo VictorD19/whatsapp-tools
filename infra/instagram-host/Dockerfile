@@ -29,6 +29,7 @@ COPY --from=builder /app/apps/web/.next/static ./web/apps/web/.next/static
 COPY --from=builder /app/apps/web/public ./web/apps/web/public
 COPY tools/instagram-review-gateway.mjs ./tools/instagram-review-gateway.mjs
 COPY infra/instagram-host/start.cjs ./infra/instagram-host/start.cjs
+COPY infra/instagram-host/reply-policy.cjs ./infra/instagram-host/reply-policy.cjs
 COPY infra/instagram-host/bootstrap.cjs ./infra/instagram-host/bootstrap.cjs
 RUN chown node:node /app
 ENV NODE_PATH=/app/apps/api/node_modules

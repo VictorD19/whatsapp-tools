@@ -23,6 +23,46 @@ test('refuses a different local or production upstream', () => {
   assert.throws(()=>createReviewGateway({api:'https://sistemazapchat.com'}))
   assert.throws(()=>createReviewGateway({api:'http://127.0.0.1:18001'}))
 })
+test('reply gateway fails closed unless the owner demonstration has an explicit valid scope', async () => {
+  for (const replyEnvironment of [
+    { INSTAGRAM_SEND_ENABLED: 'true' },
+    { INSTAGRAM_SEND_ENABLED: 'true', INSTAGRAM_CONTROLLED_REPLY_SCOPE: '{' },
+    { INSTAGRAM_SEND_ENABLED: 'true', INSTAGRAM_CONTROLLED_REPLY_SCOPE: JSON.stringify({ tenantId: 'instagram-meta-review', instagramId: '123', participantId: '456' }) },
+  ]) assert.throws(() => createReviewGateway({ replyEnvironment }))
+  assert.equal(reviewRoute('POST', '/api/v1/instagram/conversations/x/reply', 'true'), null)
+  assert.equal(reviewRoute('POST', '/api/v1/instagram/conversations/x/reply', true), 'api')
+  assert.equal(reviewRoute('POST', '/api/v1/instagram/conversations/x%2Fy/reply', true), null)
+  assert.equal(reviewRoute('POST', '/api/v1/instagram/accounts/x/sync', true), null)
+  const originalFetch = globalThis.fetch
+  let calls = 0
+  globalThis.fetch = async (url, options) => {
+    calls++
+    assert.equal(url, 'http://127.0.0.1:18011/api/v1/instagram/conversations/x/reply')
+    assert.equal(options.headers.authorization, 'Bearer test-only')
+    // Authentication, tenant/recipient checks and the 24h window remain in the API.
+    return new Response('Denied by API', { status: 403 })
+  }
+  try {
+    for (const enabled of [false, true]) {
+      const gateway = createReviewGateway({ replyEnvironment: enabled ? {
+        INSTAGRAM_SEND_ENABLED: 'true', INSTAGRAM_CONTROLLED_REPLY_SCOPE: JSON.stringify({ tenantId: 'instagram-review', instagramId: '123', participantId: '456' }),
+      } : {} })
+      await new Promise(resolve => gateway.listen(0, '127.0.0.1', resolve))
+      try {
+        const status = await new Promise((resolve, reject) => {
+          const req = request({ host: '127.0.0.1', port: gateway.address().port,
+            path: '/api/v1/instagram/conversations/x/reply', method: 'POST',
+            headers: { Host: 'instagram-review.sistemazapchat.com', Authorization: 'Bearer test-only', 'Content-Type': 'application/json' } }, res => {
+            res.resume(); res.once('end', () => resolve(res.statusCode))
+          })
+          req.once('error', reject); req.end('{}')
+        })
+        assert.equal(status, enabled ? 403 : 404)
+      } finally { await new Promise(resolve => gateway.close(resolve)) }
+    }
+    assert.equal(calls, 1)
+  } finally { globalThis.fetch = originalFetch }
+})
 test('rejects hostile hosts, foreign origins and restricted routes before contacting an upstream', async () => {
   const gateway = createReviewGateway()
   await new Promise(resolve => gateway.listen(0, '127.0.0.1', resolve))
