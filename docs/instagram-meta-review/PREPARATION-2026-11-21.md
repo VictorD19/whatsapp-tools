@@ -45,3 +45,20 @@ The complete real-flow video and reviewer reproduction remain explicit blockers.
 
 Historical publication/backup evidence:
 [20 November R4](../INSTAGRAM-PILOT-R4-PUBLISHED-2026-11-20.md).
+
+## Installable candidate prepared
+
+Image shared-20261121-r5 was built locally from immutable code commit dbbb328
+for Linux amd64. Its login, Instagram, privacy and deletion pages, plus all their
+referenced script assets, returned HTTP 200 in a local network-disabled container.
+The imported gateway kept replies blocked by default. This is a packaging smoke
+check, not a real Meta flow or database recovery test.
+
+Private archive: 432620837 bytes, SHA-256
+cbcb16830211441e43f4072f36aadd16955d7c069c7a2d0a013704052d2eeec4.
+The prepared application procedure checks the existing release and this hash,
+requires disabled runtime sending, restores a new pilot backup before changing
+the app, keeps the previous image for rollback, verifies reviewer isolation and
+compares all six main container identities/start times. No upload/publication or
+new server access was performed. Revalidate backup and capacity on the server;
+local image validation does not replace those checks.
