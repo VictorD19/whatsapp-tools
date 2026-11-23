@@ -87,6 +87,26 @@ describe('Instagram Meta transport', () => {
     const adapter = new InstagramAdapter(new InstagramConfig(new ConfigService(values())))
     await expect(adapter.completeConnection({ token: 'private-provider-token', expiresAt: null })).rejects.toMatchObject({ retryable: true, retryAfterSeconds: 600 })
   })
+  it('uses the separate Page-aware configuration only for Continue with Facebook', () => {
+    global.fetch = jest.fn() as any
+    const config: Record<string, string> = { ...values(), INSTAGRAM_FACEBOOK_CONFIG_ID: '789' }
+    const adapter = new InstagramAdapter(new InstagramConfig({ get: (key: string, fallback: string) => config[key] ?? fallback } as ConfigService))
+    const instagram = new URL(adapter.authUrl('one-use-state'))
+    const facebook = new URL(adapter.authUrl('one-use-state', true))
+    expect(instagram.searchParams.get('config_id')).toBe('456')
+    expect(facebook.searchParams.get('config_id')).toBe('789')
+    expect(facebook.searchParams.get('state')).toBe('one-use-state')
+    expect(facebook.searchParams.get('redirect_uri')).toBe('https://test.example/callback')
+    expect(facebook.searchParams.has('scope')).toBe(false)
+    expect(facebook.searchParams.has('client_secret')).toBe(false)
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+  it.each(['https://other.example', '789&scope=ads_management', ' 789 '])('rejects an invalid optional Facebook configuration %s without affecting Instagram login', id => {
+    const config: Record<string, string> = { ...values(), INSTAGRAM_FACEBOOK_CONFIG_ID: id }
+    const adapter = new InstagramAdapter(new InstagramConfig({ get: (key: string, fallback: string) => config[key] ?? fallback } as ConfigService))
+    expect(() => adapter.authUrl('state', true)).toThrow('Configuração de login do Facebook inválida')
+    expect(new URL(adapter.authUrl('state')).searchParams.get('config_id')).toBe('456')
+  })
   it('keeps a permanent permission denial separate from a quota error', async () => {
     global.fetch = jest.fn(async () => ({ ok: false, status: 403, headers: new Headers(), json: async () => ({ error: { code: 200 } }) })) as any
     await expect(new InstagramAdapter(new InstagramConfig(new ConfigService(values()))).completeConnection({ token: 'private-provider-token', expiresAt: null }))

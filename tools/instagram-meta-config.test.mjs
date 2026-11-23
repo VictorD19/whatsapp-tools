@@ -28,3 +28,14 @@ test('diagnostics do not expose secrets or copy arbitrary environment fields', (
   assert.ok(!metaDiagnostics(config).join().includes(config.appSecret))
   assert.equal('DATABASE_URL' in metaEnvironment({ ...config, appId: '123' }), false)
 })
+test('supports a separate Page-aware configuration without replacing the existing login or enabling sends', () => {
+  const base = metaEnvironment(configured())
+  assert.equal('INSTAGRAM_FACEBOOK_CONFIG_ID' in base, false)
+  const extra = metaEnvironment({ ...configured(), facebookConfigId: '789' })
+  assert.equal(extra.INSTAGRAM_CONFIG_ID, '456')
+  assert.equal(extra.INSTAGRAM_FACEBOOK_CONFIG_ID, '789')
+  assert.equal(extra.INSTAGRAM_SEND_ENABLED, 'false')
+  for (const facebookConfigId of ['', null, 789, '789&scope=ads_management']) {
+    assert.throws(() => metaEnvironment({ ...configured(), facebookConfigId }), /Facebook/)
+  }
+})

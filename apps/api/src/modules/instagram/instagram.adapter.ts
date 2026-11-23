@@ -17,10 +17,12 @@ export class InstagramAdapter {
   constructor(private readonly config: InstagramConfig) {}
   authUrl(state: string, useFacebookSession = false): string {
     this.config.assertMeta()
+    const configId = (useFacebookSession && this.config.get('INSTAGRAM_FACEBOOK_CONFIG_ID')) || this.config.get('INSTAGRAM_CONFIG_ID')
+    if (!/^\d+$/.test(configId)) throw new ServiceUnavailableException('Configuração de login do Facebook inválida no piloto')
     const url = new URL('https://www.facebook.com/dialog/oauth')
     url.search = new URLSearchParams({ client_id: this.config.get('INSTAGRAM_APP_ID'),
       redirect_uri: this.config.get('INSTAGRAM_REDIRECT_URI'), response_type: 'code',
-      config_id: this.config.get('INSTAGRAM_CONFIG_ID'), display: 'popup', override_default_response_type: 'true', state }).toString()
+      config_id: configId, display: 'popup', override_default_response_type: 'true', state }).toString()
     if (!useFacebookSession) url.searchParams.set('prompt', 'login')
     return url.toString()
   }

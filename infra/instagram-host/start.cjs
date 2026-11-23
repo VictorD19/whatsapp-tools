@@ -12,6 +12,7 @@ async function main() {
   if (config.version !== 1 || dbUrl.protocol !== 'postgresql:' || dbUrl.hostname !== 'postgres' || dbUrl.port !== '5432' || dbUrl.pathname !== '/instagram_review' || dbUrl.username !== 'instagram_review' ||
       config.meta.redirectUri !== 'https://instagram-review.sistemazapchat.com/api/v1/instagram/callback' ||
       !/^\d+$/.test(config.meta.appId) || !/^\d+$/.test(config.meta.configId) || !/^v\d+\.\d+$/.test(config.meta.apiVersion) ||
+      (config.meta.facebookConfigId !== undefined && (typeof config.meta.facebookConfigId !== 'string' || !/^\d+$/.test(config.meta.facebookConfigId))) ||
       typeof config.meta.appSecret !== 'string' || !config.meta.appSecret ||
       [[config.meta.verifyToken, 32], [config.jwt, 48], [config.refresh, 48], [config.loginPassword, 24]].some(([value, length]) => typeof value !== 'string' || value.length < length) ||
       typeof config.encryption !== 'string' || config.encryption.length !== 32) throw Error('Unexpected deployment configuration')
@@ -21,6 +22,7 @@ async function main() {
     JWT_SECRET: config.jwt, JWT_REFRESH_SECRET: config.refresh, ENCRYPTION_KEY: config.encryption,
     INSTAGRAM_ENABLED: 'true', INSTAGRAM_MODE: 'meta', INSTAGRAM_PILOT_TENANT_IDS: separateReviewer ? 'instagram-review,instagram-meta-review' : 'instagram-review', ...replyEnvironment,
     INSTAGRAM_APP_ID: config.meta.appId, INSTAGRAM_APP_SECRET: config.meta.appSecret, INSTAGRAM_CONFIG_ID: config.meta.configId,
+    ...(config.meta.facebookConfigId ? { INSTAGRAM_FACEBOOK_CONFIG_ID: config.meta.facebookConfigId } : {}),
     INSTAGRAM_VERIFY_TOKEN: config.meta.verifyToken, INSTAGRAM_API_VERSION: config.meta.apiVersion, INSTAGRAM_REDIRECT_URI: config.meta.redirectUri,
     INSTAGRAM_REVIEW_CONTAINER: 'true', CORS_ORIGINS: 'https://instagram-review.sistemazapchat.com', NEXT_TELEMETRY_DISABLED: '1',
     ...(shared ? { NODE_OPTIONS: '--max-old-space-size=160' } : {}) }
