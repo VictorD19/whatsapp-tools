@@ -38,3 +38,7 @@ Policies: https://sistemazapchat.com/privacy · https://sistemazapchat.com/data-
 ## Complete recording
 
 Local artifact: output/instagram-meta-review-20261123/zapchat-instagram-meta-review-final-20261123.mp4. It includes verified service login, Page/Instagram authorization, real receive/reply, actual unsend and local deletion. Real captures were edited into sections with explanatory English captions; the authorization was re-recorded after the original receive/reply and this is disclosed. Password text and unrelated contact lists are masked. The full MP4 decoded without errors. Prepared is not the same as attached: confirm persistence in pages_show_list and instagram_manage_messages, and replace the older instagram_basic authorization-only clip with this complete recording. Do not submit the draft.
+
+## Subsequent attachment verification
+
+The owner uploaded the complete recording to instagram_manage_messages. Reopening confirmed a saved screencast link (video3186709034993456), checked concordance and current description; saving changed that permission to Editar. pages_show_list remains the sole incomplete permitted-use form, with no saved screencast. The supported file chooser timed out again; its separate upload form is open for owner completion. instagram_basic retains its previous authorization clip. Reviewer credentials and the updated unsend/deletion instructions were confirmed persisted. Submission stays disabled and has not occurred.
