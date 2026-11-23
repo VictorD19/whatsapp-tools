@@ -1,3 +1,5 @@
+Atualização de 23/11: **R7 publicada somente no piloto**, backups anterior e posterior restaurados, seis serviços principais preservados, 11 verificações HTTPS aprovadas. Reconexão com Instagram e Página na revisão final da Meta, aguardando confirmação da nova concessão. **Recebimento real ainda não comprovado; análise não submetida.** [Publicação e pendências atuais](../INSTAGRAM-PILOT-R7-PUBLISHED-2026-11-23.md).
+
 Estado vigente em23/11: a Meta orientou incluir a Página vinculada na conexão.
 Nova configuração Pages+Instagram criada após autorização; código/pacote R7
 preparados e testados, ainda não publicados. A R6 permanece no piloto, com envios

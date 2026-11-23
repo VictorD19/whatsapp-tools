@@ -1,3 +1,5 @@
+Atualização de 23/11: **R7 publicada somente no piloto**, backups anterior e posterior restaurados, seis serviços principais preservados, 11 verificações HTTPS aprovadas. Reconexão com Instagram e Página na revisão final da Meta, aguardando confirmação da nova concessão. **Recebimento real ainda não comprovado; análise não submetida.** [Publicação e pendências atuais](../INSTAGRAM-PILOT-R7-PUBLISHED-2026-11-23.md).
+
 **23 November update:** hosted release remains R6, with real replies disabled.
 The sender tester has accepted; the21November eligible message was readable via
 Graph but not delivered to the pilot. Meta has now advised including the linked
