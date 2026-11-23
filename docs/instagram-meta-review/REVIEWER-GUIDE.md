@@ -1,80 +1,40 @@
-Estado posterior de 23/11: **Direct real recebido pelo webhook e resposta confirmada nas duas pontas. Envios temporários desligados.** Provedor de Tecnologia aplicado e novo vídeo real preparado. R8 do avaliador compilada e testada, ainda não publicada; concordâncias e ativação aguardam confirmação. Upload novo não confirmado. [Evidências e pendências atuais](../INSTAGRAM-REAL-DIRECTS-2026-11-23.md). Registros anteriores abaixo são históricos.
+# Meta reviewer guide — current pilot, 23 November 2026
 
-Atualização posterior de 23/11: **Instagram e Página reconectados**, novo token válido com pages_show_list e uma única Página atribuída, inscrições de mensagens/callback conferidos. A Meta exige cadastro como Provedor de Tecnologia para adicionar pages_show_list à análise; confirmação específica pendente. Demonstração real nova aguarda autorização, sem solicitar Direct manual. [Reconexão, justificativa e exigência da Meta](PAGE-PERMISSION-2026-11-23.md).
+R8 is hosted at https://instagram-review.sistemazapchat.com/instagram. The reviewer tenant was verified by API and browser: its own login, no owner accounts/messages, no superadministrator, own-asset connection controls. Manual replies are enabled only for that tenant until **7 December 2026, 23:59 UTC**. Owner sending is disabled. The draft remains unsubmitted while the final complete video attachment remains unverified.
 
-Atualização de 23/11: **R7 publicada somente no piloto**, backups anterior e posterior restaurados, seis serviços principais preservados, 11 verificações HTTPS aprovadas. Reconexão com Instagram e Página na revisão final da Meta, aguardando confirmação da nova concessão. **Recebimento real ainda não comprovado; análise não submetida.** [Publicação e pendências atuais](../INSTAGRAM-PILOT-R7-PUBLISHED-2026-11-23.md).
+## Service sign-in and business authorization
 
-**23 November update:** hosted release remains R6, with real replies disabled.
-The sender tester has accepted; the21November eligible message was readable via
-Graph but not delivered to the pilot. Meta has now advised including the linked
-Facebook Page with pages_show_list in a separate system-user configuration. It
-is created; R7 code/image are prepared but not deployed or reauthorized. Do not
-submit this draft until the real flow and reviewer reproduction are verified.
-See [current workaround preparation](../INSTAGRAM-META-PAGE-WORKAROUND-2026-11-23.md).
-Earlier state descriptions below are historical where superseded.
+1. Open https://instagram-review.sistemazapchat.com/login. Use the dedicated service credentials in the private Meta access field. Do not use or request the owner’s Facebook/Instagram credentials.
+2. Open Instagram → Conexão → Continuar com Facebook.
+3. Use your own Facebook account. Select your professional Instagram account and its linked Facebook Page. Confirm profile/Direct and Page-list permissions, then Concluir.
+4. The callback returns automatically to the connection panel. Confirm the selected Instagram username and open Conversas.
+5. From a second Instagram account, send a Direct to your connected professional account. The server receives signed webhooks independently of the browser; the inbox refreshes every three seconds. No history import is enabled.
+6. Select the sender, enter a manual reply in Sua resposta and click Enviar resposta within 24 hours of the latest inbound message. Standby conversations are read-only. The service rechecks tenant/account/conversation ownership, token, window and deadline before transport; retries use request IDs to avoid duplicate sending.
+7. To test sender unsend handling, cancel the incoming message in the sending Instagram account. The CRM redacts its content and retains a deduplication marker.
+8. To test local deletion, click Excluir do CRM on a message and confirm after reviewing. This erases local content, not the Instagram original. Pending/uncertain outbound messages cannot be erased before reconciliation.
+9. The tabs marked Prévia — automations, AI, menus, results and test lab — are outside this permission request. No AI replies, history import, advertising, posting, comments, insights or Human Agent scope is claimed.
 
-# Reviewer material — draft, not submitted
+Meta’s official guide states that reviewers use their own Facebook accounts and do not need app roles: https://developers.facebook.com/documentation/business-messaging/instagram-messaging/app-review/apps-for-other-businesses . The same guide requires receive/reply/delete/unsend demonstration. The authorized demonstration of both actions was completed on 23 November using the same two existing messages.
 
-Current preparation: 21 November 2026. This document describes the hosted R4
-and explicitly separates pending work. It supersedes older reviewer instructions.
+## Permission uses
 
-## instagram_basic — use description
+- instagram_basic: read and display the ID/username of the explicitly selected professional account and associate that connection with the signed-in CRM business.
+- instagram_manage_messages: receive subscribed signed Direct webhooks, show conversations, reply manually inside 24 hours and process unsends/local deletion. Tokens are encrypted at rest; messages are isolated by tenant.
+- pages_show_list: let the administrator select and confirm the linked Facebook Page during Facebook Login for Business. The linked Page asset resolves real delivery for the pilot, following support case2256928134873004.
+- public_profile: standard Facebook profile permission retained in the Meta configuration/review. The additional advertising, publishing and comment review requests introduced by the Tech Provider conversion were removed from the draft.
 
-ZapChat Social Lab is an isolated Instagram Direct inbox pilot for SistemaZapChat
-CRM. A business administrator selects one professional Instagram account through
-Meta Unified Login. We use the authorized account ID and username to display the
-connection and associate conversations with the correct business. We request
-instagram_basic, instagram_manage_messages and public_profile only. Advertising,
-publishing, comments, insights and Human Agent access are outside this review.
+## Verified evidence and remaining gate
 
-## instagram_manage_messages — use description
+A real authorized Direct arrived through messaging at 13:12 UTC on23November; its manual reply was confirmed by Meta and visible in Instagram at13:15UTC. Owner-to-owner demonstration sends were disabled afterwards. Eleven public checks and nine tenant-isolation checks passed after R8 publication. Backups before and after were restored with two users recovered; the six principal services retained IDs and start times.
 
-The pilot implements a Direct inbox with conversation text, participant/message
-identifiers and timestamps. Data belongs to the authenticated business. Access
-tokens are encrypted at rest. Webhooks require a valid signature and matching
-account/recipient identifiers; standby conversations remain read-only. Sender
-unsend processing removes stored content and prevents replay from restoring it.
-An operator can also delete message content through the inbox.
+Concordances and current descriptions were saved in Meta after explicit authorization. The old instagram_basic authorization clip is visible as a saved screencast. **The new real-flow video has not yet been verified as a persisted attachment.** The documented IAB file chooser did not open; access to the native picker belonging to the Codex app is disallowed. Native Chrome automation also did not confirm file selection. Do not report a successful upload based on a click or populated filename alone.
 
-R4 is continuously hosted at https://instagram-review.sistemazapchat.com/instagram.
-The deletion interface and OAuth return are deployed. Real replies are disabled.
-Live receipt, reply and sender-unsend have not been demonstrated in the hosted
-version. Synthetic fixtures and historical Graph reads are not live evidence.
-The old local five-minute reconciliation is not installed in the hosted reviewer.
-Do not submit this description as a completed messaging demonstration yet.
+The dedicated service-review credential was entered only in the private Meta draft field after the owner authorized reviewer access. No personal Meta password or owner service credential was shared. The draft was reopened and the dedicated service credential was confirmed persisted without printing it.
 
-Advanced Access is requested for eligible interactions involving people without
-app roles. Meta Support case 2256928134873004 explains that Standard Access tests
-require an app role for the sender as well as the receiving account. The invited
-sender remains pending. Neither production CRM nor its customers are used here.
+Sender cancellation and local deletion were specifically authorized and completed. Read-only database verification confirmed both texts empty with provider/deduplication identifiers retained; the reply remained visible in Instagram. No additional Direct was sent or requested. Final submission remains a separate action and has not occurred.
 
-## Reviewer access
+Policies: https://sistemazapchat.com/privacy · https://sistemazapchat.com/data-deletion .
 
-The service has its own email/password login. Meta Unified Login subsequently
-connects an Instagram account; it does not replace the service login.
+## Complete recording
 
-1. Open https://instagram-review.sistemazapchat.com/login.
-2. Use the dedicated service credentials in the private review fields. The login
-   is meta-review@example.com, in tenant instagram-meta-review. No password has
-   been supplied to Meta yet. Never supply the owner's service or Meta passwords.
-3. Open Instagram → Conexão. Select the connection button and authorize your own
-   eligible professional account through Meta Unified Login. Select exactly one
-   Instagram account and its portfolio. No ad account is required.
-4. A successful callback returns to /instagram#conexao. Confirm the displayed
-   username. Pending authorization or errors do not count as successful connection.
-5. Open Conversas. Only this business's connected account and conversations can
-   be shown. The review tenant has no access to the owner's connection/history.
-6. Message receipt/reply/unsend steps must be finalized against the completed
-   screencast and the actual reviewer configuration before submission. The new
-   controlled-owner reply preparation does not enable reviewer replies.
-7. Operator deletion is available from a displayed message. Disconnection disables
-   the local connection and clears its token; it does not erase all history or
-   revoke authorization inside Meta.
-8. Public instructions: https://sistemazapchat.com/data-deletion and
-   https://sistemazapchat.com/privacy.
-
-Five additional tabs are previews, not features claimed in this submission.
-Confirm continuous access and matching form instructions before sending review.
-See [current preparation](PREPARATION-2026-11-21.md),
-[publication evidence](../INSTAGRAM-PILOT-R4-PUBLISHED-2026-11-20.md) and the
-[official review guide](https://developers.facebook.com/documentation/business-messaging/instagram-messaging/app-review/apps-for-other-businesses).
+Local artifact: output/instagram-meta-review-20261123/zapchat-instagram-meta-review-final-20261123.mp4. It includes verified service login, Page/Instagram authorization, real receive/reply, actual unsend and local deletion. Real captures were edited into sections with explanatory English captions; the authorization was re-recorded after the original receive/reply and this is disclosed. Password text and unrelated contact lists are masked. The full MP4 decoded without errors. Prepared is not the same as attached: confirm persistence in pages_show_list and instagram_manage_messages, and replace the older instagram_basic authorization-only clip with this complete recording. Do not submit the draft.

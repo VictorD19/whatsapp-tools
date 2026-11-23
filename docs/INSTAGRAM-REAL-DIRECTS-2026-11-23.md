@@ -1,3 +1,5 @@
+Estado posterior: **R8 publicada, avaliador isolado validado, cancelamento real e exclusão local concluídos.** Vídeo completo pronto localmente; upload persistido ainda pendente. [Estado vigente](INSTAGRAM-PILOT-R8-PUBLISHED-2026-11-23.md). O relato abaixo preserva a sequência anterior.
+
 # Directs reais confirmados no piloto — 23/11/2026
 
 O recebimento real foi resolvido no piloto após seguir a orientação do suporte da Meta: configuração Facebook Login for Business com usuário do sistema, conta do Instagram e Página vinculada, incluindo pages_show_list. O CRM principal não foi alterado.
