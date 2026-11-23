@@ -1,3 +1,7 @@
+**Enviada à Meta em23/11/2026 após autorização final. Recebimento confirmado pelo status “Análise em andamento”**, pedido1690021079384646, aplicativo1684815669905187. Permissões: instagram_basic, pages_show_list, instagram_manage_messages e public_profile. Meta informa que a maioria é analisada em até20dias, sujeito a pendências. Nenhuma aprovação avançada foi concedida por este status. Piloto permanece isolado; CRM principal sem alteração. O acesso de resposta do avaliador mantém a expiração autorizada em07/12/2026às23:59UTC e deverá ser reavaliado se a análise ultrapassar esse prazo.
+
+Os estados anteriores abaixo preservam a preparação antes do envio.
+
 # Meta reviewer guide — current pilot, 23 November 2026
 
 R8 is hosted at https://instagram-review.sistemazapchat.com/instagram. The reviewer tenant was verified by API and browser: its own login, no owner accounts/messages, no superadministrator, own-asset connection controls. Manual replies are enabled only for that tenant until **7 December 2026, 23:59 UTC**. Owner sending is disabled. The draft is ready for the owner’s final submission decision: Meta enabled Enviar para análise after all permitted-use forms were completed. It has not been submitted.

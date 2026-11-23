@@ -1,3 +1,7 @@
+**Enviada à Meta em23/11/2026 após autorização final. Recebimento confirmado pelo status “Análise em andamento”**, pedido1690021079384646, aplicativo1684815669905187. Permissões: instagram_basic, pages_show_list, instagram_manage_messages e public_profile. Meta informa que a maioria é analisada em até20dias, sujeito a pendências. Nenhuma aprovação avançada foi concedida por este status. Piloto permanece isolado; CRM principal sem alteração. O acesso de resposta do avaliador mantém a expiração autorizada em07/12/2026às23:59UTC e deverá ser reavaliado se a análise ultrapassar esse prazo.
+
+Os estados anteriores abaixo preservam a preparação antes do envio.
+
 # R8 published only in the isolated pilot — 23 November 2026
 
 Release shared-20261123-r8, code5ba02dd, is now current in /opt/zapchat-instagram-lab. The owner explicitly authorized the evaluator reply window and Meta concordances. The separate evaluator tenant may manually respond using its own authorized assets until2026-12-07T23:59:00.000Z. Owner sending remains off; no account or history was moved to the evaluator.
