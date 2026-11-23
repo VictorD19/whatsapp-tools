@@ -1,3 +1,9 @@
+Estado vigente em23/11: a Meta orientou incluir a Página vinculada na conexão.
+Nova configuração Pages+Instagram criada após autorização; código/pacote R7
+preparados e testados, ainda não publicados. A R6 permanece no piloto, com envios
+bloqueados. [Correção indicada pela Meta e próximos passos](../INSTAGRAM-META-PAGE-WORKAROUND-2026-11-23.md).
+Registros anteriores abaixo são históricos.
+
 Atualização de 21/11: instruções do avaliador e roteiro consolidados; proteção de
 resposta controlada do host/gateway preparada na branch, ainda não publicada.
 Convite do remetente continua pendente; recebimento real e vídeo completo não

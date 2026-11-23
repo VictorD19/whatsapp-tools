@@ -1,3 +1,12 @@
+**23 November update:** hosted release remains R6, with real replies disabled.
+The sender tester has accepted; the21November eligible message was readable via
+Graph but not delivered to the pilot. Meta has now advised including the linked
+Facebook Page with pages_show_list in a separate system-user configuration. It
+is created; R7 code/image are prepared but not deployed or reauthorized. Do not
+submit this draft until the real flow and reviewer reproduction are verified.
+See [current workaround preparation](../INSTAGRAM-META-PAGE-WORKAROUND-2026-11-23.md).
+Earlier state descriptions below are historical where superseded.
+
 # Reviewer material — draft, not submitted
 
 Current preparation: 21 November 2026. This document describes the hosted R4
