@@ -1,6 +1,6 @@
 # Meta reviewer guide — current pilot, 23 November 2026
 
-R8 is hosted at https://instagram-review.sistemazapchat.com/instagram. The reviewer tenant was verified by API and browser: its own login, no owner accounts/messages, no superadministrator, own-asset connection controls. Manual replies are enabled only for that tenant until **7 December 2026, 23:59 UTC**. Owner sending is disabled. The draft remains unsubmitted while the final complete video attachment remains unverified.
+R8 is hosted at https://instagram-review.sistemazapchat.com/instagram. The reviewer tenant was verified by API and browser: its own login, no owner accounts/messages, no superadministrator, own-asset connection controls. Manual replies are enabled only for that tenant until **7 December 2026, 23:59 UTC**. Owner sending is disabled. The draft is ready for the owner’s final submission decision: Meta enabled Enviar para análise after all permitted-use forms were completed. It has not been submitted.
 
 ## Service sign-in and business authorization
 
@@ -23,11 +23,11 @@ Meta’s official guide states that reviewers use their own Facebook accounts an
 - pages_show_list: let the administrator select and confirm the linked Facebook Page during Facebook Login for Business. The linked Page asset resolves real delivery for the pilot, following support case2256928134873004.
 - public_profile: standard Facebook profile permission retained in the Meta configuration/review. The additional advertising, publishing and comment review requests introduced by the Tech Provider conversion were removed from the draft.
 
-## Verified evidence and remaining gate
+## Verified evidence and submission state
 
 A real authorized Direct arrived through messaging at 13:12 UTC on23November; its manual reply was confirmed by Meta and visible in Instagram at13:15UTC. Owner-to-owner demonstration sends were disabled afterwards. Eleven public checks and nine tenant-isolation checks passed after R8 publication. Backups before and after were restored with two users recovered; the six principal services retained IDs and start times.
 
-Concordances and current descriptions were saved in Meta after explicit authorization. The old instagram_basic authorization clip is visible as a saved screencast. **The new real-flow video has not yet been verified as a persisted attachment.** The documented IAB file chooser did not open; access to the native picker belonging to the Codex app is disallowed. Native Chrome automation also did not confirm file selection. Do not report a successful upload based on a click or populated filename alone.
+Concordances and current descriptions are saved in Meta. The complete 99-second recording is persisted in instagram_manage_messages (video3186709034993456) and pages_show_list (final video1592441405985027). The final Page upload was saved, reopened and played in Meta: the service-login section and final sender-unsend/local-deletion section match the local final recording. instagram_basic retains its previous authorization screencast, accepted by the completed form. All four permission forms show Editar.
 
 The dedicated service-review credential was entered only in the private Meta draft field after the owner authorized reviewer access. No personal Meta password or owner service credential was shared. The draft was reopened and the dedicated service credential was confirmed persisted without printing it.
 
@@ -37,8 +37,8 @@ Policies: https://sistemazapchat.com/privacy · https://sistemazapchat.com/data-
 
 ## Complete recording
 
-Local artifact: output/instagram-meta-review-20261123/zapchat-instagram-meta-review-final-20261123.mp4. It includes verified service login, Page/Instagram authorization, real receive/reply, actual unsend and local deletion. Real captures were edited into sections with explanatory English captions; the authorization was re-recorded after the original receive/reply and this is disclosed. Password text and unrelated contact lists are masked. The full MP4 decoded without errors. Prepared is not the same as attached: confirm persistence in pages_show_list and instagram_manage_messages, and replace the older instagram_basic authorization-only clip with this complete recording. Do not submit the draft.
+Local artifact: output/instagram-meta-review-20261123/zapchat-instagram-meta-review-final-20261123.mp4. It includes verified service login, Page/Instagram authorization, real receive/reply, actual unsend and local deletion. Real captures were edited into sections with English captions; authorization was re-recorded after the original receive/reply, as disclosed. Password text and unrelated contact lists are masked. The complete local MP4 decoded without errors and the saved Meta video was checked directly.
 
-## Subsequent attachment verification
+## Final pre-submission confirmation
 
-The owner uploaded the complete recording to instagram_manage_messages. Reopening confirmed a saved screencast link (video3186709034993456), checked concordance and current description; saving changed that permission to Editar. pages_show_list remains the sole incomplete permitted-use form, with no saved screencast. The supported file chooser timed out again; its separate upload form is open for owner completion. instagram_basic retains its previous authorization clip. Reviewer credentials and the updated unsend/deletion instructions were confirmed persisted. Submission stays disabled and has not occurred.
+The dedicated service credential, business authorization instructions, 7 December 23:59 UTC manual-reply deadline and public policy URLs remain present in the private Meta draft. The live reviewer login URL returned HTTP200. Meta enabled Enviar para análise; it was not clicked. No server access, CRM principal change or new Direct was needed for this final attachment/form review. The administrative key remains revoked. The evaluator window must be reconsidered if review happens after its expiry; do not silently extend access.

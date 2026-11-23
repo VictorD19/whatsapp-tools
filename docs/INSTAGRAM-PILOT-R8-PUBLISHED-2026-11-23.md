@@ -15,9 +15,9 @@ Release shared-20261123-r8, code5ba02dd, is now current in /opt/zapchat-instagra
 
 R7 remains available for rollback. The new image was built locally from immutable code after107Instagram tests and10host/gateway tests. Its compiled policy passed with the network disabled. This publication did not send new messages.
 
-## Meta remaining gate
+## Meta draft ready, not submitted
 
-The current permission descriptions and concordances were saved; the dedicated service-review login was entered in the private draft field only. The old instagram_basic authorization screencast remains visible. New real-flow video attachment is not confirmed. A native file picker for the embedded browser is inaccessible to automation and native Chrome did not confirm selection. Sender-unsend and local deletion on the two existing demonstration messages were specifically authorized and completed. Both stored texts are empty, deduplication identifiers remain, and the outgoing Instagram copy is preserved. The complete recording includes these actions and verified service login; it decodes without errors. The app review is not submitted and not yet ready for submission.
+The owner completed the final recording uploads. The complete 99-second screencast is persisted in instagram_manage_messages and pages_show_list; the final Page recording was saved, reopened and visually checked at service login and the final cancellation/local-deletion section. instagram_basic retains its accepted authorization clip. All four permitted-use forms are complete, reviewer credentials/instructions are saved and Meta enabled Enviar para análise. No submission was made. The isolated reviewer window still ends7December2026 at23:59UTC.
 
 ## Final safety receipt
 
