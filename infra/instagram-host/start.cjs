@@ -8,6 +8,7 @@ async function main() {
   const config = JSON.parse(readFileSync('/run/secrets/pilot_runtime', 'utf8'))
   const replyEnvironment = controlledReplyEnvironment(config.meta)
   const separateReviewer = typeof config.reviewerLoginPassword === 'string' && config.reviewerLoginPassword.length >= 24
+  if (config.meta.reviewerReplyUntil !== undefined && !separateReviewer) throw Error('Separate reviewer required')
   const dbUrl = new URL(config.databaseUrl)
   if (config.version !== 1 || dbUrl.protocol !== 'postgresql:' || dbUrl.hostname !== 'postgres' || dbUrl.port !== '5432' || dbUrl.pathname !== '/instagram_review' || dbUrl.username !== 'instagram_review' ||
       config.meta.redirectUri !== 'https://instagram-review.sistemazapchat.com/api/v1/instagram/callback' ||

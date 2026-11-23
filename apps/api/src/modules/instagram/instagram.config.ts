@@ -30,18 +30,28 @@ export class InstagramConfig {
       return scope
     } catch { return false }
   }
+  reviewerSendingAllowed(tenantId: string): boolean {
+    const raw = this.get('INSTAGRAM_REVIEWER_REPLY_UNTIL')
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.000Z$/.test(raw)) return false
+    const until = Date.parse(raw), now = Date.now()
+    return this.allowed(tenantId) && tenantId === 'instagram-meta-review' && this.mode === 'meta' &&
+      Number.isFinite(until) && until > now && until - now <= 31 * 86400000 && new Date(until).toISOString() === raw
+  }
   realSendingAllowed(tenantId: string): boolean {
+    if (this.reviewerSendingAllowed(tenantId)) return true
     const scope = this.controlledReplyScope()
     return this.allowed(tenantId) && this.mode === 'meta' && this.get('INSTAGRAM_SEND_ENABLED') === 'true' &&
       !!scope && scope.tenantId === tenantId
   }
-  transportTargetAllowed(instagramId: string, participantId: string): boolean {
+  transportTargetAllowed(instagramId: string, participantId: string, tenantId?: string): boolean {
+    if (tenantId && this.reviewerSendingAllowed(tenantId)) return /^\d{1,40}$/.test(instagramId) &&
+      /^\d{1,40}$/.test(participantId) && instagramId !== participantId
     const scope = this.controlledReplyScope()
     return this.get('INSTAGRAM_SEND_ENABLED') === 'true' && !!scope &&
       scope.instagramId === instagramId && scope.participantId === participantId
   }
   replyTargetAllowed(tenantId: string, instagramId: string, participantId: string): boolean {
-    return this.realSendingAllowed(tenantId) && this.transportTargetAllowed(instagramId, participantId)
+    return this.realSendingAllowed(tenantId) && this.transportTargetAllowed(instagramId, participantId, tenantId)
   }
   assertMeta(): void {
     if (this.mode !== 'meta' || !this.get('INSTAGRAM_APP_ID') || !this.get('INSTAGRAM_APP_SECRET') ||

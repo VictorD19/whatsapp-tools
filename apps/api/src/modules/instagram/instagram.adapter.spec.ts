@@ -64,6 +64,18 @@ describe('Instagram Meta transport', () => {
     await expect(malformed.sendText('123', '456', 'token', 'text')).rejects.toThrow()
     expect(global.fetch).not.toHaveBeenCalled()
   })
+  it('requires an enabled reviewer tenant context even when the reviewer deadline is valid', async () => {
+    global.fetch = jest.fn(async () => ({ ok:true, json:async()=>({message_id:'review-mid'}) })) as any
+    const config={...values(),INSTAGRAM_ENABLED:'true',INSTAGRAM_PILOT_TENANT_IDS:'instagram-meta-review',
+      INSTAGRAM_SEND_ENABLED:'false',INSTAGRAM_CONTROLLED_REPLY_SCOPE:'',
+      INSTAGRAM_REVIEWER_REPLY_UNTIL:new Date(Math.floor((Date.now()+3600000)/1000)*1000).toISOString()}
+    const adapter=new InstagramAdapter(new InstagramConfig(new ConfigService(config)))
+    await expect(adapter.sendText('123','456','token','text')).rejects.toThrow()
+    await expect(adapter.sendText('123','456','token','text','instagram-review')).rejects.toThrow()
+    expect(global.fetch).not.toHaveBeenCalled()
+    await expect(adapter.sendText('123','456','token','text','instagram-meta-review')).resolves.toBe('review-mid')
+    expect(global.fetch).toHaveBeenCalledTimes(1)
+  })
   it('does not include provider errors or credentials in application exceptions', async () => {
     global.fetch = jest.fn(async () => ({ ok: false, json: async () => ({ error: 'private-token' }) })) as any
     const adapter = new InstagramAdapter(new InstagramConfig(new ConfigService(values())))

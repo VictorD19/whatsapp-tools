@@ -35,3 +35,29 @@ describe('Instagram controlled reply scope', () => {
     }
   })
 })
+
+ describe('Instagram isolated reviewer reply deadline', () => {
+  const make = (extra: Record<string,string | undefined> = {}) => { const values:Record<string,string | undefined> = {
+    NODE_ENV:'test', INSTAGRAM_ENABLED:'true', INSTAGRAM_MODE:'meta',
+    INSTAGRAM_PILOT_TENANT_IDS:'instagram-review,instagram-meta-review', INSTAGRAM_SEND_ENABLED:'false',
+    INSTAGRAM_REVIEWER_REPLY_UNTIL: new Date(Math.floor((Date.now()+3600000)/1000)*1000).toISOString(), ...extra,
+  }; return new InstagramConfig({get:(key:string,fallback:string)=>values[key]??fallback} as ConfigService) }
+  it('allows only the separate reviewer tenant and requires tenant context at transport', () => {
+    const c=make()
+    expect(c.replyTargetAllowed('instagram-meta-review','123','456')).toBe(true)
+    expect(c.realSendingAllowed('instagram-review')).toBe(false)
+    expect(c.replyTargetAllowed('instagram-review','123','456')).toBe(false)
+    expect(c.transportTargetAllowed('123','456')).toBe(false)
+    expect(c.transportTargetAllowed('123','456','instagram-review')).toBe(false)
+    expect(c.replyTargetAllowed('instagram-meta-review','123','123')).toBe(false)
+    expect(c.replyTargetAllowed('instagram-meta-review','/evil','456')).toBe(false)
+  })
+  it('expires without restarting the pilot and cannot override production or tenant isolation', () => {
+    for(const extra of [{INSTAGRAM_REVIEWER_REPLY_UNTIL:'2000-01-01T00:00:00.000Z'},
+      {INSTAGRAM_REVIEWER_REPLY_UNTIL:'9999-01-01T00:00:00.000Z'}, {INSTAGRAM_REVIEWER_REPLY_UNTIL:'invalid'},
+      {NODE_ENV:'production'},{INSTAGRAM_ENABLED:'false'}, {INSTAGRAM_MODE:'simulated'},
+      {INSTAGRAM_PILOT_TENANT_IDS:'instagram-review'}]) {
+      expect(make(extra).replyTargetAllowed('instagram-meta-review','123','456')).toBe(false)
+    }
+  })
+})

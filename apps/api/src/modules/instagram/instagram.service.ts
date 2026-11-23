@@ -33,7 +33,7 @@ export class InstagramService {
 
   status(tenantId: string) {
     return { enabled: this.config.allowed(tenantId), mode: this.config.mode, testOnly: true,
-      realSendingEnabled: this.config.realSendingAllowed(tenantId) }
+      reviewerReplyEnabled: this.config.reviewerSendingAllowed(tenantId), realSendingEnabled: this.config.realSendingAllowed(tenantId) }
   }
   accounts(tenantId: string) {
     this.config.assertTenant(tenantId)
@@ -278,7 +278,7 @@ export class InstagramService {
       if (!canReply(currentConversation.lastInboundAt, Date.now())) throw new Error('reply_window_closed')
       if (current.mode === 'meta' && !this.config.replyTargetAllowed(tenantId, current.instagramId, currentConversation.participantId)) throw new Error('reply_target_disabled')
       const token = current.accessToken ? this.crypto.decrypt(current.accessToken) : null
-      const providerMessageId = await this.adapter.sendText(current.instagramId, currentConversation.participantId, token, text)
+      const providerMessageId = await this.adapter.sendText(current.instagramId, currentConversation.participantId, token, text, tenantId)
       await this.db.instagramMessage.updateMany({ where: { id: message.id, tenantId }, data: { providerMessageId, status: 'sent' } })
       return { id: message.id, status: 'sent' }
     } catch {

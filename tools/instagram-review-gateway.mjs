@@ -32,6 +32,8 @@ export function createReviewGateway({ api = 'http://127.0.0.1:18011', web = 'htt
       controlledReplyScope: JSON.parse(replyEnvironment.INSTAGRAM_CONTROLLED_REPLY_SCOPE || 'null') })
     controlledReplies = true
   }
+  const reviewerUntil = replyEnvironment.INSTAGRAM_REVIEWER_REPLY_UNTIL
+  if (reviewerUntil !== undefined) replyPolicy.controlledReplyEnvironment({ sendEnabled: false, reviewerReplyUntil: reviewerUntil })
   const attempts = new Map()
   const hosts = new Set(['instagram-review.sistemazapchat.com', 'localhost:18012', '127.0.0.1:18012'])
   return createServer(async (req, res) => {
@@ -39,7 +41,7 @@ export function createReviewGateway({ api = 'http://127.0.0.1:18011', web = 'htt
     try {
       if (!hosts.has(req.headers.host)) return deny(404)
       const url = new URL(req.url, 'http://localhost')
-      const target = reviewRoute(req.method, url.pathname, controlledReplies)
+      const target = reviewRoute(req.method, url.pathname, controlledReplies || (typeof reviewerUntil === 'string' && Date.now() < Date.parse(reviewerUntil)))
       if (!target) return deny(404)
       if (['GET', 'HEAD'].includes(req.method) && ['/', '/inbox'].includes(url.pathname)) {
         res.writeHead(302, { Location: url.pathname === '/' ? '/login' : '/instagram', 'Cache-Control': 'no-store' }); return res.end()

@@ -72,10 +72,10 @@ export class InstagramAdapter {
   async exchange(code: string): Promise<InstagramConnection> {
     return this.completeConnection(await this.exchangeToken(code))
   }
-  async sendText(instagramId: string, participantId: string, token: string | null, text: string): Promise<string> {
+  async sendText(instagramId: string, participantId: string, token: string | null, text: string, tenantId?: string): Promise<string> {
     if (this.config.mode === 'simulated') return 'simulated-' + randomUUID()
     this.config.assertMeta()
-    if (!this.config.transportTargetAllowed(instagramId, participantId) || !token) throw new ServiceUnavailableException('Envio real desabilitado para este destinatário no piloto')
+    if (!this.config.transportTargetAllowed(instagramId, participantId, tenantId) || !token) throw new ServiceUnavailableException('Envio real desabilitado para este destinatário no piloto')
     const result = await this.request(`https://graph.facebook.com/${this.config.get('INSTAGRAM_API_VERSION')}/${instagramId}/messages`, {
       method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ recipient: { id: participantId }, message: { text } }),

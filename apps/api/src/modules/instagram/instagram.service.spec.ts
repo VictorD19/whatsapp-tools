@@ -49,6 +49,37 @@ describe('Instagram service', () => {
     f.account.mode = 'meta'; (f.account as any).accessToken = 'encrypted-token'
     return f
   }
+  const reviewer = () => {
+    const f=fixture()
+    Object.assign(f.values,{INSTAGRAM_MODE:'meta',INSTAGRAM_PILOT_TENANT_IDS:'one,instagram-meta-review',
+      INSTAGRAM_SEND_ENABLED:'false',INSTAGRAM_CONTROLLED_REPLY_SCOPE:'',
+      INSTAGRAM_REVIEWER_REPLY_UNTIL:new Date(Math.floor((Date.now()+3600000)/1000)*1000).toISOString()})
+    f.account.tenantId='instagram-meta-review'; f.account.mode='meta'; (f.account as any).accessToken='encrypted-token'
+    f.conversation.tenantId='instagram-meta-review'
+    return f
+  }
+  it('lets the isolated reviewer reply only through an account and conversation owned by that tenant', async () => {
+    const f=reviewer()
+    await expect(f.service.reply('one','c','blocked','foreign')).rejects.toThrow('indisponível')
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+    expect(await f.service.reply('instagram-meta-review','c','review reply','request')).toMatchObject({status:'sent'})
+    expect(f.adapter.sendText).toHaveBeenCalledWith('123','456','encrypted-token','review reply','instagram-meta-review')
+    const foreign=reviewer(); foreign.account.tenantId='one'
+    await expect(foreign.service.reply('instagram-meta-review','c','blocked','request')).rejects.toThrow('indisponível')
+    expect(foreign.adapter.sendText).not.toHaveBeenCalled()
+  })
+  it('rechecks the reviewer deadline after the outgoing claim and keeps the 24h and standby guards', async () => {
+    const f=reviewer(), original=f.db.instagramMessage.upsert.getMockImplementation()
+    f.db.instagramMessage.upsert.mockImplementationOnce(async(args:any)=>{
+      const message=await original(args); f.values.INSTAGRAM_REVIEWER_REPLY_UNTIL='2000-01-01T00:00:00.000Z';return message
+    })
+    expect(await f.service.reply('instagram-meta-review','c','blocked','request')).toMatchObject({status:'unknown'})
+    expect(f.adapter.sendText).not.toHaveBeenCalled()
+    for(const passive of [true,false]){const f=reviewer();if(passive)f.conversation.lastWebhookChannel='standby';else f.conversation.lastInboundAt=new Date(Date.now()-25*3600000)
+      await expect(f.service.reply('instagram-meta-review','c','blocked','request')).rejects.toThrow()
+      expect(f.adapter.sendText).not.toHaveBeenCalled()
+    }
+  })
   it('allows the controlled reply but refuses another participant before creating an outgoing attempt', async () => {
     const f = controlled()
     expect(await f.service.reply('one', 'c', 'Controlled reply', 'request')).toMatchObject({ status: 'sent' })

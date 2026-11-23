@@ -111,3 +111,22 @@ test('returns successful OAuth to the fixed pilot panel without leaking grant pa
     await new Promise(resolve => gateway.close(resolve))
   }
 })
+
+test('reviewer reply route expires dynamically without opening history or registration',async()=>{
+ const original=globalThis.fetch;let calls=0
+ globalThis.fetch=async()=>{calls++;return new Response('API still checks tenant ownership',{status:403})}
+ const deadline=new Date(Math.floor((Date.now()+3600000)/1000)*1000).toISOString()
+ const gateway=createReviewGateway({replyEnvironment:{INSTAGRAM_REVIEWER_REPLY_UNTIL:deadline}})
+ await new Promise(resolve=>gateway.listen(0,'127.0.0.1',resolve))
+ const realNow=Date.now
+ const status=path=>new Promise((resolve,reject)=>{const req=request({host:'127.0.0.1',port:gateway.address().port,path,method:'POST',headers:{Host:'instagram-review.sistemazapchat.com'}},res=>{res.resume();res.once('end',()=>resolve(res.statusCode))});req.on('error',reject);req.end('{}')})
+ try{
+  assert.equal(await status('/api/v1/instagram/conversations/owned/reply'),403)
+  assert.equal(await status('/api/v1/instagram/accounts/owned/sync'),404)
+  assert.equal(await status('/api/v1/auth/register'),404)
+  Date.now=()=>Date.parse(deadline)+1000
+  assert.equal(await status('/api/v1/instagram/conversations/owned/reply'),404)
+  assert.equal(calls,1)
+ }finally{Date.now=realNow;globalThis.fetch=original;await new Promise(resolve=>gateway.close(resolve))}
+ assert.throws(()=>createReviewGateway({replyEnvironment:{INSTAGRAM_REVIEWER_REPLY_UNTIL:'invalid'}}))
+})
