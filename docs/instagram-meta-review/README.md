@@ -1,3 +1,5 @@
+Atualização posterior de 23/11: **Instagram e Página reconectados**, novo token válido com pages_show_list e uma única Página atribuída, inscrições de mensagens/callback conferidos. A Meta exige cadastro como Provedor de Tecnologia para adicionar pages_show_list à análise; confirmação específica pendente. Demonstração real nova aguarda autorização, sem solicitar Direct manual. [Reconexão, justificativa e exigência da Meta](PAGE-PERMISSION-2026-11-23.md).
+
 Atualização de 23/11: **R7 publicada somente no piloto**, backups anterior e posterior restaurados, seis serviços principais preservados, 11 verificações HTTPS aprovadas. Reconexão com Instagram e Página na revisão final da Meta, aguardando confirmação da nova concessão. **Recebimento real ainda não comprovado; análise não submetida.** [Publicação e pendências atuais](../INSTAGRAM-PILOT-R7-PUBLISHED-2026-11-23.md).
 
 Estado vigente em23/11: a Meta orientou incluir a Página vinculada na conexão.
