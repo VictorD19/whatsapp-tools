@@ -1,0 +1,28 @@
+name: zapchat-instagram-review
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports: ["127.0.0.1:25432:5432"]
+    environment:
+      POSTGRES_USER: instagram_review
+      POSTGRES_PASSWORD: ${REVIEW_DB_PASSWORD:?Use tools/instagram-review.mjs prepare}
+      POSTGRES_DB: instagram_review
+    volumes: ["review_postgres:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U instagram_review -d instagram_review"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    ports: ["127.0.0.1:26379:6379"]
+    command: redis-server --appendonly yes
+    volumes: ["review_redis:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+volumes:
+  review_postgres:
+  review_redis:

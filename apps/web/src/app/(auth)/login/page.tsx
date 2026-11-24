@@ -168,7 +168,7 @@ export default function LoginPage() {
               <p className="mt-1 text-[12.5px] text-zinc-400">{t('subtitle')}</p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
                 <label htmlFor="email" className="block text-[12px] font-medium text-zinc-300">{t('email')}</label>
                 <input

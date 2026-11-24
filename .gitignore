@@ -48,3 +48,7 @@ coverage/
 playwright-report/
 test-results/
 .worktrees/
+.instagram-test/
+
+# Local Meta review recordings; credentials and test evidence stay out of Git
+output/instagram-meta-review-20261118/

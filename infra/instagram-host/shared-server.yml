@@ -1,0 +1,88 @@
+# Tests on the existing server. No builds, host ports, production networks or production volumes.
+name: zapchat-instagram-lab
+x-pilot-logging: &pilot-logging
+  driver: json-file
+  options: {max-size: "10m", max-file: "3"}
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: instagram_review
+      POSTGRES_DB: instagram_review
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    command: postgres -c shared_buffers=32MB -c work_mem=2MB -c maintenance_work_mem=32MB -c max_connections=20
+    secrets: [db_password]
+    volumes: ["lab_postgres:/var/lib/postgresql/data"]
+    cpus: 0.10
+    mem_limit: 320m
+    memswap_limit: 320m
+    pids_limit: 80
+    logging: *pilot-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U instagram_review -d instagram_review"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 48mb --maxmemory-policy noeviction
+    volumes: ["lab_redis:/data"]
+    cpus: 0.05
+    mem_limit: 96m
+    memswap_limit: 96m
+    pids_limit: 32
+    logging: *pilot-logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  app:
+    image: zapchat-instagram-pilot:${PILOT_RELEASE:?Use a prebuilt immutable release}
+    platform: linux/amd64
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    secrets: [pilot_runtime]
+    environment:
+      INSTAGRAM_PILOT_SHARED_HOST: 'true'
+      NODE_OPTIONS: --max-old-space-size=64
+    cpus: 0.45
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 256
+    logging: *pilot-logging
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "node", "-e", "Promise.all([fetch('http://127.0.0.1:18012/login'),fetch('http://127.0.0.1:18011/api/v1/instagram/status')]).then(([web,api])=>process.exit(web.status===200&&api.status===401?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 10s
+      start_period: 120s
+      retries: 6
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.0
+    profiles: [public]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token-file /run/secrets/tunnel_token
+    secrets: [tunnel_token]
+    cpus: 0.05
+    mem_limit: 96m
+    memswap_limit: 96m
+    pids_limit: 64
+    logging: *pilot-logging
+    depends_on:
+      app: {condition: service_healthy}
+secrets:
+  db_password:
+    file: ${PILOT_PRIVATE_DIR:?Choose the isolated lab private directory}/db-password
+  pilot_runtime:
+    file: ${PILOT_PRIVATE_DIR:?Choose the isolated lab private directory}/runtime.json
+  tunnel_token:
+    file: ${PILOT_PRIVATE_DIR:?Choose the isolated lab private directory}/cloudflared.token
+volumes:
+  lab_postgres:
+  lab_redis:

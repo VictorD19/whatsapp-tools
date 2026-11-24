@@ -1,0 +1,28 @@
+name: zapchat-instagram-test
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports: ["127.0.0.1:15432:5432"]
+    environment:
+      POSTGRES_USER: instagram_lab
+      POSTGRES_PASSWORD: instagram_lab_local_only
+      POSTGRES_DB: instagram_lab
+    volumes: ["instagram_postgres:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U instagram_lab -d instagram_lab"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    ports: ["127.0.0.1:16379:6379"]
+    command: redis-server --appendonly yes
+    volumes: ["instagram_redis:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+volumes:
+  instagram_postgres:
+  instagram_redis:
